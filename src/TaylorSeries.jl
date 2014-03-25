@@ -110,12 +110,12 @@ function *(a::Taylor, b::Taylor)
     coeffs = zeros(T,order+1)
     coeffs[1] = a1.coeffs[1] * b1.coeffs[1]
     for k = 1:order
-        coeffs[k+1] = mulHomogcoef(k, a1.coeffs, b1.coeffs)
+        coeffs[k+1] = mulHomogCoef(k, a1.coeffs, b1.coeffs)
     end
     Taylor(coeffs, order)
 end
 # Homogeneous coefficient for the multiplication
-function mulHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, bc::Array{T,1})
+function mulHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, bc::Array{T,1})
     coefhomog = zero(T)
     for i = 0:kcoef
         coefhomog += ac[i+1] * bc[kcoef-i+1]
@@ -135,7 +135,7 @@ function /(a::Taylor, b::Taylor)
     coeffs = zeros(T,order+1)
     coeffs[1] = cLHopital
     for k = ordLHopital+1:order
-        coeffs[k-ordLHopital+1] = divHomogcoef(k, v1, v2, coeffs, ordLHopital)
+        coeffs[k-ordLHopital+1] = divHomogCoef(k, v1, v2, coeffs, ordLHopital)
     end
     Taylor(coeffs, order)
 end
@@ -162,9 +162,9 @@ function divlhopital(a1::Taylor, b1::Taylor)
     return ordLHopital, cLHopital
 end
 # Homogeneous coefficient for the division
-function divHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, bc::Array{T,1}, 
+function divHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, bc::Array{T,1}, 
         coeffs::Array{T,1}, ordLHopital::Integer)
-    coefhomog = mulHomogcoef(kcoef, coeffs, bc)
+    coefhomog = mulHomogCoef(kcoef, coeffs, bc)
     coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordLHopital+1]
     coefhomog
 end
@@ -226,12 +226,12 @@ function ^(a::Taylor, x::Real)
     coeffs[lnull+1] = aux
     k0 = lnull+l0nz
     for k = k0+1:order
-        coeffs[k-l0nz+1] = powHomogcoef(k, v, x, coeffs, l0nz)
+        coeffs[k-l0nz+1] = powHomogCoef(k, v, x, coeffs, l0nz)
     end
     Taylor(coeffs,order)
 end
 # Homogeneous coefficients for real power
-function powHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, x::Real, 
+function powHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, x::Real, 
         coeffs::Array{T,1}, knull::Integer)
     coefhomog = zero(T)
     for i = 0:kcoef-knull-1
@@ -251,12 +251,12 @@ function square{T<:Number}(a::Taylor{T})
     coeffs = zeros(T,order+1)
     coeffs[1] = a.coeffs[1]^2
     for k = 1:order
-        coeffs[k+1] = squareHomogcoeff(k, a.coeffs)
+        coeffs[k+1] = squareHomogCoef(k, a.coeffs)
     end
     Taylor(coeffs,order)
 end
 # Homogeneous coefficients for square
-function squareHomogcoeff{T<:Number}(kcoef::Integer, ac::Array{T,1})
+function squareHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1})
     coefhomog = zero(T)
     kodd = kcoef%2
     kend = div(kcoef - 2 + kodd, 2)
@@ -293,12 +293,12 @@ function sqrt(a::Taylor)
     coeffs = zeros(T, order+1)
     coeffs[lnull+1] = aux
     for k = lnull+1:order-l0nz
-        coeffs[k+1] = sqrtHomogcoef(k, v, coeffs, lnull)
+        coeffs[k+1] = sqrtHomogCoef(k, v, coeffs, lnull)
     end
     Taylor(coeffs, order)
 end
 # Homogeneous coefficients for the square-root
-function sqrtHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1}, knull::Integer)
+function sqrtHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1}, knull::Integer)
     coefhomog = zero(T)
     kodd = (kcoef - knull)%2
     kend = div(kcoef - knull - 2 + kodd, 2)
@@ -322,12 +322,12 @@ function exp(a::Taylor)
     coeffs = zeros(T, order+1)
     coeffs[1] = aux
     for k = 1:order
-        coeffs[k+1] = expHomogcoef(k, v, coeffs)
+        coeffs[k+1] = expHomogCoef(k, v, coeffs)
     end
     Taylor( coeffs, order )
 end
 # Homogeneous coefficients for exp
-function expHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1})
+function expHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1})
     coefhomog = zero(T)
     for i = 0:kcoef-1
         coefhomog += (kcoef-i) * ac[kcoef-i+1] * coeffs[i+1]
@@ -349,12 +349,12 @@ function log(a::Taylor)
     coeffs = zeros(T, order+1)
     coeffs[1] = aux
     for k = 1:order
-        coeffs[k+1] = logHomogcoef(k, ac, coeffs)
+        coeffs[k+1] = logHomogCoef(k, ac, coeffs)
     end
     Taylor( coeffs, order )
 end
 # Homogeneous coefficients for log
-function logHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1})
+function logHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1})
   coefhomog = zero(T)
   for i = 1:kcoef-1
     coefhomog += (kcoef-i) * ac[i+1] * coeffs[kcoef-i+1]
@@ -376,7 +376,7 @@ function sincos(a::Taylor, fun::String)
     sincoeffs[1] = aux
     coscoeffs[1] = cos( a.coeffs[1] )
     for k = 1:order
-        sincoeffs[k+1], coscoeffs[k+1] = sincosHomogcoef(k, v, sincoeffs, coscoeffs)
+        sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
     end
     if fun == "sin"
         return Taylor( sincoeffs, order )
@@ -385,7 +385,7 @@ function sincos(a::Taylor, fun::String)
     end
 end
 # Homogeneous coefficients for log
-function sincosHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, 
+function sincosHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, 
         sincoeffs::Array{T,1}, coscoeffs::Array{T,1})
     sincoefhom = zero(T)
     coscoefhom = zero(T)
@@ -410,13 +410,13 @@ function tan(a::Taylor)
     coeffs[1] = aux
     coeffst2[1] = aux^2
     for k = 1:order
-        coeffs[k+1] = tanHomogcoef(k, v, coeffst2)
-        coeffst2[k+1] = squareHomogcoeff(k, coeffs)
+        coeffs[k+1] = tanHomogCoef(k, v, coeffst2)
+        coeffst2[k+1] = squareHomogCoef(k, coeffs)
     end
     Taylor( coeffs, order )
 end
 # Homogeneous coefficients for tan
-function tanHomogcoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffst2::Array{T,1})
+function tanHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffst2::Array{T,1})
     coefhomog = zero(T)
     for i = 0:kcoef-1
         coefhomog += (kcoef-i)*ac[kcoef-i+1]*coeffst2[i+1]
