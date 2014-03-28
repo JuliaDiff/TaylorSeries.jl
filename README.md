@@ -181,6 +181,8 @@ It is worth pointing out the existing julia packages [Polynomial][2] and [PowerS
 
 Comments on the code are appreciated.
 
+This project began during a Masters' course in the postgraduate programs in Physics and in Mathematics at UNAM, during the second half of 2013. This is joint work with David P. Sanders.
+
 [1]: http://www.maia.ub.es/~alex/admcds/admcds.pdf
 [2]: https://github.com/vtjnash/Polynomial.jl
 [3]: https://github.com/jwmerrill/PowerSeries.jl
