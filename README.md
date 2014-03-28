@@ -2,6 +2,7 @@
 
 A julia package for Taylor expansions in one independent variable.
 
+[![Build Status](https://travis-ci.org/lbenet/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/lbenet/TaylorSeries.jl)
 
 ### An overlook
 
