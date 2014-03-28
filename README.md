@@ -110,7 +110,7 @@ true
 
 ```
 
-Differentiating and integrating is trivial for polynomial expansions. The last coefficient of the differential is set to zero; for the integral, the integration constant may be set to a different value (the default is zero). The order of the resulting polynomial is not changed.
+Differentiating and integrating is trivial for polynomial expansions. The last coefficient of the differential is set to zero; for the integral, the integration constant may be set to a different value (the default is zero). The order of the resulting polynomial is not changed. The n-th ($n\ge 0$) derivative is obtained with `deriv(a,n)`, where `a` is a Taylor series; default is n=1.
 
 ```julia
 julia> diffTaylor(exp(x0))
@@ -125,6 +125,11 @@ Taylor{Float64}([1.0,1.0,0.5,0.166667,0.0416667,0.00833333],5)
 julia> integTaylor( diffTaylor( exp(-x0)), 1.0 ) == exp(-x0)
 true
 
+julia> deriv( exp(x(1.0))) == e
+true
+
+julia> deriv( exp(x(1.0)), 5) == e
+true
 ```
 
 For the evaluation of a Taylor series, we use Horner's rule and `evalTaylor(a::Taylor, dx::Number)`. Here, $dx$ is the difference with respect to the point $x_0$ where the Taylor expansion was calculated, i.e., the series is evaluated at $x = x_0 + dx$. Omitting $dx$ corresponds to $dx=0$.

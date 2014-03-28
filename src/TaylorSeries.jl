@@ -15,7 +15,7 @@ import Base: convert, promote_rule, promote, eltype, length, showcompact
 import Base: real, imag, conj, ctranspose
 import Base: square, sqrt, exp, log, sin, cos, tan
 
-export Taylor, diffTaylor, integTaylor, evalTaylor
+export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
 
 ## Constructors ##
 immutable Taylor{T<:Number}
@@ -468,6 +468,15 @@ function evalTaylor{T}(a::Taylor{T}, dx::Number)
   suma
 end
 evalTaylor(a::Taylor) = evalTaylor(a, 0.0)
+
+## Returns de n-th derivative of a series expansion
+function deriv{T}(a::Taylor{T}, n::Int=1)
+    n > a.order && error("You need to increase the order of the Taylor series (currently $(a.order))\n",
+        "to calculate its $(n)-th derivative.")
+    n < 0 && error("Needs a non-negative value for the derivative!")
+    res::T = factorial(BigInt(n))*a.coeffs[n+1]
+    return res
+end
 
 ## showcompact ##
 function showcompact{T<:Number}(io::IO, a::Taylor{T})

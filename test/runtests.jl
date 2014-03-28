@@ -2,11 +2,12 @@
 using TaylorSeries
 using Base.Test
 
-x = Taylor([0,1],15)
-xI = im*x
-z = zero(x)
-u = 1.0*one(x)
-tol(x) = eps(x)
+x(a) = Taylor([a,1],15)
+x0 = x(0)
+xI = im*x0
+z = zero(x0)
+u = 1.0*one(x0)
+tol(x0) = eps(x0)
 tol1 = eps(1.0)
 
 @test eltype(convert(Taylor{Complex128},u)) == Complex128
@@ -14,50 +15,55 @@ tol1 = eps(1.0)
 @test eltype(promote(1.0+im, z)[1]) == Complex{Float64}
 @test eltype(TaylorSeries.fixshape(z,u)[1]) == Float64
 @test length(TaylorSeries.fixshape(Taylor(0,5),z)[1]) == 15
-@test TaylorSeries.firstnonzero(x) == 1
+@test TaylorSeries.firstnonzero(x0) == 1
 @test TaylorSeries.firstnonzero(z) == z.order+1
 
 @test u == 1
 @test 0.0 == z
-@test x.coeffs[2] == 1
+@test x0.coeffs[2] == 1
 @test z+1 == u
-@test x+x == 2x
-@test x-x == z
+@test x0+x0 == 2x0
+@test x0-x0 == z
 
-x2 = Taylor([0,0,1],15)
-@test x*x == x2
-@test (-x)^2 == x2
-@test x2/x == x
-@test x/(3x) == (1/3)*u
-@test x/3im == -xI/3
-@test Taylor([0,1,1])/x == x+1
-@test (x+im)^2 == x2+2im*x-1
-@test imag(x2+2im*x-1) == 2x
-@test (Rational(1,2)*x2).coeffs[3] == 1//2
-@test x^2/x2 == u
-@test ((1+x)^(1/3)).coeffs[3]+1/9 <= tol1
-@test 1-x2 == (1+x)-x*(1+x)
-@test (1-x2)^2 == (1+x)^2 * (1-x)^2
-@test (sqrt(1+x)).coeffs[3] == -1/8
-@test ((1-x)^(1/4)).coeffs[15] == -4188908511/549755813888
-@test abs(((1+x)^3.2).coeffs[14] + 5.4021062656e-5) < tol1
+xsquare = Taylor([0,0,1],15)
+@test x0*x0 == xsquare
+@test (-x0)^2 == xsquare
+@test xsquare/x0 == x0
+@test x0/(3x0) == (1/3)*u
+@test x0/3im == -xI/3
+@test Taylor([0,1,1])/x0 == x0+1
+@test (x0+im)^2 == xsquare+2im*x0-1
+@test imag(xsquare+2im*x0-1) == 2x0
+@test (Rational(1,2)*xsquare).coeffs[3] == 1//2
+@test x0^2/xsquare == u
+@test ((1+x0)^(1/3)).coeffs[3]+1/9 <= tol1
+@test 1-xsquare == (1+x0)-x0*(1+x0)
+@test (1-xsquare)^2 == (1+x0)^2 * (1-x0)^2
+@test (sqrt(1+x0)).coeffs[3] == -1/8
+@test ((1-x0)^(1/4)).coeffs[15] == -4188908511/549755813888
+@test abs(((1+x0)^3.2).coeffs[14] + 5.4021062656e-5) < tol1
 
-@test log(exp(x2)) == x2
-@test exp(log(1-x2)) == 1-x2
-@test log((1-x)^2) == 2*log(1-x)
-@test real(exp(xI)) == cos(x)
-@test imag(exp(xI)) == sin(x)
-@test exp(xI') == cos(x)-im*sin(x)
-@test abs((tan(x)).coeffs[8]- 17/315) < tol1
-@test abs((tan(x)).coeffs[14]- 21844/6081075) < tol1
+@test log(exp(xsquare)) == xsquare
+@test exp(log(1-xsquare)) == 1-xsquare
+@test log((1-x0)^2) == 2*log(1-x0)
+@test real(exp(xI)) == cos(x0)
+@test imag(exp(xI)) == sin(x0)
+@test exp(xI') == cos(x0)-im*sin(x0)
+@test abs((tan(x0)).coeffs[8]- 17/315) < tol1
+@test abs((tan(x0)).coeffs[14]- 21844/6081075) < tol1
 @test evalTaylor(exp(Taylor([0,1],17)),1.0) == e
 
-@test_throws t1/x
+@test deriv( exp(x(1.0)), 5 ) == exp(1.0)
+@test deriv( exp(x(pi)), 3 ) == exp(pi)
+@test isapprox(deriv( exp(x(pi)), 10 ) , exp(pi))
+
+@test_throws t1/x0
 @test_throws z/z
-@test_throws x^1.5
-@test_throws sqrt(x)
-@test_throws log(x)
-@test_throws cos(x)/sin(x)
+@test_throws x0^1.5
+@test_throws sqrt(x0)
+@test_throws log(x0)
+@test_throws cos(x0)/sin(x0)
+@test_throws deriv( exp(x(pi)), 30 )
 
 println("    \033[32;1mSUCCESS\033[0m")
 
