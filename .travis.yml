@@ -15,3 +15,4 @@ before_install:
 script:
   - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir("TaylorSeries"))`); Pkg.pin("TaylorSeries"); Pkg.resolve()'
   - julia -e 'using TaylorSeries; @assert isdefined(:TaylorSeries); @assert typeof(TaylorSeries) === Module'
+  - julia test/runtests.jl
