@@ -20,9 +20,9 @@ export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
 ## Constructors ##
 immutable Taylor{T<:Number}
     coeffs :: Array{T,1}
-    order :: Integer
+    order :: Int
     ## Inner constructor ##
-    function Taylor(coeffs::Array{T,1}, order::Integer)
+    function Taylor(coeffs::Array{T,1}, order::Int)
         lencoef = length(coeffs)
         order = max(order, lencoef-1)
         v = zeros(T, order+1)
@@ -31,11 +31,11 @@ immutable Taylor{T<:Number}
     end
 end
 ## Outer constructors ##
-Taylor{T<:Number}(x::Taylor{T}, order::Integer) = Taylor{T}(x.coeffs, order)
+Taylor{T<:Number}(x::Taylor{T}, order::Int) = Taylor{T}(x.coeffs, order)
 Taylor{T<:Number}(x::Taylor{T}) = Taylor{T}(x.coeffs, x.order)
-Taylor{T<:Number}(coeffs::Array{T,1}, order::Integer) = Taylor{T}(coeffs, order)
+Taylor{T<:Number}(coeffs::Array{T,1}, order::Int) = Taylor{T}(coeffs, order)
 Taylor{T<:Number}(coeffs::Array{T,1}) = Taylor{T}(coeffs, length(coeffs)-1)
-Taylor{T<:Number}(x::T, order::Integer) = Taylor{T}([x], order)
+Taylor{T<:Number}(x::T, order::Int) = Taylor{T}([x], order)
 Taylor{T<:Number}(x::T) = Taylor{T}([x], 0)
 
 ## Type, length ##
@@ -115,7 +115,7 @@ function *(a::Taylor, b::Taylor)
     Taylor(coeffs, order)
 end
 # Homogeneous coefficient for the multiplication
-function mulHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, bc::Array{T,1})
+function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
     coefhomog = zero(T)
     for i = 0:kcoef
@@ -163,8 +163,8 @@ function divlhopital(a1::Taylor, b1::Taylor)
     return ordLHopital, cLHopital
 end
 # Homogeneous coefficient for the division
-function divHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, bc::Array{T,1}, 
-        coeffs::Array{T,1}, ordLHopital::Integer)
+function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1}, 
+        coeffs::Array{T,1}, ordLHopital::Int)
     kcoef == ordLHopital && return ac[ordLHopital+1] / bc[ordLHopital+1]
     coefhomog = mulHomogCoef(kcoef, coeffs, bc)
     coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordLHopital+1]
@@ -173,7 +173,7 @@ end
 /(a::Taylor,b::Number) = Taylor(a.coeffs/b, a.order)
 /(a::Number,b::Taylor) = Taylor([a], b.order) / b
 
-## Integer power ##
+## Int power ##
 function ^(a::Taylor, x::Integer)
     uno = one(a)
     if x < 0
@@ -233,8 +233,8 @@ function ^(a::Taylor, x::Real)
     Taylor(coeffs,order)
 end
 # Homogeneous coefficients for real power
-function powHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, x::Real, 
-        coeffs::Array{T,1}, knull::Integer)
+function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real, 
+        coeffs::Array{T,1}, knull::Int)
     kcoef == knull && return (ac[knull+1])^x
     coefhomog = zero(T)
     for i = 0:kcoef-knull-1
@@ -259,7 +259,7 @@ function square{T<:Number}(a::Taylor{T})
     Taylor(coeffs,order)
 end
 # Homogeneous coefficients for square
-function squareHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1})
+function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     kcoef == 0 && return ac[1]^2
     coefhomog = zero(T)
     kodd = kcoef%2
@@ -302,7 +302,7 @@ function sqrt(a::Taylor)
     Taylor(coeffs, order)
 end
 # Homogeneous coefficients for the square-root
-function sqrtHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1}, knull::Integer)
+function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}, knull::Int)
     kcoef == knull && return sqrt(ac[2*knull+1])
     coefhomog = zero(T)
     kodd = (kcoef - knull)%2
@@ -332,7 +332,7 @@ function exp(a::Taylor)
     Taylor( coeffs, order )
 end
 # Homogeneous coefficients for exp
-function expHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1})
+function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return exp(ac[1])
     coefhomog = zero(T)
     for i = 0:kcoef-1
@@ -360,7 +360,7 @@ function log(a::Taylor)
     Taylor( coeffs, order )
 end
 # Homogeneous coefficients for log
-function logHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffs::Array{T,1})
+function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return log( ac[1] )
     coefhomog = zero(T)
     for i = 1:kcoef-1
@@ -392,7 +392,7 @@ function sincos(a::Taylor, fun::String)
     end
 end
 # Homogeneous coefficients for log
-function sincosHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, 
+function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, 
         sincoeffs::Array{T,1}, coscoeffs::Array{T,1})
     kcoef == 0 && return sin( ac[1] ), cos( ac[1] )
     sincoefhom = zero(T)
@@ -424,7 +424,7 @@ function tan(a::Taylor)
     Taylor( coeffs, order )
 end
 # Homogeneous coefficients for tan
-function tanHomogCoef{T<:Number}(kcoef::Integer, ac::Array{T,1}, coeffst2::Array{T,1})
+function tanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffst2::Array{T,1})
     kcoef == 0 && return tan( ac[1] )
     coefhomog = zero(T)
     for i = 0:kcoef-1
@@ -471,9 +471,11 @@ evalTaylor(a::Taylor) = evalTaylor(a, 0.0)
 
 ## Returns de n-th derivative of a series expansion
 function deriv{T}(a::Taylor{T}, n::Int=1)
-    n > a.order && error("You need to increase the order of the Taylor series (currently $(a.order))\n",
-        "to calculate its $(n)-th derivative.")
-    n < 0 && error("Needs a non-negative value for the derivative!")
+    @assert n>= 0
+    #n < 0 && error("Needs a non-negative value for the derivative!")
+    n > a.order && error(
+        "You need to increase the order of the Taylor series (currently ", a.order, ")\n",
+        "to calculate its ", n,"-th derivative.")
     res::T = factorial(BigInt(n))*a.coeffs[n+1]
     return res
 end
@@ -482,25 +484,25 @@ end
 function showcompact{T<:Number}(io::IO, a::Taylor{T})
     z = zero(T)
     if a == z
-        println(io, "$(a.order)-order Taylor{$T}:\n $(z) ")
+        println(io, a.order, "-order Taylor{", T, "}:\n ", z, " ")
         return
     end
     space = " "
     ser = space
     ifirst = true
-    print(io, "$(a.order)-order Taylor{$T}:\n ")
+    print(io, a.order, "-order Taylor{", T, "}:\n ")
     for i = 0:a.order
-        monom = i==0 ? "" : i==1 ? " * x" : " * x^$(i)"
+        monom = i==0 ? "" : i==1 ? " * x" : string(" * x^", i)
         c = a.coeffs[i+1]
         if c != z
             if ifirst
                 plusmin = c > 0 ? "" : "-"
-                print(io, ser * plusmin * "$(abs(c))" * monom * space)
+                print(io, ser, plusmin, abs(c), monom, space)
                 ifirst = false
                 continue
             end
             plusmin = c > 0 ? "+ " : "- "
-            print(io, ser * plusmin * "$(abs(c))" * monom * space)
+            print(io, ser, plusmin, abs(c), monom, space)
             ser = ""
         end
     end
@@ -510,14 +512,14 @@ function showcompact{T<:Complex}(io::IO, a::Taylor{T})
     z = zero(T)
     zre = real(z)
     if a == z
-        println(io, "$(a.order)-order Taylor{$T}\n $(zre)")
+        println(io, a.order, "-order Taylor{", T, "}\n ", zre)
         return
     end
     space = " "
     ifirst = true
-    print(io, "$(a.order)-order Taylor{$T}\n ")
+    print(io, a.order, "-order Taylor{", T, "}\n ")
     for i = 0:a.order
-        monom = i==0 ? "" : i==1 ? " * x" : " * x^$(i)"
+        monom = i==0 ? "" : i==1 ? " * x" : string(" * x^", i)
         c = a.coeffs[i+1]
         if c == z
             continue
@@ -536,35 +538,35 @@ function compactCmplx{T}(zz::Complex{T}, ifirst::Bool)
     cre, cim = reim(zz)
     if cre > zre
         if ifirst
-            cadena = "( $(abs(cre)) "
+            cadena = string("( ", abs(cre)," ")
         else
-            cadena = " + ( $(abs(cre)) "
+            cadena = string(" + ( ", abs(cre)," ")
         end
         if cim > zre
-            cadena = cadena * "+ $(abs(cim)) im )"
+            cadena = string(cadena, "+ ", abs(cim), " im )")
         elseif cim < zre
-            cadena = cadena * "- $(abs(cim)) im )"
+            cadena = string(cadena, "- ", abs(cim), " im )")
         else
-            cadena = cadena * ")"
+            cadena = string(cadena, ")")
         end
     elseif cre < zre
-        cadena = " - ( $(abs(cre)) "
+        cadena = string(" - ( ", abs(cre), " ")
         if cim > zre
-            cadena = cadena * "- $(abs(cim)) im )"
+            cadena = string(cadena, "- ", abs(cim), " im )")
         elseif cim < zre
-            cadena = cadena * "+ $(abs(cim)) im )"
+            cadena = string(cadena, "+ ", abs(cim), " im )")
         else
-            cadena = cadena * ")"
+            cadena = string(cadena, ")")
         end
     else
         if cim > zre
             if ifirst
-                cadena = "( $(abs(cim)) im )"
+                cadena = string("( ", abs(cim), " im )")
             else
-                cadena = " + ( $(abs(cim)) im )"
+                cadena = string(" + ( ", abs(cim), " im )")
             end
         else
-            cadena = " - ( $(abs(cim)) im )"
+            cadena = string(" - ( ", abs(cim), " im )")
         end
     end
     return cadena
