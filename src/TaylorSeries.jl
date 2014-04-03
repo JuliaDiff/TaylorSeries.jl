@@ -26,7 +26,7 @@ immutable Taylor{T<:Number}
         lencoef = length(coeffs)
         order = max(order, lencoef-1)
         v = zeros(T, order+1)
-        v[1:lencoef] = coeffs[1:end]
+        @inbounds v[1:lencoef] = coeffs[1:lencoef]
         new(v, order)
     end
 end
@@ -55,7 +55,7 @@ promote_rule{T<:Number, S<:Number}(::Type{S}, ::Type{Taylor{T}}) = Taylor{promot
 ## Auxiliary function ##
 function firstnonzero{T<:Number}(a::Taylor{T})
     order = a.order
-    nonzero = order+1
+    nonzero::Int = order+1
     z = zero(T)
     for i = 1:order+1
         if a.coeffs[i] != z
@@ -73,7 +73,7 @@ end
 
 ## real, imag, conj and ctranspose ##
 for f in (:real, :imag, :conj)
-    @eval ($f)(a::Taylor) = Taylor(($f)(a.coeffs),a.order)
+    @eval ($f)(a::Taylor) = Taylor(($f)(a.coeffs), a.order)
 end
 ctranspose(a::Taylor) = conj(a)
 
@@ -119,7 +119,7 @@ function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
     coefhomog = zero(T)
     for i = 0:kcoef
-        coefhomog += ac[i+1] * bc[kcoef-i+1]
+        @inbounds coefhomog += ac[i+1] * bc[kcoef-i+1]
     end
     coefhomog
 end
@@ -199,7 +199,7 @@ end
 ## Real power ##
 function ^(a::Taylor, x::Real)
     uno = one(a)
-    if x == 0
+    if x == zero(x)
         return uno
     elseif x == 0.5
         return sqrt(a)
@@ -239,10 +239,10 @@ function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
     coefhomog = zero(T)
     for i = 0:kcoef-knull-1
         aux = x*(kcoef-i)-i
-        coefhomog += aux*ac[kcoef-i+1]*coeffs[i+1]
+        @inbounds coefhomog += aux*ac[kcoef-i+1]*coeffs[i+1]
     end
     aux = kcoef - knull*(x+1)
-    coefhomog = coefhomog / (aux*ac[knull+1])
+    @inbounds coefhomog = coefhomog / (aux*ac[knull+1])
     coefhomog
 end
 ^{T<:Number,S<:Number}(a::Taylor{T}, x::Complex{S}) = exp( x*log(a) )
@@ -265,11 +265,11 @@ function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     kodd = kcoef%2
     kend = div(kcoef - 2 + kodd, 2)
     for i = 0:kend
-        coefhomog += ac[i+1]*ac[kcoef-i+1]
+        @inbounds coefhomog += ac[i+1]*ac[kcoef-i+1]
     end
     coefhomog = 2coefhomog
     if kodd == 0
-        coefhomog += ac[div(kcoef,2)+1]^2
+        @inbounds coefhomog += ac[div(kcoef,2)+1]^2
     end
     coefhomog
 end
@@ -308,11 +308,11 @@ function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}
     kodd = (kcoef - knull)%2
     kend = div(kcoef - knull - 2 + kodd, 2)
     for i = knull+1:knull+kend
-        coefhomog += coeffs[i+1]*coeffs[kcoef+knull-i+1]
+        @inbounds coefhomog += coeffs[i+1]*coeffs[kcoef+knull-i+1]
     end
-    aux = ac[kcoef+knull+1]-2coefhomog
+    @inbounds aux = ac[kcoef+knull+1]-2coefhomog
     if kodd == 0
-        aux = aux - (coeffs[kend+knull+2])^2
+        @inbounds aux = aux - (coeffs[kend+knull+2])^2
     end
     coefhomog = aux / (2coeffs[knull+1])
     coefhomog
@@ -336,7 +336,7 @@ function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return exp(ac[1])
     coefhomog = zero(T)
     for i = 0:kcoef-1
-        coefhomog += (kcoef-i) * ac[kcoef-i+1] * coeffs[i+1]
+        @inbounds coefhomog += (kcoef-i) * ac[kcoef-i+1] * coeffs[i+1]
     end
     coefhomog = coefhomog/kcoef
     coefhomog
@@ -364,9 +364,9 @@ function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return log( ac[1] )
     coefhomog = zero(T)
     for i = 1:kcoef-1
-        coefhomog += (kcoef-i) * ac[i+1] * coeffs[kcoef-i+1]
+        @inbounds coefhomog += (kcoef-i) * ac[i+1] * coeffs[kcoef-i+1]
     end
-    coefhomog = (ac[kcoef+1] -coefhomog/kcoef) / ac[1]
+    @inbounds coefhomog = (ac[kcoef+1] -coefhomog/kcoef) / ac[1]
     coefhomog
 end
 
@@ -398,9 +398,11 @@ function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
     sincoefhom = zero(T)
     coscoefhom = zero(T)
     for i = 1:kcoef
-        number = i * ac[i+1]
-        sincoefhom += number * coscoeffs[kcoef-i+1]
-        coscoefhom -= number * sincoeffs[kcoef-i+1]
+        @inbounds begin
+            number = i * ac[i+1]
+            sincoefhom += number * coscoeffs[kcoef-i+1]
+            coscoefhom -= number * sincoeffs[kcoef-i+1]
+        end
     end
     sincoefhom = sincoefhom/kcoef
     coscoefhom = coscoefhom/kcoef
@@ -428,9 +430,9 @@ function tanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffst2::Array{T,1
     kcoef == 0 && return tan( ac[1] )
     coefhomog = zero(T)
     for i = 0:kcoef-1
-        coefhomog += (kcoef-i)*ac[kcoef-i+1]*coeffst2[i+1]
+        @inbounds coefhomog += (kcoef-i)*ac[kcoef-i+1]*coeffst2[i+1]
     end
-    coefhomog = ac[kcoef+1] + coefhomog/kcoef
+    @inbounds coefhomog = ac[kcoef+1] + coefhomog/kcoef
     coefhomog
 end
 
@@ -440,7 +442,7 @@ function diffTaylor{T<:Number}(a::Taylor{T})
     coeffs = zeros(T, order+1)
     coeffs[1] = a.coeffs[2]
     for i = 1:order
-        coeffs[i] = i*a.coeffs[i+1]
+        @inbounds coeffs[i] = i*a.coeffs[i+1]
     end
     return Taylor(coeffs, order)
 end
@@ -451,23 +453,23 @@ function integTaylor{T<:Number}(a::Taylor{T}, x::Number)
     R = promote_type(T, typeof(a.coeffs[1] / 1), typeof(x))
     coeffs = zeros(R, order+1)
     for i = 1:order
-        coeffs[i+1] = a.coeffs[i] / i
+        @inbounds coeffs[i+1] = a.coeffs[i] / i
     end
     coeffs[1] = convert(R, x)
     return Taylor(coeffs, order)
 end
-integTaylor(a::Taylor) = integTaylor(a, 0.0)
+integTaylor{T<:Number}(a::Taylor{T}) = integTaylor(a, zero(T))
 
 ## Evaluates a Taylor polynomial on a given point using Horner's rule ##
 function evalTaylor{T}(a::Taylor{T}, dx::Number)
-  orden = a.order
-  suma = a.coeffs[end]
-  for k = orden:-1:1
-    suma = suma*dx + a.coeffs[k]
-  end
-  suma
+    orden = a.order
+    suma = a.coeffs[end]
+    for k = orden:-1:1
+        @inbounds suma = suma*dx + a.coeffs[k]
+    end
+    suma
 end
-evalTaylor(a::Taylor) = evalTaylor(a, 0.0)
+evalTaylor{T<:Number}(a::Taylor{T}) = evalTaylor(a, zero(T))
 
 ## Returns de n-th derivative of a series expansion
 function deriv{T}(a::Taylor{T}, n::Int=1)
@@ -493,7 +495,7 @@ function showcompact{T<:Number}(io::IO, a::Taylor{T})
     print(io, a.order, "-order Taylor{", T, "}:\n ")
     for i = 0:a.order
         monom = i==0 ? "" : i==1 ? " * x" : string(" * x^", i)
-        c = a.coeffs[i+1]
+        @inbounds c = a.coeffs[i+1]
         if c != z
             if ifirst
                 plusmin = c > 0 ? "" : "-"
@@ -520,7 +522,7 @@ function showcompact{T<:Complex}(io::IO, a::Taylor{T})
     print(io, a.order, "-order Taylor{", T, "}\n ")
     for i = 0:a.order
         monom = i==0 ? "" : i==1 ? " * x" : string(" * x^", i)
-        c = a.coeffs[i+1]
+        @inbounds c = a.coeffs[i+1]
         if c == z
             continue
         end
