@@ -8,40 +8,26 @@
 
 
 
-## Utilities to get/set the maximum degree of polynomials (MAX_DEG)
-##  and the number of variables considered (NUM_VARS)
-const MAX_DEG = (10)
-const NUM_VARS = (2)
+## Default values for the maximum degree of polynomials (MAX_DEG) and 
+##  number of variables considered (NUM_VARS)
+const MAX_DEG = [10]
+const NUM_VARS = [2]
 
-get_maxDeg() = MAX_DEG[end]
-function set_maxDeg(n::Int)
-    @assert n >= 0
-    info("MAX_DEG changed; you should re-generate the hash table using generateCoeffsTable()")
-    MAX_DEG[end] = (n)
-end
-#
-get_numVars() = NUM_VARS[end]
-function set_numVars(n::Int)
-    @assert n > 0
-    info("NUM_VARS changed; you should re-generate the hash table using generateCoeffsTable()")
-    NUM_VARS[end] = (n)
-end
-
-# Defining the hash table
-""" 
+## Hash table: coeffsTable
+"""
 `generateCoeffsTable`: generates a dictionary with the Hash Table.
-numVars: number of (real) variables for the polynomial expansions <--> lNiv
+numVars: number of (real?) variables for the polynomial expansions <--> lNiv
 maxDeg: maximum degree of polynomials <--> nPart
 """
 function generateCoeffsTable()
     numVars::Int = NUM_VARS[end]
     maxDeg::Int = MAX_DEG[end]
     DDic = Dict{Int64, Array{Int64,1}}()
-    #!?DDic = Dict{Int64, NTuple{numVars,Int}()
 
     if numVars==1
         info( string("`TaylorSeries.jl` package is more appropriate\n", 
-            "(much MUCH faster!) for 1-variable expansions. Use `Taylor` constructor.\n") )
+            "(much MUCH faster!) for 1-variable expansions.\n", 
+            "Instead of `TaylorN` use `Taylor` constructor.\n") )
         for k = 0:maxDeg
             DDic[k+1] = [k]
         end
@@ -55,8 +41,7 @@ function generateCoeffsTable()
         iV = numVars
         for iz = 0:kDeg
             iindices[end] = iz
-            #!@inbounds pos, DDic[pos] = coef2indices!( iV, kDeg, iindices, pos, DDic)
-            @inbounds DDic( coef2indices!( iV, kDeg, iindices, pos, DDic)... )
+            @inbounds pos, DDic[pos] = coef2indices!( iV, kDeg, iindices, pos, DDic)
         end
     end
     return DDic
@@ -69,19 +54,37 @@ function coef2indices!(iV::Int, kDeg::Int, iIndices::Array{Int,1}, pos::Int, dic
     if jVar > 1
         for jDeg=0:kDegNext
             iIndices[jVar] = jDeg
-            #?@inbounds pos, dict[pos] = coef2indices!( jVar, kDegNext, iIndices, pos, dict)
-            @inbounds dict( coef2indices!( jVar, kDegNext, iIndices, pos, dict)... )
+            @inbounds pos, dict[pos] = coef2indices!( jVar, kDegNext, iIndices, pos, dict)
         end
     else
         iIndices[1] = kDegNext
         pos += 1
-        #?@inbounds dict[pos] = iIndices[1:end]
-        @inbounds dict(pos, iIndices[1:end])
+        @inbounds dict[pos] = iIndices[1:end]
     end
     return pos, iIndices[1:end]
 end
+
+const coeffsTable = [ generateCoeffsTable() ]
+
+## Utilities to get/set MAX_DEG and NUM_VARS; they reset the coeffsTable
+get_maxDeg() = MAX_DEG[end]
+function set_maxDeg(n::Int)
+    @assert n >= 0
+    info("MAX_DEG changed; `coeffsTable` regenerated.\n")
+    MAX_DEG[end] = n
+    coeffsTable[end] = generateCoeffsTable()
+    n
+end
 #
-const coefTable = generateCoeffsTable()
+get_numVars() = NUM_VARS[end]
+function set_numVars(n::Int)
+    @assert n > 0
+    info("NUM_VARS changed; `coeffsTable` regenerated.\n")
+    NUM_VARS[end] = n
+    coeffsTable[end] = generateCoeffsTable()
+    n
+end
+
 
 ## Constructors ##
 immutable TaylorN{T<:Number}

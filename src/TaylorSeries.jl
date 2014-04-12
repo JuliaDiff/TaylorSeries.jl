@@ -29,5 +29,4 @@ export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
 export generateCoeffsTable, set_maxDeg, get_maxDeg, set_numVars, get_numVars
 export TaylorN
 
-
 end
