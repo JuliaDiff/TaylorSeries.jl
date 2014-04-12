@@ -4,6 +4,12 @@ A julia package for Taylor expansions in one independent variable.
 
 [![Build Status](https://travis-ci.org/lbenet/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/lbenet/TaylorSeries.jl)
 
+##### Contributors
+- Luis Benet, Instituto de Ciencias Físicas, Universidad Nacional Autónoma de México (UNAM)
+- David P. Sanders, Facultad de Ciencias, Universidad Nacional Autónoma de México (UNAM)
+
+Comments on the code and improvements are welcome.
+
 ### An overlook
 
 This package computes Taylor expansions (around 0) using automatic differentiation techniques (see e.g. Alex Haro's [nice paper][1]). The module implements the basic operations (+,-,*,/,^), some elementary functions (exp, log, sin, cos, tan), integration, differentiation and (a Horner's rule) evaluation on a point. 
@@ -180,9 +186,11 @@ julia> showcompact(ans)
 
 It is worth pointing out the existing julia packages [Polynomial][2] and [PowerSeries][3], which have similar functionality as this one, but somewhat different approaches.
 
-Comments on the code are appreciated.
 
-This project began during a Masters' course in the postgraduate programs in Physics and in Mathematics at UNAM, during the second half of 2013. This is joint work with David P. Sanders.
+#### Acknowledgments 
+This project began during a Masters' course in the postgraduate programs in Physics and in Mathematics at UNAM, during the second half of 2013. We thank the participants of the course for putting up with the half-baked material and contributing energy and ideas.
+
+We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114. LB acknowledges support through a *Cátedra Moshinsky* (2013).
 
 [1]: http://www.maia.ub.es/~alex/admcds/admcds.pdf
 [2]: https://github.com/vtjnash/Polynomial.jl
