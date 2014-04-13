@@ -18,6 +18,7 @@ import Base: zero, one
 import Base: convert, promote_rule, promote, eltype, length, showcompact
 import Base: real, imag, conj, ctranspose
 import Base: square, sqrt, exp, log, sin, cos, tan
+import Base: getkey
 
 include("utils_Taylor1.jl")
 include("utils_TaylorN.jl")
@@ -26,7 +27,7 @@ include("utils_TaylorN.jl")
 export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
 
 # Exports to TaylorN
-export generateCoeffsTable, set_maxDeg, get_maxDeg, set_numVars, get_numVars
 export TaylorN
+export generateCoeffsTable, set_maxDeg, get_maxDeg, set_numVars, get_numVars
 
 end
