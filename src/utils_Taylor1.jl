@@ -174,7 +174,7 @@ function ^(a::Taylor, n::Integer)
         pow = div(n, 2)
         return square( a^pow )
     else            # odd power
-        x == 1 && return a
+        n == 1 && return a
         pow = div(n-1, 2)
         return a*square( a^pow )
     end
