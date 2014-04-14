@@ -252,7 +252,7 @@ function /(a::TaylorN, b::TaylorN)
     for k = 1:order
         posI = posHomogCoefN(k)
         posF = posHomogCoefN(k+1)-1
-        coeffs[posI:posF] = divHomogCoefN( k, v1, v2, coeffs, 0 )
+        @inbounds coeffs[posI:posF] = divHomogCoefN( k, v1, v2, coeffs, 0 )
     end
     TaylorN(coeffs, order)
 end
@@ -327,7 +327,7 @@ function ^(a::TaylorN, x::Real)
     for k = 1:order
         posI = posHomogCoefN(k)
         posF = posHomogCoefN(k+1)-1
-        coeffs[posI:posF] = powHomogCoefN(k, v, x, coeffs, 0)
+        @inbounds coeffs[posI:posF] = powHomogCoefN(k, v, x, coeffs, 0)
     end
     TaylorN(coeffs,order)
 end
@@ -368,7 +368,7 @@ function square{T<:Number}(a::TaylorN{T})
     for k = 1:order
         posI = posHomogCoefN(k)
         posF = posHomogCoefN(k+1)-1
-        coeffs[posI:posF] = squareHomogCoefN( k, a.coeffs )
+        @inbounds coeffs[posI:posF] = squareHomogCoefN( k, a.coeffs )
     end
     TaylorN(coeffs,order)
 end
@@ -393,11 +393,11 @@ function squareHomogCoefN{T<:Number}(k::Int, ac::Array{T,1})
                 @inbounds indb = coeffsTable[end][jb]
                 pos = indices2coef( inda + indb )
                 pos = pos - posI + 1
-                coeffs[pos] += ac[ja] * ac[jb]
+                @inbounds coeffs[pos] += ac[ja] * ac[jb]
             end
         end
     end
-    coeffs = 2coeffs
+    @inbounds coeffs[1:end] = 2coeffs[1:end]
     #
     if kodd == 0
         ka = div(k,2)
@@ -409,13 +409,14 @@ function squareHomogCoefN{T<:Number}(k::Int, ac::Array{T,1})
                 @inbounds indb = coeffsTable[end][jb]
                 pos = indices2coef( inda + indb )
                 pos = pos - posI + 1
-                coeffs[pos] += ac[ja] * ac[jb]
+                @inbounds coeffs[pos] += ac[ja] * ac[jb]
             end
         end
     end
     coeffs
 end
 
+## sqrt ##
 function sqrt(a::TaylorN)
     order = a.order
     nCoefTot = sizeCoeffsTable[end]
@@ -427,7 +428,7 @@ function sqrt(a::TaylorN)
     for k = 1:order
         posI = posHomogCoefN(k)
         posF = posHomogCoefN(k+1)-1
-        coeffs[posI:posF] = sqrtHomogCoefN( k, v, coeffs, 0 )
+        @inbounds coeffs[posI:posF] = sqrtHomogCoefN( k, v, coeffs, 0 )
     end
     TaylorN(coeffs,order)
 end
@@ -452,11 +453,11 @@ function sqrtHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1}, k
                 @inbounds indb = coeffsTable[end][jb]
                 pos = indices2coef( inda + indb )
                 pos = pos - posI + 1
-                cc[pos] += coeffs[ja] * coeffs[jb]
+                @inbounds cc[pos] += coeffs[ja] * coeffs[jb]
             end
         end
     end
-    cc = 2cc
+    @inbounds cc[1:end] = 2cc[1:end]
     #
     if kodd == 0
         ka = div(k,2)
@@ -468,10 +469,151 @@ function sqrtHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1}, k
                 @inbounds indb = coeffsTable[end][jb]
                 pos = indices2coef( inda + indb )
                 pos = pos - posI + 1
-                cc[pos] += coeffs[ja] * coeffs[jb]
+                @inbounds cc[pos] += coeffs[ja] * coeffs[jb]
             end
         end
     end
-    cc[1:end] = (ac[posI:posF] - cc[1:end]) / (2coeffs[1])
+    @inbounds cc[1:end] = (ac[posI:posF] - cc[1:end]) / (2coeffs[1])
     cc
 end
+
+## exp ##
+function exp(a::TaylorN)
+    order = a.order
+    nCoefTot = sizeCoeffsTable[end]
+    aux = exp(a.coeffs[1])
+    T = typeof(aux)
+    v = convert(Array{T,1}, a.coeffs)
+    coeffs = zeros(T, nCoefTot)
+    coeffs[1] = aux
+    for k = 1:order
+        posI = posHomogCoefN(k)
+        posF = posHomogCoefN(k+1)-1
+        @inbounds coeffs[posI:posF] = expHomogCoefN( k, v, coeffs )
+    end
+    TaylorN(coeffs,order)
+end
+# Homogeneous coefficients for exp
+function expHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1})
+    k == 0 && return exp( ac[1] )
+    posI = posHomogCoefN(k)
+    numCoefk = numHomogCoefN(k)
+    posF = posI + numCoefk - 1
+    cc = zeros(T, numCoefk)
+    for ka = 0:k-1
+        kb = k - ka
+        posaI = posHomogCoefN(ka)
+        posaF = posHomogCoefN(ka+1)-1
+        posbI = posHomogCoefN(kb)
+        posbF = posHomogCoefN(kb+1)-1
+        for ja = posaI:posaF
+            @inbounds inda = coeffsTable[end][ja]
+            for jb = posbI:posbF
+                @inbounds indb = coeffsTable[end][jb]
+                pos = indices2coef( inda + indb )
+                pos = pos - posI + 1
+                @inbounds cc[pos] += kb * coeffs[ja] * ac[jb]
+            end
+        end
+    end
+    @inbounds cc[1:end] = cc[1:end] / k
+    cc
+end
+
+## log ##
+function log(a::TaylorN)
+    order = a.order
+    nCoefTot = sizeCoeffsTable[end]
+    aux = log(a.coeffs[1])
+    T = typeof(aux)
+    v = convert(Array{T,1}, a.coeffs)
+    coeffs = zeros(T, nCoefTot)
+    coeffs[1] = aux
+    for k = 1:order
+        posI = posHomogCoefN(k)
+        posF = posHomogCoefN(k+1)-1
+        @inbounds coeffs[posI:posF] = logHomogCoefN( k, v, coeffs )
+    end
+    TaylorN(coeffs, order)
+end
+# Homogeneous coefficients for square
+function logHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1})
+    k == 0 && return log( ac[1] )
+    posI = posHomogCoefN(k)
+    numCoefk = numHomogCoefN(k)
+    posF = posI + numCoefk - 1
+    cc = zeros(T, numCoefk)
+    for ka = 1:k-1
+        kb = k - ka
+        posaI = posHomogCoefN(ka)
+        posaF = posHomogCoefN(ka+1)-1
+        posbI = posHomogCoefN(kb)
+        posbF = posHomogCoefN(kb+1)-1
+        for ja = posaI:posaF
+            @inbounds inda = coeffsTable[end][ja]
+            for jb = posbI:posbF
+                @inbounds indb = coeffsTable[end][jb]
+                pos = indices2coef( inda + indb )
+                pos = pos - posI + 1
+                @inbounds cc[pos] += ka * coeffs[ja] * ac[jb]
+            end
+        end
+    end
+    @inbounds cc[1:end] = ( ac[posI:posF] - cc[1:end] / k ) / ac[1]
+    cc
+end
+
+## sin and cos ##
+sin(a::TaylorN) = sincos(a)[1]
+cos(a::TaylorN) = sincos(a)[2]
+function sincos(a::TaylorN)
+    order = a.order
+    nCoefTot = sizeCoeffsTable[end]
+    aux = sin(a.coeffs[1])
+    T = typeof(aux)
+    v = convert(Array{T,1}, a.coeffs)
+    sincoeffs = zeros(T,nCoefTot)
+    coscoeffs = zeros(T,nCoefTot)
+    sincoeffs[1] = aux
+    coscoeffs[1] = cos( a.coeffs[1] )
+    for k = 1:order
+        posI = posHomogCoefN(k)
+        posF = posHomogCoefN(k+1)-1
+        @inbounds sincoeffs[posI:posF], coscoeffs[posI:posF] = 
+            sincosHomogCoefN(k, v, sincoeffs, coscoeffs)
+    end
+    return TaylorN( sincoeffs, order ), TaylorN( coscoeffs, order )
+end
+# Homogeneous coefficients for sin and cos
+function sincosHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, scoeffs::Array{T,1}, ccoeffs::Array{T,1})
+    k == 0 && return sin( ac[1] ), cos( ac[1] )
+    posI = posHomogCoefN(k)
+    numCoefk = numHomogCoefN(k)
+    posF = posI + numCoefk - 1
+    sv = zeros(T, numCoefk)
+    cv = zeros(T, numCoefk)
+    for ka = 0:k-1
+        kb = k - ka
+        posaI = posHomogCoefN(ka)
+        posaF = posHomogCoefN(ka+1)-1
+        posbI = posHomogCoefN(kb)
+        posbF = posHomogCoefN(kb+1)-1
+        for ja = posaI:posaF
+            @inbounds inda = coeffsTable[end][ja]
+            for jb = posbI:posbF
+                @inbounds indb = coeffsTable[end][jb]
+                pos = indices2coef( inda + indb )
+                pos = pos - posI + 1
+                @inbounds begin
+                    x = kb * ac[jb]
+                    sv[pos] += x * ccoeffs[ja]
+                    cv[pos] -= x * scoeffs[ja]
+                end
+            end
+        end
+    end
+    @inbounds sv[1:end] = sv[1:end] / k
+    @inbounds cv[1:end] = cv[1:end] / k
+    sv, cv
+end
+
