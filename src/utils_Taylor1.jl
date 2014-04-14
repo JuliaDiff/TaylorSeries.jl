@@ -165,7 +165,7 @@ end
 /(a::Number,b::Taylor) = Taylor([a], b.order) / b
 
 ## Int power ##
-function ^(a::Taylor, (a::TaylorN, n::Integer)
+function ^(a::Taylor, n::Integer)
     uno = one(a)
     n < 0 && return uno / a^(-n)
     n == 0 && return uno
@@ -217,8 +217,7 @@ function ^(a::Taylor, x::Real)
 end
 # Homogeneous coefficients for real power
 function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real, 
-    coeffs::Array{T,1}, knull::Int)
-    
+        coeffs::Array{T,1}, knull::Int)
     kcoef == knull && return (ac[knull+1])^x
     coefhomog = zero(T)
     for i = 0:kcoef-knull-1
