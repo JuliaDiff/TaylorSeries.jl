@@ -354,9 +354,9 @@ function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
 end
 
 ## Sin and cos ##
-sin(a::Taylor) = sincos(a, "sin")
-cos(a::Taylor) = sincos(a, "cos")
-function sincos(a::Taylor, fun::String)
+sin(a::Taylor) = sincos(a)[1]
+cos(a::Taylor) = sincos(a)[2]
+function sincos(a::Taylor)
     order = a.order
     aux = sin( a.coeffs[1] )
     T = typeof(aux)
@@ -368,23 +368,20 @@ function sincos(a::Taylor, fun::String)
     for k = 1:order
         sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
     end
-    if fun == "sin"
-        return Taylor( sincoeffs, order )
-    else
-        return Taylor( coscoeffs, order )
-    end
+    return sincoeffs, coscoeffs
 end
 # Homogeneous coefficients for log
 function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, 
-        sincoeffs::Array{T,1}, coscoeffs::Array{T,1})
+    scoeffs::Array{T,1}, ccoeffs::Array{T,1})
+    #
     kcoef == 0 && return sin( ac[1] ), cos( ac[1] )
     sincoefhom = zero(T)
     coscoefhom = zero(T)
     for i = 1:kcoef
         @inbounds begin
-            number = i * ac[i+1]
-            sincoefhom += number * coscoeffs[kcoef-i+1]
-            coscoefhom -= number * sincoeffs[kcoef-i+1]
+            x = i * ac[i+1]
+            sincoefhom += x * ccoeffs[kcoef-i+1]
+            coscoefhom -= x * scoeffs[kcoef-i+1]
         end
     end
     sincoefhom = sincoefhom/kcoef
