@@ -154,7 +154,8 @@ function divlhopital(a1::Taylor, b1::Taylor)
 end
 # Homogeneous coefficient for the division
 function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1}, 
-        coeffs::Array{T,1}, ordLHopital::Int)
+    coeffs::Array{T,1}, ordLHopital::Int)
+    #
     kcoef == ordLHopital && return ac[ordLHopital+1] / bc[ordLHopital+1]
     coefhomog = mulHomogCoef(kcoef, coeffs, bc)
     coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordLHopital+1]
@@ -164,26 +165,18 @@ end
 /(a::Number,b::Taylor) = Taylor([a], b.order) / b
 
 ## Int power ##
-function ^(a::Taylor, x::Integer)
+function ^(a::Taylor, (a::TaylorN, n::Integer)
     uno = one(a)
-    if x < 0
-        return uno / a^(-x)
-    elseif x == 0
-        return uno
-    elseif x%2 == 0 # even power
-        if x == 2
-            return square(a)
-        else
-            pow = div(x, 2)
-            return square( a^pow )
-        end
-    else  # odd power
-        if x == 1
-            return a
-        else
-            expon = div(x-1, 2)
-            return a*square( a^expon )
-        end
+    n < 0 && return uno / a^(-n)
+    n == 0 && return uno
+    if n%2 == 0     # even power
+        n == 2 && return square(a)
+        pow = div(n, 2)
+        return square( a^pow )
+    else            # odd power
+        x == 1 && return a
+        pow = div(n-1, 2)
+        return a*square( a^pow )
     end
 end
 ## Real power ##
@@ -224,7 +217,8 @@ function ^(a::Taylor, x::Real)
 end
 # Homogeneous coefficients for real power
 function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real, 
-        coeffs::Array{T,1}, knull::Int)
+    coeffs::Array{T,1}, knull::Int)
+    
     kcoef == knull && return (ac[knull+1])^x
     coefhomog = zero(T)
     for i = 0:kcoef-knull-1
