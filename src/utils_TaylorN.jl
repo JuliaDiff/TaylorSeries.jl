@@ -617,3 +617,23 @@ function sincosHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, scoeffs::Array{T,1}
     sv, cv
 end
 
+## Differentiating ##
+"""Partial differentiation of a TaylorN series with respect to the r-th variable"""
+function diffTaylor{T<:Number}(a::TaylorN{T}, r::Int)
+    @assert 1 <= r <= NUMVARS[end]
+    order = a.order
+    nCoefTot = sizeCoeffsTable[end]
+    coeffs = zeros(T, nCoefTot)
+    posF = posHomogCoefN(order+1)-1
+    iIndices = zeros(Int, NUMVARS[end])
+    for pos = 1:posF
+        @inbounds iIndices[1:end] = coeffsTable[end][pos]
+        @inbounds n = iIndices[r]
+        n == 0 && continue
+        @inbounds iIndices[r] -= 1
+        posI = indices2coef( iIndices )
+        @inbounds coeffs[posI] = n * a.coeffs[pos]
+    end
+    return TaylorN( coeffs, order )
+end
+diffTaylor(a::TaylorN) = diffTaylor(a, 1)
