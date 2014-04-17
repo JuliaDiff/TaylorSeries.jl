@@ -368,7 +368,7 @@ function sincos(a::Taylor)
     for k = 1:order
         sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
     end
-    return sincoeffs, coscoeffs
+    return Taylor(sincoeffs, order), Taylor(coscoeffs, order)
 end
 # Homogeneous coefficients for log
 function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, 
