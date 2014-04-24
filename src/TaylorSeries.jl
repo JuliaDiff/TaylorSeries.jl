@@ -28,6 +28,6 @@ export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
 
 # Exports to TaylorN
 export TaylorN
-export set_maxDeg, get_maxDeg, set_numVars, get_numVars
+export set_maxOrder, get_maxOrder, set_numVars, get_numVars
 
 end
