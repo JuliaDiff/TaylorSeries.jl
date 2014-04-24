@@ -439,6 +439,13 @@ function integTaylor{T<:Number}(a::Taylor{T}, x::Number)
     return Taylor(coeffs, order)
 end
 integTaylor{T<:Number}(a::Taylor{T}) = integTaylor(a, zero(T))
+function definiteIntegralTaylor{T<:Number}(a::Taylor{T}, x1::Number, x2::Number)
+    @assert isfinite(x1) && isfinite(x2)
+    integral = integTaylor(a)
+    v1 = evalTaylor(integral, x1)
+    v2 = evalTaylor(integral, x2)
+    return v2-v1
+end
 
 ## Evaluates a Taylor polynomial on a given point using Horner's rule ##
 function evalTaylor{T}(a::Taylor{T}, dx::Number)
@@ -454,11 +461,10 @@ evalTaylor{T<:Number}(a::Taylor{T}) = evalTaylor(a, zero(T))
 ## Returns de n-th derivative of a series expansion
 function deriv{T}(a::Taylor{T}, n::Int=1)
     @assert n>= 0
-    #n < 0 && error("Needs a non-negative value for the derivative!")
     n > a.order && error(
         "You need to increase the order of the Taylor series (currently ", a.order, ")\n",
         "to calculate its ", n,"-th derivative.")
-    res::T = factorial(BigInt(n))*a.coeffs[n+1]
+    res::T = factorial( BigInt(n) ) * a.coeffs[n+1]
     return res
 end
 
