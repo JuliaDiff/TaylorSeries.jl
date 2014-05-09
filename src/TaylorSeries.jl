@@ -17,6 +17,7 @@ module TaylorSeries
 import Base: zero, one
 import Base: convert, promote_rule, promote, eltype, length, showcompact
 import Base: real, imag, conj, ctranspose
+import Base: rem, mod, mod2pi
 import Base: sqrt, exp, log, sin, cos, tan#, square
 
 include("utils_Taylor1.jl")

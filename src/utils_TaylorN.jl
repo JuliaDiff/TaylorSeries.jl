@@ -307,6 +307,23 @@ end
 /(a::TaylorN,b::Number) = TaylorN(a.coeffs/b, a.order)
 /(a::Number,b::TaylorN) = TaylorN([a], b.order) / b
 
+## Division functions: rem and mod
+## NEEDS CHECKING
+for op in (:mod, :rem)
+    @eval begin
+        function ($op){T<:FloatingPoint}(a::TaylorN{T}, x::T)
+            coeffs = a.coeffs
+            coeffs[1] = ($op)(a.coeffs[1], x)
+            return TaylorN( coeffs, a.order )
+        end
+    end
+end
+function mod2pi(a::TaylorN) 
+    coeffs = a.coeffs
+    coeffs[1] = mod2pi( a.coeffs[1] )
+    return TaylorN( coeffs, a.order )
+end
+
 ## Int power ##
 function ^(a::TaylorN, n::Integer)
     uno = one(a)

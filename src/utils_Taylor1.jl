@@ -164,6 +164,23 @@ end
 /(a::Taylor,b::Number) = Taylor(a.coeffs/b, a.order)
 /(a::Number,b::Taylor) = Taylor([a], b.order) / b
 
+## Division functions: rem and mod
+## NEEDS CHECKING
+for op in (:mod, :rem)
+    @eval begin
+        function ($op){T<:FloatingPoint}(a::Taylor{T}, x::T)
+            coeffs = a.coeffs
+            coeffs[1] = ($op)(a.coeffs[1], x)
+            return Taylor( coeffs, a.order)
+        end
+    end
+end
+function mod2pi(a::Taylor) 
+    coeffs = a.coeffs
+    coeffs[1] = mod2pi( a.coeffs[1] )
+    return Taylor( coeffs, a.order)
+end
+
 ## Int power ##
 function ^(a::Taylor, n::Integer)
     uno = one(a)
@@ -217,7 +234,8 @@ function ^(a::Taylor, x::Real)
 end
 # Homogeneous coefficients for real power
 function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real, 
-        coeffs::Array{T,1}, knull::Int)
+    coeffs::Array{T,1}, knull::Int)
+    #
     kcoef == knull && return (ac[knull+1])^x
     coefhomog = zero(T)
     for i = 0:kcoef-knull-1
