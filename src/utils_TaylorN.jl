@@ -308,7 +308,7 @@ end
 /(a::Number,b::TaylorN) = TaylorN([a], b.order) / b
 
 ## Division functions: rem and mod
-## NEEDS CHECKING
+## NEEDS TESTING
 for op in (:mod, :rem)
     @eval begin
         function ($op){T<:FloatingPoint}(a::TaylorN{T}, x::T)

@@ -24,10 +24,127 @@ include("utils_Taylor1.jl")
 
 include("utils_TaylorN.jl")
 
-# Exports to Taylor
-export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
+## Routines for output ##
+# showcompact
+function showcompact{T<:Number}(io::IO, a::Union(Taylor{T},TaylorN{T}) )
+    strout = pretty_print(a)
+    println(io, strout)
+    return
+end
 
-# Exports to TaylorN
+# infostr
+infostr{T<:Number}(a::Taylor{T}) = 
+    string(a.order, "-order Taylor{", T, "}:\n")
+infostr{T<:Number}(a::TaylorN{T}) = 
+    string(a.order, "-order TaylorN{", T, "} in ", a.numVars, " variables:\n")
+
+# pretty_print (Taylor)
+function pretty_print{T<:Number}(a::Taylor{T})
+    print( infostr(a) )
+    z = zero(T)
+    space = " "
+    a == z && return string( space, z)
+    strout = space
+    ifirst = true
+    for i = 0:a.order
+        monom = i==0 ? "" : i==1 ? " * x0" : string(" * x0^", i)
+        @inbounds c = a.coeffs[i+1]
+        c == z && continue
+        cadena = numbr2str(c, ifirst)
+        strout = string(strout, cadena, monom, space)
+        ifirst = false
+    end
+    return strout
+end
+
+# pretty_print (TaylorN)
+function pretty_print{T<:Number}(a::TaylorN{T})
+    print( infostr(a) )
+    z = zero(T)
+    space = " "
+    a == z && return string( space, z)
+    varstring = {}
+    for ivar=1:a.numVars
+        push!(varstring,string(" * x",ivar))
+    end
+    strout = string("")
+    ifirst = true
+    iIndices = zeros(Int, a.numVars)
+    for pos = 1:length(a.coeffs)
+        monom = ""
+        iIndices = indicesTable[end][pos]
+        if pos>1
+            for ivar=1:a.numVars
+                powivar = iIndices[ivar]
+                if powivar == 1
+                    monom = string(monom, varstring[ivar])
+                elseif powivar > 1
+                    monom = string(monom, varstring[ivar], "^", powivar)
+                end
+            end
+        end
+        @inbounds c = a.coeffs[pos]
+        c == z && continue
+        cadena = numbr2str(c, ifirst)
+        strout = string(strout, cadena, monom, space)
+        ifirst = false
+    end
+    return strout
+end
+
+# make string from a number; for complex numbers, use 
+function numbr2str{T<:Real}(zz::T, ifirst=false::Bool)
+    plusmin = zz > 0 ? "+ " : "- "
+    if ifirst
+        plusmin = zz > 0 ? "" : "-"
+    end
+    return string(plusmin, abs(zz))
+end
+
+function numbr2str{T}(zz::Complex{T}, ifirst=false::Bool)
+    zT = zero(T)
+    zz == zero(Complex{T}) && return zT
+    zre, zim = reim(zz)
+    cadena = ""
+    if zre > zT
+        if ifirst
+            cadena = string("( ", abs(zre)," ")
+        else
+            cadena = string(" + ( ", abs(zre)," ")
+        end
+        if zim > zT
+            cadena = string(cadena, "+ ", abs(zim), " im )")
+        elseif zim < zT
+            cadena = string(cadena, "- ", abs(zim), " im )")
+        else
+            cadena = string(cadena, ")")
+        end
+    elseif zre < zT
+        cadena = string(" - ( ", abs(zre), " ")
+        if zim > zT
+            cadena = string(cadena, "- ", abs(zim), " im )")
+        elseif zim < zT
+            cadena = string(cadena, "+ ", abs(zim), " im )")
+        else
+            cadena = string(cadena, ")")
+        end
+    else
+        if zim > zT
+            if ifirst
+                cadena = string("( ", abs(zim), " im )")
+            else
+                cadena = string(" + ( ", abs(zim), " im )")
+            end
+        else
+            cadena = string(" - ( ", abs(zim), " im )")
+        end
+    end
+    return cadena
+end
+
+## Exports to Taylor and TaylorN ##
+export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
+#
 export TaylorN
 export set_maxOrder, get_maxOrder, set_numVars, get_numVars
 
