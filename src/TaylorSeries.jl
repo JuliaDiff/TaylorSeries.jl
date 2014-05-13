@@ -24,7 +24,9 @@ include("utils_Taylor1.jl")
 
 include("utils_TaylorN.jl")
 
-## Routines for output ##
+## The following routines combine Taylor and TaylorN, so they must appear defining 
+##   Taylor and TaylorN and some of its functionalities
+
 # showcompact
 function showcompact{T<:Number}(io::IO, a::Union(Taylor{T},TaylorN{T}) )
     strout = pretty_print(a)
@@ -38,7 +40,7 @@ infostr{T<:Number}(a::Taylor{T}) =
 infostr{T<:Number}(a::TaylorN{T}) = 
     string(a.order, "-order TaylorN{", T, "} in ", a.numVars, " variables:\n")
 
-# pretty_print (Taylor)
+# pretty_print
 function pretty_print{T<:Number}(a::Taylor{T})
     print( infostr(a) )
     z = zero(T)
@@ -56,8 +58,6 @@ function pretty_print{T<:Number}(a::Taylor{T})
     end
     return strout
 end
-
-# pretty_print (TaylorN)
 function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
     z = zero(T)
@@ -100,7 +100,6 @@ function numbr2str{T<:Real}(zz::T, ifirst=false::Bool)
     end
     return string(plusmin, abs(zz))
 end
-
 function numbr2str{T}(zz::Complex{T}, ifirst=false::Bool)
     zT = zero(T)
     zz == zero(Complex{T}) && return zT
@@ -141,6 +140,29 @@ function numbr2str{T}(zz::Complex{T}, ifirst=false::Bool)
     end
     return cadena
 end
+
+# evalTaylor(TaylorN, Array{Taylor,1})
+function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vT::Array{Taylor{S},1})
+    numVars = NUMVARS[end]
+    @assert length(vT) == numVars
+    R = promote_type(T,S)
+    order = length(vT[1])
+    sumaT = Taylor(zero(R), order)
+    z = zero(sumaT)
+    nCoefTot = sizeTable[end]
+    iIndices = zeros(Int, numVars)
+    for pos = nCoefTot:-1:1
+        @inbounds iIndices[1:end] = indicesTable[end][pos]
+        a.coeffs[pos] == zero(T) && continue
+        val = Taylor(a.coeffs[pos], order)
+        for k = 1:numVars
+            @inbounds val = val*(vT[k])^iIndices[k]
+        end
+        sumaT += val
+    end
+    return sumaT
+end
+
 
 ## Exports to Taylor and TaylorN ##
 export Taylor, diffTaylor, integTaylor, evalTaylor, deriv

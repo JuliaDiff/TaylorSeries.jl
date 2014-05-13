@@ -288,9 +288,7 @@ function sqrt(a::Taylor)
     end
     # Reaching this point, it is possible to implement the sqrt of the Taylor polynomial. 
     # The last l0nz coefficients are set to zero.
-    if l0nz > 0
-        warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
-    end
+    l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
     lnull = div(l0nz, 2)
     aux = sqrt(a.coeffs[l0nz+1])
     T = typeof(aux)
@@ -298,7 +296,7 @@ function sqrt(a::Taylor)
     coeffs = zeros(T, order+1)
     coeffs[lnull+1] = aux
     for k = lnull+1:order-l0nz
-        coeffs[k+1] = sqrtHomogCoef(k, v, coeffs, lnull)
+        @inbounds coeffs[k+1] = sqrtHomogCoef(k, v, coeffs, lnull)
     end
     Taylor(coeffs, order)
 end
@@ -475,6 +473,15 @@ function evalTaylor{T}(a::Taylor{T}, dx::Number)
     suma
 end
 evalTaylor{T<:Number}(a::Taylor{T}) = evalTaylor(a, zero(T))
+
+function evalTaylor{T,S}(a::Taylor{T}, x::Taylor{S})
+    orden = a.order
+    suma = a.coeffs[end]
+    for k = orden:-1:1
+        @inbounds suma = suma*x + a.coeffs[k]
+    end
+    suma
+end
 
 ## Returns de n-th derivative of a series expansion
 function deriv{T}(a::Taylor{T}, n::Int=1)

@@ -88,6 +88,8 @@ function posHomogCoefK(k::Int)
     k == 0 && return 1
     return binomial( k + NUMVARS[end]-1, k-1 ) + 1
 end
+"""Generates the auxiliary table of the initial and final position for the coefficients of 
+homogeneous polynomial of given degree (`posNumHomPolKTable`)"""
 function generatePosHomPolKTable()
     DDic = Dict{Int,(Int, Int)}()
     for k=0:MAXORDER[end]
@@ -384,6 +386,8 @@ function powHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, x::Real,
     @inbounds cc[1:end] = cc[1:end] / ( k * ac[1] )
     cc
 end
+^{T<:Number,S<:Number}(a::TaylorN{T}, x::Complex{S}) = exp( x*log(a) )
+^(a::TaylorN, b::TaylorN) = exp( b*log(a) )
 
 ## Square ##
 function square{T<:Number}(a::TaylorN{T})
@@ -626,7 +630,7 @@ function sincosHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, scoeffs::Array{T,1}
     sv, cv
 end
 
-## Differentiating ##
+## Differentiation ##
 """Partial differentiation of a TaylorN series with respect to the r-th variable"""
 function diffTaylor{T<:Number}(a::TaylorN{T}, r::Int)
     @assert 1 <= r <= NUMVARS[end]
@@ -646,3 +650,25 @@ function diffTaylor{T<:Number}(a::TaylorN{T}, r::Int)
 end
 diffTaylor(a::TaylorN) = diffTaylor(a, 1)
 
+## TO BE DONE: Integration...
+
+## Evaluates a Taylor polynomial on a given point using Horner's rule ##
+function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
+    numVars = NUMVARS[end]
+    @assert length(vals) == numVars
+    R = promote_type(T,S)
+    suma = zero(R)
+    nCoefTot = sizeTable[end]
+    iIndices = zeros(Int, numVars)
+    for pos = nCoefTot:-1:1
+        @inbounds iIndices[1:end] = indicesTable[end][pos]
+        @inbounds val = a.coeffs[pos]
+        val == zero(R) && continue
+        for k = 1:numVars
+            @inbounds val *= vals[k]^iIndices[k]
+        end
+        suma += val
+    end
+    suma
+end
+evalTaylor{T<:Number}(a::TaylorN{T}) = evalTaylor(a, zeros(T, a.numVars) )
