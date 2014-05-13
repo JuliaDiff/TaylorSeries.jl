@@ -2,12 +2,15 @@
 using TaylorSeries
 using Base.Test
 
-x(a) = Taylor([a,1],15)
+# Tests for 1-d Tylor expansions
+x0 = Taylor(0)
+@test length(x0) == 0
+
+x(a) = Taylor([a,one(a)],15)
 x0 = x(0)
 xI = im*x0
 z = zero(x0)
 u = 1.0*one(x0)
-tol(x0) = eps(x0)
 tol1 = eps(1.0)
 
 @test eltype(convert(Taylor{Complex128},u)) == Complex128
@@ -29,8 +32,9 @@ xsquare = Taylor([0,0,1],15)
 @test x0*x0 == xsquare
 @test (-x0)^2 == xsquare
 @test xsquare/x0 == x0
-@test x0/(3x0) == (1/3)*u
+@test x0/(x0*3) == (1/3)*u
 @test x0/3im == -xI/3
+@test 1/(1-x0) == Taylor(ones(x0.order+1))
 @test Taylor([0,1,1])/x0 == x0+1
 @test (x0+im)^2 == xsquare+2im*x0-1
 @test imag(xsquare+2im*x0-1) == 2x0
@@ -49,21 +53,23 @@ xsquare = Taylor([0,0,1],15)
 @test real(exp(xI)) == cos(x0)
 @test imag(exp(xI)) == sin(x0)
 @test exp(xI') == cos(x0)-im*sin(x0)
+@test (exp(x0))^(2im) == cos(2x0)+im*sin(2x0)
+@test (exp(x0))^Taylor(-5.2im) == cos(5.2x0)-im*sin(5.2x0)
 @test abs((tan(x0)).coeffs[8]- 17/315) < tol1
 @test abs((tan(x0)).coeffs[14]- 21844/6081075) < tol1
 @test evalTaylor(exp(Taylor([0,1],17)),1.0) == e
 
 @test deriv( exp(x(1.0)), 5 ) == exp(1.0)
-@test deriv( exp(x(pi)), 3 ) == exp(pi)
-@test isapprox(deriv( exp(x(pi)), 10 ) , exp(pi))
+@test deriv( exp(x(1.0pi)), 3 ) == exp(1.0pi)
+@test isapprox( deriv(exp(x(1.0pi)), 10) , exp(1.0pi) )
 
-@test_throws t1/x0
-@test_throws z/z
-@test_throws x0^1.5
-@test_throws sqrt(x0)
-@test_throws log(x0)
-@test_throws cos(x0)/sin(x0)
-@test_throws deriv( exp(x(pi)), 30 )
+@test_throws ErrorException 1/x0
+@test_throws ErrorException z/z
+@test_throws ErrorException x0^1.5
+@test_throws ErrorException sqrt(x0)
+@test_throws ErrorException log(x0)
+@test_throws ErrorException cos(x0)/sin(x0)
+@test_throws ErrorException deriv( exp(x(1.0pi)), 30 )
 
 println("    \033[32;1mSUCCESS\033[0m")
 
