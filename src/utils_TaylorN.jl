@@ -89,8 +89,8 @@ function posHomogCoefK(k::Int)
     return binomial( k + NUMVARS[end]-1, k-1 ) + 1
 end
 """Generates the auxiliary table of the initial and final position for the coefficients of 
-homogeneous polynomial of given degree (`posNumHomPolKTable`)"""
-function generatePosHomPolKTable()
+homogeneous polynomial of given degree (`posAuxTable`)"""
+function generateAuxTable()
     DDic = Dict{Int,(Int, Int)}()
     for k=0:MAXORDER[end]
         posI = posHomogCoefK(k)
@@ -99,7 +99,7 @@ function generatePosHomPolKTable()
     end
     return DDic
 end
-const posNumHomPolKTable = [ generatePosHomPolKTable() ]
+const posAuxTable = [ generateAuxTable() ]
 
 ## Utilities to get/set MAXORDER and NUMVARS; they reset the indicesTable
 get_maxOrder() = MAXORDER[end]
@@ -110,7 +110,7 @@ function set_maxOrder(n::Int)
     indicesTable[end] = generateIndicesTable()
     sizeTable[end] = length( indicesTable[end] )
     posTable[end] = generatePosTable()
-    posNumHomPolKTable[end] = generatePosHomPolKTable()
+    posAuxTable[end] = generateAuxTable()
     return n
 end
 #
@@ -122,7 +122,7 @@ function set_numVars(n::Int)
     indicesTable[end] = generateIndicesTable()
     sizeTable[end] = length( indicesTable[end] )
     posTable[end] = generatePosTable()
-    posNumHomPolKTable[end] = generatePosHomPolKTable()
+    posAuxTable[end] = generateAuxTable()
     return n
 end
 
@@ -225,20 +225,20 @@ function *(a::TaylorN, b::TaylorN)
     coeffs = zeros(T, nCoefTot)
     coeffs[1] = a1.coeffs[1] * b1.coeffs[1]   ## 0th-order
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds coeffs[posI:posF] = mulHomogCoefN( k, a1.coeffs, b1.coeffs )
     end
     TaylorN(coeffs, order)
 end
 function mulHomogCoefN{T<:Number}( k::Int, ac::Array{T,1}, bc::Array{T,1} )
     k==0 && return ac[1] * bc[1]
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     coeffs = zeros(T, numCoefk)
     for ka = 0:k
         kb = k-ka
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
-        @inbounds posbI, posbF = posNumHomPolKTable[end][kb]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
+        @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
@@ -267,7 +267,7 @@ function /(a::TaylorN, b::TaylorN)
     coeffs = zeros(T, nCoefTot)
     coeffs[1] = cLHopital
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds coeffs[posI:posF] = divHomogCoefN( k, v1, v2, coeffs, 0 )
     end
     TaylorN(coeffs, order)
@@ -299,7 +299,7 @@ function divHomogCoefN{T<:Number}( k::Int, ac::Array{T,1}, bc::Array{T,1},
     coeffs::Array{T,1}, ordLHopital::Int)
     #
     k == ordLHopital && return ac[ordLHopital+1] / bc[ordLHopital+1]
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     cc = zeros(T, numCoefk)
     @inbounds cc = mulHomogCoefN(k, coeffs, bc)
@@ -357,7 +357,7 @@ function ^(a::TaylorN, x::Real)
     coeffs = zeros(T, nCoefTot)
     coeffs[1] = aux
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds coeffs[posI:posF] = powHomogCoefN(k, v, x, coeffs, 0)
     end
     TaylorN(coeffs,order)
@@ -366,13 +366,13 @@ function powHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, x::Real,
     coeffs::Array{T,1}, knull::Int)
     #
     k == knull && return (ac[ordLHopital+1])^x
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     cc = zeros(T, numCoefk)
     for ka = 0:k-1
         kb = k-ka
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
-        @inbounds posbI, posbF = posNumHomPolKTable[end][kb]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
+        @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
@@ -396,7 +396,7 @@ function square{T<:Number}(a::TaylorN{T})
     coeffs = zeros(T, nCoefTot)
     coeffs[1] = a.coeffs[1]^2
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds coeffs[posI:posF] = squareHomogCoefN( k, a.coeffs )
     end
     TaylorN(coeffs,order)
@@ -404,15 +404,15 @@ end
 # Homogeneous coefficients for square
 function squareHomogCoefN{T<:Number}(k::Int, ac::Array{T,1})
     k == 0 && return (ac[1])^2
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     coeffs = zeros(T, numCoefk)
     kodd = k%2
     kend = div(k - 2 + kodd, 2)
     for ka = 0:kend
         kb = k - ka
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
-        @inbounds posbI, posbF = posNumHomPolKTable[end][kb]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
+        @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
@@ -427,7 +427,7 @@ function squareHomogCoefN{T<:Number}(k::Int, ac::Array{T,1})
     #
     if kodd == 0
         ka = div(k,2)
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posaI:posaF
@@ -451,7 +451,7 @@ function sqrt(a::TaylorN)
     coeffs = zeros(T, nCoefTot)
     coeffs[1] = aux
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds coeffs[posI:posF] = sqrtHomogCoefN( k, v, coeffs, 0 )
     end
     TaylorN(coeffs,order)
@@ -460,15 +460,15 @@ end
 function sqrtHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1}, knull::Int)
     k == 0 && return sqrt( ac[1] )
     #posI, numCoefk, posF = posIniNumFinK(k)
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     cc = zeros(T, numCoefk)
     kodd = k%2
     kend = div(k - 2 + kodd, 2)
     for ka = 1:kend
         kb = k - ka
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
-        @inbounds posbI, posbF = posNumHomPolKTable[end][kb]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
+        @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
@@ -483,7 +483,7 @@ function sqrtHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1}, k
     #
     if kodd == 0
         ka = div(k,2)
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posaI:posaF
@@ -508,7 +508,7 @@ function exp(a::TaylorN)
     coeffs = zeros(T, nCoefTot)
     coeffs[1] = aux
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds coeffs[posI:posF] = expHomogCoefN( k, v, coeffs )
     end
     TaylorN(coeffs,order)
@@ -516,13 +516,13 @@ end
 # Homogeneous coefficients for exp
 function expHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1})
     k == 0 && return exp( ac[1] )
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     cc = zeros(T, numCoefk)
     for ka = 0:k-1
         kb = k - ka
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
-        @inbounds posbI, posbF = posNumHomPolKTable[end][kb]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
+        @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
@@ -547,7 +547,7 @@ function log(a::TaylorN)
     coeffs = zeros(T, nCoefTot)
     coeffs[1] = aux
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds coeffs[posI:posF] = logHomogCoefN( k, v, coeffs )
     end
     TaylorN(coeffs, order)
@@ -555,13 +555,13 @@ end
 # Homogeneous coefficients for square
 function logHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1})
     k == 0 && return log( ac[1] )
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     cc = zeros(T, numCoefk)
     for ka = 1:k-1
         kb = k - ka
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
-        @inbounds posbI, posbF = posNumHomPolKTable[end][kb]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
+        @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
@@ -590,7 +590,7 @@ function sincos(a::TaylorN)
     sincoeffs[1] = aux
     coscoeffs[1] = cos( a.coeffs[1] )
     for k = 1:order
-        @inbounds posI, posF = posNumHomPolKTable[end][k]
+        @inbounds posI, posF = posAuxTable[end][k]
         @inbounds sincoeffs[posI:posF], coscoeffs[posI:posF] = 
             sincosHomogCoefN(k, v, sincoeffs, coscoeffs)
     end
@@ -600,7 +600,7 @@ end
 function sincosHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, scoeffs::Array{T,1}, ccoeffs::Array{T,1})
     k == 0 && return sin( ac[1] ), cos( ac[1] )
     #posI, numCoefk, posF = posIniNumFinK(k)
-    @inbounds posI, posF = posNumHomPolKTable[end][k]
+    @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     sv = zeros(T, numCoefk)
     cv = zeros(T, numCoefk)
@@ -608,8 +608,8 @@ function sincosHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, scoeffs::Array{T,1}
         kb = k - ka
         #posaI, posaF = posIniFinK(ka)
         #posbI, posbF = posIniFinK(kb)
-        @inbounds posaI, posaF = posNumHomPolKTable[end][ka]
-        @inbounds posbI, posbF = posNumHomPolKTable[end][kb]
+        @inbounds posaI, posaF = posAuxTable[end][ka]
+        @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
