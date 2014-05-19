@@ -106,7 +106,7 @@ get_maxOrder() = MAXORDER[end]
 function set_maxOrder(n::Int)
     @assert n >= 0
     MAXORDER[end] = n
-    info("MAXORDER changed; regenerating hash tables.\n")
+    info(string("MAXORDER is now ", n, "; hash tables regenerated.\n"))
     indicesTable[end] = generateIndicesTable()
     sizeTable[end] = length( indicesTable[end] )
     posTable[end] = generatePosTable()
@@ -118,7 +118,7 @@ get_numVars() = NUMVARS[end]
 function set_numVars(n::Int)
     @assert n > 0
     NUMVARS[end] = n
-    info("NUMVARS changed; regenerating hash tables.\n")
+    info(string("NUMVARS is now ", n, "; hash tables regenerated.\n"))
     indicesTable[end] = generateIndicesTable()
     sizeTable[end] = length( indicesTable[end] )
     posTable[end] = generatePosTable()
@@ -187,7 +187,7 @@ end
 
 ## real, imag, conj and ctranspose ##
 for f in (:real, :imag, :conj)
-    @eval ($f)(a::TaylorN) = TaylorN(($f)(a.coeffs), a.order)
+    @eval ($f){T<:Real}(a::TaylorN{T}) = TaylorN(($f)(a.coeffs), a.order)
 end
 ctranspose(a::TaylorN) = conj(a)
 
@@ -313,14 +313,14 @@ end
 ## NEEDS TESTING
 for op in (:mod, :rem)
     @eval begin
-        function ($op){T<:FloatingPoint}(a::TaylorN{T}, x::T)
+        function ($op){T<:Real}(a::TaylorN{T}, x::T)
             coeffs = a.coeffs
             coeffs[1] = ($op)(a.coeffs[1], x)
             return TaylorN( coeffs, a.order )
         end
     end
 end
-function mod2pi(a::TaylorN) 
+function mod2pi{T<:Real}(a::TaylorN{T}) 
     coeffs = a.coeffs
     coeffs[1] = mod2pi( a.coeffs[1] )
     return TaylorN( coeffs, a.order )

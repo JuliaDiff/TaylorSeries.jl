@@ -63,7 +63,7 @@ end
 
 ## real, imag, conj and ctranspose ##
 for f in (:real, :imag, :conj)
-    @eval ($f)(a::Taylor) = Taylor(($f)(a.coeffs), a.order)
+    @eval ($f){T<:Real}(a::Taylor{T}) = Taylor(($f)(a.coeffs), a.order)
 end
 ctranspose(a::Taylor) = conj(a)
 
@@ -168,14 +168,14 @@ end
 ## NEEDS CHECKING
 for op in (:mod, :rem)
     @eval begin
-        function ($op){T<:FloatingPoint}(a::Taylor{T}, x::T)
+        function ($op){T<:Real}(a::Taylor{T}, x::T)
             coeffs = a.coeffs
             coeffs[1] = ($op)(a.coeffs[1], x)
             return Taylor( coeffs, a.order)
         end
     end
 end
-function mod2pi(a::Taylor) 
+function mod2pi{T<:Real}(a::Taylor{T}) 
     coeffs = a.coeffs
     coeffs[1] = mod2pi( a.coeffs[1] )
     return Taylor( coeffs, a.order)
@@ -475,7 +475,7 @@ end
 evalTaylor{T<:Number}(a::Taylor{T}) = evalTaylor(a, zero(T))
 
 function evalTaylor{T,S}(a::Taylor{T}, x::Taylor{S})
-    orden = a.order
+    a, x, orden = fixshape(a, x)
     suma = a.coeffs[end]
     for k = orden:-1:1
         @inbounds suma = suma*x + a.coeffs[k]

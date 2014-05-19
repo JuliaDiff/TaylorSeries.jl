@@ -15,7 +15,7 @@
 module TaylorSeries
 
 import Base: zero, one
-import Base: convert, promote_rule, promote, eltype, length, showcompact
+import Base: convert, promote_rule, promote, eltype, length, pretty_print
 import Base: real, imag, conj, ctranspose
 import Base: rem, mod, mod2pi
 import Base: sqrt, exp, log, sin, cos, tan#, square
@@ -26,13 +26,6 @@ include("utils_TaylorN.jl")
 
 ## The following routines combine Taylor and TaylorN, so they must appear defining 
 ##   Taylor and TaylorN and some of its functionalities
-
-# showcompact
-function showcompact{T<:Number}(io::IO, a::Union(Taylor{T},TaylorN{T}) )
-    strout = pretty_print(a)
-    println(io, strout)
-    return
-end
 
 # infostr
 infostr{T<:Number}(a::Taylor{T}) = 
@@ -45,7 +38,8 @@ function pretty_print{T<:Number}(a::Taylor{T})
     print( infostr(a) )
     z = zero(T)
     space = " "
-    a == z && return string( space, z)
+    #a == z && return string( space, z)
+    a == z && (print(string( space, z)); return)
     strout = space
     ifirst = true
     for i = 0:a.order
@@ -56,18 +50,19 @@ function pretty_print{T<:Number}(a::Taylor{T})
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
-    return strout
+    println(strout)
+    #return strout
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
     z = zero(T)
     space = " "
-    a == z && return string( space, z)
+    a == z && (print(string( space, z)); return)
     varstring = {}
     for ivar=1:a.numVars
         push!(varstring,string(" * x",ivar))
     end
-    strout = string("")
+    strout = string(" ")
     ifirst = true
     iIndices = zeros(Int, a.numVars)
     for pos = 1:length(a.coeffs)
@@ -89,7 +84,8 @@ function pretty_print{T<:Number}(a::TaylorN{T})
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
-    return strout
+    println(strout)
+    #return strout
 end
 
 # make string from a number; for complex numbers, use 
