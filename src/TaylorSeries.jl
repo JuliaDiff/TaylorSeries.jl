@@ -15,7 +15,7 @@
 module TaylorSeries
 
 import Base: zero, one
-import Base: convert, promote_rule, promote, eltype, length, pretty_print
+import Base: convert, promote_rule, promote, eltype, length
 import Base: real, imag, conj, ctranspose
 import Base: rem, mod, mod2pi
 import Base: sqrt, exp, log, sin, cos, tan#, square
@@ -161,7 +161,7 @@ end
 
 
 ## Exports to Taylor and TaylorN ##
-export Taylor, diffTaylor, integTaylor, evalTaylor, deriv
+export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
 #
 export TaylorN
 export set_maxOrder, get_maxOrder, set_numVars, get_numVars
