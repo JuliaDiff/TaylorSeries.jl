@@ -6,7 +6,7 @@
 #
 # utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2014.04.12
+# Last modification: 2014.05.21
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -38,7 +38,6 @@ function pretty_print{T<:Number}(a::Taylor{T})
     print( infostr(a) )
     z = zero(T)
     space = " "
-    #a == z && return string( space, z)
     a == z && (print(string( space, z)); return)
     strout = space
     ifirst = true
@@ -51,7 +50,6 @@ function pretty_print{T<:Number}(a::Taylor{T})
         ifirst = false
     end
     println(strout)
-    #return strout
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
@@ -85,25 +83,30 @@ function pretty_print{T<:Number}(a::TaylorN{T})
         ifirst = false
     end
     println(strout)
-    #return strout
+end
+function pretty_print{T<:Number}(a::Union(Array{Taylor{T},1},Array{TaylorN{T},1}))
+    for i=1:length(a)
+        pretty_print(a[i])
+        println("")
+    end
 end
 
 # make string from a number; for complex numbers, use 
-function numbr2str{T<:Real}(zz::T, ifirst=false::Bool)
+function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
     plusmin = zz > 0 ? "+ " : "- "
     if ifirst
-        plusmin = zz > 0 ? "" : "-"
+        plusmin = zz > 0 ? " " : "-"
     end
     return string(plusmin, abs(zz))
 end
-function numbr2str{T}(zz::Complex{T}, ifirst=false::Bool)
+function numbr2str{T}(zz::Complex{T}, ifirst::Bool=false)
     zT = zero(T)
     zz == zero(Complex{T}) && return zT
     zre, zim = reim(zz)
     cadena = ""
     if zre > zT
         if ifirst
-            cadena = string("( ", abs(zre)," ")
+            cadena = string("   ( ", abs(zre)," ")
         else
             cadena = string(" + ( ", abs(zre)," ")
         end
@@ -126,7 +129,7 @@ function numbr2str{T}(zz::Complex{T}, ifirst=false::Bool)
     else
         if zim > zT
             if ifirst
-                cadena = string("( ", abs(zim), " im )")
+                cadena = string("   ( ", abs(zim), " im )")
             else
                 cadena = string(" + ( ", abs(zim), " im )")
             end
