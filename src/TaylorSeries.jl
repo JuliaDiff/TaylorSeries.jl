@@ -20,6 +20,8 @@ import Base: real, imag, conj, ctranspose
 import Base: rem, mod, mod2pi
 import Base: sqrt, exp, log, sin, cos, tan#, square
 
+abstract AbstractSeries{T<:Number,N} <: Number
+
 include("utils_Taylor1.jl")
 
 include("utils_TaylorN.jl")

@@ -127,7 +127,7 @@ function set_numVars(n::Int)
 end
 
 ## TaylorN Constructors ##
-immutable TaylorN{T<:Number}
+immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
    coeffs :: Array{T,1}
    order :: Int
    numVars :: Int
@@ -158,12 +158,10 @@ get_numVars(x::TaylorN) = x.numVars
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) = TaylorN(convert(Array{T,1}, a.coeffs), a.order)
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::Array{S,1}) = TaylorN(convert(Array{T,1},b))
-convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::S) = TaylorN([convert(T,b)], 0)
+convert{T<:Number}(::Type{TaylorN{T}}, b::Number) = TaylorN([convert(T,b)], 0)
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) = TaylorN{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{Array{S,1}}) = TaylorN{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{Array{S,1}}, ::Type{TaylorN{T}}) = TaylorN{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{S}) = TaylorN{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{S}, ::Type{TaylorN{T}}) = TaylorN{promote_type(T, S)}
 
 ## Auxiliary functions ##
 # function firstnonzero{T<:Number}(a::Taylor{T})
@@ -187,9 +185,9 @@ end
 
 ## real, imag, conj and ctranspose ##
 for f in (:real, :imag, :conj)
-    @eval ($f){T<:Real}(a::TaylorN{T}) = TaylorN(($f)(a.coeffs), a.order)
+    @eval ($f){T<:Number}(a::TaylorN{T}) = TaylorN(($f)(a.coeffs), a.order)
 end
-ctranspose(a::TaylorN) = conj(a)
+ctranspose{T<:Number}(a::TaylorN{T}) = conj(a)
 
 ## zero and one ##
 zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(T), a.order)
@@ -200,8 +198,6 @@ function ==(a::TaylorN, b::TaylorN)
     a1, b1, order = fixshape(a, b)
     return a1.coeffs == b1.coeffs
 end
-==(a::TaylorN, b::Number) = ==(a, TaylorN(b, a.order))
-==(a::Number, b::TaylorN) = ==(b, TaylorN(a, b.order))
 
 ## Addition and substraction ##
 for f in (:+, :-)
@@ -212,8 +208,6 @@ for f in (:+, :-)
             return TaylorN(v, order)
         end
         ($f)(a::TaylorN, b::Number) = ($f)(a, TaylorN(b, a.order))
-        ($f)(a::Number, b::TaylorN) = ($f)(TaylorN(a, b.order), b)
-        ($f)(a::TaylorN) = TaylorN(($f)(a.coeffs), a.order)
     end
 end
 
@@ -251,8 +245,6 @@ function mulHomogCoefN{T<:Number}( k::Int, ac::Array{T,1}, bc::Array{T,1} )
     end
     return coeffs
 end
-*(a::TaylorN, b::Number) = TaylorN(b*a.coeffs, a.order)
-*(a::Number, b::TaylorN) = TaylorN(a*b.coeffs, b.order)
 
 ## Division ##
 function /(a::TaylorN, b::TaylorN)
@@ -306,8 +298,6 @@ function divHomogCoefN{T<:Number}( k::Int, ac::Array{T,1}, bc::Array{T,1},
     @inbounds cc[1:end] = (ac[posI:posF]-cc[1:end]) / bc[ordLHopital+1]
     cc
 end
-/(a::TaylorN,b::Number) = TaylorN(a.coeffs/b, a.order)
-/(a::Number,b::TaylorN) = TaylorN([a], b.order) / b
 
 ## Division functions: rem and mod
 ## NEEDS TESTING
@@ -341,6 +331,8 @@ function ^(a::TaylorN, n::Integer)
         return a*square( a^pow )
     end
 end
+## Rational power ##
+^(a::TaylorN,x::Rational) = a^(x.num/x.den)
 ## Real power ##
 function ^(a::TaylorN, x::Real)
     uno = one(a)
@@ -459,7 +451,6 @@ end
 # Homogeneous coefficients for sqrt
 function sqrtHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, coeffs::Array{T,1}, knull::Int)
     k == 0 && return sqrt( ac[1] )
-    #posI, numCoefk, posF = posIniNumFinK(k)
     @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     cc = zeros(T, numCoefk)
@@ -599,22 +590,18 @@ end
 # Homogeneous coefficients for sin and cos
 function sincosHomogCoefN{T<:Number}(k::Int, ac::Array{T,1}, scoeffs::Array{T,1}, ccoeffs::Array{T,1})
     k == 0 && return sin( ac[1] ), cos( ac[1] )
-    #posI, numCoefk, posF = posIniNumFinK(k)
     @inbounds posI, posF = posAuxTable[end][k]
     numCoefk = posF - posI + 1
     sv = zeros(T, numCoefk)
     cv = zeros(T, numCoefk)
     for ka = 0:k-1
         kb = k - ka
-        #posaI, posaF = posIniFinK(ka)
-        #posbI, posbF = posIniFinK(kb)
         @inbounds posaI, posaF = posAuxTable[end][ka]
         @inbounds posbI, posbF = posAuxTable[end][kb]
         for ja = posaI:posaF
             @inbounds inda = indicesTable[end][ja]
             for jb = posbI:posbF
                 @inbounds indb = indicesTable[end][jb]
-                #pos = indices2coef( inda + indb )
                 @inbounds pos = posTable[end][ inda + indb ]
                 pos = pos - posI + 1
                 @inbounds begin

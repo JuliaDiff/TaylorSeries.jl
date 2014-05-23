@@ -8,7 +8,7 @@
 
 
 ## Constructors ##
-immutable Taylor{T<:Number}
+immutable Taylor{T<:Number} <: AbstractSeries{T,1}
     coeffs :: Array{T,1}
     order :: Int
     ## Inner constructor ##
@@ -35,12 +35,10 @@ length{T<:Number}(a::Taylor{T}) = a.order
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{Taylor{T}}, a::Taylor) = Taylor(convert(Array{T,1}, a.coeffs), a.order)
 convert{T<:Number, S<:Number}(::Type{Taylor{T}}, b::Array{S,1}) = Taylor(convert(Array{T,1},b))
-convert{T<:Number, S<:Number}(::Type{Taylor{T}}, b::S) = Taylor([convert(T,b)], 0)
+convert{T<:Number}(::Type{Taylor{T}}, b::Number) = Taylor([convert(T,b)], 0)
 promote_rule{T<:Number, S<:Number}(::Type{Taylor{T}}, ::Type{Taylor{S}}) = Taylor{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{Taylor{T}}, ::Type{Array{S,1}}) = Taylor{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{Array{S,1}}, ::Type{Taylor{T}}) = Taylor{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{Taylor{T}}, ::Type{S}) = Taylor{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{S}, ::Type{Taylor{T}}) = Taylor{promote_type(T, S)}
 
 ## Auxiliary function ##
 function firstnonzero{T<:Number}(a::Taylor{T})
@@ -63,9 +61,9 @@ end
 
 ## real, imag, conj and ctranspose ##
 for f in (:real, :imag, :conj)
-    @eval ($f){T<:Real}(a::Taylor{T}) = Taylor(($f)(a.coeffs), a.order)
+    @eval ($f){T<:Number}(a::Taylor{T}) = Taylor(($f)(a.coeffs), a.order)
 end
-ctranspose(a::Taylor) = conj(a)
+ctranspose{T<:Number}(a::Taylor{T}) = conj(a)
 
 ## zero and one ##
 zero{T<:Number}(a::Taylor{T}) = Taylor(zero(T), a.order)
@@ -76,8 +74,6 @@ function ==(a::Taylor, b::Taylor)
     a1, b1, order = fixshape(a, b)
     return a1.coeffs == b1.coeffs
 end
-==(a::Taylor, b::Number) = ==(a, Taylor(b, a.order))
-==(a::Number, b::Taylor) = ==(b, Taylor(a, b.order))
 
 ## Addition and substraction ##
 for f in (:+, :-)
@@ -87,8 +83,6 @@ for f in (:+, :-)
             v = ($f)(a1.coeffs, b1.coeffs)
             return Taylor(v, order)
         end
-        ($f)(a::Taylor, b::Number) = ($f)(a, Taylor(b, a.order))
-        ($f)(a::Number, b::Taylor) = ($f)(Taylor(a, b.order), b)
         ($f)(a::Taylor) = Taylor(($f)(a.coeffs), a.order)
     end
 end
@@ -113,8 +107,6 @@ function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     end
     coefhomog
 end
-*(a::Taylor, b::Number) = Taylor(b*a.coeffs, a.order)
-*(a::Number, b::Taylor) = Taylor(a*b.coeffs, b.order)
 
 ## Division ##
 function /(a::Taylor, b::Taylor)
@@ -161,8 +153,6 @@ function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
     coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordLHopital+1]
     coefhomog
 end
-/(a::Taylor,b::Number) = Taylor(a.coeffs/b, a.order)
-/(a::Number,b::Taylor) = Taylor([a], b.order) / b
 
 ## Division functions: rem and mod
 ## NEEDS CHECKING
@@ -196,6 +186,8 @@ function ^(a::Taylor, n::Integer)
         return a*square( a^pow )
     end
 end
+## Rational power ##
+^(a::Taylor,x::Rational) = a^(x.num/x.den)
 ## Real power ##
 function ^(a::Taylor, x::Real)
     uno = one(a)
@@ -246,7 +238,7 @@ function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
     @inbounds coefhomog = coefhomog / (aux*ac[knull+1])
     coefhomog
 end
-^{T<:Number,S<:Number}(a::Taylor{T}, x::Complex{S}) = exp( x*log(a) )
+^{T<:Number,S<:Real}(a::Taylor{T}, x::Complex{S}) = exp( x*log(a) )
 ^(a::Taylor, b::Taylor) = exp( b*log(a) )
 
 ## Square ##
@@ -464,9 +456,9 @@ function definiteIntegralTaylor{T<:Number}(a::Taylor{T}, x1::Number, x2::Number)
 end
 
 ## Evaluates a Taylor polynomial on a given point using Horner's rule ##
-function evalTaylor{T}(a::Taylor{T}, dx::Number)
+function evalTaylor{T<:Number}(a::Taylor{T}, dx::T)
     orden = a.order
-    suma = a.coeffs[end]
+    @inbounds suma = a.coeffs[end]
     for k = orden:-1:1
         @inbounds suma = suma*dx + a.coeffs[k]
     end
@@ -474,9 +466,9 @@ function evalTaylor{T}(a::Taylor{T}, dx::Number)
 end
 evalTaylor{T<:Number}(a::Taylor{T}) = evalTaylor(a, zero(T))
 
-function evalTaylor{T,S}(a::Taylor{T}, x::Taylor{S})
+function evalTaylor{T<:Number,S<:Number}(a::Taylor{T}, x::Taylor{S})
     a, x, orden = fixshape(a, x)
-    suma = a.coeffs[end]
+    @inbounds suma = a.coeffs[end]
     for k = orden:-1:1
         @inbounds suma = suma*x + a.coeffs[k]
     end
@@ -492,4 +484,3 @@ function deriv{T}(a::Taylor{T}, n::Int=1)
     res::T = factorial( BigInt(n) ) * a.coeffs[n+1]
     return res
 end
-
