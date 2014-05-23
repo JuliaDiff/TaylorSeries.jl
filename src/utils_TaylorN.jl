@@ -207,7 +207,7 @@ for f in (:+, :-)
             v = ($f)(a1.coeffs, b1.coeffs)
             return TaylorN(v, order)
         end
-        ($f)(a::TaylorN, b::Number) = ($f)(a, TaylorN(b, a.order))
+        ($f)(a::TaylorN) = TaylorN(($f)(a.coeffs), a.order)
     end
 end
 
