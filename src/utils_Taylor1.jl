@@ -456,9 +456,10 @@ function definiteIntegralTaylor{T<:Number}(a::Taylor{T}, x1::Number, x2::Number)
 end
 
 ## Evaluates a Taylor polynomial on a given point using Horner's rule ##
-function evalTaylor{T<:Number}(a::Taylor{T}, dx::T)
+function evalTaylor{T<:Number,S<:Number}(a::Taylor{T}, dx::S)
+    R = promote_type(T,S)
     orden = a.order
-    @inbounds suma = a.coeffs[end]
+    @inbounds suma = convert(R, a.coeffs[end])
     for k = orden:-1:1
         @inbounds suma = suma*dx + a.coeffs[k]
     end
