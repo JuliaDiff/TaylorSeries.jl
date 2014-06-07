@@ -155,10 +155,9 @@ function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
 end
 
 ## Division functions: rem and mod
-## NEEDS CHECKING
 for op in (:mod, :rem)
     @eval begin
-        function ($op){T<:Real}(a::Taylor{T}, x::T)
+        function ($op){T<:Real}(a::Taylor{T}, x::Real)
             coeffs = a.coeffs
             coeffs[1] = ($op)(a.coeffs[1], x)
             return Taylor( coeffs, a.order)
@@ -199,20 +198,15 @@ function ^(a::Taylor, x::Real)
     order = a.order
     # First non-zero coefficient
     l0nz = firstnonzero(a)
-    if l0nz > order
-        return zero(a)
-    end
+    l0nz > order && return zero(a)
     # The first non-zero coefficient of the result; must be integer
     lnull = x*l0nz
-    if !isinteger(lnull)
+    !isinteger(lnull) &&
         error("Integer exponent REQUIRED if the Taylor polynomial is expanded around 0.\n")
-    end
     # Reaching this point, it is possible to implement the power of the Taylor polynomial. 
     # The last l0nz coefficients are set to zero.
     lnull = itrunc(lnull)
-    if l0nz > 0
-        warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
-    end
+    l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
     aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
@@ -220,7 +214,7 @@ function ^(a::Taylor, x::Real)
     coeffs[lnull+1] = aux
     k0 = lnull+l0nz
     for k = k0+1:order
-        coeffs[k-l0nz+1] = powHomogCoef(k, v, x, coeffs, l0nz)
+        @inbounds coeffs[k-l0nz+1] = powHomogCoef(k, v, x, coeffs, l0nz)
     end
     Taylor(coeffs,order)
 end
@@ -247,7 +241,7 @@ function square{T<:Number}(a::Taylor{T})
     coeffs = zeros(T,order+1)
     coeffs[1] = a.coeffs[1]^2
     for k = 1:order
-        coeffs[k+1] = squareHomogCoef(k, a.coeffs)
+        @inbounds coeffs[k+1] = squareHomogCoef(k, a.coeffs)
     end
     Taylor(coeffs,order)
 end
@@ -286,7 +280,7 @@ function sqrt(a::Taylor)
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = zeros(T, order+1)
-    coeffs[lnull+1] = aux
+    @inbounds coeffs[lnull+1] = aux
     for k = lnull+1:order-l0nz
         @inbounds coeffs[k+1] = sqrtHomogCoef(k, v, coeffs, lnull)
     end
@@ -305,7 +299,7 @@ function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}
     if kodd == 0
         @inbounds aux = aux - (coeffs[kend+knull+2])^2
     end
-    coefhomog = aux / (2coeffs[knull+1])
+    @inbounds coefhomog = aux / (2coeffs[knull+1])
     coefhomog
 end
 
@@ -318,7 +312,7 @@ function exp(a::Taylor)
     coeffs = zeros(T, order+1)
     coeffs[1] = aux
     for k = 1:order
-        coeffs[k+1] = expHomogCoef(k, v, coeffs)
+        @inbounds coeffs[k+1] = expHomogCoef(k, v, coeffs)
     end
     Taylor( coeffs, order )
 end
@@ -346,7 +340,7 @@ function log(a::Taylor)
     coeffs = zeros(T, order+1)
     coeffs[1] = aux
     for k = 1:order
-        coeffs[k+1] = logHomogCoef(k, ac, coeffs)
+        @inbounds coeffs[k+1] = logHomogCoef(k, ac, coeffs)
     end
     Taylor( coeffs, order )
 end
@@ -374,7 +368,7 @@ function sincos(a::Taylor)
     sincoeffs[1] = aux
     coscoeffs[1] = cos( a.coeffs[1] )
     for k = 1:order
-        sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
+        @inbounds sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
     end
     return Taylor(sincoeffs, order), Taylor(coscoeffs, order)
 end
@@ -408,8 +402,10 @@ function tan(a::Taylor)
     coeffs[1] = aux
     coeffst2[1] = aux^2
     for k = 1:order
-        coeffs[k+1] = tanHomogCoef(k, v, coeffst2)
-        coeffst2[k+1] = squareHomogCoef(k, coeffs)
+        @inbounds begin
+            coeffs[k+1] = tanHomogCoef(k, v, coeffst2)
+            coeffst2[k+1] = squareHomogCoef(k, coeffs)
+        end
     end
     Taylor( coeffs, order )
 end
@@ -447,13 +443,13 @@ function integTaylor{T<:Number}(a::Taylor{T}, x::Number)
     return Taylor(coeffs, order)
 end
 integTaylor{T<:Number}(a::Taylor{T}) = integTaylor(a, zero(T))
-function definiteIntegralTaylor{T<:Number}(a::Taylor{T}, x1::Number, x2::Number)
-    @assert isfinite(x1) && isfinite(x2)
-    integral = integTaylor(a)
-    v1 = evalTaylor(integral, x1)
-    v2 = evalTaylor(integral, x2)
-    return v2-v1
-end
+# function definiteIntegralTaylor{T<:Number}(a::Taylor{T}, x1::Number, x2::Number)
+#     @assert isfinite(x1) && isfinite(x2)
+#     integral = integTaylor(a)
+#     v1 = evalTaylor(integral, x1)
+#     v2 = evalTaylor(integral, x2)
+#     return v2-v1
+# end
 
 ## Evaluates a Taylor polynomial on a given point using Horner's rule ##
 function evalTaylor{T<:Number,S<:Number}(a::Taylor{T}, dx::S)
