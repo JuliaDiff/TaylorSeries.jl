@@ -111,7 +111,8 @@ julia> xTI'
 Taylor{Complex{Int64}}(Complex{Int64}[0+0im,0-1im,0+0im,0+0im,0+0im,0+0im],5)
 
 julia> xTI^4/xT0^4
-WARNING: Applying L'Hôpital. The last k=4 Taylor coefficients ARE SET to 0.
+WARNING: Factorizing the polynomial.
+The last k=4 Taylor coefficients ARE SET to 0.
 Taylor{Complex{Float64}}(Complex{Float64}[1.0+0.0im,0.0+0.0im,0.0+0.0im,0.0+0.0im,0.0+0.0im,0.0+0.0im],5)
 
 julia> (1-xT0)^3.2
