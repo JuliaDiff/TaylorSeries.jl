@@ -111,46 +111,45 @@ end
 ## Division ##
 function /(a::Taylor, b::Taylor)
     a1, b1, order = fixshape(a, b)
-    ordLHopital, cLHopital = divlhopital(a1, b1) # L'Hôpital order and coefficient
-    T = typeof(cLHopital)
+    orddivfact, cdivfact = divfactorization(a1, b1) # order and coefficient of first factorized term
+    T = typeof(cdivfact)
     v1 = convert(Array{T,1}, a1.coeffs)
     v2 = convert(Array{T,1}, b1.coeffs)
     coeffs = zeros(T,order+1)
-    coeffs[1] = cLHopital
-    for k = ordLHopital+1:order
-        coeffs[k-ordLHopital+1] = divHomogCoef(k, v1, v2, coeffs, ordLHopital)
+    coeffs[1] = cdivfact
+    for k = orddivfact+1:order
+        coeffs[k-orddivfact+1] = divHomogCoef(k, v1, v2, coeffs, orddivfact)
     end
     Taylor(coeffs, order)
 end
-function divlhopital(a1::Taylor, b1::Taylor)
-    # L'Hôpital order is calculated; a1 and b1 are assumed to be of the same order (length)
+function divfactorization(a1::Taylor, b1::Taylor)
+    # order of first factorized term; a1 and b1 are assumed to be of the same order (length)
     a1nz = firstnonzero(a1)
     b1nz = firstnonzero(b1)
-    ordLHopital = min(a1nz, b1nz)
-    if ordLHopital > a1.order
-        ordLHopital = a1.order
+    orddivfact = min(a1nz, b1nz)
+    if orddivfact > a1.order
+        orddivfact = a1.order
     end
-    cLHopital = a1.coeffs[ordLHopital+1] / b1.coeffs[ordLHopital+1]
-    aux = abs2(cLHopital)
-    # Can L'Hôpital be applied?
-    if isinf(aux)
-        info("Order k=$(ordLHopital) => coeff[$(ordLHopital+1)]=$(cLHopital)")
-        error("Division does not define a Taylor polynomial or its first coefficient is infinite.\n")
-    elseif isnan(aux)
-        info("Order k=$(ordLHopital) => coeff[$(ordLHopital+1)]=$(cLHopital)")
-        error("Impossible to apply L'Hôpital...\n")
-    elseif ordLHopital>0
-        warn("Applying L'Hôpital. The last k=$(ordLHopital) Taylor coefficients ARE SET to 0.\n")
+    cdivfact = a1.coeffs[orddivfact+1] / b1.coeffs[orddivfact+1]
+    aux = abs2(cdivfact)
+    # Is the polynomial factorizable?
+    if isinf(aux) || isnan(aux)
+        info("Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact)")
+        error("Division does not define a Taylor polynomial\n",
+            " or its first non-zero coefficient is Inf/NaN.\n")
+    else orddivfact>0
+        warn("Factorizing the polynomial.\n",
+            "The last k=$(orddivfact) Taylor coefficients ARE SET to 0.\n")
     end
-    return ordLHopital, cLHopital
+    return orddivfact, cdivfact
 end
 # Homogeneous coefficient for the division
 function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1}, 
-    coeffs::Array{T,1}, ordLHopital::Int)
+    coeffs::Array{T,1}, ordfact::Int)
     #
-    kcoef == ordLHopital && return ac[ordLHopital+1] / bc[ordLHopital+1]
+    kcoef == ordfact && return ac[ordfact+1] / bc[ordfact+1]
     coefhomog = mulHomogCoef(kcoef, coeffs, bc)
-    coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordLHopital+1]
+    coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordfact+1]
     coefhomog
 end
 
