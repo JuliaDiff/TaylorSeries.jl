@@ -1,6 +1,6 @@
 # utils_TaylorN.jl: N-variables Taylor expansions
 #
-# Last modification: 2014.04.23
+# Last modification: 2014.06.07
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -76,12 +76,12 @@ end
 const posTable = [ generatePosTable() ]
 
 ## Functions to obtain the number of homogenous coefficients of given degree
-"""Returns the number of homogeneous coefficients of degree k for NUMVARS:
-    binomial(k+NUMVARS-1,k)"""
-function numHomogCoefK(k::Int)
-    k == 0 && return 1
-    return binomial( k + NUMVARS[end] - 1, k )
-end
+# """Returns the number of homogeneous coefficients of degree k for NUMVARS:
+#     binomial(k+NUMVARS-1,k)"""
+# function numHomogCoefK(k::Int)
+#     k == 0 && return 1
+#     return binomial( k + NUMVARS[end] - 1, k )
+# end
 """Returns the position of the first homogeneous coefficient of degree k for NUMVARS:
     binomial(k+NUMVARS-1,k-1)+1"""
 function posHomogCoefK(k::Int)
@@ -154,6 +154,7 @@ TaylorN{T<:Number}(x::T) = TaylorN{T}([x], 0, NUMVARS[end])
 eltype{T<:Number}(::TaylorN{T}) = T
 length(a::TaylorN) = length( a.coeffs )
 get_numVars(x::TaylorN) = x.numVars
+get_maxOrder(x::TaylorN) = x.order
 
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) = TaylorN(convert(Array{T,1}, a.coeffs), a.order)
@@ -300,10 +301,9 @@ function divHomogCoefN{T<:Number}( k::Int, ac::Array{T,1}, bc::Array{T,1},
 end
 
 ## Division functions: rem and mod
-## NEEDS TESTING
 for op in (:mod, :rem)
     @eval begin
-        function ($op){T<:Real}(a::TaylorN{T}, x::T)
+        function ($op){T<:Real}(a::TaylorN{T}, x::Real)
             coeffs = a.coeffs
             coeffs[1] = ($op)(a.coeffs[1], x)
             return TaylorN( coeffs, a.order )
@@ -639,7 +639,8 @@ diffTaylor(a::TaylorN) = diffTaylor(a, 1)
 
 ## TO BE DONE: Integration...
 
-## Evaluates a Taylor polynomial on a given point using Horner's rule ##
+## Evaluates a Taylor polynomial on a given point ##
+## NEEDS REVISION since yields only approx results
 function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
     numVars = NUMVARS[end]
     @assert length(vals) == numVars

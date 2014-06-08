@@ -6,7 +6,7 @@
 #
 # utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2014.05.21
+# Last modification: 2014.06.07
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -57,7 +57,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
     z = zero(T)
     space = " "
-    a == z && (print(string( space, z)); return)
+    a == z && (println(string( space, z)); return)
     varstring = {}
     for ivar=1:a.numVars
         push!(varstring,string(" * x",ivar))

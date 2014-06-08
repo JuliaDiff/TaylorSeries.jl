@@ -1,6 +1,6 @@
 # utils_Taylor1.jl: 1-variable Taylor expansions
 #
-# Last modification: 2014.04.12
+# Last modification: 2014.06.07
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -478,6 +478,6 @@ function deriv{T}(a::Taylor{T}, n::Int=1)
     n > a.order && error(
         "You need to increase the order of the Taylor series (currently ", a.order, ")\n",
         "to calculate its ", n,"-th derivative.")
-    res::T = factorial( BigInt(n) ) * a.coeffs[n+1]
+    res::T = factorial( widen(n) ) * a.coeffs[n+1]
     return res
 end
