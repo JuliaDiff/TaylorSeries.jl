@@ -137,9 +137,9 @@ function divfactorization(a1::Taylor, b1::Taylor)
         info("Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact)")
         error("Division does not define a Taylor polynomial\n",
             " or its first non-zero coefficient is Inf/NaN.\n")
-    else orddivfact>0
-        warn("Factorizing the polynomial.\n",
-            "The last k=$(orddivfact) Taylor coefficients ARE SET to 0.\n")
+    ##else orddivfact>0
+    ##    warn("Factorizing the polynomial.\n",
+    ##        "The last k=$(orddivfact) Taylor coefficients ARE SET to 0.\n")
     end
     return orddivfact, cdivfact
 end
@@ -205,7 +205,7 @@ function ^(a::Taylor, x::Real)
     # Reaching this point, it is possible to implement the power of the Taylor polynomial. 
     # The last l0nz coefficients are set to zero.
     lnull = itrunc(lnull)
-    l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
+    ##l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
     aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
@@ -273,7 +273,7 @@ function sqrt(a::Taylor)
     end
     # Reaching this point, it is possible to implement the sqrt of the Taylor polynomial. 
     # The last l0nz coefficients are set to zero.
-    l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
+    ##l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
     lnull = div(l0nz, 2)
     aux = sqrt(a.coeffs[l0nz+1])
     T = typeof(aux)

@@ -250,7 +250,7 @@ end
 ## Division ##
 function /(a::TaylorN, b::TaylorN)
     a1, b1, order = fixshape(a, b)
-    #!?ordLHopital, cLHopital = divlhopital(a1, b1) # L'Hôpital order and coefficient
+    #!?orddivfact, cdivfact = divfactorization(a1, b1) # order and coefficient of first factorized term
     @assert b1.coeffs[1] != zero(b1.coeffs[1])
     cLHopital = a1.coeffs[1] / b1.coeffs[1]
     T = typeof(cLHopital)
@@ -265,27 +265,26 @@ function /(a::TaylorN, b::TaylorN)
     end
     TaylorN(coeffs, order)
 end
-# function divlhopital(a1::TaylorN, b1::TaylorN)
-#     # L'Hôpital order is calculated; a1 and b1 are assumed to be of the same order (length)
+# function divfactorization(a1::Taylor, b1::Taylor)
+#     # order of first factorized term; a1 and b1 are assumed to be of the same order (length)
 #     a1nz = firstnonzero(a1)
 #     b1nz = firstnonzero(b1)
-#     ordLHopital = min(a1nz, b1nz)
-#     if ordLHopital > a1.order
-#         ordLHopital = a1.order
+#     orddivfact = min(a1nz, b1nz)
+#     if orddivfact > a1.order
+#         orddivfact = a1.order
 #     end
-#     cLHopital = a1.coeffs[ordLHopital+1] / b1.coeffs[ordLHopital+1]
-#     aux = abs2(cLHopital)
-#     # Can L'Hôpital be applied?
-#     if isinf(aux)
-#         info("Order k=$(ordLHopital) => coeff[$(ordLHopital+1)]=$(cLHopital)")
-#         error("Division does not define a Taylor polynomial or its first coefficient is infinite.\n")
-#     elseif isnan(aux)
-#         info("Order k=$(ordLHopital) => coeff[$(ordLHopital+1)]=$(cLHopital)")
-#         error("Impossible to apply L'Hôpital...\n")
-#     elseif ordLHopital>0
-#         warn("Applying L'Hôpital. The last k=$(ordLHopital) Taylor coefficients ARE SET to 0.\n")
+#     cdivfact = a1.coeffs[orddivfact+1] / b1.coeffs[orddivfact+1]
+#     aux = abs2(cdivfact)
+#     # Is the polynomial factorizable?
+#     if isinf(aux) || isnan(aux)
+#         info("Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact)")
+#         error("Division does not define a Taylor polynomial\n",
+#             " or its first non-zero coefficient is Inf/NaN.\n")
+#     ##else orddivfact>0
+#     ##    warn("Factorizing the polynomial.\n",
+#     ##        "The last k=$(orddivfact) Taylor coefficients ARE SET to 0.\n")
 #     end
-#     return ordLHopital, cLHopital
+#     return orddivfact, cdivfact
 # end
 # Homogeneous coefficient for the division
 function divHomogCoefN{T<:Number}( k::Int, ac::Array{T,1}, bc::Array{T,1}, 
