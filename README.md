@@ -241,7 +241,7 @@ julia> pretty_print( sin(xTN(0.0)+yTN(0.0)) )
   1.0 * x1 + 1.0 * x2 - 0.16666666666666666 * x1^3 - 0.5 * x1^2 * x2 - 0.5 * x1 * x2^2 - 0.16666666666666666 * x2^3 + 0.008333333333333333 * x1^5 + 0.041666666666666664 * x1^4 * x2 + 0.08333333333333333 * x1^3 * x2^2 + 0.08333333333333333 * x1^2 * x2^3 + 0.041666666666666664 * x1 * x2^4 + 0.008333333333333333 * x2^5
 ```
 
-Some concrete applications of the package can be found in the directory [examples/][4].
+Some concrete applications of the package will be found in the directory [examples/][4]; for the time being we included the integration of [Kepler's problem using Taylor's method][5]).
 
 Finally, it is worth pointing out the existing julia packages [Polynomial][2] and [PowerSeries][3], which have similar functionality as `TaylorSeries` for one-variable expansions, but using somewhat different approaches.
 
@@ -255,4 +255,4 @@ We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-
 [2]: https://github.com/vtjnash/Polynomial.jl
 [3]: https://github.com/jwmerrill/PowerSeries.jl
 [4]: https://github.com/lbenet/TaylorSeries.jl/tree/master/examples/
-
+[5]: http://nbviewer.ipython.org/github/lbenet/TaylorSeries.jl/blob/master/examples/1-KeplerProblem.ipynb
