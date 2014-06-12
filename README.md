@@ -254,5 +254,5 @@ We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-
 [1]: http://www.maia.ub.es/~alex/admcds/admcds.pdf
 [2]: https://github.com/vtjnash/Polynomial.jl
 [3]: https://github.com/jwmerrill/PowerSeries.jl
-[4]: https://github.com/lbenet/TaylorSeries.jl/examples/
+[4]: https://github.com/lbenet/TaylorSeries.jl/tree/master/examples/
 
