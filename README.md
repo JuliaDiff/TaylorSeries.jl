@@ -14,7 +14,7 @@ Comments on the code and suggestions for improvements are welcome and appreciate
 
 This package computes Taylor expansions using automatic differentiation techniques (see e.g. Alex Haro's [nice paper][1] for a description of the techniques). The module implements the basic operations (+,-,*,/,^), some elementary functions (exp, log, sin, cos, tan), integration, differentiation and evaluation (Horner's rule) of the series on a point. The expansions work for one or more independent variables.
 
-The package introduces two types, `Taylor` and `TaylorN`, for the expansions in one or more independent-variable expansions, respectively. Both are subtypes of `AbstractSeries{T,N}`, with `T` the type of the coefficients and `N` the number of independent variables, which is introduced as a subtype of `Number`.
+Installing `TaylorSeries` is done with `Pkg.add("TaylorSeries")`. The package introduces two types, `Taylor` and `TaylorN`, for the expansions in one or more independent-variable expansions, respectively. Both are subtypes of `AbstractSeries{T,N} <: Number`, with `T` the type of the coefficients and `N` the number of independent variables.
 
 `Taylor` is defined by one of the constructors
 
@@ -241,9 +241,46 @@ julia> pretty_print( sin(xTN(0.0)+yTN(0.0)) )
   1.0 * x1 + 1.0 * x2 - 0.16666666666666666 * x1^3 - 0.5 * x1^2 * x2 - 0.5 * x1 * x2^2 - 0.16666666666666666 * x2^3 + 0.008333333333333333 * x1^5 + 0.041666666666666664 * x1^4 * x2 + 0.08333333333333333 * x1^3 * x2^2 + 0.08333333333333333 * x1^2 * x2^3 + 0.041666666666666664 * x1 * x2^4 + 0.008333333333333333 * x2^5
 ```
 
-Some concrete applications of the package will be found in the directory [examples/][4]; for the time being we included the integration of [Kepler's problem using Taylor's method][5]).
+Interestingly, one can *easily* compute gradients and Jacobians. The basic idea to remember is that `xTN(0)` and `yTN(0)` defined above represent the *independent variables* $x$ and $y$, indecated below as `x1` and `x2`. So computing the gradient is a straightforward application of `diffTaylor` with respect to each independent variable. The following computes the gradients of $f_1(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $f_2(x,y) = y-x^4$, yielding the expected results ($\nabla f_1 = [3x^2+4 x y -7, 2 x^2]$ and $\nabla f_2 = [ -4 x^3, 1]$), both expressed as Taylor expansions. The Jacobian can also be computed like this; the last instruction computes the Jacobian around (0,0), constructing explicitly the matrix.
 
-Finally, it is worth pointing out the existing julia packages [Polynomial][2] and [PowerSeries][3], which have similar functionality as `TaylorSeries` for one-variable expansions, but using somewhat different approaches.
+```julia
+julia> f1(x,y) = x^3 + 2x^2 * y - 7x + 2
+f1 (generic function with 1 method)
+
+julia> f2(x,y) = y - x^4
+f2 (generic function with 1 method)
+
+julia> ∇f1 = [zero(xTN(0)), zero(yTN(0))]; ∇f2 = [zero(xTN(0)), zero(yTN(0))];
+
+julia> for i = 1:2
+           ∇f1[i] = diffTaylor(f1(xTN(0), yTN(0)), i)
+           ∇f2[i] = diffTaylor(f2(xTN(0), yTN(0)), i)
+       end
+
+julia> pretty_print(∇f1)
+6-order TaylorN{Int64} in 2 variables:
+ -7 + 3 * x1^2 + 4 * x1 * x2 
+
+6-order TaylorN{Int64} in 2 variables:
+  2 * x1^2 
+
+julia> pretty_print(∇f2)
+6-order TaylorN{Int64} in 2 variables:
+ -4 * x1^3 
+
+6-order TaylorN{Int64} in 2 variables:
+  1 
+
+julia> jacobian = reshape([evalTaylor(∇f1[1],[0,0]),evalTaylor(∇f2[1],[0,0]), evalTaylor(∇f1[2],[0,0]),evalTaylor(∇f2[2],[0,0])],(2,2))
+2x2 Array{Int64,2}:
+ -7  0
+  0  1
+
+```
+
+Some concrete applications of the package will be found in the directory [examples][4]; for the time being we included the integration of [Kepler's problem using Taylor's method][5]).
+
+Finally, it is worth pointing out the existing julia packages [Polynomial][2] and [PowerSeries][3] have similar functionality as `TaylorSeries` for one-variable expansions, but using somewhat different approaches.
 
 
 #### Acknowledgments 
