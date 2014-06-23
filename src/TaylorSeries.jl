@@ -14,7 +14,7 @@
 
 module TaylorSeries
 
-import Base: zero, one
+import Base: zero, one, zeros, ones
 import Base: convert, promote_rule, promote, eltype, length
 import Base: real, imag, conj, ctranspose
 import Base: rem, mod, mod2pi
@@ -32,8 +32,10 @@ include("utils_TaylorN.jl")
 # infostr
 infostr{T<:Number}(a::Taylor{T}) = 
     string(a.order, "-order Taylor{", T, "}:\n")
+infostr{T<:Number}(a::HomogPol{T}) = 
+    string(a.order, "-order HomogPol{", T, "} in ", NUMVARS[end], " variables:\n")
 infostr{T<:Number}(a::TaylorN{T}) = 
-    string(a.order, "-order TaylorN{", T, "} in ", a.numVars, " variables:\n")
+    string(a.order, "-order TaylorN{", T, "} in ", NUMVARS[end], " variables:\n")
 
 # pretty_print
 function pretty_print{T<:Number}(a::Taylor{T})
@@ -44,7 +46,7 @@ function pretty_print{T<:Number}(a::Taylor{T})
     strout = space
     ifirst = true
     for i = 0:a.order
-        monom = i==0 ? "" : i==1 ? " * x0" : string(" * x0^", i)
+        monom = i==0 ? "" : i==1 ? " * x_0" : string(" * x_0^", i)
         @inbounds c = a.coeffs[i+1]
         c == z && continue
         cadena = numbr2str(c, ifirst)
@@ -53,35 +55,25 @@ function pretty_print{T<:Number}(a::Taylor{T})
     end
     println(strout)
 end
-function pretty_print{T<:Number}(a::TaylorN{T})
+function pretty_print{T<:Number}(a::HomogPol{T})
     print( infostr(a) )
     z = zero(T)
-    space = " "
-    a == z && (println(string( space, z)); return)
-    varstring = {}
-    for ivar=1:a.numVars
-        push!(varstring,string(" * x",ivar))
-    end
-    strout = string(" ")
+    a == z && (println(string( " ", z)); return)
+    strout = homogPol2str(a)
+    println(strout)
+end
+function pretty_print{T<:Number}(a::TaylorN{T})
+    print( infostr(a) )
     ifirst = true
-    iIndices = zeros(Int, a.numVars)
-    for pos = 1:length(a.coeffs)
-        monom = ""
-        iIndices = indicesTable[end][pos]
-        if pos>1
-            for ivar=1:a.numVars
-                powivar = iIndices[ivar]
-                if powivar == 1
-                    monom = string(monom, varstring[ivar])
-                elseif powivar > 1
-                    monom = string(monom, varstring[ivar], "^", powivar)
-                end
-            end
-        end
-        @inbounds c = a.coeffs[pos]
-        c == z && continue
-        cadena = numbr2str(c, ifirst)
-        strout = string(strout, cadena, monom, space)
+    a == zero(a) && (println(string( " ", z)); return)
+    z = zero(a.coeffs[1])
+    strout = ""
+    for ord = 0:a.order
+        pol = a.coeffs[ord+1]
+        pol == z && continue
+        cadena = homogPol2str( pol )
+        strsgn = (pol.coeffs[1] > zero(T) && ~ifirst) ? " +" : ""
+        strout = string( strout, strsgn, cadena)
         ifirst = false
     end
     println(strout)
@@ -93,11 +85,42 @@ function pretty_print{T<:Number}(a::Union(Array{Taylor{T},1},Array{TaylorN{T},1}
     end
 end
 
-# make string from a number; for complex numbers, use 
+# Aux functions related to pretty_print
+function homogPol2str{T<:Number}(a::HomogPol{T})
+    numVars = NUMVARS[end]
+    order = a.order
+    varstring = String[]
+    z = zero(T)
+    space = " "
+    for ivar = 1:numVars
+        push!(varstring, string(" * x_{", ivar, "}"))
+    end
+    strout = string(" ")
+    ifirst = true
+    iIndices = zeros(Int, numVars)
+    for pos = 1:sizeTable[order+1]
+        monom = ""
+        @inbounds iIndices[:] = indicesTable[order+1][pos]
+        for ivar = 1:numVars
+            powivar = iIndices[ivar]
+            if powivar == 1
+                monom = string(monom, varstring[ivar])
+            elseif powivar > 1
+                monom = string(monom, varstring[ivar], "^", powivar)
+            end
+        end
+        @inbounds c = a.coeffs[pos]
+        c == z && continue
+        cadena = numbr2str(c, ifirst)
+        strout = string(strout, cadena, monom, space)
+        ifirst = false
+    end
+    strout[1:end-1]
+end
 function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
     plusmin = zz > 0 ? "+ " : "- "
     if ifirst
-        plusmin = zz > 0 ? " " : "-"
+        plusmin = zz > 0 ? "" : "- "
     end
     return string(plusmin, abs(zz))
 end
@@ -165,10 +188,9 @@ function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vT::Array{Taylor{S},1})
 end
 
 
-## Exports to Taylor and TaylorN ##
+## Exports to Taylor, TaylorN and HomogPol ##
 export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
-#
-export TaylorN
+export TaylorN, HomogPol
 export set_maxOrder, get_maxOrder, set_numVars, get_numVars
 
 end

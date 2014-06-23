@@ -87,26 +87,29 @@ xsquare = Taylor([0,0,1],15)
 # Tests for 1-d Tylor expansions
 set_numVars(2)
 set_maxOrder(17)
-xTN = TaylorN([0,1,0],17)
-yTN = TaylorN([0,0,1])
-zN = zero(xTN)
-uN = convert(TaylorN{Float64},one(yTN))
+xH = HomogPol([1,0])
+yH = HomogPol([0,1],1)
+#?zH = zero(HomogPol)
+xTN = TaylorN(xH,17)
+yTN = TaylorN(yH,17)
+zTN = zero(xTN)
+uTN = one(convert(TaylorN{Float64},yTN))
 
-@test TaylorN(zN,5) == 0
-@test TaylorN(uN) == convert(TaylorN{Complex},1)
-@test get_numVars(zN) == zN.numVars
-@test length(TaylorN(0,0)) == binomial( get_numVars() + get_maxOrder(), get_maxOrder(zN) )
-@test eltype(convert(TaylorN{Complex128},[1])) == Complex128
+@test TaylorN(zTN,5) == 0
+@test TaylorN(uTN) == convert(TaylorN{Complex},1)
+@test get_numVars(zTN) == 2
+@test length(uTN) == get_maxOrder()+1
+@test eltype(convert(TaylorN{Complex128},1)) == Complex128
 
-@test TaylorN(1)+xTN+yTN == TaylorN([1,1,1])
-@test xTN-yTN == TaylorN([0,1,-1])
-@test xTN*yTN == TaylorN([0,0,0,0,1,0])
-@test (1/(1-xTN)).coeffs[4] == 1.0
-@test (yTN/(1-xTN)).coeffs[5] == 1.0
+@test TaylorN(1)+xTN+yTN == TaylorN([1,xH,yH])
+@test xTN-yTN == TaylorN([xH-yH])
+@test xTN*yTN == TaylorN([HomogPol([0,1,0],2)])
+@test (1/(1-xTN)).coeffs[4] == HomogPol(1.0,3)
+@test (yTN/(1-xTN)).coeffs[5] == xH^3 * yH
 @test mod(1+xTN,1) == +xTN
 @test (rem(1+xTN,1)).coeffs[1] == 0
-@test diffTaylor(mod2pi(2pi+yTN),2) == diffTaylor(yTN,2)
-@test diffTaylor(yTN) == zN
+@test diffTaylor(mod2pi(2pi+yTN^3),2) == diffTaylor(yTN^3,2)
+@test diffTaylor(yTN) == zTN
 
 @test diffTaylor(2xTN*yTN^2,1) == 2yTN^2
 @test xTN*xTN^3 == xTN^4

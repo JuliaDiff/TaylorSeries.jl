@@ -371,7 +371,7 @@ function sincos(a::Taylor)
     end
     return Taylor(sincoeffs, order), Taylor(coscoeffs, order)
 end
-# Homogeneous coefficients for log
+# Homogeneous coefficients for sincos
 function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, 
     scoeffs::Array{T,1}, ccoeffs::Array{T,1})
     #
@@ -442,13 +442,6 @@ function integTaylor{T<:Number}(a::Taylor{T}, x::Number)
     return Taylor(coeffs, order)
 end
 integTaylor{T<:Number}(a::Taylor{T}) = integTaylor(a, zero(T))
-# function definiteIntegralTaylor{T<:Number}(a::Taylor{T}, x1::Number, x2::Number)
-#     @assert isfinite(x1) && isfinite(x2)
-#     integral = integTaylor(a)
-#     v1 = evalTaylor(integral, x1)
-#     v2 = evalTaylor(integral, x2)
-#     return v2-v1
-# end
 
 ## Evaluates a Taylor polynomial on a given point using Horner's rule ##
 function evalTaylor{T<:Number,S<:Number}(a::Taylor{T}, dx::S)

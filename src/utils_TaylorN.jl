@@ -45,7 +45,7 @@ function generateIndicesTable()
             @inbounds iindices[end] = iz
             @inbounds pos, DDic[pos] = pos2indices!( iV, kDeg, iindices, pos, DDic)
         end
-        @assert length(DDic) == nCoefH
+        ##@assert length(DDic) == nCoefH
         push!(arrayDDic, DDic)
         push!(arraySize, nCoefH)
     end
@@ -97,7 +97,7 @@ const posTable = generatePosTable()
 ## Utilities to get/set MAXORDER and NUMVARS; they reset the indicesTable
 get_maxOrder() = MAXORDER[end]
 function set_maxOrder(n::Int)
-    @assert n > 0
+    ##@assert n > 0
     oldOrder = MAXORDER[end]
     MAXORDER[end] = n
     if n < oldOrder
@@ -119,7 +119,7 @@ end
 #
 get_numVars() = NUMVARS[end]
 function set_numVars(n::Int)
-    @assert n > 0
+    #@assert n > 0
     n==1 && error( string("Use `Taylor` rather than `TaylorN` for one independent variable.") )
     NUMVARS[end] = n
     maxOrd = MAXORDER[end]
@@ -146,10 +146,10 @@ immutable HomogPol{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
     coeffs  :: Array{T,1}
     order   :: Int
     function HomogPol(coeffs::Array{T,1}, order::Int)
-        @assert order <= MAXORDER[end]
+        #@assert order <= MAXORDER[end]
         lencoef = length( coeffs )
         @inbounds nCoefH = sizeTable[order+1]
-        @assert lencoef <= nCoefH
+        #@assert lencoef <= nCoefH
         v = zeros(T, nCoefH)
         @inbounds v[1:lencoef] = coeffs[1:lencoef]
         new(v, order)
@@ -175,7 +175,7 @@ function zero{T<:Number}(a::HomogPol{T})
 end
 function zeros{T<:Number}(a::HomogPol{T}, maxOrd::Int)
     order = max( maxOrd, a.order)
-    @assert 0 <= maxOrd <= MAXORDER[end]
+    #@assert 0 <= maxOrd <= MAXORDER[end]
     v = HomogPol{T}[]
     for ord = 0:order
         z = HomogPol(zero(T),ord)
@@ -190,7 +190,7 @@ function one{T<:Number}(a::HomogPol{T})
     HomogPol(ones(T,nCoefH), a.order)
 end
 function ones{T<:Number}(::HomogPol{T}, maxOrd::Int)
-    @assert 0 <= maxOrd <= MAXORDER[end]
+    #@assert 0 <= maxOrd <= MAXORDER[end]
     v = HomogPol{T}[]
     for ord = 0:maxOrd
         z = HomogPol(one(T),ord)
@@ -222,7 +222,7 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
     function TaylorN( v::Array{HomogPol{T},1}, mOrder::Int )
         ll = length(v)
         @inbounds maxOrd = max( [v[i].order for i=1:ll]..., mOrder )
-        @assert maxOrd <= MAXORDER[end]
+        #@assert maxOrd <= MAXORDER[end]
         coeffs = zeros(HomogPol{T}, maxOrd)
         for i = 1:ll
             @inbounds ord = v[i].order
@@ -269,12 +269,12 @@ promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{S}) = TaylorN{prom
 
 ## Auxiliary function ##
 function fixshape{T<:Number, S<:Number}(a::HomogPol{T}, b::HomogPol{S})
-    @assert a.order == b.order
+    #@assert a.order == b.order
     a1, b1 = promote(a, b)
     return HomogPol(a1, a.order), HomogPol(b1, a.order), a.order
 end
 function fixshape{T<:Number, S<:Number}(a::TaylorN{T}, b::TaylorN{S})
-    #?@assert a.numVars == b.numVars
+    #?#@assert a.numVars == b.numVars
     order = max(a.order, b.order)
     a1, b1 = promote(a, b)
     return TaylorN(a1, order), TaylorN(b1, order), order
@@ -348,7 +348,7 @@ end
 /(a::HomogPol, x::Complex) = a*inv(x)
 function /(a::TaylorN, b::TaylorN)
     b0 = b.coeffs[1].coeffs[1]
-    @assert b0 != zero(b0)
+    #@assert b0 != zero(b0)
     #!?orddivfact, cdivfact = divfactorization(a1, b1) # order and coefficient of first factorized term
     cdivfact = a.coeffs[1] / b0
     order = max(a.order, b.order)
@@ -406,7 +406,7 @@ end
 
 ## Int power ##
 function ^(a::HomogPol, n::Integer)
-    @assert n >= 0
+    #@assert n >= 0
     n == 0 && return HomogPol( one(eltype(a)) )
     if n%2 == 0     # even power
         n == 2 && return square(a)
@@ -440,7 +440,7 @@ function ^(a::TaylorN, x::Real)
     x == zero(x) && return TaylorN( uno )
     x == 0.5 && return sqrt(a)
     a0 = a.coeffs[1].coeffs[1]
-    @assert a0 != zero(a0)
+    #@assert a0 != zero(a0)
     aux = ( a0 )^x
     T = typeof(aux)
     coeffs = zeros(HomogPol{T}, a.order)
@@ -556,10 +556,13 @@ function sincos(a::TaylorN)
     TaylorN(coeffsSin, order), TaylorN(coeffsCos, order)
 end
 
+## tan ##
+# function tan(a::TaylorN)
+
 ## Differentiation ##
 """Partial differentiation of a HomogPol series with respect to the r-th variable"""
 function diffTaylor{T<:Number}(a::HomogPol{T}, r::Int)
-    @assert 1 <= r <= NUMVARS[end]
+    #@assert 1 <= r <= NUMVARS[end]
     order = a.order
     order == 0 && return HomogPol(zero(T))
     nCoefH = sizeTable[order]
@@ -592,13 +595,13 @@ diffTaylor(a::TaylorN) = diffTaylor(a, 1)
 # NEEDS REVISION since yields results not so exact
 function evalHomog{T<:Number,S<:Number}(a::HomogPol{T}, vals::Array{S,1} )
     numVars = NUMVARS[end]
-    @assert length(vals) == numVars
+    #@assert length(vals) == numVars
     R = promote_type(T,S)
     suma = zero(R)
     order = a.order
-    nCoefH = sizeTable[order]
+    nCoefH = sizeTable[order+1]
     for pos = 1:nCoefH
-        @inbounds iIndices[:] = indicesTable[order][pos]
+        @inbounds iIndices = indicesTable[order+1][pos]
         @inbounds c = a.coeffs[pos]
         c == zero(R) && continue
         for k = 1:numVars
@@ -609,7 +612,7 @@ function evalHomog{T<:Number,S<:Number}(a::HomogPol{T}, vals::Array{S,1} )
     suma
 end
 function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
-    @assert length(vals) == NUMVARS[end]
+    #@assert length(vals) == NUMVARS[end]
     R = promote_type(T,S)
     suma = zero(R)
     for ord = MAXORDER[end]:-1:0
@@ -618,4 +621,4 @@ function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
     end
     suma
 end
-evalTaylor{T<:Number}(a::TaylorN{T}) = evalTaylor(a, zeros(T, a.numVars) )
+evalTaylor{T<:Number}(a::TaylorN{T}) = evalTaylor(a, zeros(T, NUMVARS[end]) )
