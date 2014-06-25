@@ -15,7 +15,7 @@
 module TaylorSeries
 
 import Base: zero, one, zeros, ones
-import Base: convert, promote_rule, promote, eltype, length
+import Base: convert, promote_rule, promote, eltype, length, show
 import Base: real, imag, conj, ctranspose
 import Base: rem, mod, mod2pi
 import Base: sqrt, exp, log, sin, cos, tan#, square
@@ -70,7 +70,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
     strout = ""
     for ord = 0:a.order
         pol = a.coeffs[ord+1]
-        pol == z && continue
+        pol == zero(a.coeffs[ord+1]) && continue
         cadena = homogPol2str( pol )
         strsgn = (pol.coeffs[1] > zero(T) && ~ifirst) ? " +" : ""
         strout = string( strout, strsgn, cadena)
