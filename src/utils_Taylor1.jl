@@ -1,6 +1,6 @@
 # utils_Taylor1.jl: 1-variable Taylor expansions
 #
-# Last modification: 2014.06.07
+# Last modification: 2014.06.25
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -55,8 +55,8 @@ function firstnonzero{T<:Number}(a::Taylor{T})
 end
 function fixshape{T<:Number, S<:Number}(a::Taylor{T}, b::Taylor{S})
     order = max(a.order, b.order)
-    a1, b1 = promote(a, b)
-    return Taylor(a1, order), Taylor(b1, order), order
+    a, b = promote(a, b)
+    return Taylor(a, order), Taylor(b, order), order
 end
 
 ## real, imag, conj and ctranspose ##
@@ -71,16 +71,16 @@ one{T<:Number}(a::Taylor{T}) = Taylor(one(T), a.order)
 
 ## Equality ##
 function ==(a::Taylor, b::Taylor)
-    a1, b1, order = fixshape(a, b)
-    return a1.coeffs == b1.coeffs
+    a, b, order = fixshape(a, b)
+    return a.coeffs == b.coeffs
 end
 
 ## Addition and substraction ##
 for f in (:+, :-)
     @eval begin
         function ($f)(a::Taylor, b::Taylor)
-            a1, b1, order = fixshape(a, b)
-            v = ($f)(a1.coeffs, b1.coeffs)
+            a, b, order = fixshape(a, b)
+            v = ($f)(a.coeffs, b.coeffs)
             return Taylor(v, order)
         end
         ($f)(a::Taylor) = Taylor(($f)(a.coeffs), a.order)
@@ -89,12 +89,12 @@ end
 
 ## Multiplication ##
 function *(a::Taylor, b::Taylor)
-    a1, b1, order = fixshape(a, b)
-    T = eltype(a1)
+    a, b, order = fixshape(a, b)
+    T = eltype(a)
     coeffs = zeros(T,order+1)
-    coeffs[1] = a1.coeffs[1] * b1.coeffs[1]
+    coeffs[1] = a.coeffs[1] * b.coeffs[1]
     for k = 1:order
-        coeffs[k+1] = mulHomogCoef(k, a1.coeffs, b1.coeffs)
+        coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
     end
     Taylor(coeffs, order)
 end
@@ -110,11 +110,11 @@ end
 
 ## Division ##
 function /(a::Taylor, b::Taylor)
-    a1, b1, order = fixshape(a, b)
-    orddivfact, cdivfact = divfactorization(a1, b1) # order and coefficient of first factorized term
+    a, b, order = fixshape(a, b)
+    orddivfact, cdivfact = divfactorization(a, b) # order and coefficient of first factorized term
     T = typeof(cdivfact)
-    v1 = convert(Array{T,1}, a1.coeffs)
-    v2 = convert(Array{T,1}, b1.coeffs)
+    v1 = convert(Array{T,1}, a.coeffs)
+    v2 = convert(Array{T,1}, b.coeffs)
     coeffs = zeros(T,order+1)
     coeffs[1] = cdivfact
     for k = orddivfact+1:order
@@ -171,29 +171,23 @@ end
 
 ## Int power ##
 function ^(a::Taylor, n::Integer)
-    uno = one(a)
+    uno = one(eltype(a))
     n < 0 && return uno / a^(-n)
-    n == 0 && return uno
-    if n%2 == 0     # even power
-        n == 2 && return square(a)
-        pow = div(n, 2)
-        return square( a^pow )
-    else            # odd power
-        n == 1 && return a
-        pow = div(n-1, 2)
-        return a*square( a^pow )
-    end
+    n == 0 && return Taylor(uno, a.order)
+    n == 1 && return a
+    n == 2 && return square(a)
+    pow, rest = divrem(n,2)
+    rest == 0 && return square( a^pow )     # even power
+    return a*square( a^pow )                # odd power
 end
 ## Rational power ##
 ^(a::Taylor,x::Rational) = a^(x.num/x.den)
 ## Real power ##
 function ^(a::Taylor, x::Real)
     uno = one(a)
-    if x == zero(x)
-        return uno
-    elseif x == 0.5
-        return sqrt(a)
-    end
+    x == zero(x) && return uno
+    x == 0.5 && return sqrt(a)
+    x == int(x) && return a^int(x)
     order = a.order
     # First non-zero coefficient
     l0nz = firstnonzero(a)
