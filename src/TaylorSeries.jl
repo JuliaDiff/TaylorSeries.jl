@@ -64,15 +64,14 @@ function pretty_print{T<:Number}(a::HomogPol{T})
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
-    ifirst = true
     a == zero(a) && (println(string( " ", z)); return)
-    z = zero(a.coeffs[1])
     strout = ""
+    ifirst = true
     for ord = 0:a.order
         pol = a.coeffs[ord+1]
         pol == zero(a.coeffs[ord+1]) && continue
         cadena = homogPol2str( pol )
-        strsgn = (pol.coeffs[1] > zero(T) && ~ifirst) ? " +" : ""
+        strsgn = (ord == 0 || pol.coeffs[1] < zero(T) || ifirst) ? "" : " +"
         strout = string( strout, strsgn, cadena)
         ifirst = false
     end
@@ -192,5 +191,6 @@ end
 export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
 export TaylorN, HomogPol
 export set_maxOrder, get_maxOrder, set_numVars, get_numVars
+export taylorvar, ∇, jacobian, hessian
 
 end
