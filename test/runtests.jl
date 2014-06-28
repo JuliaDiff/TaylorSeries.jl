@@ -2,7 +2,7 @@
 using TaylorSeries
 using Base.Test
 
-# Tests for 1-d Tylor expansions
+# Tests for 1-d Taylor expansions
 xT(a) = Taylor([a,one(a)],15)
 xT0 = Taylor(xT(0),15)
 xTI = im*xT0
@@ -84,20 +84,20 @@ xsquare = Taylor([0,0,1],15)
 @test_throws ErrorException cos(xT0)/sin(xT0)
 @test_throws ErrorException deriv( exp(xT(1.0pi)), 30 )
 
-# Tests for 1-d Tylor expansions
+# Tests for N-d Taylor expansions
 set_numVars(2)
 set_maxOrder(17)
 xH = HomogPol([1,0])
 yH = HomogPol([0,1],1)
 #?zH = zero(HomogPol)
 xTN = TaylorN(xH,17)
-yTN = TaylorN(yH,17)
-zTN = zero(xTN)
+yTN = TaylorN( taylorvar(Int64,2),17)
+zeroTN = zero(xTN)
 uTN = one(convert(TaylorN{Float64},yTN))
 
-@test TaylorN(zTN,5) == 0
+@test TaylorN(zeroTN,5) == 0
 @test TaylorN(uTN) == convert(TaylorN{Complex},1)
-@test get_numVars(zTN) == 2
+@test get_numVars(zeroTN) == 2
 @test length(uTN) == get_maxOrder()+1
 @test eltype(convert(TaylorN{Complex128},1)) == Complex128
 
@@ -109,7 +109,7 @@ uTN = one(convert(TaylorN{Float64},yTN))
 @test mod(1+xTN,1) == +xTN
 @test (rem(1+xTN,1)).coeffs[1] == 0
 @test diffTaylor(mod2pi(2pi+yTN^3),2) == diffTaylor(yTN^3,2)
-@test diffTaylor(yTN) == zTN
+@test diffTaylor(yTN) == zeroTN
 
 @test diffTaylor(2xTN*yTN^2,1) == 2yTN^2
 @test xTN*xTN^3 == xTN^4
@@ -119,5 +119,17 @@ uTN = one(convert(TaylorN{Float64},yTN))
 @test evalTaylor(exp( xTN+yTN )) == 1
 @test isapprox(evalTaylor(exp( xTN+yTN ), [1,1]), e^2)
 
+g1(xTN,yTN) = xTN^3 + 3yTN^2 - 2xTN^2 * yTN - 7xTN + 2
+g2(xTN,yTN) = yTN + xTN^2 - xTN^4
+f1 = g1(xTN,yTN)
+f2 = g2(xTN,yTN)
+@test ∇(f1) == [TaylorN([HomogPol(-7), HomogPol([3,-4,0],2)]), 
+                TaylorN( [HomogPol([0,6],1), HomogPol([-2,0,0],2)])]
+@test ∇(f2) == [TaylorN([HomogPol([2,0],1), HomogPol([-4,0,0,0],3)]), 
+                TaylorN( HomogPol(1,0))]
+@test jacobian([f1,f2], [2,1]) == jacobian( [g1(xTN+2,yTN+1), g2(xTN+2,yTN+1)] )
+@test [xTN yTN]*hessian(f1*f2)*[xTN, yTN] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
+@test hessian(f1^2)/2 == [[49,0] [0,12]]
+@test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
 println("    \033[32;1mSUCCESS\033[0m")
 

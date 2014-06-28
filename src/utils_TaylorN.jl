@@ -240,6 +240,15 @@ TaylorN{T<:Number}(x::HomogPol{T}) = TaylorN{T}([x], x.order )
 TaylorN{T<:Number}(x::T, order::Int) = TaylorN{T}([HomogPol(x)], order )
 TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogPol(x)], 0 )
 
+# Fast way to define independent variables
+function taylorvar(T::Type, nv::Int )
+    @assert 0 < nv <= NUMVARS[end]
+    v = zeros(T, NUMVARS[end])
+    @inbounds v[nv] = one(T)
+    return TaylorN( HomogPol(v,1) )
+end
+taylorvar(nv::Int) = taylorvar(Float64, nv)
+
 ## Type, length ##
 eltype{T<:Number}(::TaylorN{T}) = T
 length(a::TaylorN) = length( a.coeffs )
@@ -616,6 +625,42 @@ function diffTaylor{T<:Number}(a::TaylorN{T}, r::Int)
     return TaylorN( coeffs, a.order )
 end
 diffTaylor(a::TaylorN) = diffTaylor(a, 1)
+
+## Gradient, jacobian and hessian
+function gradient{T}(f::TaylorN{T})
+    numVars = NUMVARS[end]
+    grad = zeros(TaylorN{T}, numVars)
+    for nv = 1:numVars
+        grad[nv] = diffTaylor(f, nv)
+    end
+    return grad
+end
+∇(f::TaylorN) = gradient(f)
+function jacobian{T}(vf::Array{TaylorN{T},1})
+    numVars = NUMVARS[end]
+    @assert length(vf) == numVars
+    jac = zeros(T,(numVars,numVars))
+    for comp = 1:numVars
+        jac[comp,1:end] = vf[comp].coeffs[2].coeffs[1:end]
+    end
+    return jac
+end
+function jacobian{T,S}(vf::Array{TaylorN{T},1}, vals::Array{S,1})
+    R = promote_type(T,S)
+    numVars = NUMVARS[end]
+    @assert length(vf) == numVars == length(vals)
+    jac = zeros(R, (numVars,numVars))
+    for comp = 1:numVars
+        grad = gradient( vf[comp] )
+        for nv = 1:numVars
+            jac[comp,nv] = evalTaylor(grad[nv], vals)
+        end
+    end
+    return jac
+end
+hessian{T,S}(f::TaylorN{T}, vals::Array{S,1}) = 
+    (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
+hessian{T}(f::TaylorN{T}) = hessian( f, zeros(T, NUMVARS[end]))
 
 # ## TO BE DONE: Integration...
 
