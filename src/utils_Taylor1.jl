@@ -94,7 +94,7 @@ function *(a::Taylor, b::Taylor)
     coeffs = zeros(T,order+1)
     coeffs[1] = a.coeffs[1] * b.coeffs[1]
     for k = 1:order
-        coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
+        @inbounds coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
     end
     Taylor(coeffs, order)
 end
