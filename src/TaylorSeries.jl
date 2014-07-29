@@ -64,7 +64,7 @@ function pretty_print{T<:Number}(a::HomogPol{T})
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
-    a == zero(a) && (println(string( " ", z)); return)
+    a == zero(a) && (println(string( " ", zero(T))); return)
     strout = ""
     ifirst = true
     for ord = 0:a.order
