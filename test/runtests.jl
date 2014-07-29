@@ -89,10 +89,9 @@ set_numVars(2)
 set_maxOrder(17)
 xH = HomogPol([1,0])
 yH = HomogPol([0,1],1)
-#?zH = zero(HomogPol)
 xTN = TaylorN(xH,17)
-yTN = TaylorN( taylorvar(Int64,2),17)
-zeroTN = zero(xTN)
+yTN = taylorvar(Int64, 2, 17)
+zeroTN = zero( taylorvar(Int64, 1) )
 uTN = one(convert(TaylorN{Float64},yTN))
 
 @test TaylorN(zeroTN,5) == 0
