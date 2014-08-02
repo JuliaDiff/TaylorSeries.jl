@@ -46,7 +46,7 @@ function pretty_print{T<:Number}(a::Taylor{T})
     strout = space
     ifirst = true
     for i = 0:a.order
-        monom = i==0 ? "" : i==1 ? " * x_0" : string(" * x_0^", i)
+        monom = i==0 ? "" : i==1 ? " * x_{0}" : string(" * x_{0}^", i)
         @inbounds c = a.coeffs[i+1]
         c == z && continue
         cadena = numbr2str(c, ifirst)
@@ -130,7 +130,7 @@ function numbr2str{T}(zz::Complex{T}, ifirst::Bool=false)
     cadena = ""
     if zre > zT
         if ifirst
-            cadena = string("   ( ", abs(zre)," ")
+            cadena = string(" ( ", abs(zre)," ")
         else
             cadena = string(" + ( ", abs(zre)," ")
         end
@@ -164,33 +164,10 @@ function numbr2str{T}(zz::Complex{T}, ifirst::Bool=false)
     return cadena
 end
 
-# evalTaylor(TaylorN, Array{Taylor,1})
-function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vT::Array{Taylor{S},1})
-    numVars = NUMVARS[end]
-    @assert length(vT) == numVars
-    R = promote_type(T,S)
-    order = length(vT[1])
-    sumaT = Taylor(zero(R), order)
-    z = zero(sumaT)
-    nCoefTot = sizeTable[end]
-    iIndices = zeros(Int, numVars)
-    for pos = nCoefTot:-1:1
-        @inbounds iIndices[1:end] = indicesTable[end][pos]
-        a.coeffs[pos] == zero(T) && continue
-        val = Taylor(a.coeffs[pos], order)
-        for k = 1:numVars
-            @inbounds val = val*(vT[k])^iIndices[k]
-        end
-        sumaT += val
-    end
-    return sumaT
-end
-
-
 ## Exports to Taylor, TaylorN and HomogPol ##
 export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
 export TaylorN, HomogPol
 export set_maxOrder, get_maxOrder, set_numVars, get_numVars
-export taylorvar, ∇, jacobian, hessian
+export taylorvar, ∇, gradient, jacobian, hessian
 
 end
