@@ -225,12 +225,13 @@ function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
     @inbounds coefhomog = coefhomog / (aux*ac[knull+1])
     coefhomog
 end
-^{T<:Number,S<:Real}(a::Taylor{T}, x::Complex{S}) = exp( x*log(a) )
+^(a::Taylor, x::Complex) = exp( x*log(a) )
 ^(a::Taylor, b::Taylor) = exp( b*log(a) )
 
 ## Square ##
-function square{T<:Number}(a::Taylor{T})
+function square(a::Taylor)
     order = a.order
+    T = eltype(a)
     coeffs = zeros(T,order+1)
     coeffs[1] = a.coeffs[1]^2
     for k = 1:order
