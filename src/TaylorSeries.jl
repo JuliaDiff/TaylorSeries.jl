@@ -25,7 +25,8 @@ abstract AbstractSeries{T<:Number,N} <: Number
 include("utils_Taylor1.jl")
 
 include("utils_TaylorN.jl")
-
+gc()
+q
 ## The following routines combine Taylor and TaylorN, so they must appear defining 
 ##   Taylor and TaylorN and some of its functionalities
 
@@ -168,6 +169,6 @@ end
 export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
 export TaylorN, HomogPol
 export set_maxOrder, get_maxOrder, set_numVars, get_numVars
-export taylorvar, ∇, gradient, jacobian, hessian
+export taylorvar, ∇, jacobian, hessian
 
 end
