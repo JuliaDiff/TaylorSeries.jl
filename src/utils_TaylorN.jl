@@ -226,9 +226,9 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
         order = maximum(coeffs)
         @assert order <= MAXORDER[end]
         coeffs = zeros(HomogPol{T}, order)
-        @inbounds for i = 1:ll
-            ord = v[i].order
-            coeffs[ord+1] += v[i]
+        @simd for i = 1:ll
+            @inbounds ord = v[i].order
+            @inbounds coeffs[ord+1] += v[i]
         end
         new(coeffs, order)
     end

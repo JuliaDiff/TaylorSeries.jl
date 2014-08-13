@@ -26,7 +26,7 @@ include("utils_Taylor1.jl")
 
 include("utils_TaylorN.jl")
 gc()
-q
+
 ## The following routines combine Taylor and TaylorN, so they must appear defining 
 ##   Taylor and TaylorN and some of its functionalities
 
