@@ -1,6 +1,6 @@
 # utils_TaylorN.jl: N-variables Taylor expansions through homogeneous polynomials
 #
-# Last modification: 2014.06.22
+# Last modification: 2014.08.19
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -177,8 +177,11 @@ function zero{T<:Number}(a::HomogPol{T})
 end
 function zeros{T<:Number}(::HomogPol{T}, order::Int)
     @assert order <= MAXORDER[end]
+    order == 0 && return [HomogPol(zero(T),0)]
     v = HomogPol{T}[]
-    for ord = 0:order
+    sizehint(v, order+1)
+    v = push!(v, HomogPol(zero(T),0))
+    for ord = 1:order
         z = HomogPol(zero(T),ord)
         push!(v,z)
     end
@@ -192,8 +195,11 @@ function one{T<:Number}(a::HomogPol{T})
 end
 function ones{T<:Number}(::HomogPol{T}, order::Int)
     @assert order <= MAXORDER[end]
+    order == 0 && return [HomogPol(zero(T),0)]
     v = HomogPol{T}[]
-    for ord = 0:order
+    sizehint(v, order+1)
+    v = push!(v,HomogPol(one(T),0))
+    for ord = 1:order
         z = HomogPol(one(T),ord)
         push!(v,z)
     end
@@ -247,7 +253,6 @@ function taylorvar(T::Type, nv::Int, order::Int=1 )
     @assert (0 < nv <= NUMVARS[end] && order <= MAXORDER[end])
     v = zeros(T, NUMVARS[end])
     @inbounds v[nv] = one(T)
-    # return TaylorN( [HomogPol(zero(T), 0), HomogPol(v,1)], order )
     return TaylorN( HomogPol(v,1), order )
 end
 taylorvar(nv::Int) = taylorvar(Float64, nv)
@@ -264,7 +269,7 @@ one{T<:Number}(a::TaylorN{T}) = TaylorN(one(T), a.order)
 
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) = 
-    TaylorN( convert(Array{HomogPol{T}}, a.coeffs), a.order )
+    TaylorN( convert(Array{HomogPol{T},1}, a.coeffs), a.order )
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogPol{S}) = 
     TaylorN( convert(HomogPol{T}, b) )
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::Array{HomogPol{S},1}) = 
@@ -300,7 +305,6 @@ function fixshape(a::HomogPol, b::HomogPol)
 end
 function fixshape(a::TaylorN, b::TaylorN)
     eltype(a) == eltype(b) && a.order == b.order && return a, b, a.order
-    # order = max(a.order, b.order)
     order = a.order < b.order ? b.order : a.order
     if eltype(a) != eltype(b)
         a, b = promote(a, b)
