@@ -275,7 +275,7 @@ julia> pretty_print(ans)
  2 * x_{1}^2
 
 
-julia> pretty_print( gradient( g1 ) )
+julia> pretty_print( TaylorSeries.gradient( g1 ) )
 6-order TaylorN{Int64} in 2 variables:
  - 4 * x_{1}^3
 
@@ -303,7 +303,7 @@ Finally, it is worth pointing out the existing julia packages [Polynomial][2] an
 #### Acknowledgments
 This project began (using `python`) during a Masters' course in the postgraduate programs in Physics and in Mathematics at UNAM, during the second half of 2013. We thank the participants of the course for putting up with the half-baked material and contributing energy and ideas.
 
-We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114. LB acknowledges support through a *Cátedra Moshinsky* (2013).
+We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114, and PAPIIT grant IG-101113. LB acknowledges support through a *Cátedra Moshinsky* (2013).
 
 [1]: http://www.maia.ub.es/~alex/admcds/admcds.pdf
 [2]: https://github.com/vtjnash/Polynomial.jl

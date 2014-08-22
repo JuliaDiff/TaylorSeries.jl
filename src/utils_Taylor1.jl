@@ -261,7 +261,7 @@ function sqrt(a::Taylor)
     # First non-zero coefficient
     l0nz = firstnonzero(a)
     if l0nz > order
-        return Taylor(zero(T),order)
+        return zero(a)
     elseif l0nz%2 == 1 # l0nz must be pair
         error("First non-vanishing Taylor coefficient must be an EVEN POWER\n",
             "to expand SQRT around 0.\n")
@@ -415,9 +415,9 @@ function tanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffst2::Array{T,1
 end
 
 ## Differentiating ##
-function diffTaylor{T<:Number}(a::Taylor{T})
+function diffTaylor(a::Taylor)
     order = a.order
-    coeffs = zeros(T, order+1)
+    coeffs = zero(a.coeffs)
     coeffs[1] = a.coeffs[2]
     for i = 1:order
         @inbounds coeffs[i] = i*a.coeffs[i+1]

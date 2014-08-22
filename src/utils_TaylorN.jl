@@ -228,7 +228,7 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
     order   :: Int
     function TaylorN( v::Array{HomogPol{T},1}, order::Int )
         ll = length(v)
-        @inbounds coeffs = [v[i].order for i=1:ll]; push!(coeffs, order)
+        @inbounds coeffs = [v[k].order for k=1:ll]; push!(coeffs, order)
         order = maximum(coeffs)
         @assert order <= MAXORDER[end]
         coeffs = zeros(HomogPol{T}, order)
@@ -249,7 +249,7 @@ TaylorN{T<:Number}(x::T, order::Int) = TaylorN{T}([HomogPol(x)], order )
 TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogPol(x)], 0 )
 
 # Fast way to define independent variables
-function taylorvar(T::Type, nv::Int, order::Int=1 )
+function taylorvar(T::Type, nv::Int, order::Int=MAXORDER[end] )
     @assert (0 < nv <= NUMVARS[end] && order <= MAXORDER[end])
     v = zeros(T, NUMVARS[end])
     @inbounds v[nv] = one(T)
@@ -636,7 +636,7 @@ function tan(a::TaylorN)
         for j = 0:ord-1
             @inbounds coeffsTan[ord+1] += (ord-j) * coeffsTan[ord-j+1] * coeffsAux[j+1]
         end
-        @inbounds coeffsTan[ord+1] = a.coeffs[ord+1] + coeffsTan[ord+1] * inv(k)
+        @inbounds coeffsTan[ord+1] = a.coeffs[ord+1] + coeffsTan[ord+1] * inv(ord)
     end
     return TaylorN(coeffsTan, order)
 end
@@ -685,11 +685,11 @@ end
 function jacobian{T<:Number}(vf::Array{TaylorN{T},1})
     numVars = NUMVARS[end]
     @assert length(vf) == numVars
-    jac = zeros(T,(numVars,numVars))
+    jac = zeros(T, (numVars,numVars))
     for comp = 1:numVars
-        @inbounds jac[comp,1:end] = vf[comp].coeffs[2].coeffs[1:end]
+        @inbounds jac[:,comp] = vf[comp].coeffs[2].coeffs[1:end]
     end
-    return jac
+    return transpose(jac)
 end
 function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1}, vals::Array{S,1})
     R = promote_type(T,S)
@@ -699,10 +699,10 @@ function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1}, vals::Array{S,1}
     for comp = 1:numVars
         grad = gradient( vf[comp] )
         for nv = 1:numVars
-            jac[comp,nv] = evalTaylor(grad[nv], vals)
+            @inbounds jac[nv,comp] = evalTaylor(grad[nv], vals)
         end
     end
-    return jac
+    return transpose(jac)
 end
 hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) = 
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
