@@ -3,6 +3,7 @@
 A julia package for Taylor expansions in one or more independent variables.
 
 [![Build Status](https://travis-ci.org/lbenet/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/lbenet/TaylorSeries.jl)
+[![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_nightly.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=nightly)
 
 #### Authors
 - Luis Benet, Instituto de Ciencias Físicas, Universidad Nacional Autónoma de México (UNAM)
@@ -22,7 +23,7 @@ Installing `TaylorSeries` is done with `Pkg.add("TaylorSeries")`. The package in
 - `Taylor{T<:Number}(a::Array{T,1}, order::Integer)`
 - `Taylor{T<:Number}(a::T, order::Integer)`
 
-Thus, Taylor polynomials can be constructed from its coefficients (increasing with the order of the polynomial term), which may be of type `Taylor`, a vector or even a number (`<:Number`). The order of the polynomial can be omitted, which is then fixed from the length of the coefficients (otherwise it is the `max` among the length of the coefficients or the integer specified). 
+Thus, Taylor polynomials can be constructed from its coefficients (increasing with the order of the polynomial term), which may be of type `Taylor`, a vector or even a number (`<:Number`). The order of the polynomial can be omitted, which is then fixed from the length of the coefficients (otherwise it is the `max` among the length of the coefficients or the integer specified).
 
 For `TaylorN` there are two basic functions, `set_maxOrder()` and `set_numVars()`, which fix the overall constants defining the maximum order of the expansions and the number of variables, respectively. These are essential to construct the dictionaries that translate the position of the coefficients vector into the indexes of the multi-variable monomials. It is a good idea to fix this values before defining the `TaylorN` objects; if the number of variables is changed, all `TaylorN` objects must be redefined. (This could be improved in the future.)
 
@@ -31,7 +32,7 @@ For `TaylorN` there are two basic functions, `set_maxOrder()` and `set_numVars()
 - `TaylorN{T<:Number}(x::TaylorN{T}, order::Int)`
 - `TaylorN{T<:Number}(coeffs::Array{T,1}, order::Int)`
 
-Again, the order can be omitted, in which case it is fixed by the value set by `set_maxOrder()`, which by default is 4. Similarly, the number of independent variables is by default 2. 
+Again, the order can be omitted, in which case it is fixed by the value set by `set_maxOrder()`, which by default is 4. Similarly, the number of independent variables is by default 2.
 
 By default, the Taylor expansions are implemented around 0; if the expansion around a different value $x_0$ is needed, the trick is simply $x\to x+a$; see the definition of `xT(a)` below.
 
@@ -89,7 +90,7 @@ julia> yTN(1.0pi)
 TaylorN{Float64}([3.14159,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0  …  0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],6,2)
 ```
 
-The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been extended to work with `Taylor` and `TaylorN` type, including combinations of polynomials and numbers. 
+The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been extended to work with `Taylor` and `TaylorN` type, including combinations of polynomials and numbers.
 
 ```julia
 julia> xT0*(3xT0+2.5)
@@ -220,21 +221,21 @@ Finally, in order to get a *compact* and more readable display, we have introduc
 ```julia
 julia> pretty_print( xT0 )
 5-order Taylor{Float64}:
-  1.0 * x0 
+  1.0 * x0
 
 julia> exp(xTI)
 Taylor{Complex{Float64}}(Complex{Float64}[0.540302+0.841471im,0.540302+0.841471im,0.270151+0.420735im,0.0900504+0.140245im,0.0225126+0.0350613im,0.00450252+0.00701226im],5)
 
 julia> pretty_print( ans )
 5-order Taylor{Complex{Float64}}:
-    ( 0.5403023058681398 + 0.8414709848078965 im )  + ( 0.5403023058681398 + 0.8414709848078965 im ) * x0  + ( 0.2701511529340699 + 0.42073549240394825 im ) * x0^2  + ( 0.09005038431135663 + 0.1402451641346494 im ) * x0^3  + ( 0.022512596077839158 + 0.03506129103366235 im ) * x0^4  + ( 0.004502519215567832 + 0.00701225820673247 im ) * x0^5 
+    ( 0.5403023058681398 + 0.8414709848078965 im )  + ( 0.5403023058681398 + 0.8414709848078965 im ) * x0  + ( 0.2701511529340699 + 0.42073549240394825 im ) * x0^2  + ( 0.09005038431135663 + 0.1402451641346494 im ) * x0^3  + ( 0.022512596077839158 + 0.03506129103366235 im ) * x0^4  + ( 0.004502519215567832 + 0.00701225820673247 im ) * x0^5
 
 julia> convert(Taylor{Rational{Int64}}, exp(xT0))
 Taylor{Rational{Int64}}(Rational{Int64}[1//1,1//1,1//2,1//6,1//24,1//120],5)
 
 julia> pretty_print(ans)
 5-order Taylor{Rational{Int64}}:
-  1//1 + 1//1 * x0 + 1//2 * x0^2 + 1//6 * x0^3 + 1//24 * x0^4 + 1//120 * x0^5 
+  1//1 + 1//1 * x0 + 1//2 * x0^2 + 1//6 * x0^3 + 1//24 * x0^4 + 1//120 * x0^5
 
 julia> pretty_print( sin(xTN(0.0)+yTN(0.0)) )
 6-order TaylorN{Float64} in 2 variables:
@@ -259,17 +260,17 @@ julia> for i = 1:2
 
 julia> pretty_print(∇f1)
 6-order TaylorN{Int64} in 2 variables:
- -7 + 3 * x1^2 + 4 * x1 * x2 
+ -7 + 3 * x1^2 + 4 * x1 * x2
 
 6-order TaylorN{Int64} in 2 variables:
-  2 * x1^2 
+  2 * x1^2
 
 julia> pretty_print(∇f2)
 6-order TaylorN{Int64} in 2 variables:
- -4 * x1^3 
+ -4 * x1^3
 
 6-order TaylorN{Int64} in 2 variables:
-  1 
+  1
 
 julia> jacobian = reshape([evalTaylor(∇f1[1],[0,0]),evalTaylor(∇f2[1],[0,0]), evalTaylor(∇f1[2],[0,0]),evalTaylor(∇f2[2],[0,0])],(2,2))
 2x2 Array{Int64,2}:
@@ -283,7 +284,7 @@ Some concrete applications of the package will be found in the directory [exampl
 Finally, it is worth pointing out the existing julia packages [Polynomial][2] and [PowerSeries][3] have similar functionality as `TaylorSeries` for one-variable expansions, but using somewhat different approaches.
 
 
-#### Acknowledgments 
+#### Acknowledgments
 This project began (using `python`) during a Masters' course in the postgraduate programs in Physics and in Mathematics at UNAM, during the second half of 2013. We thank the participants of the course for putting up with the half-baked material and contributing energy and ideas.
 
 We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114. LB acknowledges support through a *Cátedra Moshinsky* (2013).
