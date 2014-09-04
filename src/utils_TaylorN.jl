@@ -173,14 +173,14 @@ get_maxOrder(a::HomogPol) = a.order
 function zero{T<:Number}(a::HomogPol{T})
     a.order == 0 && return HomogPol(zero(T), 0)
     @inbounds nCoefH = sizeTable[a.order+1]
-    return HomogPol(zeros(T,nCoefH), a.order)
+    return HomogPol{T}( zeros(T,nCoefH), a.order)
 end
 function zeros{T<:Number}(::HomogPol{T}, order::Int)
     @assert order <= MAXORDER[end]
     order == 0 && return [HomogPol(zero(T),0)]
     v = HomogPol{T}[]
     sizehint(v, order+1)
-    v = push!(v, HomogPol(zero(T),0))
+    push!(v, HomogPol(zero(T),0))
     for ord = 1:order
         z = HomogPol(zero(T),ord)
         push!(v,z)
@@ -189,18 +189,19 @@ function zeros{T<:Number}(::HomogPol{T}, order::Int)
 end
 zeros{T<:Number}(::Type{HomogPol{T}}, order::Int) = zeros( HomogPol(zero(T), 0), order)
 function one{T<:Number}(a::HomogPol{T})
-    a.order == 0 && HomogPol(one(T), 0)
-    nCoefH = sizeTable[a.order+1]
-    return HomogPol(ones(T,nCoefH), a.order)
+    a.order == 0 && return HomogPol(one(T), 0)
+    @inbounds nCoefH = sizeTable[a.order+1]
+    return HomogPol{T}( ones(T,nCoefH), a.order)
 end
 function ones{T<:Number}(::HomogPol{T}, order::Int)
     @assert order <= MAXORDER[end]
-    order == 0 && return [HomogPol(zero(T),0)]
+    order == 0 && return [HomogPol(one(T),0)]
     v = HomogPol{T}[]
     sizehint(v, order+1)
-    v = push!(v,HomogPol(one(T),0))
+    push!(v,HomogPol(one(T),0))
     for ord = 1:order
-        z = HomogPol(one(T),ord)
+        @inbounds nCoefH = sizeTable[ord+1]
+        z = HomogPol{T}(ones(T,nCoefH),ord)
         push!(v,z)
     end
     return v
@@ -209,11 +210,11 @@ ones{T<:Number}(::Type{HomogPol{T}}, order::Int) = ones( HomogPol(one(T), 0), or
 
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{HomogPol{T}}, a::HomogPol) = 
-    HomogPol(convert(Array{T,1}, a.coeffs), a.order)
+    HomogPol{T}(convert(Array{T,1}, a.coeffs), a.order)
 convert{T<:Number, S<:Number}(::Type{HomogPol{T}}, b::Array{S,1}) = 
-    HomogPol(convert(Array{T,1},b))
+    HomogPol{T}(convert(Array{T,1},b), 0)
 convert{T<:Number}(::Type{HomogPol{T}}, b::Number) = 
-    HomogPol([convert(T,b)], 0)
+    HomogPol{T}([convert(T,b)], 0)
 #
 promote_rule{T<:Number, S<:Number}(::Type{HomogPol{T}}, ::Type{HomogPol{S}}) = 
     HomogPol{promote_type(T, S)}
@@ -241,8 +242,8 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
 end
 TaylorN{T<:Number}(x::TaylorN{T}, order::Int) = TaylorN{T}(x.coeffs, order )
 TaylorN{T<:Number}(x::TaylorN{T}) = TaylorN{T}(x.coeffs, x.order )
-TaylorN{T<:Number}(v::Array{HomogPol{T},1}, order::Int) = TaylorN{T}(v, order )
-TaylorN{T<:Number}(v::Array{HomogPol{T},1}) = TaylorN{T}(v, 0 )
+TaylorN{T<:Number}(x::Array{HomogPol{T},1}, order::Int) = TaylorN{T}(x, order )
+TaylorN{T<:Number}(x::Array{HomogPol{T},1}) = TaylorN{T}(x, 0 )
 TaylorN{T<:Number}(x::HomogPol{T}, order::Int) = TaylorN{T}([x], order )
 TaylorN{T<:Number}(x::HomogPol{T}) = TaylorN{T}([x], x.order )
 TaylorN{T<:Number}(x::T, order::Int) = TaylorN{T}([HomogPol(x)], order )
@@ -269,11 +270,11 @@ one{T<:Number}(a::TaylorN{T}) = TaylorN(one(T), a.order)
 
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) = 
-    TaylorN( convert(Array{HomogPol{T},1}, a.coeffs), a.order )
+    TaylorN{T}( convert(Array{HomogPol{T},1}, a.coeffs), a.order )
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogPol{S}) = 
-    TaylorN( convert(HomogPol{T}, b) )
+    TaylorN{T}( [convert(HomogPol{T}, b)], 0 )
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::Array{HomogPol{S},1}) = 
-    TaylorN( convert(Array{HomogPol{T},1}, b) )
+    TaylorN{T}( convert(Array{HomogPol{T},1}, b), length(b)-1 )
 convert{T<:Number}(::Type{TaylorN{T}}, b::Number) = TaylorN( convert(T, b), 0)
 #
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) = 
@@ -285,17 +286,17 @@ promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{Array{HomogPol{S},
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{S}) = TaylorN{promote_type(T, S)}
 
 ## Auxiliary function ##
-function fixorder(a::TaylorN, order::Int64)
+function fixorder{T<:Number}(a::TaylorN{T}, order::Int64)
     order <= a.order && return a
     @assert MAXORDER[end] >= order
-    T = eltype(a)
+    #T = eltype(a)
     for ord = a.order+1:order
         @inbounds nCoefH = sizeTable[ord+1]
         z = zeros(T, nCoefH)
-        zH = HomogPol(z, ord)
+        zH = HomogPol{T}(z, ord)
         push!(a.coeffs, zH)
     end
-    return TaylorN(a.coeffs, order)
+    return TaylorN{T}(a.coeffs, order)
 end
 function fixshape(a::HomogPol, b::HomogPol)
     @assert a.order == b.order
@@ -366,7 +367,7 @@ function *(a::HomogPol, b::HomogPol)
             @inbounds coeffs[pos] += ca * cb
         end
     end
-    return HomogPol(coeffs, order)
+    return HomogPol{T}(coeffs, order)
 end
 function *(a::TaylorN, b::TaylorN)
     a, b, order = fixshape(a, b)
@@ -379,7 +380,7 @@ function *(a::TaylorN, b::TaylorN)
             coeffs[ord+1] += a.coeffs[i+1] * b.coeffs[ord-i+1]
         end
     end
-    return TaylorN(coeffs, order)
+    return TaylorN{T}(coeffs, order)
 end
 
 ## Division ##
@@ -402,7 +403,7 @@ function /(a::TaylorN, b::TaylorN)
         end
         @inbounds coeffs[ord+1] = (a.coeffs[ord+1] - coeffs[ord+1]) * invb0
     end
-    return TaylorN(coeffs, order)
+    return TaylorN{T}(coeffs, order)
 end
 # function divfactorization(a1::Taylor, b1::Taylor)
 #     # order of first factorized term; a1 and b1 are assumed to be of the same order (length)
@@ -432,14 +433,14 @@ for op in (:mod, :rem)
         function ($op){T<:Real}(a::TaylorN{T}, x::Real)
             @inbounds y = ($op)(a.coeffs[1].coeffs[1], x)
             a.coeffs[1] = HomogPol(y)
-            return TaylorN( a.coeffs, a.order )
+            return TaylorN{T}( a.coeffs, a.order )
         end
     end
 end
 function mod2pi{T<:Real}(a::TaylorN{T}) 
     @inbounds y = mod2pi(a.coeffs[1].coeffs[1])
     a.coeffs[1] = HomogPol(y)
-    return TaylorN( a.coeffs, a.order )
+    return TaylorN{T}( a.coeffs, a.order )
 end
 
 ## Int power ##
@@ -480,8 +481,6 @@ function ^(a::TaylorN, x::Real)
     @assert a0 != zero(a0)
     aux = ( a0 )^x
     T = typeof(aux)
-    #order = MAXORDER[end]
-    #a = TaylorN(a, order)
     coeffs = zeros(HomogPol{T}, a.order)
     @inbounds coeffs[1] = HomogPol( aux )
     for ord = 1:a.order
@@ -494,7 +493,7 @@ function ^(a::TaylorN, x::Real)
         end
         @inbounds coeffs[ord+1] = coeffs[ord+1] / (ord*a0)
     end
-    return TaylorN(coeffs, a.order)
+    return TaylorN{T}(coeffs, a.order)
 end
 ^(a::TaylorN, x::Complex) = exp( x*log(a) )
 ^(a::TaylorN, b::TaylorN) = exp( b*log(a) )
@@ -523,7 +522,7 @@ function square(a::HomogPol)
             @inbounds coeffs[pos] += two * ca * cb
         end
     end
-    return HomogPol(coeffs, order)
+    return HomogPol{T}(coeffs, order)
 end
 function square(a::TaylorN)
     T = eltype(a)
@@ -540,7 +539,7 @@ function square(a::TaylorN)
         kodd = div(ord,2)
         @inbounds coeffs[ord+1] += square( a.coeffs[kodd+1] )
     end
-    return TaylorN(coeffs, a.order)
+    return TaylorN{T}(coeffs, a.order)
 end
 
 ## sqrt ##
@@ -561,7 +560,7 @@ function sqrt(a::TaylorN)
         end
         @inbounds coeffs[ord+1] = coeffs[ord+1] / (2 * p0)
     end
-    return TaylorN(coeffs, a.order)
+    return TaylorN{T}(coeffs, a.order)
 end
 
 ## exp ##
@@ -577,7 +576,7 @@ function exp(a::TaylorN)
         end
         @inbounds coeffs[ord+1] = coeffs[ord+1] / ord
     end
-    return TaylorN(coeffs, order)
+    return TaylorN{T}(coeffs, order)
 end
 
 ## log ##
@@ -594,32 +593,34 @@ function log(a::TaylorN)
         end
         @inbounds coeffs[ord+1] = (a.coeffs[ord+1] - coeffs[ord+1] / ord ) / a0
     end
-    return TaylorN(coeffs, order)
+    return TaylorN{T}(coeffs, order)
 end
 
 ## sin and cos ##
-sin(a::TaylorN) = sincos(a)[1]
-cos(a::TaylorN) = sincos(a)[2]
-function sincos(a::TaylorN)
-    order = a.order
-    @inbounds a0 = a.coeffs[1].coeffs[1]
-    s0 = sin( a0 )
-    c0 = cos( a0 )
-    T = typeof(s0)
-    coeffsSin = zeros(HomogPol{T}, order)
-    coeffsCos = zeros(HomogPol{T}, order)
-    @inbounds coeffsSin[1] = HomogPol(s0)
-    @inbounds coeffsCos[1] = HomogPol(c0)
-    for ord = 1:order
-        for j = 0:ord-1
-            @inbounds coeffsSin[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffsCos[j+1]
-            @inbounds coeffsCos[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffsSin[j+1]
-        end
-        @inbounds coeffsSin[ord+1] =  coeffsSin[ord+1] / ord
-        @inbounds coeffsCos[ord+1] = -coeffsCos[ord+1] / ord
-    end
-    return TaylorN(coeffsSin, order), TaylorN(coeffsCos, order)
-end
+sin(a::TaylorN) = imag( exp(im*a) )
+cos(a::TaylorN) = real( exp(im*a) )
+# sin(a::TaylorN) = sincos(a)[1]
+# cos(a::TaylorN) = sincos(a)[2]
+# function sincos(a::TaylorN)
+#     order = a.order
+#     @inbounds a0 = a.coeffs[1].coeffs[1]
+#     s0 = sin( a0 )
+#     c0 = cos( a0 )
+#     T = typeof(s0)
+#     coeffsSin = zeros(HomogPol{T}, order)
+#     coeffsCos = zeros(HomogPol{T}, order)
+#     @inbounds coeffsSin[1] = HomogPol(s0)
+#     @inbounds coeffsCos[1] = HomogPol(c0)
+#     for ord = 1:order
+#         for j = 0:ord-1
+#             @inbounds coeffsSin[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffsCos[j+1]
+#             @inbounds coeffsCos[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffsSin[j+1]
+#         end
+#         @inbounds coeffsSin[ord+1] =  coeffsSin[ord+1] / ord
+#         @inbounds coeffsCos[ord+1] = -coeffsCos[ord+1] / ord
+#     end
+#     return TaylorN{T}(coeffsSin, order), TaylorN{T}(coeffsCos, order)
+# end
 
 ## tan ##
 function tan(a::TaylorN)
@@ -638,7 +639,7 @@ function tan(a::TaylorN)
         end
         @inbounds coeffsTan[ord+1] = a.coeffs[ord+1] + coeffsTan[ord+1] * inv(ord)
     end
-    return TaylorN(coeffsTan, order)
+    return TaylorN{T}(coeffsTan, order)
 end
 
 ## Differentiation ##
@@ -658,7 +659,7 @@ function diffTaylor(a::HomogPol, r::Int)
         pos = posTable[a.order][iind-jind]
         coeffs[pos] = n * a.coeffs[i]
     end
-    return HomogPol(coeffs, a.order-1)
+    return HomogPol{T}(coeffs, a.order-1)
 end
 """Partial differentiation of a TaylorN series with respect to the r-th variable"""
 function diffTaylor(a::TaylorN, r::Int)
@@ -667,7 +668,7 @@ function diffTaylor(a::TaylorN, r::Int)
     for ord = 1:a.order
         @inbounds coeffs[ord] = diffTaylor( a.coeffs[ord+1], r)
     end
-    return TaylorN( coeffs, a.order )
+    return TaylorN{T}( coeffs, a.order )
 end
 diffTaylor(a::TaylorN) = diffTaylor(a, 1)
 
