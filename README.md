@@ -153,7 +153,7 @@ julia> sqrt(xT0)
 ERROR: First non-vanishing Taylor coefficient must be an EVEN POWER
 to expand SQRT around 0.
 
- in sqrt at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_Taylor1.jl:265
+ in sqrt at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_Taylor1.jl:266
 
 julia> sqrt( xT(1.0) )   # identic to sqrt( 1+x0 )
 Taylor{Float64}([1.0,0.5,-0.125,0.0625,-0.0390625,0.0273438],5)
@@ -232,7 +232,7 @@ julia> pretty_print( xT0 )
   1.0 * x_{0}
 
 julia> exp(xTI)
-Taylor{Complex{Float64}}(Complex{Float64}[0.540302+0.841471im,0.540302+0.841471im,0.270151+0.420735im,0.0900504+0.140245im,0.0225126+0.0350613im,0.00450252+0.00701226im],5)
+Taylor{Complex{Float64}}(Complex{Float64}[1.0+0.0im,0.0+1.0im,-0.5+0.0im,0.0-0.166667im,0.0416667+0.0im,0.0+0.00833333im],5)
 
 julia> pretty_print( ans )
 5-order Taylor{Complex{Float64}}:
@@ -274,14 +274,12 @@ julia> pretty_print(ans)
 6-order TaylorN{Int64} in 2 variables:
  2 * x_{1}^2
 
-
 julia> pretty_print( TaylorSeries.gradient( g1 ) )
 6-order TaylorN{Int64} in 2 variables:
  - 4 * x_{1}^3
 
 6-order TaylorN{Int64} in 2 variables:
  1
-
 
 julia> jacobian([f1,g1], [2,1])
 2x2 Array{Int64,2}:
