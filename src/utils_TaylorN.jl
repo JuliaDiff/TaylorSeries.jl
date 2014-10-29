@@ -229,8 +229,13 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
     order   :: Int
     function TaylorN( v::Array{HomogPol{T},1}, order::Int )
         ll = length(v)
-        @inbounds coeffs = [v[k].order for k=1:ll]; push!(coeffs, order)
-        order = maximum(coeffs)
+        # @inbounds coeffs = [v[k].order for k=1:ll]; push!(vAux, order)
+        vAux = zeros(Int,ll+1)
+        @simd for i = 1:ll
+            @inbounds vAux[i]=v[i].order
+        end
+        vAux[ll+1] = order
+        order = maximum(vAux)
         @assert order <= MAXORDER[end]
         coeffs = zeros(HomogPol{T}, order)
         @simd for i = 1:ll
