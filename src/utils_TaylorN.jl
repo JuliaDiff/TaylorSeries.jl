@@ -137,7 +137,10 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
         nCoefTot = sizeTable[end]
         @assert lencoef <= nCoefTot
         v = zeros(T, nCoefTot)
-        @inbounds v[1:lencoef] = coeffs[1:lencoef]
+        #@inbounds v[1:lencoef] = coeffs[1:lencoef]
+        for i = 1:lencoef
+            @inbounds v[i] = coeffs[i]
+        end
         new(v, order, NUMVARS[end])
    end
 end

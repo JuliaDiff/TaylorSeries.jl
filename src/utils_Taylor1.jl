@@ -16,7 +16,10 @@ immutable Taylor{T<:Number} <: AbstractSeries{T,1}
         lencoef = length(coeffs)
         order = max(order, lencoef-1)
         v = zeros(T, order+1)
-        @inbounds v[1:lencoef] = coeffs[1:lencoef]
+        #@inbounds v[1:lencoef] = coeffs[1:lencoef]
+        for i = 1:lencoef
+            @inbounds v[i] = coeffs[i]
+        end
         new(v, order)
     end
 end
