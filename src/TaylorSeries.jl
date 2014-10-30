@@ -58,7 +58,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
     z = zero(T)
     space = " "
     a == z && (println(string( space, z)); return)
-    varstring = {}
+    varstring = []
     for ivar=1:a.numVars
         push!(varstring,string(" * x",ivar))
     end
