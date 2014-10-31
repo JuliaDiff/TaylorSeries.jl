@@ -39,12 +39,12 @@ infostr{T<:Number}(a::TaylorN{T}) =
 function pretty_print{T<:Number}(a::Taylor{T})
     print( infostr(a) )
     z = zero(T)
-    space = " "
-    a == z && (print(string( space, z)); return)
-    strout = space
+    space = string(" ")
+    a == zero(a) && (println(string( space, z)); return)
+    strout::ASCIIString = space
     ifirst = true
     for i = 0:a.order
-        monom = i==0 ? "" : i==1 ? " * x0" : string(" * x0^", i)
+        monom::ASCIIString = i==0 ? string("") : i==1 ? string(" * x_{0}") : string(" * x_{0}^", i)
         @inbounds c = a.coeffs[i+1]
         c == z && continue
         cadena = numbr2str(c, ifirst)
@@ -52,15 +52,16 @@ function pretty_print{T<:Number}(a::Taylor{T})
         ifirst = false
     end
     println(strout)
+    return
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
+    a == zero(a) && (println(string( " ", zero(T))); return)
     z = zero(T)
     space = " "
-    a == z && (println(string( space, z)); return)
-    varstring = []
+    varstring = ASCIIString[]
     for ivar=1:a.numVars
-        push!(varstring,string(" * x",ivar))
+        push!(varstring,string(" * x_{", ivar, "}"))
     end
     strout = string(" ")
     ifirst = true
@@ -85,19 +86,22 @@ function pretty_print{T<:Number}(a::TaylorN{T})
         ifirst = false
     end
     println(strout)
+    return
 end
 function pretty_print{T<:Number}(a::Union(Array{Taylor{T},1},Array{TaylorN{T},1}))
     for i=1:length(a)
         pretty_print(a[i])
         println("")
     end
+    return
 end
 
 # make string from a number; for complex numbers, use 
 function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
-    plusmin = zz > 0 ? "+ " : "- "
+    zz == zero(T) && return string( zz )
+    plusmin = zz > zero(T) ? "+ " : "- "
     if ifirst
-        plusmin = zz > 0 ? " " : "-"
+        plusmin = zz > zero(T) ? " " : "-"
     end
     return string(plusmin, abs(zz))
 end
@@ -105,10 +109,10 @@ function numbr2str{T}(zz::Complex{T}, ifirst::Bool=false)
     zT = zero(T)
     zz == zero(Complex{T}) && return zT
     zre, zim = reim(zz)
-    cadena = ""
+    cadena = string("")
     if zre > zT
         if ifirst
-            cadena = string("   ( ", abs(zre)," ")
+            cadena = string(" ( ", abs(zre)," ")
         else
             cadena = string(" + ( ", abs(zre)," ")
         end
@@ -131,9 +135,9 @@ function numbr2str{T}(zz::Complex{T}, ifirst::Bool=false)
     else
         if zim > zT
             if ifirst
-                cadena = string("   ( ", abs(zim), " im )")
+                cadena = string("( ", abs(zim), " im )")
             else
-                cadena = string(" + ( ", abs(zim), " im )")
+                cadena = string("+ ( ", abs(zim), " im )")
             end
         else
             cadena = string(" - ( ", abs(zim), " im )")
