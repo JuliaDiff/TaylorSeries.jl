@@ -173,30 +173,52 @@ function mod2pi{T<:Real}(a::Taylor{T})
 end
 
 ## Int power ##
-function ^(a::Taylor, n::Integer)
-    uno = one(a)
-    n < 0 && return uno / a^(-n)
-    n == 0 && return uno
-    if n%2 == 0     # even power
-        n == 2 && return square(a)
-        pow = div(n, 2)
-        return square( a^pow )
-    else            # odd power
-        n == 1 && return a
-        pow = div(n-1, 2)
-        return a*square( a^pow )
-    end
+function ^{T<:Number}(a::Taylor{T}, n::Integer)
+    n == 0 && return one(a)
+    n == 1 && return a
+    n == 2 && return square(a)
+    n < 0 && return inv( a^(-n) )
+    return power_by_squaring(a, n)
 end
+function ^{T<:Integer}(a::Taylor{T}, n::Integer)
+    n == 0 && return one(a)
+    n == 1 && return a
+    n == 2 && return square(a)
+    n < 0 && throw(DomainError())
+    return power_by_squaring(a, n)
+end
+## power_by_squaring; modified from intfuncs.jl
+function power_by_squaring(x::Taylor, p::Integer)
+    # x = to_power_type(x)
+    p == 1 && return x##copy(x)
+    p == 0 && return one(x)
+    p == 2 && return square(x)
+    # p < 0 && throw(DomainError())
+    t = trailing_zeros(p) + 1
+    p >>= t
+    while (t -= 1) > 0
+        x *= x
+    end
+    y = x
+    while p > 0
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) >= 0
+            x *= x
+        end
+        y *= x
+    end
+    return y
+end
+
 ## Rational power ##
 ^(a::Taylor,x::Rational) = a^(x.num/x.den)
+
 ## Real power ##
 function ^(a::Taylor, x::Real)
     uno = one(a)
-    if x == zero(x)
-        return uno
-    elseif x == 0.5
-        return sqrt(a)
-    end
+    x == zero(x) && return uno
+    x == one(x)/2 && return sqrt(a)
     order = a.order
     # First non-zero coefficient
     l0nz = firstnonzero(a)
