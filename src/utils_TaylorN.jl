@@ -166,7 +166,7 @@ HomogPol{T<:Number}(x::T) = HomogPol{T}([x], 0)
 
 eltype{T<:Number}(::HomogPol{T}) = T
 length(a::HomogPol) = length( a.coeffs )
-get_numVars(x::HomogPol) = NUMVARS[end]
+get_numVars(::HomogPol) = NUMVARS[end]
 get_maxOrder(a::HomogPol) = a.order
 
 ## zero and one ##
@@ -234,7 +234,7 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
         @simd for i = 1:ll
             @inbounds vAux[i]=v[i].order
         end
-        vAux[ll+1] = order
+        @inbounds vAux[ll+1] = order
         order = maximum(vAux)
         @assert order <= MAXORDER[end]
         coeffs = zeros(HomogPol{T}, order)
@@ -266,7 +266,7 @@ taylorvar(nv::Int) = taylorvar(Float64, nv)
 ## Type, length ##
 eltype{T<:Number}(::TaylorN{T}) = T
 length(a::TaylorN) = length( a.coeffs )
-get_numVars(x::TaylorN) = NUMVARS[end]
+get_numVars(::TaylorN) = NUMVARS[end]
 get_maxOrder(x::TaylorN) = x.order
 
 ## zero and one ##
@@ -337,15 +337,25 @@ end
 
 iszero(a::HomogPol) = a == zero(a)
 
-## Addition and substraction ##
-for f in (:+, :-), T in (:HomogPol, :TaylorN)
+# Addition and substraction ##
+for T in (:HomogPol, :TaylorN), f in (:+, :-)
     @eval begin
         function ($f)(a::($T), b::($T))
             a, b, order = fixshape(a,b)
-            v = ($f)(a.coeffs, b.coeffs)
+            # v = ($f)(a.coeffs, b.coeffs)
+            v = similar(a.coeffs)
+            for i=1:length(a.coeffs)
+                v[i] = ($f)(a.coeffs[i], b.coeffs[i])
+            end
             return ($T)(v, order)
         end
-        ($f)(a::($T)) = ($T)(($f)(a.coeffs), a.order)
+        # ($f)(a::($T)) = ($T)(($f)(a.coeffs), a.order)
+        function ($f)(a::($T))
+            for i=1:length(a.coeffs)
+                a.coeffs[i] = ($f)(a.coeffs[i])
+            end
+            return ($T)(a.coeffs, a.order)
+        end
     end
 end
 
@@ -368,7 +378,10 @@ function *(a::HomogPol, b::HomogPol)
             @inbounds cb = b.coeffs[nb]
             cb == z && continue
             @inbounds indb = indicesTable[b.order+1][nb]
-            @inbounds pos = posTable[order+1][inda+indb]
+            for i=1:numVars[end]
+                indp[i] = inda[i]+indb[i]
+            end
+            @inbounds pos = posTable[order+1][indp]
             @inbounds coeffs[pos] += ca * cb
         end
     end
@@ -379,10 +392,16 @@ function *(a::TaylorN, b::TaylorN)
     T = eltype(a)
     coeffs = zeros(HomogPol{T}, order)
     @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
-    for ord = 1:order
-        @inbounds for i = 0:ord
-            (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i+1])) && continue
-            coeffs[ord+1] += a.coeffs[i+1] * b.coeffs[ord-i+1]
+    # for ord = 1:order
+    #     @inbounds for i = 0:ord
+    #         (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i+1])) && continue
+    #         coeffs[ord+1] += a.coeffs[i+1] * b.coeffs[ord-i+1]
+    #     end
+    # end
+    for ord = 2:order+1
+        @inbounds for i = 0:ord-1
+            (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
+            coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
         end
     end
     return TaylorN{T}(coeffs, order)
@@ -452,27 +471,36 @@ end
 function ^(a::HomogPol, n::Integer)
     @assert n >= 0
     T = eltype(a)
-    n == 0 && return HomogPol( one(T) )
     n*a.order > MAXORDER[end] && return HomogPol(zero(T), MAXORDER[end])
+    n == 0 && return HomogPol( one(T) )
     n == 1 && return a
     n == 2 && return square(a)
-    pow, rest = divrem(n,2)
     b = square(a)
-    b = b^pow
-    rest == 0 && return b     # even power
-    return a * b              # odd power
+    # pow, rest = divrem(n,2)
+    # b = b^pow
+    # rest == 0 && return b     # even power
+    # return a * b              # odd power
+    for i = 2:n-1 
+        b = b*a
+    end
+    return b
 end
 function ^(a::TaylorN, n::Integer)
-    uno = one(eltype(a))
+    T = eltype(a)
+    uno = one(T)
     n < 0 && return uno / a^(-n)
     n == 0 && return TaylorN( uno, a.order )
     n == 1 && return a
     n == 2 && return square(a)
-    pow, rest = divrem(n,2)
     b = square(a)
-    b = b^pow
-    rest == 0 && return b     # even power
-    return a * b              # odd power
+    # pow, rest = divrem(n,2)
+    # b = b^pow
+    # rest == 0 && return b     # even power
+    # return a * b              # odd power
+    for i = 2:n-1 
+        b = b*a
+    end
+    return b
 end
 ## Rational power ##
 ^(a::TaylorN, x::Rational) = a^(x.num/x.den)
@@ -523,7 +551,10 @@ function square(a::HomogPol)
             @inbounds cb = a.coeffs[nb]
             cb == zero(T) && continue
             @inbounds indb = indicesTable[a.order+1][nb]
-            @inbounds pos = posTable[order+1][inda + indb]
+            for i=1:numVars[end]
+                iind[i] = inda[i]+indb[i]
+            end
+            @inbounds pos = posTable[order+1][iind]
             @inbounds coeffs[pos] += two * ca * cb
         end
     end
