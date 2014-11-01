@@ -173,18 +173,47 @@ function mod2pi{T<:Real}(a::Taylor{T})
 end
 
 ## Int power ##
-function ^(a::Taylor, n::Integer)
-    uno = one(eltype(a))
-    n < 0 && return uno / a^(-n)
-    n == 0 && return Taylor(uno, a.order)
+function ^{T<:Number}(a::Taylor{T}, n::Integer)
+    n == 0 && return one(a)
     n == 1 && return a
     n == 2 && return square(a)
-    pow, rest = divrem(n,2)
-    rest == 0 && return square( a^pow )     # even power
-    return a*square( a^pow )                # odd power
+    n < 0 && return inv( a^(-n) )
+    return power_by_squaring(a, n)
 end
+function ^{T<:Integer}(a::Taylor{T}, n::Integer)
+    n == 0 && return one(a)
+    n == 1 && return a
+    n == 2 && return square(a)
+    n < 0 && throw(DomainError())
+    return power_by_squaring(a, n)
+end
+## power_by_squaring; modified from intfuncs.jl
+function power_by_squaring(x::Taylor, p::Integer)
+    # x = to_power_type(x)
+    p == 1 && return copy(x)
+    p == 0 && return one(x)
+    p == 2 && return square(x)
+    # p < 0 && throw(DomainError())
+    t = trailing_zeros(p) + 1
+    p >>= t
+    while (t -= 1) > 0
+        x *= x
+    end
+    y = x
+    while p > 0
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) >= 0
+            x *= x
+        end
+        y *= x
+    end
+    return y
+end
+
 ## Rational power ##
 ^(a::Taylor,x::Rational) = a^(x.num/x.den)
+
 ## Real power ##
 function ^(a::Taylor, x::Real)
     uno = one(a)
