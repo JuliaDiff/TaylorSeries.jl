@@ -69,7 +69,7 @@ xsquare = Taylor([0,0,1],15)
 @test evalTaylor(exp(Taylor([0,1],17)),1.0) == e
 @test evalTaylor(exp(Taylor([0,1],1))) == 1.0
 @test evalTaylor(exp(xT0),xT0^2) == exp(xT0^2)
-@test (1.0+x)^(-3) == inv((1+x)^3)
+@test (1.0+xT0)^(-3) == inv((1+xT0)^3)
 
 @test deriv( exp(xT(1.0)), 5 ) == exp(1.0)
 @test deriv( exp(xT(1.0pi)), 3 ) == exp(1.0pi)
@@ -84,7 +84,7 @@ xsquare = Taylor([0,0,1],15)
 @test_throws ErrorException log(xT0)
 @test_throws ErrorException cos(xT0)/sin(xT0)
 @test_throws ErrorException deriv( exp(xT(1.0pi)), 30 )
-@test_throws DomainError (1+x)^(-4)
+@test_throws DomainError (1+xT0)^(-4)
 
 # Tests for 1-d Tylor expansions
 set_numVars(2)
