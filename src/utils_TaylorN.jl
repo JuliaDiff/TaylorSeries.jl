@@ -229,7 +229,6 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
     order   :: Int
     function TaylorN( v::Array{HomogPol{T},1}, order::Int )
         ll = length(v)
-        # @inbounds coeffs = [v[k].order for k=1:ll]; push!(vAux, order)
         vAux = zeros(Int,ll+1)
         @simd for i = 1:ll
             @inbounds vAux[i]=v[i].order
@@ -391,12 +390,6 @@ function *(a::TaylorN, b::TaylorN)
     T = eltype(a)
     coeffs = zeros(HomogPol{T}, order)
     @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
-    # for ord = 1:order
-    #     @inbounds for i = 0:ord
-    #         (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i+1])) && continue
-    #         coeffs[ord+1] += a.coeffs[i+1] * b.coeffs[ord-i+1]
-    #     end
-    # end
     for ord = 2:order+1
         @inbounds for i = 0:ord-1
             (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
@@ -455,14 +448,14 @@ for op in (:mod, :rem)
     @eval begin
         function ($op){T<:Real}(a::TaylorN{T}, x::Real)
             @inbounds y = ($op)(a.coeffs[1].coeffs[1], x)
-            a.coeffs[1] = HomogPol(y)
+            @inbounds a.coeffs[1] = HomogPol(y)
             return TaylorN{T}( a.coeffs, a.order )
         end
     end
 end
 function mod2pi{T<:Real}(a::TaylorN{T}) 
     @inbounds y = mod2pi(a.coeffs[1].coeffs[1])
-    a.coeffs[1] = HomogPol(y)
+    @inbounds a.coeffs[1] = HomogPol(y)
     return TaylorN{T}( a.coeffs, a.order )
 end
 
