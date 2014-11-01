@@ -701,11 +701,7 @@ function diffTaylor(a::HomogPol, r::Int)
         iind = indicesTable[a.order+1][i]
         n = iind[r]
         n == 0 && continue
-        for i=1:NUMVARS[end]
-            indp[i] = iind[i]-jind[i]
-        end
-        pos = posTable[a.order][indp]
-        #pos = posTable[a.order][iind-jind]
+        pos = posTable[a.order][iind-jind]
         coeffs[pos] = n * a.coeffs[i]
     end
     return HomogPol{T}(coeffs, a.order-1)
