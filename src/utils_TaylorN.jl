@@ -491,14 +491,14 @@ function power_by_squaring(x::Union(TaylorN,HomogPol), p::Integer)
     t = trailing_zeros(p) + 1
     p >>= t
     while (t -= 1) > 0
-        x *= x
+        x = square(x)
     end
     y = x
     while p > 0
         t = trailing_zeros(p) + 1
         p >>= t
         while (t -= 1) >= 0
-            x *= x
+            x = square(x)
         end
         y *= x
     end
