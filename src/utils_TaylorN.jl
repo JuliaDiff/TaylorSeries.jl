@@ -293,7 +293,6 @@ promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{S}) = TaylorN{prom
 function fixorder{T<:Number}(a::TaylorN{T}, order::Int64)
     order <= a.order && return a
     @assert MAXORDER[end] >= order
-    #T = eltype(a)
     for ord = a.order+1:order
         @inbounds nCoefH = sizeTable[ord+1]
         z = zeros(T, nCoefH)
@@ -304,19 +303,21 @@ function fixorder{T<:Number}(a::TaylorN{T}, order::Int64)
 end
 function fixshape(a::HomogPol, b::HomogPol)
     @assert a.order == b.order
-    eltype(a) == eltype(b) && return a, b, a.order
-    a, b = promote(a, b)
-    return a, b, a.order
+    eltype(a) == eltype(b) && return a, b
+    return promote(a, b)
 end
 function fixshape(a::TaylorN, b::TaylorN)
-    eltype(a) == eltype(b) && a.order == b.order && return a, b, a.order
-    order = a.order < b.order ? b.order : a.order
+    eltype(a) == eltype(b) && a.order == b.order && return a, b
     if eltype(a) != eltype(b)
         a, b = promote(a, b)
     end
-    a.order == b.order && return a, b, a.order
-    a, b = fixorder(a, order), fixorder(b, order)
-    return a, b, order
+    a.order == b.order && return a, b
+    if a.order < b.order
+        a = TaylorN(a, b.order)
+    else
+        b = TaylorN(b, a.order)
+    end
+    return a, b
 end
 
 ## real, imag, conj and ctranspose ##
@@ -330,7 +331,7 @@ ctranspose{T<:Number}(a::TaylorN{T}) = conj(a)
 ## Equality ##
 ==(a::HomogPol, b::HomogPol) = a.coeffs == b.coeffs
 function ==(a::TaylorN, b::TaylorN)
-    a, b, order = fixshape(a, b)
+    a, b = fixshape(a, b)
     return a.coeffs == b.coeffs
 end
 
@@ -340,12 +341,12 @@ iszero(a::HomogPol) = a == zero(a)
 for T in (:HomogPol, :TaylorN), f in (:+, :-)
     @eval begin
         function ($f)(a::($T), b::($T))
-            a, b, order = fixshape(a,b)
+            a, b = fixshape(a, b)
             v = similar(a.coeffs)
             for i=1:length(a.coeffs)
                 @inbounds v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
-            return ($T)(v, order)
+            return ($T)(v, a.order)
         end
         function ($f)(a::($T))
             for i=1:length(a.coeffs)
@@ -365,6 +366,9 @@ function *(a::HomogPol, b::HomogPol)
     @inbounds nCoefHa = sizeTable[a.order+1]
     @inbounds nCoefHb = sizeTable[b.order+1]
     @inbounds nCoefH  = sizeTable[order+1]
+    if eltype(a) != eltype(b)
+        a, b = promote(a, b)
+    end
     coeffs = zeros(T, nCoefH)
     z = zero(T)
     for na = 1:nCoefHa
@@ -386,17 +390,17 @@ function *(a::HomogPol, b::HomogPol)
     return HomogPol{T}(coeffs, order)
 end
 function *(a::TaylorN, b::TaylorN)
-    a, b, order = fixshape(a, b)
+    a, b = fixshape(a, b)
     T = eltype(a)
-    coeffs = zeros(HomogPol{T}, order)
+    coeffs = zeros(HomogPol{T}, a.order)
     @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
-    for ord = 2:order+1
+    for ord = 2:a.order+1
         @inbounds for i = 0:ord-1
             (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
             coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
         end
     end
-    return TaylorN{T}(coeffs, order)
+    return TaylorN{T}(coeffs, a.order)
 end
 
 ## Division ##
@@ -405,21 +409,21 @@ end
 function /(a::TaylorN, b::TaylorN)
     b0 = b.coeffs[1].coeffs[1]
     @assert b0 != zero(b0)
-    a, b, order = fixshape(a, b)
-    #!?orddivfact, cdivfact = divfactorization(a, b) # order and coefficient of first factorized term
+    a, b = fixshape(a, b)
+    #!?orddivfact, cdivfact = divfactorization(a, b) # a.order and coefficient of first factorized term
     invb0 = inv(b0)
     cdivfact = a.coeffs[1] * invb0
     T = eltype(cdivfact)
-    coeffs = zeros(HomogPol{T}, order)
+    coeffs = zeros(HomogPol{T}, a.order)
     @inbounds coeffs[1] = cdivfact
-    for ord = 1:order
+    for ord = 1:a.order
         @inbounds for i = 0:ord-1
             (iszero(coeffs[i+1]) || iszero(b.coeffs[ord-i+1])) && continue
             coeffs[ord+1] = coeffs[i+1] * b.coeffs[ord-i+1]
         end
         @inbounds coeffs[ord+1] = (a.coeffs[ord+1] - coeffs[ord+1]) * invb0
     end
-    return TaylorN{T}(coeffs, order)
+    return TaylorN{T}(coeffs, a.order)
 end
 # function divfactorization(a1::Taylor, b1::Taylor)
 #     # order of first factorized term; a1 and b1 are assumed to be of the same order (length)
