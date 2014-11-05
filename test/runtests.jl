@@ -109,6 +109,7 @@ uTN = one(convert(TaylorN{Float64},yTN))
 @test (rem(1+xTN,1)).coeffs[1] == 0
 @test diffTaylor(mod2pi(2pi+yTN^3),2) == diffTaylor(yTN^3,2)
 @test diffTaylor(yTN) == zeroTN
+@test -xTN/3im == im*xTN/3
 
 @test diffTaylor(2xTN*yTN^2,1) == 2yTN^2
 @test xTN*xTN^3 == xTN^4

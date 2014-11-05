@@ -1,6 +1,6 @@
 # utils_Taylor1.jl: 1-variable Taylor expansions
 #
-# Last modification: 2014.06.25
+# Last modification: 2014.11.04
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -83,7 +83,11 @@ for f in (:+, :-)
     @eval begin
         function ($f)(a::Taylor, b::Taylor)
             a, b, order = fixshape(a, b)
-            v = ($f)(a.coeffs, b.coeffs)
+            # v = ($f)(a.coeffs, b.coeffs)
+            v = similar(a.coeffs)
+            for i=1:length(a.coeffs)
+                @inbounds v[i] = ($f)(a.coeffs[i], b.coeffs[i])
+            end
             return Taylor(v, order)
         end
         ($f)(a::Taylor) = Taylor(($f)(a.coeffs), a.order)
@@ -218,8 +222,8 @@ end
 function ^(a::Taylor, x::Real)
     uno = one(a)
     x == zero(x) && return uno
-    x == 0.5 && return sqrt(a)
-    x == int(x) && return a^int(x)
+    x == one(x)/2 && return sqrt(a)
+    isinteger(x) && return a^int(x)
     order = a.order
     # First non-zero coefficient
     l0nz = firstnonzero(a)

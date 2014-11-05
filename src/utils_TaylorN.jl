@@ -1,6 +1,6 @@
 # utils_TaylorN.jl: N-variables Taylor expansions through homogeneous polynomials
 #
-# Last modification: 2014.08.19
+# Last modification: 2014.11.04
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -11,6 +11,7 @@
 ##  number of variables considered (NUMVARS <--> lNiv)
 const MAXORDER = [6]
 const NUMVARS  = [2]
+
 info( string("\n MAXORDER = ", MAXORDER[end], "\n NUMVARS  = ",NUMVARS[end]) )
 
 ## Hash tables
@@ -26,6 +27,8 @@ function generateIndicesTable()
     maxOrd = MAXORDER[end]
     arrayDDic = Dict{Int,Array{Int,1}}[]
     arraySize = Int[]
+    sizehint(arrayDDic, maxOrd+1)
+    sizehint(arraySize, maxOrd+1)
     # if numVars==1
     #     for k = 0:maxOrd
     #         DDic = Dict{Int, Array{Int,1}}()
@@ -73,6 +76,7 @@ const indicesTable, sizeTable = generateIndicesTable()
 function generatePosTable()
     maxOrd  = MAXORDER[end]
     arrayDDic = Dict{Array{Int,1},Int}[]
+    sizehint(arrayDDic, maxOrd+1)
     # if NUMVARS[end]==1
     #     for k = 0:maxOrd
     #         DDic = Dict{Array{Int,1}, Int}()
@@ -349,10 +353,11 @@ for T in (:HomogPol, :TaylorN), f in (:+, :-)
             return ($T)(v, a.order)
         end
         function ($f)(a::($T))
-            for i=1:length(a.coeffs)
-                @inbounds a.coeffs[i] = ($f)(a.coeffs[i])
+            v = similar(a.coeffs)
+            for i=1:length(v)
+                @inbounds v[i] = ($f)(a.coeffs[i])
             end
-            return ($T)(a.coeffs, a.order)
+            return ($T)(v, a.order)
         end
     end
 end
@@ -371,6 +376,8 @@ function *(a::HomogPol, b::HomogPol)
     end
     coeffs = zeros(T, nCoefH)
     z = zero(T)
+    iaux = zeros(NUMVARS[end])
+    posTb = posTable[order+1]
     for na = 1:nCoefHa
         @inbounds ca = a.coeffs[na]
         ca == z && continue
@@ -379,11 +386,10 @@ function *(a::HomogPol, b::HomogPol)
             @inbounds cb = b.coeffs[nb]
             cb == z && continue
             @inbounds indb = indicesTable[b.order+1][nb]
-            indp = zeros(inda)
             for i=1:NUMVARS[end]
-                indp[i] = inda[i]+indb[i]
+                iaux[i] = inda[i]+indb[i]
             end
-            @inbounds pos = posTable[order+1][indp]
+            @inbounds pos = posTb[iaux]
             @inbounds coeffs[pos] += ca * cb
         end
     end
@@ -516,8 +522,8 @@ end
 function ^(a::TaylorN, x::Real)
     uno = one(eltype(a))
     x == zero(x) && return TaylorN( uno )
-    x == 0.5 && return sqrt(a)
-    x == int(x) && return a^int(x)
+    x == one(x)/2 && return sqrt(a)
+    isinteger(x) && return a^int(x)
     @inbounds a0 = a.coeffs[1].coeffs[1]
     @assert a0 != zero(a0)
     aux = ( a0 )^x
@@ -548,25 +554,25 @@ function square(a::HomogPol)
     @inbounds nCoefH  = sizeTable[order+1]
     two = 2*one(T)
     coeffs = zeros(T, nCoefH)
+    iaux = zeros(NUMVARS[end])
+    posTb = posTable[order+1]
     for na = 1:nCoefHa
         @inbounds ca = a.coeffs[na]
         ca == zero(T) && continue
         @inbounds inda = indicesTable[a.order+1][na]
-        # iind = 2*inda
-        iind = zeros(inda)
         for i=1:NUMVARS[end]
-            @inbounds iind[i] = 2inda[i]
+            @inbounds iaux[i] = 2inda[i]
         end
-        @inbounds pos = posTable[order+1][iind]
+        @inbounds pos = posTb[iaux]
         @inbounds coeffs[pos] += ca * ca
         for nb = na+1:nCoefHa
             @inbounds cb = a.coeffs[nb]
             cb == zero(T) && continue
             @inbounds indb = indicesTable[a.order+1][nb]
             for i=1:NUMVARS[end]
-                @inbounds iind[i] = inda[i]+indb[i]
+                @inbounds iaux[i] = inda[i]+indb[i]
             end
-            @inbounds pos = posTable[order+1][iind]
+            @inbounds pos = posTb[iaux]
             @inbounds coeffs[pos] += two * ca * cb
         end
     end
@@ -699,13 +705,13 @@ function diffTaylor(a::HomogPol, r::Int)
     nCoefH = sizeTable[a.order]
     coeffs = zeros(T,nCoefH)
     jind = zeros(Int, NUMVARS[end])
-    indp = zeros(jind)
+    posTb = posTable[a.order]
     @inbounds jind[r] = 1
     @inbounds for i = 1:sizeTable[a.order+1]
         iind = indicesTable[a.order+1][i]
         n = iind[r]
         n == 0 && continue
-        pos = posTable[a.order][iind-jind]
+        pos = posTb[iind-jind]
         coeffs[pos] = n * a.coeffs[i]
     end
     return HomogPol{T}(coeffs, a.order-1)
