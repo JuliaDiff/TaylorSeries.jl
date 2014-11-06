@@ -30,17 +30,16 @@ function generateIndicesTable()
     sizehint(arrayDDic, maxOrd+1)
     sizehint(arraySize, maxOrd+1)
     # if numVars==1
+    #     DDic = Dict{Int, Array{Int,1}}()
     #     for k = 0:maxOrd
-    #         DDic = Dict{Int, Array{Int,1}}()
     #         DDic[k+1] = [k]
     #         push!(arraySize, 1)
     #         push!(arrayDDic, DDic)
     #     end
     #     return arrayDDic, arraySize
     # end
+    iindices = zeros(Int, numVars)
     for kDeg = 0:maxOrd
-        nCoefH = binomial( numVars+kDeg-1, kDeg)
-        iindices = zeros(Int, numVars)
         pos = 0
         DDic = Dict{Int, Array{Int,1}}()
         iV = numVars
@@ -48,7 +47,9 @@ function generateIndicesTable()
             @inbounds iindices[end] = iz
             @inbounds pos, DDic[pos] = pos2indices!( iV, kDeg, iindices, pos, DDic)
         end
-        @assert length(DDic) == nCoefH
+        nCoefH = length(DDic)
+        # nCoefH = binomial( numVars+kDeg-1, kDeg)  # This was used for debugging
+        # @assert length(DDic) == nCoefH
         push!(arrayDDic, DDic)
         push!(arraySize, nCoefH)
     end
@@ -59,14 +60,14 @@ function pos2indices!(iV::Int, kDeg::Int, iIndices::Array{Int,1}, pos::Int, dict
     jVar = iV-1
     kDegNext = kDeg - iIndices[iV]
     if jVar > 1
-        for jDeg=0:kDegNext
+        for jDeg = 0:kDegNext
             iIndices[jVar] = jDeg
             @inbounds pos, dict[pos] = pos2indices!( jVar, kDegNext, iIndices, pos, dict)
         end
     else
         iIndices[1] = kDegNext
         pos += 1
-        @inbounds dict[pos] = iIndices[1:end]
+        @inbounds dict[pos] = iIndices
     end
     return pos, iIndices[1:end]
 end
@@ -78,8 +79,8 @@ function generatePosTable()
     arrayDDic = Dict{Array{Int,1},Int}[]
     sizehint(arrayDDic, maxOrd+1)
     # if NUMVARS[end]==1
+    #     DDic = Dict{Array{Int,1}, Int}()
     #     for k = 0:maxOrd
-    #         DDic = Dict{Array{Int,1}, Int}()
     #         DDic[ [k] ] = k+1
     #         push!(arrayDDic, DDic)
     #     end
@@ -123,8 +124,8 @@ end
 #
 get_numVars() = NUMVARS[end]
 function set_numVars(n::Int)
-    @assert n > 0
-    n==1 && error( string("Use `Taylor` rather than `TaylorN` for one independent variable.") )
+    @assert n > 1
+    # n==1 && error( string("Use `Taylor` rather than `TaylorN` for one independent variable.") )
     NUMVARS[end] = n
     maxOrd = MAXORDER[end]
     indicesTable[:], sizeTable[:] = generateIndicesTable()
@@ -137,7 +138,7 @@ end
 function orderH{T}(coeffs::Array{T,1})
     ord = 0
     ll = length(coeffs)
-    for i=1:MAXORDER[end]+1
+    for i = 1:MAXORDER[end]+1
         @inbounds nCoefH = sizeTable[i]
         ll <= nCoefH && break
         ord += 1
@@ -155,7 +156,7 @@ immutable HomogPol{T<:Number} <: AbstractSeries{T, NUMVARS[end]}
         @inbounds nCoefH = sizeTable[order+1]
         @assert lencoef <= nCoefH
         z = zero(T)
-        for i=lencoef+1:nCoefH
+        for i = lencoef+1:nCoefH
             push!(coeffs, z)
         end
         new(coeffs, order)
@@ -300,7 +301,7 @@ function fixorder{T<:Number}(a::TaylorN{T}, order::Int64)
     for ord = a.order+1:order
         @inbounds nCoefH = sizeTable[ord+1]
         z = zeros(T, nCoefH)
-        zH = HomogPol{T}(z, ord)
+        zH = HomogPol(z, ord)
         push!(a.coeffs, zH)
     end
     return TaylorN{T}(a.coeffs, order)
@@ -347,14 +348,14 @@ for T in (:HomogPol, :TaylorN), f in (:+, :-)
         function ($f)(a::($T), b::($T))
             a, b = fixshape(a, b)
             v = similar(a.coeffs)
-            for i=1:length(a.coeffs)
+            for i = 1:length(a.coeffs)
                 @inbounds v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
             return ($T)(v, a.order)
         end
         function ($f)(a::($T))
             v = similar(a.coeffs)
-            for i=1:length(v)
+            for i = 1:length(v)
                 @inbounds v[i] = ($f)(a.coeffs[i])
             end
             return ($T)(v, a.order)
@@ -386,7 +387,7 @@ function *(a::HomogPol, b::HomogPol)
             @inbounds cb = b.coeffs[nb]
             cb == z && continue
             @inbounds indb = indicesTable[b.order+1][nb]
-            for i=1:NUMVARS[end]
+            for i = 1:NUMVARS[end]
                 iaux[i] = inda[i]+indb[i]
             end
             @inbounds pos = posTb[iaux]
@@ -560,7 +561,7 @@ function square(a::HomogPol)
         @inbounds ca = a.coeffs[na]
         ca == zero(T) && continue
         @inbounds inda = indicesTable[a.order+1][na]
-        for i=1:NUMVARS[end]
+        for i = 1:NUMVARS[end]
             @inbounds iaux[i] = 2inda[i]
         end
         @inbounds pos = posTb[iaux]
@@ -569,7 +570,7 @@ function square(a::HomogPol)
             @inbounds cb = a.coeffs[nb]
             cb == zero(T) && continue
             @inbounds indb = indicesTable[a.order+1][nb]
-            for i=1:NUMVARS[end]
+            for i = 1:NUMVARS[end]
                 @inbounds iaux[i] = inda[i]+indb[i]
             end
             @inbounds pos = posTb[iaux]
@@ -589,7 +590,7 @@ function square(a::TaylorN)
             @inbounds coeffs[ord+1] += a.coeffs[i+1] * a.coeffs[ord-i+1]
         end
         @inbounds coeffs[ord+1] = 2 * coeffs[ord+1]
-        ord%2 == 1 && continue
+        isodd(ord) && continue
         kodd = div(ord,2)
         @inbounds coeffs[ord+1] += square( a.coeffs[kodd+1] )
     end
@@ -609,7 +610,7 @@ function sqrt(a::TaylorN)
             @inbounds coeffs[ord+1] += coeffs[i+1] * coeffs[ord-i+1]
         end
         @inbounds coeffs[ord+1] = a.coeffs[ord+1] - 2 * coeffs[ord+1]
-        if ord%2 == 0
+        if iseven(ord)
             @inbounds coeffs[ord+1] = coeffs[ord+1] - square( coeffs[div(ord,2)+1] )
         end
         @inbounds coeffs[ord+1] = coeffs[ord+1] / (2 * p0)
