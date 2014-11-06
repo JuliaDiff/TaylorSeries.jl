@@ -124,8 +124,8 @@ end
 #
 get_numVars() = NUMVARS[end]
 function set_numVars(n::Int)
-    @assert n > 1
-    # n==1 && error( string("Use `Taylor` rather than `TaylorN` for one independent variable.") )
+    @assert n > 0
+    n==1 && error( string("Use `Taylor` rather than `TaylorN` for one independent variable.") )
     NUMVARS[end] = n
     maxOrd = MAXORDER[end]
     indicesTable[:], sizeTable[:] = generateIndicesTable()
