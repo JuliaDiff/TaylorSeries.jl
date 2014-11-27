@@ -178,7 +178,7 @@ end
 ## Exports to Taylor, TaylorN and HomogPol ##
 export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
 export TaylorN, HomogPol
-export set_maxOrder, get_maxOrder, set_numVars, get_numVars
+export set_Params_TaylorN, set_maxOrder, get_maxOrder, set_numVars, get_numVars
 export taylorvar, ∇, jacobian, hessian
 
 end

@@ -101,37 +101,36 @@ const posTable = generatePosTable()
 
 ## Utilities to get/set MAXORDER and NUMVARS; they reset the indicesTable
 get_maxOrder() = MAXORDER[end]
-function set_maxOrder(n::Int)
-    @assert n > 0
+set_maxOrder(n::Int) = set_Params(n, NUMVARS[end])
+
+get_numVars() = NUMVARS[end]
+set_numVars(n::Int) = set_Params(MAXORDER[end], n)
+
+function set_Params_TaylorN(order::Int, nV::Int)
+    @assert (order > 0 && nV>1)
+    order == MAXORDER[end] && nV == NUMVARS[end] && return order, nV
     oldOrder = MAXORDER[end]
-    MAXORDER[end] = n
-    if n < oldOrder
-        for i = oldOrder:-1:n+1
-            pop!(indicesTable);
-            pop!(sizeTable);
-            pop!(posTable);
+    oldVars = NUMVARS[end]
+    MAXORDER[end] = order
+    NUMVARS[end] = nV
+
+    if order < oldOrder
+        for i = oldOrder:-1:order+1
+            pop!(indicesTable)
+            pop!(sizeTable)
+            pop!(posTable)
         end
     else
-        resize!(indicesTable,n+1)
-        resize!(sizeTable,n+1)
-        resize!(posTable,n+1)
-        indicesTable[:], sizeTable[:] = generateIndicesTable()
-        posTable[:] = generatePosTable()
+        resize!(indicesTable,order+1)
+        resize!(sizeTable,order+1)
+        resize!(posTable,order+1)
     end
-    info(string("MAXORDER is now ", n, "; hash tables resetted.\n"))
-    return n
-end
-#
-get_numVars() = NUMVARS[end]
-function set_numVars(n::Int)
-    @assert n > 0
-    n==1 && error( string("Use `Taylor` rather than `TaylorN` for one independent variable.") )
-    NUMVARS[end] = n
-    maxOrd = MAXORDER[end]
+
     indicesTable[:], sizeTable[:] = generateIndicesTable()
     posTable[:] = generatePosTable()
-    info(string("NUMVARS is now ", n, "; hash tables resetted.\n"))
-    return n
+    gc();
+    info(string("MAXORDER=", order, " and NUMVARS=", nV, "; hash tables resetted.\n"))
+    return order, nV
 end
 
 ## Obtains the minimum order of a HomogPol compatible with the length of the vector
