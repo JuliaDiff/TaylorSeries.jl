@@ -101,10 +101,10 @@ const posTable = generatePosTable()
 
 ## Utilities to get/set MAXORDER and NUMVARS; they reset the indicesTable
 get_maxOrder() = MAXORDER[end]
-set_maxOrder(n::Int) = set_Params(n, NUMVARS[end])
+set_maxOrder(n::Int) = set_Params_TaylorN(n, NUMVARS[end])
 
 get_numVars() = NUMVARS[end]
-set_numVars(n::Int) = set_Params(MAXORDER[end], n)
+set_numVars(n::Int) = set_Params_TaylorN(MAXORDER[end], n)
 
 function set_Params_TaylorN(order::Int, nV::Int)
     @assert (order > 0 && nV>1)
