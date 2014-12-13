@@ -33,6 +33,7 @@ xsquare = Taylor([0,0,1],15)
 @test xT0^0 == xT0^0.0 == one(xT0)
 @test xT0*xT0 == xsquare
 @test (-xT0)^2 == xsquare
+@test xT0^3 == xsquare*xT0
 @test xsquare/xT0 == xT0
 @test xT0/(xT0*3) == (1/3)*u
 @test xT0/3im == -xTI/3
@@ -76,23 +77,35 @@ xsquare = Taylor([0,0,1],15)
 @test integTaylor(diffTaylor(exp(xT0)),1) == exp(xT0)
 @test integTaylor(cos(xT0)) == sin(xT0)
 
+@test promote(xT(0.0), xT0) == (xT(0.0),xT(0.0))
+
 @test_throws ErrorException 1/xT0
 @test_throws ErrorException z/z
 @test_throws ErrorException xT0^1.5
+@test_throws DomainError xT0^(-2)
 @test_throws ErrorException sqrt(xT0)
 @test_throws ErrorException log(xT0)
 @test_throws ErrorException cos(xT0)/sin(xT0)
 @test_throws ErrorException deriv( exp(xT(1.0pi)), 30 )
 
 # Tests for N-d Taylor expansions
+set_Params_TaylorN(3,4)
 set_numVars(2)
 set_maxOrder(17)
 xH = HomogPol([1,0])
 yH = HomogPol([0,1],1)
+@test get_numVars(xH) == 2
+@test get_maxOrder(yH) == 1
 xTN = TaylorN(xH,17)
 yTN = taylorvar(Int64, 2, 17)
 zeroTN = zero( taylorvar(Int64, 1) )
 uTN = one(convert(TaylorN{Float64},yTN))
+
+@test HomogPol(xH,1) == HomogPol(xH)
+@test eltype(xH) == Int
+@test length(xH) == 2
+@test zero(xH) == 0*xH
+@test one(yH) == xH+yH
 
 @test TaylorN(zeroTN,5) == 0
 @test TaylorN(uTN) == convert(TaylorN{Complex},1)
@@ -131,5 +144,6 @@ f2 = g2(xTN,yTN)
 @test [xTN yTN]*hessian(f1*f2)*[xTN, yTN] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
 @test hessian(f1^2)/2 == [[49,0] [0,12]]
 @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
-println("    \033[32;1mSUCCESS\033[0m")
+
+#println("    \033[32;1mSUCCESS\033[0m")
 
