@@ -67,7 +67,7 @@ xsquare = Taylor([0,0,1],15)
 @test (exp(xT0))^Taylor(-5.2im) == cos(5.2xT0)-im*sin(5.2xT0)
 @test abs((tan(xT0)).coeffs[8]- 17/315) < tol1
 @test abs((tan(xT0)).coeffs[14]- 21844/6081075) < tol1
-@test evalTaylor(exp(Taylor([0,1],17)),1.0) == e
+@test evalTaylor(exp(Taylor([0,1],17)),1.0) == 1.0*e
 @test evalTaylor(exp(Taylor([0,1],1))) == 1.0
 @test evalTaylor(exp(xT0),xT0^2) == exp(xT0^2)
 
