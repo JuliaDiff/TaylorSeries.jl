@@ -1,0 +1,18 @@
+site_name: TaylorSeries.jl
+
+site_description: [TaylorSeries.jl: A julia package to manipulate Taylor expansions]
+
+repo_url: https://github.com/lbenet/TaylorSeries.jl
+
+theme: mkdocs
+
+extra_css: ['css/github.css']
+
+markdown_extensions: [codehilite, toc]
+
+copyright: Copyright &copy; Luis Benet and David P. Sanders, 2014, 2015.
+
+pages:
+- ['index.md', 'Home']
+- ['background.md', 'Background']
+- ['usersguide.md', 'Users guide']
