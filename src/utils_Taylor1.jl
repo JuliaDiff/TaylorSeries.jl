@@ -1,6 +1,6 @@
 # utils_Taylor1.jl: 1-variable Taylor expansions
 #
-# Last modification: 2014.11.04
+# Last modification: 2015.03.26
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -8,6 +8,16 @@
 
 
 ## Constructors ##
+@doc """
+DataType for polynomial expansions in one independent variable
+
+Fieldnames:
+
+- `coeffs`: vector containing the expansion coefficients; the i-th component is the i-1 coefficient of the expansion
+
+- `order` : maximum order of the expansion considered
+
+""" ->
 immutable Taylor{T<:Number} <: AbstractSeries{T,1}
     coeffs :: Array{T,1}
     order :: Int
@@ -234,7 +244,7 @@ function ^(a::Taylor, x::Real)
         error("Integer exponent REQUIRED if the Taylor polynomial is expanded around 0.\n")
     # Reaching this point, it is possible to implement the power of the Taylor polynomial. 
     # The last l0nz coefficients are set to zero.
-    lnull = itrunc(lnull)
+    lnull = trunc(Int,lnull)
     ##l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
     aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)

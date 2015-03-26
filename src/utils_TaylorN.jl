@@ -1,6 +1,6 @@
 # utils_TaylorN.jl: N-variables Taylor expansions through homogeneous polynomials
 #
-# Last modification: 2014.11.04
+# Last modification: 2015.03.26
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -12,7 +12,11 @@
 const MAXORDER = [6]
 const NUMVARS  = [2]
 
-info( string("\n MAXORDER = ", MAXORDER[end], "\n NUMVARS  = ",NUMVARS[end]) )
+function show_ParamsTaylorN()
+    info( string("\n MAXORDER = ", MAXORDER[end], "\n NUMVARS  = ",NUMVARS[end]) )
+    nothing
+end
+# info( string("\n MAXORDER = ", MAXORDER[end], "\n NUMVARS  = ",NUMVARS[end]) )
 
 ## Hash tables
 #=
@@ -27,8 +31,8 @@ function generateIndicesTable()
     maxOrd = MAXORDER[end]
     arrayDDic = Dict{Int,Array{Int,1}}[]
     arraySize = Int[]
-    sizehint(arrayDDic, maxOrd+1)
-    sizehint(arraySize, maxOrd+1)
+    sizehint!(arrayDDic, maxOrd+1)
+    sizehint!(arraySize, maxOrd+1)
     # if numVars==1
     #     DDic = Dict{Int, Array{Int,1}}()
     #     for k = 0:maxOrd
@@ -71,13 +75,12 @@ function pos2indices!(iV::Int, kDeg::Int, iIndices::Array{Int,1}, pos::Int, dict
     end
     return pos, iIndices[1:end]
 end
-
 const indicesTable, sizeTable = generateIndicesTable()
 
 function generatePosTable()
     maxOrd  = MAXORDER[end]
     arrayDDic = Dict{Array{Int,1},Int}[]
-    sizehint(arrayDDic, maxOrd+1)
+    sizehint!(arrayDDic, maxOrd+1)
     # if NUMVARS[end]==1
     #     DDic = Dict{Array{Int,1}, Int}()
     #     for k = 0:maxOrd
@@ -106,7 +109,7 @@ set_maxOrder(n::Int) = set_Params_TaylorN(n, NUMVARS[end])
 get_numVars() = NUMVARS[end]
 set_numVars(n::Int) = set_Params_TaylorN(MAXORDER[end], n)
 
-function set_Params_TaylorN(order::Int, nV::Int)
+function set_ParamsTaylorN(order::Int, nV::Int)
     @assert (order > 0 && nV>1)
     order == MAXORDER[end] && nV == NUMVARS[end] && return order, nV
     oldOrder = MAXORDER[end]
@@ -128,8 +131,9 @@ function set_Params_TaylorN(order::Int, nV::Int)
 
     indicesTable[:], sizeTable[:] = generateIndicesTable()
     posTable[:] = generatePosTable()
-    gc();
-    info(string("MAXORDER=", order, " and NUMVARS=", nV, "; hash tables resetted.\n"))
+    # gc();
+    show_ParamsTaylorN()
+    # info(string("MAXORDER=", order, " and NUMVARS=", nV, "; hash tables resetted.\n"))
     return order, nV
 end
 
@@ -146,6 +150,15 @@ function orderH{T}(coeffs::Array{T,1})
 end
 
 ## HomogPol (homogeneous polynomial) constructors ##
+@doc """
+DataType for *homogenous* polynomials in many (>1) independent variables
+
+Fieldnames:
+
+- `coeffs`: vector containing the expansion coefficients; the vector components are related to the monomials by `indicesTables` and `posTable`
+
+- `order` : order (degree) of the homogenous polynomial
+""" ->
 immutable HomogPol{T<:Number} <: AbstractSeries{T, NUMVARS[end]}
     coeffs  :: Array{T,1}
     order   :: Int
@@ -183,7 +196,7 @@ function zeros{T<:Number}(::HomogPol{T}, order::Int)
     @assert order <= MAXORDER[end]
     order == 0 && return [HomogPol(zero(T),0)]
     v = HomogPol{T}[]
-    sizehint(v, order+1)
+    sizehint!(v, order+1)
     push!(v, HomogPol(zero(T),0))
     for ord = 1:order
         z = HomogPol(zero(T),ord)
@@ -201,7 +214,7 @@ function ones{T<:Number}(::HomogPol{T}, order::Int)
     @assert order <= MAXORDER[end]
     order == 0 && return [HomogPol(one(T),0)]
     v = HomogPol{T}[]
-    sizehint(v, order+1)
+    sizehint!(v, order+1)
     push!(v,HomogPol(one(T),0))
     for ord = 1:order
         @inbounds nCoefH = sizeTable[ord+1]
@@ -228,6 +241,16 @@ promote_rule{T<:Number, S<:Number}(::Type{HomogPol{T}}, ::Type{Array{S,1}}) =
 promote_rule{T<:Number, S<:Union(Real,Complex)}(::Type{HomogPol{T}}, ::Type{S}) = 
     HomogPol{promote_type(T, S)}
 
+@doc """
+DataType for polynomial expansions in many (>1) independent variables
+
+Fieldnames:
+
+- `coeffs`: vector containing the `HomogPol` entries
+
+- `order` : maximum order of the polynomial expansion
+
+""" ->
 immutable TaylorN{T<:Number} <: AbstractSeries{T,NUMVARS[end]}
     coeffs  :: Array{HomogPol{T},1}
     order   :: Int
@@ -697,7 +720,7 @@ function tan(a::TaylorN)
 end
 
 ## Differentiation ##
-"""Partial differentiation of a HomogPol series with respect to the r-th variable"""
+"Partial differentiation of a HomogPol series with respect to the r-th variable"
 function diffTaylor(a::HomogPol, r::Int)
     @assert 1 <= r <= NUMVARS[end]
     T = eltype(a)
@@ -716,7 +739,7 @@ function diffTaylor(a::HomogPol, r::Int)
     end
     return HomogPol{T}(coeffs, a.order-1)
 end
-"""Partial differentiation of a TaylorN series with respect to the r-th variable"""
+"Partial differentiation of a TaylorN series with respect to the r-th variable"
 function diffTaylor(a::TaylorN, r::Int)
     T = eltype(a)
     coeffs = zeros(HomogPol{T}, a.order)

@@ -2,11 +2,11 @@
 #
 # Julia module for handling Taylor series of arbitrary but finite order
 #
-# utils_Taylor1.jl contains the constructors and methods for 1-variable expansions
+# - utils_Taylor1.jl contains the constructors and methods for 1-variable expansions
 #
-# utils_TaylorN.jl contains the constructors and methods for N-variable expansions
+# - utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2014.06.07
+# Last modification: 2015.03.26
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -14,18 +14,35 @@
 
 module TaylorSeries
 
-import Base: zero, one, zeros, ones
-import Base: convert, promote_rule, promote, eltype, length, show
-import Base: real, imag, conj, ctranspose
-import Base: rem, mod, mod2pi
-import Base: sqrt, exp, log, sin, cos, tan#, square
+## Documentation
+if VERSION < v"0.4.0-dev"
+    using Docile
+end
 
+## Compatibility v0.3 -> 0.4
+using Compat
+@compat sizehint!
+@compat trunc
+
+import Base: zero, one, zeros, ones, 
+    convert, promote_rule, promote, eltype, length, show, 
+    real, imag, conj, ctranspose, 
+    rem, mod, mod2pi, 
+    sqrt, exp, log, sin, cos, tan#, square
+
+## Exported types
+export AbstractSeries, Taylor, TaylorN, HomogPol
+## Exported methods
+export diffTaylor, integTaylor, evalTaylor, deriv, pretty_print,
+    set_ParamsTaylorN, show_ParamsTaylorN, 
+    set_maxOrder, get_maxOrder, set_numVars, get_numVars,
+    taylorvar, ∇, jacobian, hessian
+
+@doc "The main overall abstract type in TaylorSeries" ->
 abstract AbstractSeries{T<:Number,N} <: Number
 
 include("utils_Taylor1.jl")
-
 include("utils_TaylorN.jl")
-gc()
 
 ## The following routines combine Taylor and TaylorN, so they must appear defining 
 ##   Taylor and TaylorN and some of its functionalities
@@ -174,11 +191,5 @@ function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
     end
     return cadena
 end
-
-## Exports to Taylor, TaylorN and HomogPol ##
-export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
-export TaylorN, HomogPol
-export set_Params_TaylorN, set_maxOrder, get_maxOrder, set_numVars, get_numVars
-export taylorvar, ∇, jacobian, hessian
 
 end
