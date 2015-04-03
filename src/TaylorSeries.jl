@@ -24,18 +24,18 @@ using Compat
 @compat sizehint!
 @compat trunc
 
-import Base: zero, one, zeros, ones, 
-    convert, promote_rule, promote, eltype, length, show, 
-    real, imag, conj, ctranspose, 
-    rem, mod, mod2pi, 
+import Base: zero, one, zeros, ones,
+    convert, promote_rule, promote, eltype, length, show,
+    real, imag, conj, ctranspose,
+    rem, mod, mod2pi,
     sqrt, exp, log, sin, cos, tan#, square
 
 ## Exported types
 export AbstractSeries, Taylor, TaylorN, HomogPol
 ## Exported methods
 export diffTaylor, integTaylor, evalTaylor, deriv, pretty_print,
-    set_ParamsTaylorN, show_ParamsTaylorN, 
-    set_maxOrder, get_maxOrder, set_numVars, get_numVars,
+    set_ParamsTaylorN, show_ParamsTaylorN,
+        set_maxOrder, get_maxOrder, set_numVars, get_numVars,
     taylorvar, ∇, jacobian, hessian
 
 @doc "The main overall abstract type in TaylorSeries" ->
@@ -44,15 +44,15 @@ abstract AbstractSeries{T<:Number,N} <: Number
 include("utils_Taylor1.jl")
 include("utils_TaylorN.jl")
 
-## The following routines combine Taylor and TaylorN, so they must appear defining 
+## The following routines combine Taylor and TaylorN, so they must appear defining
 ##   Taylor and TaylorN and some of its functionalities
 
 # infostr
-infostr{T<:Number}(a::Taylor{T}) = 
+infostr{T<:Number}(a::Taylor{T}) =
     string(a.order, "-order Taylor{", T, "}:\n")
-infostr{T<:Number}(a::HomogPol{T}) = 
+infostr{T<:Number}(a::HomogPol{T}) =
     string(a.order, "-order HomogPol{", T, "} in ", NUMVARS[end], " variables:\n")
-infostr{T<:Number}(a::TaylorN{T}) = 
+infostr{T<:Number}(a::TaylorN{T}) =
     string(a.order, "-order TaylorN{", T, "} in ", NUMVARS[end], " variables:\n")
 
 # pretty_print

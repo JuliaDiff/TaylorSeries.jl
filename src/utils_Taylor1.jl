@@ -161,7 +161,7 @@ function divfactorization(a1::Taylor, b1::Taylor)
     return orddivfact, cdivfact
 end
 # Homogeneous coefficient for the division
-function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1}, 
+function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
     coeffs::Array{T,1}, ordfact::Int)
     #
     kcoef == ordfact && return ac[ordfact+1] / bc[ordfact+1]
@@ -180,7 +180,7 @@ for op in (:mod, :rem)
         end
     end
 end
-function mod2pi{T<:Real}(a::Taylor{T}) 
+function mod2pi{T<:Real}(a::Taylor{T})
     coeffs = a.coeffs
     coeffs[1] = mod2pi( a.coeffs[1] )
     return Taylor( coeffs, a.order)
@@ -242,7 +242,7 @@ function ^(a::Taylor, x::Real)
     lnull = x*l0nz
     !isinteger(lnull) &&
         error("Integer exponent REQUIRED if the Taylor polynomial is expanded around 0.\n")
-    # Reaching this point, it is possible to implement the power of the Taylor polynomial. 
+    # Reaching this point, it is possible to implement the power of the Taylor polynomial.
     # The last l0nz coefficients are set to zero.
     lnull = trunc(Int,lnull)
     ##l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
@@ -258,7 +258,7 @@ function ^(a::Taylor, x::Real)
     Taylor(coeffs,order)
 end
 # Homogeneous coefficients for real power
-function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real, 
+function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
     coeffs::Array{T,1}, knull::Int)
     #
     kcoef == knull && return (ac[knull+1])^x
@@ -312,7 +312,7 @@ function sqrt(a::Taylor)
         error("First non-vanishing Taylor coefficient must be an EVEN POWER\n",
             "to expand SQRT around 0.\n")
     end
-    # Reaching this point, it is possible to implement the sqrt of the Taylor polynomial. 
+    # Reaching this point, it is possible to implement the sqrt of the Taylor polynomial.
     # The last l0nz coefficients are set to zero.
     ##l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
     lnull = div(l0nz, 2)
@@ -413,7 +413,7 @@ function sincos(a::Taylor)
     return Taylor(sincoeffs, order), Taylor(coscoeffs, order)
 end
 # Homogeneous coefficients for sincos
-function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, 
+function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
     scoeffs::Array{T,1}, ccoeffs::Array{T,1})
     #
     kcoef == 0 && return sin( ac[1] ), cos( ac[1] )

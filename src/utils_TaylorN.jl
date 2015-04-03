@@ -7,7 +7,7 @@
 #
 
 
-## Default values for the maximum degree of polynomials (MAXORDER <--> nPart) and 
+## Default values for the maximum degree of polynomials (MAXORDER <--> nPart) and
 ##  number of variables considered (NUMVARS <--> lNiv)
 const MAXORDER = [6]
 const NUMVARS  = [2]
@@ -22,7 +22,7 @@ end
 #=
   `generateIndicesTable`: generates the array of dictionaries `indicesTable`. Then, `indicesTable[k+1]`
   contains the dictionary with the table defining the indices from the position for the homogeneous
-  polynomial of degree k. 
+  polynomial of degree k.
   The number of coefficients of the homogenous polynomial of degree k is stored in `sizeTable[k+1]`.
   `generatePosTable`: generates the dictionary `posTable`, the "inverse" of `indicesTable`
 =#
@@ -104,10 +104,10 @@ const posTable = generatePosTable()
 
 ## Utilities to get/set MAXORDER and NUMVARS; they reset the indicesTable
 get_maxOrder() = MAXORDER[end]
-set_maxOrder(n::Int) = set_Params_TaylorN(n, NUMVARS[end])
+set_maxOrder(n::Int) = set_ParamsTaylorN(n, NUMVARS[end])
 
 get_numVars() = NUMVARS[end]
-set_numVars(n::Int) = set_Params_TaylorN(MAXORDER[end], n)
+set_numVars(n::Int) = set_ParamsTaylorN(MAXORDER[end], n)
 
 function set_ParamsTaylorN(order::Int, nV::Int)
     @assert (order > 0 && nV>1)
@@ -226,19 +226,19 @@ end
 ones{T<:Number}(::Type{HomogPol{T}}, order::Int) = ones( HomogPol(one(T), 0), order)
 
 ## Conversion and promotion rules ##
-convert{T<:Number}(::Type{HomogPol{T}}, a::HomogPol) = 
+convert{T<:Number}(::Type{HomogPol{T}}, a::HomogPol) =
     HomogPol{T}(convert(Array{T,1}, a.coeffs), a.order)
-convert{T<:Number, S<:Number}(::Type{HomogPol{T}}, b::Array{S,1}) = 
+convert{T<:Number, S<:Number}(::Type{HomogPol{T}}, b::Array{S,1}) =
     HomogPol{T}(convert(Array{T,1}, b), 0)
-convert{T<:Number}(::Type{HomogPol{T}}, b::Number) = 
+convert{T<:Number}(::Type{HomogPol{T}}, b::Number) =
     HomogPol{T}([convert(T,b)], 0)
 #
-promote_rule{T<:Number, S<:Number}(::Type{HomogPol{T}}, ::Type{HomogPol{S}}) = 
+promote_rule{T<:Number, S<:Number}(::Type{HomogPol{T}}, ::Type{HomogPol{S}}) =
     HomogPol{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{HomogPol{T}}, ::Type{Array{S,1}}) = 
+promote_rule{T<:Number, S<:Number}(::Type{HomogPol{T}}, ::Type{Array{S,1}}) =
     HomogPol{promote_type(T, S)}
 # Defined this way to permit promotion of HomogPol to TaylorN; see below.
-promote_rule{T<:Number, S<:Union(Real,Complex)}(::Type{HomogPol{T}}, ::Type{S}) = 
+promote_rule{T<:Number, S<:Union(Real,Complex)}(::Type{HomogPol{T}}, ::Type{S}) =
     HomogPol{promote_type(T, S)}
 
 @doc """
@@ -300,19 +300,19 @@ zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(T), a.order)
 one{T<:Number}(a::TaylorN{T}) = TaylorN(one(T), a.order)
 
 ## Conversion and promotion rules ##
-convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) = 
+convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) =
     TaylorN{T}( convert(Array{HomogPol{T},1}, a.coeffs), a.order )
-convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogPol{S}) = 
+convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogPol{S}) =
     TaylorN{T}( [convert(HomogPol{T}, b)], 0 )
-convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::Array{HomogPol{S},1}) = 
+convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::Array{HomogPol{S},1}) =
     TaylorN{T}( convert(Array{HomogPol{T},1}, b), length(b)-1 )
 convert{T<:Number}(::Type{TaylorN{T}}, b::Number) = TaylorN( convert(T, b), 0)
 #
-promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) = 
+promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) =
     TaylorN{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{HomogPol{S}}) = 
+promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{HomogPol{S}}) =
     TaylorN{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{Array{HomogPol{S},1}}) = 
+promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{Array{HomogPol{S},1}}) =
     TaylorN{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{S}) = TaylorN{promote_type(T, S)}
 
@@ -486,7 +486,7 @@ for op in (:mod, :rem)
         end
     end
 end
-function mod2pi{T<:Real}(a::TaylorN{T}) 
+function mod2pi{T<:Real}(a::TaylorN{T})
     @inbounds y = mod2pi(a.coeffs[1].coeffs[1])
     @inbounds a.coeffs[1] = HomogPol(y)
     return TaylorN{T}( a.coeffs, a.order )
@@ -783,7 +783,7 @@ function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1}, vals::Array{S,1}
     end
     return transpose(jac)
 end
-hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) = 
+hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
 hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, NUMVARS[end]))
 

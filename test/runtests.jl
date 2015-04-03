@@ -89,7 +89,7 @@ xsquare = Taylor([0,0,1],15)
 @test_throws ErrorException deriv( exp(xT(1.0pi)), 30 )
 
 # Tests for N-d Taylor expansions
-set_Params_TaylorN(3,4)
+set_ParamsTaylorN(3,4)
 set_numVars(2)
 set_maxOrder(17)
 xH = HomogPol([1,0])
@@ -136,9 +136,9 @@ g1(xTN,yTN) = xTN^3 + 3yTN^2 - 2xTN^2 * yTN - 7xTN + 2
 g2(xTN,yTN) = yTN + xTN^2 - xTN^4
 f1 = g1(xTN,yTN)
 f2 = g2(xTN,yTN)
-@test ∇(f1) == [TaylorN([HomogPol(-7), HomogPol([3,-4,0],2)]), 
+@test ∇(f1) == [TaylorN([HomogPol(-7), HomogPol([3,-4,0],2)]),
                 TaylorN( [HomogPol([0,6],1), HomogPol([-2,0,0],2)])]
-@test ∇(f2) == [TaylorN([HomogPol([2,0],1), HomogPol([-4,0,0,0],3)]), 
+@test ∇(f2) == [TaylorN([HomogPol([2,0],1), HomogPol([-4,0,0,0],3)]),
                 TaylorN( HomogPol(1,0))]
 @test jacobian([f1,f2], [2,1]) == jacobian( [g1(xTN+2,yTN+1), g2(xTN+2,yTN+1)] )
 @test [xTN yTN]*hessian(f1*f2)*[xTN, yTN] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
