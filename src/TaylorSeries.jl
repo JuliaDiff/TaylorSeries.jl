@@ -6,7 +6,7 @@
 #
 # - utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2015.03.26
+# Last modification: 2015.04.07
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -24,11 +24,13 @@ using Compat
 @compat sizehint!
 @compat trunc
 
+
 import Base: zero, one, zeros, ones,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
     rem, mod, mod2pi,
     sqrt, exp, log, sin, cos, tan#, square
+
 
 ## Exported types
 export AbstractSeries, Taylor, TaylorN, HomogPol
@@ -38,11 +40,14 @@ export diffTaylor, integTaylor, evalTaylor, deriv, pretty_print,
         set_maxOrder, get_maxOrder, set_numVars, get_numVars,
     taylorvar, ∇, jacobian, hessian
 
+
 @doc "The main overall abstract type in TaylorSeries" ->
 abstract AbstractSeries{T<:Number,N} <: Number
 
 include("utils_Taylor1.jl")
+include("hashtables.jl")
 include("utils_TaylorN.jl")
+
 
 ## The following routines combine Taylor and TaylorN, so they must appear defining
 ##   Taylor and TaylorN and some of its functionalities
@@ -51,9 +56,9 @@ include("utils_TaylorN.jl")
 infostr{T<:Number}(a::Taylor{T}) =
     string(a.order, "-order Taylor{", T, "}:\n")
 infostr{T<:Number}(a::HomogPol{T}) =
-    string(a.order, "-order HomogPol{", T, "} in ", NUMVARS[end], " variables:\n")
+    string(a.order, "-order HomogPol{", T, "} in ", _params.numVars, " variables:\n")
 infostr{T<:Number}(a::TaylorN{T}) =
-    string(a.order, "-order TaylorN{", T, "} in ", NUMVARS[end], " variables:\n")
+    string(a.order, "-order TaylorN{", T, "} in ", _params.numVars, " variables:\n")
 
 # pretty_print
 function pretty_print{T<:Number}(a::Taylor{T})
@@ -113,7 +118,7 @@ end
 
 # Aux functions related to pretty_print
 function homogPol2str{T<:Number}(a::HomogPol{T})
-    numVars = NUMVARS[end]
+    numVars = _params.numVars
     order = a.order
     varstring = ASCIIString[]
     z = zero(T)
@@ -151,7 +156,8 @@ function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
     end
     return string(plusmin, abs(zz))
 end
-function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
+function numbr2str(zz::Complex, ifirst::Bool=false)
+    T = typeof(zz.re)
     zT = zero(T)
     zz == zero(Complex{T}) && return zT
     zre, zim = reim(zz)

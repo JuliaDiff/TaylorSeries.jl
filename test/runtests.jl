@@ -94,7 +94,7 @@ set_numVars(2)
 set_maxOrder(17)
 xH = HomogPol([1,0])
 yH = HomogPol([0,1],1)
-@test get_numVars(xH) == 2
+@test get_numVars() == 2
 @test get_maxOrder(yH) == 1
 xTN = TaylorN(xH,17)
 yTN = taylorvar(Int64, 2, 17)
@@ -109,7 +109,7 @@ uTN = one(convert(TaylorN{Float64},yTN))
 
 @test TaylorN(zeroTN,5) == 0
 @test TaylorN(uTN) == convert(TaylorN{Complex},1)
-@test get_numVars(zeroTN) == 2
+@test get_numVars() == 2
 @test length(uTN) == get_maxOrder()+1
 @test eltype(convert(TaylorN{Complex128},1)) == Complex128
 
