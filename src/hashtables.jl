@@ -6,29 +6,24 @@
 # UNAM
 #
 
-## MAXORDER is the maximum degree of polynomials
-## NUMVARS is the maximum number of variables considered
-# global const MAXORDER = Int[6]
-# global const NUMVARS  = Int[2]
 @doc """Type structure holding the current parameters for `TaylorN` and `HomogPol`.
     
     Fieldnames:
 
-    - mO: maximim degree of the polynomials
-    - nV: maximum number of variables
+    - maxOrder: maximim degree of the polynomials
+    - numVars : maximum number of variables
 
-    These parameters can be changed using `set_ParamsTaylorN(mO,nV)`
+    These parameters can be changed using `set_ParamsTaylorN(order,numVars)`
     """ ->
 type ParamsTaylorN
     maxOrder :: Int
-    numVars :: Int
+    numVars  :: Int
 end
 
 global const _params = ParamsTaylorN(6,2)
 
 @doc """Display the current parameters for `TaylorN` and `HomogPol`""" ->
 function show_ParamsTaylorN()
-    # info( string("\n MAXORDER = ", MAXORDER[end], "\n NUMVARS  = ", NUMVARS[end]) )
     info( string("`TaylorN` and `HomogPol` parameters:\n    Maximum order       = ", _params.maxOrder,
         "\n    Number of variables = ", _params.numVars) )
     nothing
@@ -47,33 +42,31 @@ end
   a vector of indexes, it returns the (lexicographic) position of the corresponding monomial.
 """ ->
 function generateTables()
-    # numVars = NUMVARS[end]
-    # maxOrd = MAXORDER[end]
     maxOrd = _params.maxOrder
     numVars = _params.numVars
     arrayInd  = Array(Dict{Int,Array{Int,1}},maxOrd+1)
     arraySize = Array(Int,maxOrd+1)
-    arrayPos  = Array(Dict{Array{Int,1},Int},maxOrd+1)
+    arrayPos  = Array(Dict{UInt,Int},maxOrd+1)
 
-    # if numVars==1
-    #     for k = 0:maxOrd
-    #         dInd = Dict{Int, Array{Int,1}}()
-    #         dPos = Dict{Array{Int,1},Int}()
-    #         dInd[1] = [k]
-    #         dPos[[k]] = 1
-    #         push!(arraySize, 1)
-    #         push!(arrayInd, dInd)
-    #         push!(arrayPos, dPos)
-    #     end
-    #     return arrayInd, arraySize, arrayPos
-    # end
+    if numVars==1
+        for k = 0:maxOrd
+            dInd = Dict{Int, Array{Int,1}}()
+            dPos = Dict{UInt,Int}()
+            dInd[1] = [k]
+            dPos[hash([k])] = 1
+            arrayInd[k+1] = dInd
+            arraySize[k+1] = 1
+            arrayPos[k+1] = dPos
+        end
+        return arrayInd, arraySize, arrayPos
+    end
 
     iindices = zeros(Int, numVars)
     idic = 0
     for kDeg = 0:maxOrd
         pos = 0
         dInd = Dict{Int, Array{Int,1}}()
-        dPos = Dict{Array{Int,1}, Int}()
+        dPos = Dict{UInt, Int}()
         iV = numVars
         for iz = 0:kDeg
             @inbounds iindices[end] = iz
@@ -81,7 +74,8 @@ function generateTables()
         end
         nCoefH = length(dInd)
         for i=1:nCoefH
-            dPos[dInd[i]] = i
+            kdic = hash(dInd[i])
+            dPos[kdic] = i
         end
         idic += 1
         arrayInd[idic] = dInd
@@ -121,12 +115,12 @@ set_maxOrder(n::Int) = set_ParamsTaylorN(n, _params.numVars)
 get_numVars() = _params.numVars
 set_numVars(n::Int) = set_ParamsTaylorN(_params.maxOrder, n)
 
-function set_ParamsTaylorN(order::Int, nV::Int)
-    (order > 0 && nV>1) || error("Incorrect order or number of variables")
-    order == _params.maxOrder && nV == _params.numVars && return order, nV
+function set_ParamsTaylorN(order::Int, numVars::Int)
+    (order > 0 && numVars>=1) || error("Incorrect order or number of variables")
+    order == _params.maxOrder && numVars == _params.numVars && return order, numVars
     oldOrder = _params.maxOrder
     oldVars = _params.numVars
-    global _params = ParamsTaylorN(order, nV)
+    global _params = ParamsTaylorN(order, numVars)
 
     resize!(indicesTable,order+1)
     resize!(sizeTable,order+1)
@@ -135,5 +129,5 @@ function set_ParamsTaylorN(order::Int, nV::Int)
     gc();
     show_ParamsTaylorN()
 
-    return order, nV
+    return order, numVars
 end

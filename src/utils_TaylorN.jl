@@ -307,9 +307,10 @@ function *(a::HomogPol, b::HomogPol)
                 for i = 1:numVars
                     iaux[i] = inda[i]+indb[i]
                 end
-                # pos = posTb[iaux]
-                # coeffs[pos] += ca * cb
-                coeffs[posTb[iaux]] += ca * cb
+                kdic = hash(iaux)
+                pos = posTb[kdic]
+                coeffs[pos] += ca * cb
+                # coeffs[posTb[iaux]] += ca * cb
             end
         end
     end
@@ -503,9 +504,10 @@ function square(a::HomogPol)
         @inbounds for i = 1:numVars
             iaux[i] = 2inda[i]
         end
-        # pos = posTb[iaux]
-        # coeffs[pos] += ca * ca
-        coeffs[posTb[iaux]] += ca * ca
+        kdic = hash(iaux)
+        pos = posTb[kdic]
+        coeffs[pos] += ca * ca
+        # coeffs[posTb[iaux]] += ca * ca
         @inbounds for nb = na+1:nCoefHa
             cb = a.coeffs[nb]
             cb == zero(T) && continue
@@ -513,9 +515,10 @@ function square(a::HomogPol)
             @inbounds for i = 1:numVars
                 iaux[i] = inda[i]+indb[i]
             end
-            # pos = posTb[iaux]
-            # coeffs[pos] += two * ca * cb
-            coeffs[posTb[iaux]] += two * ca * cb
+            kdic = hash(iaux)
+            pos = posTb[kdic]
+            coeffs[pos] += two * ca * cb
+            # coeffs[posTb[iaux]] += two * ca * cb
         end
     end
 
@@ -659,16 +662,17 @@ function diffTaylor(a::HomogPol, r::Int)
     a.order == 0 && return HomogPol(zero(T))
     @inbounds nCoefH = sizeTable[a.order]
     coeffs = zeros(T,nCoefH)
-    jind = zeros(Int, numVars)
     @inbounds posTb = posTable[a.order]
-    @inbounds jind[r] = 1
 
     @inbounds for i = 1:sizeTable[a.order+1]
         iind = indicesTable[a.order+1][i]
         n = iind[r]
         n == 0 && continue
-        pos = posTb[iind-jind]
+        iind[r] -= 1
+        kdic = hash(iind)
+        pos = posTb[kdic]
         coeffs[pos] = n * a.coeffs[i]
+        iind[r] += 1
     end
 
     return HomogPol{T}(coeffs, a.order-1)
