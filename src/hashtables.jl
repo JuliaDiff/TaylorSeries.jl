@@ -25,7 +25,7 @@ global const _params = ParamsTaylorN(6,2)
 @doc """Display the current parameters for `TaylorN` and `HomogPol`""" ->
 function show_ParamsTaylorN()
     info( string("`TaylorN` and `HomogPol` parameters:\n    Maximum order       = ", _params.maxOrder,
-        "\n    Number of variables = ", _params.numVars) )
+        "\n    Number of variables = ", _params.numVars, "\n") )
     nothing
 end
 
