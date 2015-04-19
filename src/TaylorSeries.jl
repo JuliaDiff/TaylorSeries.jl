@@ -14,6 +14,12 @@
 
 module TaylorSeries
 
+## Compatibility v0.3 -> 0.4
+using Compat
+@compat trunc
+@compat Tuple{Int, Int}
+
+
 import Base: zero, one
 import Base: convert, promote_rule, promote, eltype, length
 import Base: real, imag, conj, ctranspose

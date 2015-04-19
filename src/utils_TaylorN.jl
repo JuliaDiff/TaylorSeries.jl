@@ -91,7 +91,7 @@ end
 """Generates the auxiliary table of the initial and final position for the coefficients of 
 homogeneous polynomial of given degree (`posAuxTable`)"""
 function generateAuxTable()
-    DDic = Dict{Int,(Int, Int)}()
+    DDic = Dict{Int, Tuple{Int, Int}}()
     for k=0:MAXORDER[end]
         posI = posHomogCoefK(k)
         posF = posHomogCoefK(k+1)-1
