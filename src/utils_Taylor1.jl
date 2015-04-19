@@ -229,7 +229,7 @@ function ^(a::Taylor, x::Real)
         error("Integer exponent REQUIRED if the Taylor polynomial is expanded around 0.\n")
     # Reaching this point, it is possible to implement the power of the Taylor polynomial. 
     # The last l0nz coefficients are set to zero.
-    lnull = itrunc(lnull)
+    lnull = trunc(Int,lnull)
     ##l0nz > 0 && warn("The last k=$(l0nz) Taylor coefficients ARE SET to 0.\n")
     aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)
