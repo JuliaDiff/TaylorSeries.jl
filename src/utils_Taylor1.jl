@@ -1,6 +1,6 @@
 # utils_Taylor1.jl: 1-variable Taylor expansions
 #
-# Last modification: 2015.03.26
+# Last modification: 2015.04.22
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -27,7 +27,7 @@ immutable Taylor{T<:Number} <: AbstractSeries{T,1}
         lencoef = length(coeffs)
         order = max(order, lencoef-1)
         v = zeros(T, order+1)
-        @inbounds for i = 1:lencoef
+        @inbounds for i in eachindex(coeffs)
             v[i] = coeffs[i]
         end
         new(v, order)
@@ -60,7 +60,7 @@ function firstnonzero{T<:Number}(a::Taylor{T})
     order = a.order
     nonzero::Int = order+1
     z = zero(T)
-    for i = 1:order+1
+    for i in eachindex(a.coeffs)
         if a.coeffs[i] != z
             nonzero = i-1
             break
@@ -103,7 +103,7 @@ for f in (:+, :-)
         function ($f)(a::Taylor, b::Taylor)
             a, b = fixshape(a, b)
             v = similar(a.coeffs)
-            @inbounds for i=1:length(a.coeffs)
+            @inbounds for i in eachindex(a.coeffs)
                 v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
             return Taylor(v, a.order)

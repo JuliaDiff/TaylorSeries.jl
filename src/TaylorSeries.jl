@@ -6,7 +6,7 @@
 #
 # - utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2015.04.07
+# Last modification: 2015.04.22
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -23,7 +23,7 @@ end
 using Compat
 @compat sizehint!
 @compat trunc
-
+@compat eachindex
 
 import Base: zero, one, zeros, ones,
     convert, promote_rule, promote, eltype, length, show,
@@ -64,13 +64,14 @@ infostr{T<:Number}(a::TaylorN{T}) =
 function pretty_print{T<:Number}(a::Taylor{T})
     print( infostr(a) )
     z = zero(T)
-    space = string(" ")
+    space = utf8(" ")
     a == zero(a) && (println(string( space, z)); return)
-    strout::ASCIIString = space
+    strout::UTF8String = space
     ifirst = true
-    for i = 0:a.order
-        monom::ASCIIString = i==0 ? string("") : i==1 ? string(" * x_{0}") : string(" * x_{0}^", i)
-        @inbounds c = a.coeffs[i+1]
+    for i in eachindex(a.coeffs)
+        monom::UTF8String = i==1 ? string("") : i==2 ?
+            string("⋅x_{0}") : string("⋅x_{0}^", i-1)
+        @inbounds c = a.coeffs[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
         strout = string(strout, cadena, monom, space)
@@ -90,13 +91,13 @@ end
 function pretty_print{T<:Number}(a::TaylorN{T})
     print( infostr(a) )
     a == zero(a) && (println(string( " ", zero(T))); return)
-    strout::ASCIIString = string("")
+    strout::UTF8String = string("")
     ifirst = true
-    for ord = 0:a.order
-        pol = a.coeffs[ord+1]
-        pol == zero(a.coeffs[ord+1]) && continue
-        cadena::ASCIIString = homogPol2str( pol )
-        strsgn = (ifirst || ord == 0 || cadena[2] == '-') ? string("") : string(" +")
+    for ord in eachindex(a.coeffs)
+        pol = a.coeffs[ord]
+        pol == zero(a.coeffs[ord]) && continue
+        cadena::UTF8String = homogPol2str( pol )
+        strsgn = (ifirst || ord == 1 || cadena[2] == '-') ? string("") : string(" +")
         strout = string( strout, strsgn, cadena)
         ifirst = false
     end
@@ -104,13 +105,13 @@ function pretty_print{T<:Number}(a::TaylorN{T})
     return
 end
 function pretty_print{T<:Number}(a::Array{Taylor{T},1})
-    for i=1:length(a)
+    for i in eachindex(a)
         pretty_print(a[i])
     end
     return
 end
 function pretty_print{T<:Number}(a::Array{TaylorN{T},1})
-    for i=1:length(a)
+    for i in eachindex(a)
         pretty_print(a[i])
     end
     return
@@ -120,17 +121,17 @@ end
 function homogPol2str{T<:Number}(a::HomogPol{T})
     numVars = _params.numVars
     order = a.order
-    varstring = ASCIIString[]
+    varstring = UTF8String[]
     z = zero(T)
-    space = string(" ")
+    space = utf8(" ")
     for ivar = 1:numVars
-        push!(varstring, string(" * x_{", ivar, "}"))
+        push!(varstring, string(" ⋅ x_{", ivar, "}"))
     end
-    strout::ASCIIString = space
+    strout::UTF8String = space
     ifirst = true
     iIndices = zeros(Int, numVars)
     for pos = 1:sizeTable[order+1]
-        monom::ASCIIString = string("")
+        monom::UTF8String = string("")
         @inbounds iIndices[:] = indicesTable[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]

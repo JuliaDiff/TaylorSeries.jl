@@ -1,6 +1,6 @@
 # utils_TaylorN.jl: N-variables Taylor expansions through homogeneous polynomials
 #
-# Last modification: 2015.04.07
+# Last modification: 2015.04.22
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -50,7 +50,7 @@ immutable HomogPol{T<:Number} <: AbstractSeries{T, _params.numVars}
     end
 end
 HomogPol{T<:Number}(x::HomogPol{T}, order::Int) = HomogPol{T}(x.coeffs, order)
-HomogPol{T<:Number}(x::HomogPol{T}) = x#HomogPol{T}(x.coeffs, x.order)
+HomogPol{T<:Number}(x::HomogPol{T}) = x
 HomogPol{T<:Number}(coeffs::Array{T,1}, order::Int) = HomogPol{T}(coeffs, order)
 HomogPol{T<:Number}(coeffs::Array{T,1}) = HomogPol{T}(coeffs, orderH(coeffs))
 HomogPol{T<:Number}(x::T, order::Int) = HomogPol{T}([x], order)
@@ -72,11 +72,16 @@ end
 function zeros{T<:Number}(::HomogPol{T}, order::Int)
     order == 0 && return [HomogPol(zero(T),0)]
     v = Array(HomogPol{T}, order+1)
-    @inbounds v[1] = HomogPol(zero(T),0)
-    @simd for ord = 1:order
-        @inbounds nCoefH = sizeTable[ord+1]
-        z = HomogPol(zeros(T,nCoefH),ord)
-        @inbounds v[ord+1] = z
+    # @inbounds v[1] = HomogPol(zero(T),0)
+    # @simd for ord = 1:order
+    #     @inbounds nCoefH = sizeTable[ord+1]
+    #     z = HomogPol(zeros(T,nCoefH),ord)
+    #     @inbounds v[ord+1] = z
+    # end
+    @simd for ord in eachindex(v)
+        @inbounds nCoefH = sizeTable[ord]
+        z = HomogPol(zeros(T,nCoefH),ord-1)
+        @inbounds v[ord] = z
     end
     return v
 end
@@ -92,11 +97,16 @@ end
 function ones{T<:Number}(::HomogPol{T}, order::Int)
     order == 0 && return [HomogPol(one(T),0)]
     v = Array(HomogPol{T}, order+1)
-    @inbounds v[1] = HomogPol(one(T),0)
-    @simd for ord = 1:order
-        @inbounds nCoefH = sizeTable[ord+1]
-        z = HomogPol{T}(ones(T,nCoefH),ord)
-        @inbounds v[ord+1] = z
+    # @inbounds v[1] = HomogPol(one(T),0)
+    # @simd for ord = 1:order
+    #     @inbounds nCoefH = sizeTable[ord+1]
+    #     z = HomogPol{T}(ones(T,nCoefH),ord)
+    #     @inbounds v[ord+1] = z
+    # end
+    @simd for ord in eachindex(v)
+        @inbounds nCoefH = sizeTable[ord]
+        z = HomogPol(ones(T,nCoefH),ord-1)
+        @inbounds v[ord] = z
     end
     return v
 end
@@ -124,7 +134,7 @@ promote_rule{T<:Number, S<:Union(Real,Complex)}(::Type{HomogPol{T}}, ::Type{S}) 
 function maxorderH{T<:Number}(v::Array{HomogPol{T},1})
     ll = length(v)
     m = 0
-    @simd for i = 1:ll
+    @simd for i in eachindex(v)
         @inbounds ord = v[i].order
         m = max(m, ord)
     end
@@ -152,7 +162,7 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T, _params.numVars}
         m = maxorderH(v)
         order = max( m, order )
         coeffs = zeros(HomogPol{T}, order)
-        @simd for i = 1:ll
+        @simd for i in eachindex(v)
             @inbounds ord = v[i].order
             @inbounds coeffs[ord+1] += v[i]
         end
@@ -259,14 +269,14 @@ for T in (:HomogPol, :TaylorN), f in (:+, :-)
         function ($f)(a::($T), b::($T))
             a, b = fixshape(a, b)
             v = Array(eltype(a.coeffs), length(a.coeffs))
-            @inbounds for i = 1:length(a.coeffs)
+            @inbounds for i in eachindex(v)
                 v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
             return ($T)(v, a.order)
         end
         function ($f)(a::($T))
             v = Array(eltype(a.coeffs), length(a.coeffs))
-            @inbounds for i = 1:length(v)
+            @inbounds for i in eachindex(v)
                 v[i] = ($f)(a.coeffs[i])
             end
             return ($T)(v, a.order)
@@ -296,7 +306,7 @@ function *(a::HomogPol, b::HomogPol)
     iaux = zeros(Int, numVars)
     @inbounds begin
         posTb = posTable[order+1]
-        @inbounds for na = 1:nCoefHa
+        for na = 1:nCoefHa
             ca = a.coeffs[na]
             ca == z && continue
             inda = indicesTable[a.order+1][na]
@@ -322,9 +332,11 @@ function *(a::TaylorN, b::TaylorN)
     a, b = fixshape(a, b)
     T = eltype(a)
     coeffs = zeros(HomogPol{T}, a.order)
-    @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
+    # @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
 
-    for ord = 2:a.order+1
+    # for ord = 2:a.order+1
+    for ord in eachindex(coeffs)
+        # ord == 1 && continue
         @inbounds for i = 0:ord-1
             (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
             coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
@@ -348,7 +360,9 @@ function /(a::TaylorN, b::TaylorN)
     coeffs = zeros(HomogPol{T}, a.order)
     @inbounds coeffs[1] = cdivfact
 
-    for ord = 1:a.order
+    # for ord = 1:a.order
+    for ord in eachindex(coeffs)
+        ord == a.order+1 && break
         @inbounds for i = 0:ord-1
             (iszero(coeffs[i+1]) || iszero(b.coeffs[ord-i+1])) && continue
             coeffs[ord+1] = coeffs[i+1] * b.coeffs[ord-i+1]
@@ -468,7 +482,9 @@ function ^(a::TaylorN, x::Real)
     coeffs = zeros(HomogPol{T}, a.order)
     @inbounds coeffs[1] = HomogPol( aux )
 
-    @inbounds for ord = 1:a.order
+    # @inbounds for ord = 1:a.order
+    for ord in eachindex(coeffs)
+        ord == a.order+1 && break
         @inbounds for i = 0:ord-1
             tt = x*(ord-i)-i
             cpol = coeffs[i+1]
@@ -530,7 +546,9 @@ function square(a::TaylorN)
     coeffs = zeros(HomogPol{T}, a.order)
     @inbounds coeffs[1] = square(a.coeffs[1])
 
-    for ord = 1:a.order
+    # for ord = 1:a.order
+    for ord in eachindex(coeffs)
+        ord == a.order+1 && break
         kodd = ord%2
         kord = div(ord-2+kodd, 2)
         @inbounds for i = 0: kord
@@ -552,7 +570,9 @@ function sqrt(a::TaylorN)
     coeffs = zeros(HomogPol{T}, a.order)
     @inbounds coeffs[1] = HomogPol( p0 )
 
-    for ord = 1:a.order
+    # for ord = 1:a.order
+    for ord in eachindex(coeffs)
+        ord == a.order+1 && break
         kodd = ord%2
         kord = div(ord-2+kodd, 2)
         @inbounds for i = 1:kord
@@ -576,7 +596,9 @@ function exp(a::TaylorN)
     coeffs = zeros(HomogPol{T}, order)
     @inbounds coeffs[1] = HomogPol(aux, 0)
 
-    @inbounds for ord = 1:order
+    # @inbounds for ord = 1:order
+    @inbounds for ord in eachindex(coeffs)
+        ord == order+1 && break
         @inbounds for j = 0:ord-1
             coeffs[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffs[j+1]
         end
@@ -595,7 +617,9 @@ function log(a::TaylorN)
     coeffs = zeros(HomogPol{T}, order)
     @inbounds coeffs[1] = HomogPol(l0)
 
-    @inbounds for ord = 1:order
+    # @inbounds for ord = 1:order
+    @inbounds for ord in eachindex(coeffs)
+        ord == order+1 && break
         @inbounds for j = 1:ord-1
             coeffs[ord+1] += j * a.coeffs[ord-j+1] * coeffs[j+1]
         end
@@ -642,7 +666,9 @@ function tan(a::TaylorN)
     @inbounds coeffsTan = HomogPol(t0)
     @inbounds coeffsAux = HomogPol(t0^2)
 
-    @inbounds for ord = 1:order
+    # @inbounds for ord = 1:order
+    @inbounds for ord in eachindex(coeffsTan)
+        ord == order+1 && break
         coeffsAux[ord] = coeffsTan[ord] * coeffsTan[ord]
         @inbounds for j = 0:ord-1
             coeffsTan[ord+1] += (ord-j) * coeffsTan[ord-j+1] * coeffsAux[j+1]
@@ -682,7 +708,8 @@ end
 function diffTaylor(a::TaylorN, r::Int)
     T = eltype(a)
     coeffs = Array(HomogPol{T},a.order)
-    @inbounds for ord = 1:a.order
+    @inbounds for ord in eachindex(coeffs)
+        ord == a.order+1 && break
         coeffs[ord] = diffTaylor( a.coeffs[ord+1], r)
     end
     return TaylorN{T}( coeffs, a.order )
@@ -780,8 +807,8 @@ function show(io::IO, a::TaylorN)
     a == zero(a) && (print(io, string(typeof(a), "( [", a.coeffs[1], "], ", a.order, ")")); return)
     strout = string(typeof(a), "( [")
 
-    for ord = 0:a.order
-        @inbounds pol = a.coeffs[ord+1]
+    for ord in eachindex(a.coeffs)
+        @inbounds pol = a.coeffs[ord]
         pol == zero(pol) && continue
         strout = string( strout, pol, ", ")
     end
