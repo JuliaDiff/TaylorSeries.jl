@@ -145,5 +145,27 @@ f2 = g2(xTN,yTN)
 @test hessian(f1^2)/2 == [[49,0] [0,12]]
 @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
 
+#= Testing an identity proved by Euler
+It creates symbols :a1, :b1, ... :a4, :b4
+the independent variables which will be used.
+For this we ser the parameters appropriately
+=#
+set_ParamsTaylorN(4,8) # order 4, 8 variables
+for i=1:4
+    ai = symbol(string("a",i))
+    bi = symbol(string("b",i))
+    @eval ($ai) = taylorvar(Int,$i,4)
+    @eval ($bi) = taylorvar(Int,4+($i),4)
+end
+expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2
+expr_lhs2 = b1^2 + b2^2 + b3^2 + b4^2
+lhs = expr_lhs1 * expr_lhs2
+expr_rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2
+expr_rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2
+expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2
+expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2
+rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
+@test lhs == rhs
+
 #println("    \033[32;1mSUCCESS\033[0m")
 
