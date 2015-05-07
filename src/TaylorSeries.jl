@@ -6,7 +6,7 @@
 #
 # - utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2015.04.22
+# Last modification: 2015.05.08
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -29,69 +29,52 @@ import Base: zero, one, zeros, ones,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
     rem, mod, mod2pi,
-    sqrt, exp, log, sin, cos, tan#, square
+    sqrt, exp, log, sin, cos, tan
 
 
-## Exported types
-export AbstractSeries, Taylor, TaylorN, HomogPol
-## Exported methods
-export diffTaylor, integTaylor, evalTaylor, deriv, pretty_print,
-    set_ParamsTaylorN, show_ParamsTaylorN,
-        set_maxOrder, get_maxOrder, set_numVars, get_numVars,
-    taylorvar, ∇, jacobian, hessian
+## Exported types and methods
+export Taylor1, TaylorN, HomogeneousPolynomial
+export taylor1_variable, taylorN_variable,
+    diffTaylor, integTaylor, evalTaylor, deriv,
+    set_params_TaylorN, show_params_TaylorN,
+    set_maxOrder, get_maxOrder, set_numVars, get_numVars,
+    ∇, jacobian, hessian
 
-
-@doc "The main overall abstract type in TaylorSeries" ->
-abstract AbstractSeries{T<:Number,N} <: Number
 
 include("utils_Taylor1.jl")
 include("hashtables.jl")
 include("utils_TaylorN.jl")
 
 
-## The following routines combine Taylor and TaylorN, so they must appear defining
-##   Taylor and TaylorN and some of its functionalities
-
-# infostr
-infostr{T<:Number}(a::Taylor{T}) =
-    string(a.order, "-order Taylor{", T, "}:\n")
-infostr{T<:Number}(a::HomogPol{T}) =
-    string(a.order, "-order HomogPol{", T, "} in ", _params.numVars, " variables:\n")
-infostr{T<:Number}(a::TaylorN{T}) =
-    string(a.order, "-order TaylorN{", T, "} in ", _params.numVars, " variables:\n")
-
 # pretty_print
-function pretty_print{T<:Number}(a::Taylor{T})
-    print( infostr(a) )
+function pretty_print{T<:Number}(a::Taylor1{T})
     z = zero(T)
     space = utf8(" ")
-    a == zero(a) && (println(string( space, z)); return)
+    a == zero(a) && return string(space, z)
     strout::UTF8String = space
     ifirst = true
     for i in eachindex(a.coeffs)
-        monom::UTF8String = i==1 ? string("") : i==2 ?
-            string("⋅x_{0}") : string("⋅x_{0}^", i-1)
+        monom::UTF8String = i==1 ? string("") : i==2 ? string("⋅t") : string("⋅t^", i-1)
         @inbounds c = a.coeffs[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
-    println(strout)
-    return
+    strout
 end
-function pretty_print{T<:Number}(a::HomogPol{T})
-    print( infostr(a) )
+function pretty_print{T<:Number}(a::HomogeneousPolynomial{T})
     z = zero(T)
-    a == zero(a) && (println(string( " ", z)); return)
-    strout = homogPol2str(a)
-    println(strout)
-    return
+    space = utf8(" ")
+    a == zero(a) && return string(space, z)
+    strout::UTF8String = homogPol2str(a)
+    strout
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
-    print( infostr(a) )
-    a == zero(a) && (println(string( " ", zero(T))); return)
-    strout::UTF8String = string("")
+    z = zero(T)
+    space = utf8(" ")
+    a == zero(a) && return string(space, z)
+    strout::UTF8String = ""#space
     ifirst = true
     for ord in eachindex(a.coeffs)
         pol = a.coeffs[ord]
@@ -101,31 +84,17 @@ function pretty_print{T<:Number}(a::TaylorN{T})
         strout = string( strout, strsgn, cadena)
         ifirst = false
     end
-    println(strout)
-    return
-end
-function pretty_print{T<:Number}(a::Array{Taylor{T},1})
-    for i in eachindex(a)
-        pretty_print(a[i])
-    end
-    return
-end
-function pretty_print{T<:Number}(a::Array{TaylorN{T},1})
-    for i in eachindex(a)
-        pretty_print(a[i])
-    end
-    return
+    strout
 end
 
-# Aux functions related to pretty_print
-function homogPol2str{T<:Number}(a::HomogPol{T})
-    numVars = _params.numVars
+function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
+    numVars = _params_taylorN.numVars
     order = a.order
     varstring = UTF8String[]
     z = zero(T)
     space = utf8(" ")
     for ivar = 1:numVars
-        push!(varstring, string(" ⋅ x_{", ivar, "}"))
+        push!(varstring, string("⋅x_{", ivar, "}"))
     end
     strout::UTF8String = space
     ifirst = true
@@ -197,6 +166,18 @@ function numbr2str(zz::Complex, ifirst::Bool=false)
         end
     end
     return cadena
+end
+
+# # summary
+# summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
+# function summary{T<:Number}(a::Union(HomogeneousPolynomial{T}, TaylorN{T}))
+#     string(a.order, "-order ", typeof(a), " in ", _params_taylorN.numVars, " variables:")
+# end
+
+# show
+function show(io::IO, a::Union(Taylor1, HomogeneousPolynomial, TaylorN))
+    # println(io, summary(a) )
+    print(io, pretty_print(a))
 end
 
 end

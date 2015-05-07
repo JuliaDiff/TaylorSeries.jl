@@ -1,33 +1,34 @@
-# hashtables.jl: hash tables for HomogPol and TaylorN
+# hashtables.jl: hash tables for HomogeneousPolynomial and TaylorN
 #
-# Last modification: 2015.04.07
+# Last modification: 2015.05.08
 #
 # Luis Benet & David P. Sanders
 # UNAM
 #
 
-@doc """Type structure holding the current parameters for `TaylorN` and `HomogPol`.
+@doc """Type structure holding the current parameters for `TaylorN` and `HomogeneousPolynomial`.
     
     Fieldnames:
 
-    - maxOrder: maximim degree of the polynomials
-    - numVars : maximum number of variables
+    - maxOrder: maximim order (degree) of the polynomials
+    - numVars : (maximum) number of variables
 
-    These parameters can be changed using `set_ParamsTaylorN(order,numVars)`
+    These parameters can be changed using `set_params_TaylorN(order,numVars)`
     """ ->
 type ParamsTaylorN
     maxOrder :: Int
     numVars  :: Int
 end
 
-global const _params = ParamsTaylorN(6,2)
-
-@doc """Display the current parameters for `TaylorN` and `HomogPol`""" ->
-function show_ParamsTaylorN()
-    info( string("`TaylorN` and `HomogPol` parameters:\n    Maximum order       = ", _params.maxOrder,
-        "\n    Number of variables = ", _params.numVars, "\n") )
+@doc """Display the current parameters for `TaylorN` and `HomogeneousPolynomial`""" ->
+function show_params_TaylorN()
+    info( string("`TaylorN` and `HomogeneousPolynomial` parameters:\n    Maximum order       = ",
+        _params_taylorN.maxOrder, "\n    Number of variables = ", _params_taylorN.numVars, "\n") )
     nothing
 end
+
+global const _params_taylorN = ParamsTaylorN(6,2)
+
 
 ## Hash tables
 @doc """
@@ -42,8 +43,8 @@ end
   a vector of indexes, it returns the (lexicographic) position of the corresponding monomial.
 """ ->
 function generateTables()
-    maxOrd = _params.maxOrder
-    numVars = _params.numVars
+    maxOrd = _params_taylorN.maxOrder
+    numVars = _params_taylorN.numVars
     arrayInd  = Array(Dict{Int,Array{Int,1}},maxOrd+1)
     arraySize = Array(Int,maxOrd+1)
     arrayPos  = Array(Dict{UInt,Int},maxOrd+1)
@@ -110,24 +111,24 @@ gc();
 
 
 ## Utilities to get/set the maximum order and number of variables; they reset the hash tables
-get_maxOrder() = _params.maxOrder
-set_maxOrder(n::Int) = set_ParamsTaylorN(n, _params.numVars)
-get_numVars() = _params.numVars
-set_numVars(n::Int) = set_ParamsTaylorN(_params.maxOrder, n)
+get_maxOrder() = _params_taylorN.maxOrder
+set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
+get_numVars() = _params_taylorN.numVars
+set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
 
-function set_ParamsTaylorN(order::Int, numVars::Int)
+function set_params_TaylorN(order::Int, numVars::Int)
     (order > 0 && numVars>=1) || error("Incorrect order or number of variables")
-    order == _params.maxOrder && numVars == _params.numVars && return order, numVars
-    oldOrder = _params.maxOrder
-    oldVars = _params.numVars
-    global _params = ParamsTaylorN(order, numVars)
+    order == _params_taylorN.maxOrder && numVars == _params_taylorN.numVars && return order, numVars
+    oldOrder = _params_taylorN.maxOrder
+    oldVars = _params_taylorN.numVars
+    global _params_taylorN = ParamsTaylorN(order, numVars)
 
     resize!(indicesTable,order+1)
     resize!(sizeTable,order+1)
     resize!(posTable,order+1)
     indicesTable[:], sizeTable[:], posTable[:] = generateTables()
     gc();
-    show_ParamsTaylorN()
+    # show_params_TaylorN()
 
     return order, numVars
 end
