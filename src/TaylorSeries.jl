@@ -54,7 +54,8 @@ function pretty_print{T<:Number}(a::Taylor1{T})
     strout::UTF8String = space
     ifirst = true
     for i in eachindex(a.coeffs)
-        monom::UTF8String = i==1 ? string("") : i==2 ? string("⋅t") : string("⋅t^", i-1)
+        monom::UTF8String = i==1 ? string("") : i==2 ? string("⋅t") :
+            string("⋅t", superscriptify(i-1))
         @inbounds c = a.coeffs[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
@@ -94,7 +95,7 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
     z = zero(T)
     space = utf8(" ")
     for ivar = 1:numVars
-        push!(varstring, string("⋅x_{", ivar, "}"))
+        push!(varstring, string("⋅x", subscriptify(ivar)))
     end
     strout::UTF8String = space
     ifirst = true
@@ -107,7 +108,7 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
             if powivar == 1
                 monom = string(monom, varstring[ivar])
             elseif powivar > 1
-                monom = string(monom, varstring[ivar], "^", powivar)
+                monom = string(monom, varstring[ivar], superscriptify(powivar))
             end
         end
         @inbounds c = a.coeffs[pos]
@@ -166,6 +167,19 @@ function numbr2str(zz::Complex, ifirst::Bool=false)
         end
     end
     return cadena
+end
+
+# subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
+# and superscriptify is a small variation
+function subscriptify(n::Int)
+    subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
+    dig = reverse(digits(n))
+    join([subscript_digits[i+1] for i in dig])
+end
+function superscriptify(n::Int)
+    superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
+    dig = reverse(digits(n))
+    join([superscript_digits[i+1] for i in dig])
 end
 
 # # summary
