@@ -102,6 +102,8 @@ xTN = TaylorN(xH,17)
 yTN = taylorN_variable(Int64, 2, 17)
 zeroTN = zero( taylorN_variable(Int64, 1) )
 uTN = one(convert(TaylorN{Float64},yTN))
+@test get_coeff(xT,[1,0]) == 1
+@test get_coeff(yH,[1,0]) == 0
 
 @test HomogeneousPolynomial(xH,1) == HomogeneousPolynomial(xH)
 @test eltype(xH) == Int

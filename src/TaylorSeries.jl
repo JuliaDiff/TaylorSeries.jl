@@ -34,7 +34,7 @@ import Base: zero, one, zeros, ones,
 
 ## Exported types and methods
 export Taylor1, TaylorN, HomogeneousPolynomial
-export taylor1_variable, taylorN_variable,
+export taylor1_variable, taylorN_variable, get_coeff,
     diffTaylor, integTaylor, evalTaylor, deriv,
     set_params_TaylorN, show_params_TaylorN,
     set_maxOrder, get_maxOrder, set_numVars, get_numVars,
