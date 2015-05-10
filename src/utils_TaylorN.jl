@@ -49,16 +49,20 @@ immutable HomogeneousPolynomial{T<:Number} <: Number
         new(coeffs, order)
     end
 end
-HomogeneousPolynomial{T<:Number}(x::HomogeneousPolynomial{T}, order::Int) = HomogeneousPolynomial{T}(x.coeffs, order)
+
+HomogeneousPolynomial{T<:Number}(x::HomogeneousPolynomial{T}, order::Int) =
+    HomogeneousPolynomial{T}(x.coeffs, order)
 HomogeneousPolynomial{T<:Number}(x::HomogeneousPolynomial{T}) = x
-HomogeneousPolynomial{T<:Number}(coeffs::Array{T,1}, order::Int) = HomogeneousPolynomial{T}(coeffs, order)
-HomogeneousPolynomial{T<:Number}(coeffs::Array{T,1}) = HomogeneousPolynomial{T}(coeffs, orderH(coeffs))
-HomogeneousPolynomial{T<:Number}(x::T, order::Int) = HomogeneousPolynomial{T}([x], order)
+HomogeneousPolynomial{T<:Number}(coeffs::Array{T,1}, order::Int) =
+    HomogeneousPolynomial{T}(coeffs, order)
+HomogeneousPolynomial{T<:Number}(coeffs::Array{T,1}) =
+    HomogeneousPolynomial{T}(coeffs, orderH(coeffs))
+HomogeneousPolynomial{T<:Number}(x::T, order::Int) =
+    HomogeneousPolynomial{T}([x], order)
 HomogeneousPolynomial{T<:Number}(x::T) = HomogeneousPolynomial{T}([x], 0)
 
 eltype{T<:Number}(::HomogeneousPolynomial{T}) = T
 length(a::HomogeneousPolynomial) = length( a.coeffs )
-# get_numVars(::HomogeneousPolynomial) = _params_taylorN.numVars
 get_maxOrder(a::HomogeneousPolynomial) = a.order
 
 
@@ -74,8 +78,7 @@ function zeros{T<:Number}(::HomogeneousPolynomial{T}, order::Int)
     v = Array(HomogeneousPolynomial{T}, order+1)
     @simd for ord in eachindex(v)
         @inbounds nCoefH = sizeTable[ord]
-        z = HomogeneousPolynomial(zeros(T,nCoefH),ord-1)
-        @inbounds v[ord] = z
+        @inbounds v[ord] = HomogeneousPolynomial(zeros(T,nCoefH),ord-1)
     end
     return v
 end
@@ -94,13 +97,13 @@ function ones{T<:Number}(::HomogeneousPolynomial{T}, order::Int)
     v = Array(HomogeneousPolynomial{T}, order+1)
     @simd for ord in eachindex(v)
         @inbounds nCoefH = sizeTable[ord]
-        z = HomogeneousPolynomial(ones(T,nCoefH),ord-1)
-        @inbounds v[ord] = z
+        @inbounds v[ord] = HomogeneousPolynomial(ones(T,nCoefH),ord-1)
     end
     return v
 end
 
-ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) = ones( HomogeneousPolynomial(one(T), 0), order)
+ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
+    ones( HomogeneousPolynomial(one(T), 0), order)
 
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) =
@@ -109,19 +112,21 @@ convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, b), 0)
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Number) =
     HomogeneousPolynomial{T}([convert(T,b)], 0)
+convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial{T}) = a
+convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{T,1}) =
+    HomogeneousPolynomial{T}(b, 0)
+convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::T) =
+    HomogeneousPolynomial{T}([b], 0)
 
 promote_rule{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, ::Type{HomogeneousPolynomial{S}}) =
     HomogeneousPolynomial{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, ::Type{Array{S,1}}) =
     HomogeneousPolynomial{promote_type(T, S)}
-# Defined this way to permit promotion of HomogeneousPolynomial to TaylorN; see below.
 promote_rule{T<:Number, S<:Union(Real,Complex)}(::Type{HomogeneousPolynomial{T}}, ::Type{S}) =
     HomogeneousPolynomial{promote_type(T, S)}
 
-
 ## Returns maximum order of a HomogeneousPolynomial vector; used by TaylorN constructor
 function maxorderH{T<:Number}(v::Array{HomogeneousPolynomial{T},1})
-    ll = length(v)
     m = 0
     @inbounds for i in eachindex(v)
         ord = v[i].order
@@ -147,7 +152,6 @@ immutable TaylorN{T<:Number} <: Number
     order   :: Int
 
     function TaylorN( v::Array{HomogeneousPolynomial{T},1}, order::Int )
-        ll = length(v)
         m = maxorderH(v)
         order = max( m, order )
         coeffs = zeros(HomogeneousPolynomial{T}, order)
@@ -158,6 +162,7 @@ immutable TaylorN{T<:Number} <: Number
         new(coeffs, order)
     end
 end
+
 TaylorN{T<:Number}(x::TaylorN{T}, order::Int) = TaylorN{T}(x.coeffs, order )
 TaylorN{T<:Number}(x::TaylorN{T}) = x
 TaylorN{T<:Number}(x::Array{HomogeneousPolynomial{T},1}, order::Int) = TaylorN{T}(x, order )
@@ -175,7 +180,8 @@ function taylorN_variable(T::Type, nv::Int, order::Int=_params_taylorN.maxOrder 
     @inbounds v[nv] = one(T)
     return TaylorN( HomogeneousPolynomial(v,1), order )
 end
-taylorN_variable(nv::Int) = taylorN_variable(Float64, nv)
+taylorN_variable(nv::Int, order::Int=_params_taylorN.maxOrder) =
+    taylorN_variable(Float64, nv, order)
 
 ## get_coeff
 function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
@@ -202,11 +208,18 @@ one{T<:Number}(a::TaylorN{T}) = TaylorN(one(T), a.order)
 convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) =
     TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), a.order )
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{S}) =
-    TaylorN{T}( [convert(HomogeneousPolynomial{T}, b)], 0 )
+    TaylorN{T}( [convert(HomogeneousPolynomial{T}, b)], b.order )
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) =
     TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, b), length(b)-1 )
-convert{T<:Number}(::Type{TaylorN{T}}, b::Number) = TaylorN( convert(T, b), 0)
-#
+convert{T<:Number}(::Type{TaylorN{T}}, b::Number) =
+    TaylorN( [HomogeneousPolynomial(convert(T, b))], 0)
+convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN{T}) = a
+convert{T<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) =
+    TaylorN{T}( [b], b.order)
+convert{T<:Number}(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) =
+    TaylorN{T}( b, length(b)-1 )
+convert{T<:Number}(::Type{TaylorN{T}}, b::T) = TaylorN( [HomogeneousPolynomial(b)], 0)
+
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) =
     TaylorN{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{HomogeneousPolynomial{S}}) =
@@ -222,12 +235,9 @@ function fixorder{T<:Number}(a::TaylorN{T}, order::Int64)
 end
 
 function fixorder(a::TaylorN, b::TaylorN)
-    if a.order < b.order
-        a = TaylorN(a.coeffs, b.order)
-    elseif a.order > b.order
-        b = TaylorN(b.coeffs, a.order)
-    end
-    return a, b
+    a.order == b.order && return a, b
+    a.order < b.order && return TaylorN(a.coeffs, b.order), b
+    return a, TaylorN(b.coeffs, a.order)
 end
 
 function fixshape(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
@@ -236,13 +246,13 @@ function fixshape(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 end
 
 function fixshape(a::TaylorN, b::TaylorN)
+    eltype(a) == eltype(b) && a.order == b.order && return a,b
     if eltype(a) != eltype(b)
         a, b = promote(a, b)
     end
-    if a.order != b.order
-        a, b = fixorder(a,b)
-    end
-    return a, b
+    # a, b = fixorder(a, b)
+    # return a, b
+    return fixorder(a, b)
 end
 
 ## real, imag, conj and ctranspose ##
@@ -257,15 +267,21 @@ ctranspose{T<:Number}(a::TaylorN{T}) = conj(a)
 ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial) = a.coeffs == b.coeffs
 function ==(a::TaylorN, b::TaylorN)
     a, b = fixshape(a, b)
-    return a.coeffs == b.coeffs
-end
-
-# iszero(a::HomogeneousPolynomial) = a == zero(a)
-function iszero(a::HomogeneousPolynomial)
     test = true
     for i in eachindex(a.coeffs)
-        @inbounds test = a.coeffs[i] == zero(a.coeffs[i])
-        ~test && break
+        @inbounds test = a.coeffs[i] == b.coeffs[i]
+        ~test && return test
+    end
+    return test
+end
+
+function iszero(a::HomogeneousPolynomial)
+    T = eltype(a)
+    test = true
+    @inbounds z = zero(T)
+    for i in eachindex(a.coeffs)
+        @inbounds test = a.coeffs[i] == z
+        ~test && return test
     end
     return test
 end

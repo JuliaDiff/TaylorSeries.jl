@@ -54,8 +54,14 @@ length{T<:Number}(a::Taylor1{T}) = a.order
 convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1) = Taylor1(convert(Array{T,1}, a.coeffs), a.order)
 convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) = Taylor1(convert(Array{T,1},b))
 convert{T<:Number}(::Type{Taylor1{T}}, b::Number) = Taylor1([convert(T,b)], 0)
-promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) = Taylor1{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Array{S,1}}) = Taylor1{promote_type(T, S)}
+convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1{T}) = a
+convert{T<:Number}(::Type{Taylor1{T}}, b::Array{T,1}) = Taylor1(b)
+convert{T<:Number}(::Type{Taylor1{T}}, b::T) = Taylor1([b], 0)
+
+promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) =
+    Taylor1{promote_type(T, S)}
+promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Array{S,1}}) =
+    Taylor1{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{S}) = Taylor1{promote_type(T, S)}
 
 ## Auxiliary function ##
@@ -73,15 +79,16 @@ function firstnonzero{T<:Number}(a::Taylor1{T})
 end
 
 function fixshape{T<:Number, S<:Number}(a::Taylor1{T}, b::Taylor1{S})
+    eltype(a) == eltype(b) && a.order == b.order && return a, b
     if eltype(a) != eltype(b)
         a, b = promote(a, b)
     end
-    if a.order < b.order
-        a = Taylor1(a, b.order)
-    elseif a.order > b.order
-        b = Taylor1(b, a.order)
+    if a.order == b.order
+        return a, b
+    elseif a.order < b.order
+        return Taylor1(a, b.order), b
     end
-    return a, b
+    return a, Taylor1(b, a.order)
 end
 
 ## real, imag, conj and ctranspose ##

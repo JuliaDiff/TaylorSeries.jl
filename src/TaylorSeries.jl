@@ -75,7 +75,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
     z = zero(T)
     space = utf8(" ")
     a == zero(a) && return string(space, z)
-    strout::UTF8String = ""#space
+    strout::UTF8String = ""
     ifirst = true
     for ord in eachindex(a.coeffs)
         pol = a.coeffs[ord]
@@ -91,12 +91,8 @@ end
 function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
     numVars = _params_taylorN.numVars
     order = a.order
-    varstring = UTF8String[]
     z = zero(T)
     space = utf8(" ")
-    for ivar = 1:numVars
-        push!(varstring, string("⋅x", subscriptify(ivar)))
-    end
     strout::UTF8String = space
     ifirst = true
     iIndices = zeros(Int, numVars)
@@ -106,9 +102,9 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
         for ivar = 1:numVars
             powivar = iIndices[ivar]
             if powivar == 1
-                monom = string(monom, varstring[ivar])
+                monom = string(monom, name_taylorNvar(ivar))
             elseif powivar > 1
-                monom = string(monom, varstring[ivar], superscriptify(powivar))
+                monom = string(monom, name_taylorNvar(ivar), superscriptify(powivar))
             end
         end
         @inbounds c = a.coeffs[pos]
@@ -168,6 +164,8 @@ function numbr2str(zz::Complex, ifirst::Bool=false)
     end
     return cadena
 end
+
+name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
 
 # subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
 # and superscriptify is a small variation

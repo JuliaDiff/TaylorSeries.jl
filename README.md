@@ -54,7 +54,7 @@ DataType   : Taylor1{T<:Number} (constructor with 6 methods)
   fields   : (:coeffs,:order)
 
 julia> Taylor1([0,1,2])
- 1⋅t + 2⋅t² 
+ 1⋅t + 2⋅t²
 
 julia> dump(ans)
 Taylor1{Int64}
@@ -110,13 +110,13 @@ The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been extende
 
 ```julia
 julia> xT0*(3xT0+2.5)
- 2.5⋅t + 3.0⋅t² 
+ 2.5⋅t + 3.0⋅t²
 
 julia> 1/(1-xT0)
- 1.0 + 1.0⋅t + 1.0⋅t² + 1.0⋅t³ + 1.0⋅t⁴ + 1.0⋅t⁵ 
+ 1.0 + 1.0⋅t + 1.0⋅t² + 1.0⋅t³ + 1.0⋅t⁴ + 1.0⋅t⁵
 
 julia> xT0*(xT0^2-4)/(xT0+2)
- - 2.0⋅t + 1.0⋅t² 
+ - 2.0⋅t + 1.0⋅t²
 
 julia> Taylor1([1],5) == 1.0
 true
@@ -131,16 +131,16 @@ julia> xTI^4 / xT0^4
   ( 1.0 )
 
 julia> (1-xT0)^3.2
- 1.0 - 3.2⋅t + 3.5200000000000005⋅t² - 1.4080000000000004⋅t³ + 0.07040000000000009⋅t⁴ + 0.011264000000000012⋅t⁵ 
+ 1.0 - 3.2⋅t + 3.5200000000000005⋅t² - 1.4080000000000004⋅t³ + 0.07040000000000009⋅t⁴ + 0.011264000000000012⋅t⁵
 
 julia> (1+xT0)^xT0
- 1.0 + 1.0⋅t² - 0.5⋅t³ + 0.8333333333333333⋅t⁴ - 0.75⋅t⁵ 
+ 1.0 + 1.0⋅t² - 0.5⋅t³ + 0.8333333333333333⋅t⁴ - 0.75⋅t⁵
 
 julia> xTN(1)-yTN(1) # 1+x-(1+y)
  1⋅x₁ - 1⋅x₂
 
-julia> xTN(1)*yTN(1)  # (1+x)*(1+y)
- 1 + 1⋅x₁ + 1⋅x₂ + 1⋅x₁⋅x₂
+julia> xTN(3)*yTN(1)^2  # (3+x)*(1+y)^2
+ 3 + 1⋅x₁ + 6⋅x₂ + 2⋅x₁⋅x₂ + 3⋅x₂² + 1⋅x₁⋅x₂²
 
 julia> 1/xTN(1)
  1.0 - 1.0⋅x₁ + 1.0⋅x₁² - 1.0⋅x₁³ + 1.0⋅x₁⁴ - 1.0⋅x₁⁵ + 1.0⋅x₁⁶
@@ -151,13 +151,13 @@ Some elemental functions have been implemented using automatic differentiation t
 
 ```julia
 julia> exp(xT0)
- 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ 
+ 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵
 
 julia> convert(Taylor1{Rational{Int64}}, ans)
- 1//1 + 1//1⋅t + 1//2⋅t² + 1//6⋅t³ + 1//24⋅t⁴ + 1//120⋅t⁵ 
+ 1//1 + 1//1⋅t + 1//2⋅t² + 1//6⋅t³ + 1//24⋅t⁴ + 1//120⋅t⁵
 
 julia> log(1-xT0)
- - 1.0⋅t - 0.5⋅t² - 0.3333333333333333⋅t³ - 0.25⋅t⁴ - 0.2⋅t⁵ 
+ - 1.0⋅t - 0.5⋅t² - 0.3333333333333333⋅t³ - 0.25⋅t⁴ - 0.2⋅t⁵
 
 julia> sqrt(xT0)
 ERROR: First non-vanishing Taylor1 coefficient must correspond to an **even power**
@@ -165,10 +165,10 @@ to expand `sqrt` around 0.
  in sqrt at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries/src/utils_Taylor1.jl:339
 
 julia> sqrt( xT(1.0) )   # identic to sqrt( 1+x0 )
- 1.0 + 0.5⋅t - 0.125⋅t² + 0.0625⋅t³ - 0.0390625⋅t⁴ + 0.02734375⋅t⁵ 
+ 1.0 + 0.5⋅t - 0.125⋅t² + 0.0625⋅t³ - 0.0390625⋅t⁴ + 0.02734375⋅t⁵
 
 julia> imag(exp(xTI)')
- - 1.0⋅t + 0.16666666666666666⋅t³ - 0.008333333333333333⋅t⁵ 
+ - 1.0⋅t + 0.16666666666666666⋅t³ - 0.008333333333333333⋅t⁵
 
 julia> real(exp(Taylor1([0.0,1im],17))) - cos(Taylor1([0.0,1.0],17)) == 0.0
 true
@@ -187,10 +187,10 @@ Differentiating and integrating is trivial for polynomial expansions in one vari
 
 ```julia
 julia> diffTaylor(exp(xT0))
- 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ 
+ 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴
 
 julia> integTaylor(exp(xT0))
- 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ 
+ 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵
 
 julia> integTaylor( ans, 1.0)
  1.0 + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵
@@ -247,7 +247,7 @@ julia> f1 = f(xTN(0),yTN(0))
 
 julia> g1 = g(xTN(0),yTN(0))
  1⋅x₂ - 1⋅x₁⁴
- 
+
 julia> ∇(f1)
 2-element Array{TaylorN{Int64},1}:
 2-element Array{TaylorN{Int64},1}:
