@@ -24,11 +24,12 @@ using Compat
 @compat sizehint!
 @compat trunc
 @compat eachindex
+@compat round
 
 import Base: zero, one, zeros, ones,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
-    rem, mod, mod2pi,
+    rem, mod, mod2pi, gradient,
     sqrt, exp, log, sin, cos, tan
 
 
@@ -180,15 +181,15 @@ function superscriptify(n::Int)
     join([superscript_digits[i+1] for i in dig])
 end
 
-# # summary
-# summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
-# function summary{T<:Number}(a::Union(HomogeneousPolynomial{T}, TaylorN{T}))
-#     string(a.order, "-order ", typeof(a), " in ", _params_taylorN.numVars, " variables:")
-# end
+# summary
+summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
+function summary{T<:Number}(a::Union(HomogeneousPolynomial{T}, TaylorN{T}))
+    string(a.order, "-order ", typeof(a), " in ", _params_taylorN.numVars, " variables:")
+end
 
 # show
 function show(io::IO, a::Union(Taylor1, HomogeneousPolynomial, TaylorN))
-    # println(io, summary(a) )
+    # (isa(a, TaylorN) || isa(a, Taylor1)) && println(io, summary(a))
     print(io, pretty_print(a))
 end
 

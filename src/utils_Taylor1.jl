@@ -26,11 +26,12 @@ immutable Taylor1{T<:Number} <: Number
     function Taylor1(coeffs::Array{T,1}, order::Int)
         lencoef = length(coeffs)
         order = max(order, lencoef-1)
-        v = zeros(T, order+1)
-        @inbounds for i in eachindex(coeffs)
-            v[i] = coeffs[i]
+        order == lencoef-1 && return new(coeffs, order)
+        resize!(coeffs, order+1)
+        for i = lencoef+1:order+1
+            coeffs[i] = zero(T)
         end
-        new(v, order)
+        new(coeffs, order)
     end
 end
 
@@ -43,8 +44,11 @@ Taylor1{T<:Number}(x::T, order::Int) = Taylor1{T}([x], order)
 Taylor1{T<:Number}(x::T) = Taylor1{T}([x], 0)
 
 # Shortcut to define Taylor1 independent variables
-taylor1_variable(T::Type, order::Int=1 ) = Taylor1{T}( [zero(T), one(T)], order )
-taylor1_variable(order::Int=1 ) = taylor1_variable(Float64, order)
+taylor1_variable(T::Type, order::Int=1) = Taylor1{T}( [zero(T), one(T)], order)
+taylor1_variable(order::Int=1) = taylor1_variable(Float64, order)
+
+## get_coeff
+get_coeff(a::Taylor1, n::Int) = (@assert 0 <= n <= a.order+1; return a.coeffs[n+1])
 
 ## Type, length ##
 eltype{T<:Number}(::Taylor1{T}) = T
@@ -66,11 +70,9 @@ promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{S}) = Taylor1{prom
 
 ## Auxiliary function ##
 function firstnonzero{T<:Number}(a::Taylor1{T})
-    order = a.order
-    nonzero::Int = order+1
-    z = zero(T)
+    nonzero::Int = a.order+1
     for i in eachindex(a.coeffs)
-        if a.coeffs[i] != z
+        if a.coeffs[i] != zero(T)
             nonzero = i-1
             break
         end
@@ -113,8 +115,8 @@ for f in (:+, :-)
         function ($f)(a::Taylor1, b::Taylor1)
             a, b = fixshape(a, b)
             v = similar(a.coeffs)
-            @inbounds for i in eachindex(a.coeffs)
-                v[i] = ($f)(a.coeffs[i], b.coeffs[i])
+            @simd for i in eachindex(a.coeffs)
+                @inbounds v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
             return Taylor1(v, a.order)
         end
@@ -125,8 +127,7 @@ end
 ## Multiplication ##
 function *(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
-    T = eltype(a)
-    coeffs = zeros(T,a.order+1)
+    coeffs = similar(a.coeffs)
     @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
     @inbounds for k = 1:a.order
         coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
@@ -198,16 +199,17 @@ end
 for op in (:mod, :rem)
     @eval begin
         function ($op){T<:Real}(a::Taylor1{T}, x::Real)
-            # coeffs = a.coeffs
-            @inbounds a.coeffs[1] = ($op)(a.coeffs[1], x)
-            return Taylor1( a.coeffs, a.order)
+            coeffs = copy(a.coeffs)
+            @inbounds coeffs[1] = ($op)(a.coeffs[1], x)
+            return Taylor1(coeffs, a.order)
         end
     end
 end
 
 function mod2pi{T<:Real}(a::Taylor1{T})
-    @inbounds a.coeffs[1] = mod2pi( a.coeffs[1] )
-    return Taylor1( a.coeffs, a.order)
+    coeffs = copy(a.coeffs)
+    @inbounds coeffs[1] = mod2pi( a.coeffs[1] )
+    return Taylor1( coeffs, a.order)
 end
 
 ## Int power ##
@@ -227,7 +229,7 @@ function ^{T<:Integer}(a::Taylor1{T}, n::Integer)
     return power_by_squaring(a, n)
 end
 
-## power_by_squaring; slightly modified from base/intfuncs.jl
+## power_by_squaring; slightly modified from base/intfuncs.jl (License MIT)
 function power_by_squaring(x::Taylor1, p::Integer)
     p == 1 && return copy(x)
     p == 0 && return one(x)
@@ -257,15 +259,13 @@ end
 
 ## Real power ##
 function ^(a::Taylor1, x::Real)
-    uno = one(a)
-    x == zero(x) && return uno
+    x == zero(x) && return one(a)
     x == one(x)/2 && return sqrt(a)
-    isinteger(x) && return a^int(x)
-    order = a.order
+    isinteger(x) && return a^round(Int,x)
 
     # First non-zero coefficient
     l0nz = firstnonzero(a)
-    l0nz > order && return zero(a)
+    l0nz > a.order && return zero(a)
 
     # The first non-zero coefficient of the result; must be integer
     lnull = x*l0nz
@@ -279,14 +279,14 @@ function ^(a::Taylor1, x::Real)
     @inbounds aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
-    coeffs = zeros(T, order+1)
+    coeffs = zeros(T, a.order+1)
     @inbounds coeffs[lnull+1] = aux
     k0 = lnull+l0nz
-    @inbounds for k = k0+1:order
+    @inbounds for k = k0+1:a.order
         coeffs[k-l0nz+1] = powHomogCoef(k, v, x, coeffs, l0nz)
     end
 
-    Taylor1(coeffs,order)
+    Taylor1(coeffs,a.order)
 end
 
 # Homogeneous coefficients for real power
@@ -309,14 +309,12 @@ end
 
 ## Square ##
 function square(a::Taylor1)
-    order = a.order
-    T = eltype(a)
-    coeffs = zeros(T,order+1)
+    coeffs = Array(eltype(a), a.order+1)
     coeffs[1] = a.coeffs[1]^2
-    @inbounds for k = 1:order
+    @inbounds for k = 1:a.order
         coeffs[k+1] = squareHomogCoef(k, a.coeffs)
     end
-    Taylor1(coeffs,order)
+    Taylor1(coeffs,a.order)
 end
 
 # Homogeneous coefficients for square
@@ -328,7 +326,7 @@ function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     @inbounds for i = 0:kend
         coefhomog += ac[i+1]*ac[kcoef-i+1]
     end
-    coefhomog = 2coefhomog
+    coefhomog = convert(T,2) * coefhomog
     if kodd == 0
         @inbounds coefhomog += ac[div(kcoef,2)+1]^2
     end
@@ -337,10 +335,9 @@ end
 
 ## Square root ##
 function sqrt(a::Taylor1)
-    order = a.order
     # First non-zero coefficient
     l0nz = firstnonzero(a)
-    if l0nz > order
+    if l0nz > a.order
         return zero(a)
     elseif l0nz%2 == 1 # l0nz must be pair
         error("First non-vanishing Taylor1 coefficient must correspond to an **even power**\n",
@@ -354,12 +351,12 @@ function sqrt(a::Taylor1)
     @inbounds aux = sqrt(a.coeffs[l0nz+1])
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
-    coeffs = zeros(T, order+1)
+    coeffs = zeros(T, a.order+1)
     @inbounds coeffs[lnull+1] = aux
-    @inbounds for k = lnull+1:order-l0nz
+    @inbounds for k = lnull+1:a.order-l0nz
         coeffs[k+1] = sqrtHomogCoef(k, v, coeffs, lnull)
     end
-    Taylor1(coeffs, order)
+    Taylor1(coeffs, a.order)
 end
 
 # Homogeneous coefficients for the square-root
@@ -368,31 +365,31 @@ function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}
     coefhomog = zero(T)
     kodd = (kcoef - knull)%2
     kend = div(kcoef - knull - 2 + kodd, 2)
+    two = convert(T,2)
     @inbounds for i = knull+1:knull+kend
         coefhomog += coeffs[i+1]*coeffs[kcoef+knull-i+1]
     end
-    @inbounds aux = ac[kcoef+knull+1]-2coefhomog
+    @inbounds aux = ac[kcoef+knull+1] - two*coefhomog
 
     if kodd == 0
         @inbounds aux = aux - (coeffs[kend+knull+2])^2
     end
-    @inbounds coefhomog = aux / (2coeffs[knull+1])
+    @inbounds coefhomog = aux / (two*coeffs[knull+1])
 
     coefhomog
 end
 
 ## Exp ##
 function exp(a::Taylor1)
-    order = a.order
     @inbounds aux = exp( a.coeffs[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
-    coeffs = zeros(T, order+1)
+    coeffs = similar(v)
     @inbounds coeffs[1] = aux
-    @inbounds for k = 1:order
+    @inbounds for k = 1:a.order
         coeffs[k+1] = expHomogCoef(k, v, coeffs)
     end
-    Taylor1( coeffs, order )
+    Taylor1( coeffs, a.order )
 end
 
 # Homogeneous coefficients for exp
@@ -408,20 +405,16 @@ end
 
 ## Log ##
 function log(a::Taylor1)
-    order = a.order
-    l0nz = firstnonzero(a)
-    if firstnonzero(a)>0
-        error("Not possible to expand `log` around 0.")
-    end
+    ( firstnonzero(a)>0 ) && error("Not possible to expand `log` around 0.")
     @inbounds aux = log( a.coeffs[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
-    coeffs = zeros(T, order+1)
+    coeffs = similar(ac)
     @inbounds coeffs[1] = aux
-    @inbounds for k = 1:order
+    @inbounds for k = 1:a.order
         coeffs[k+1] = logHomogCoef(k, ac, coeffs)
     end
-    Taylor1( coeffs, order )
+    Taylor1( coeffs, a.order )
 end
 
 # Homogeneous coefficients for log
@@ -439,18 +432,17 @@ end
 sin(a::Taylor1) = sincos(a)[1]
 cos(a::Taylor1) = sincos(a)[2]
 function sincos(a::Taylor1)
-    order = a.order
     @inbounds aux = sin( a.coeffs[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
-    sincoeffs = zeros(T,order+1)
-    coscoeffs = zeros(T,order+1)
+    sincoeffs = similar(v)
+    coscoeffs = similar(v)
     @inbounds sincoeffs[1] = aux
     @inbounds coscoeffs[1] = cos( a.coeffs[1] )
-    @inbounds for k = 1:order
+    @inbounds for k = 1:a.order
         sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
     end
-    return Taylor1(sincoeffs, order), Taylor1(coscoeffs, order)
+    return Taylor1(sincoeffs, a.order), Taylor1(coscoeffs, a.order)
 end
 
 # Homogeneous coefficients for sincos
@@ -462,9 +454,9 @@ function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
     coscoefhom = zero(T)
 
     @inbounds for i = 1:kcoef
-            x = i * ac[i+1]
-            sincoefhom += x * ccoeffs[kcoef-i+1]
-            coscoefhom -= x * scoeffs[kcoef-i+1]
+        x = i * ac[i+1]
+        sincoefhom += x * ccoeffs[kcoef-i+1]
+        coscoefhom -= x * scoeffs[kcoef-i+1]
     end
 
     sincoefhom = sincoefhom/kcoef
@@ -474,19 +466,18 @@ end
 
 ## Tan ##
 function tan(a::Taylor1)
-    order = a.order
     aux = tan( a.coeffs[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
-    coeffs = zeros(T,order+1)
-    coeffst2 = zeros(T,order+1)
+    coeffs = similar(v)
+    coeffst2 = similar(v)
     @inbounds coeffs[1] = aux
     @inbounds coeffst2[1] = aux^2
-    @inbounds for k = 1:order
+    @inbounds for k = 1:a.order
         coeffs[k+1] = tanHomogCoef(k, v, coeffst2)
         coeffst2[k+1] = squareHomogCoef(k, coeffs)
     end
-    Taylor1( coeffs, order )
+    Taylor1( coeffs, a.order )
 end
 # Homogeneous coefficients for tan
 function tanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffst2::Array{T,1})
@@ -501,34 +492,31 @@ end
 
 ## Differentiating ##
 function diffTaylor(a::Taylor1)
-    order = a.order
     coeffs = zero(a.coeffs)
     @inbounds coeffs[1] = a.coeffs[2]
-    @inbounds for i = 1:order
+    @inbounds for i = 1:a.order
         coeffs[i] = i*a.coeffs[i+1]
     end
-    return Taylor1(coeffs, order)
+    return Taylor1(coeffs, a.order)
 end
 
 ## Integrating ##
 function integTaylor{T<:Number}(a::Taylor1{T}, x::Number)
-    order = a.order
     R = promote_type(T, typeof(a.coeffs[1] / 1), typeof(x))
-    coeffs = zeros(R, order+1)
-    @inbounds for i = 1:order
+    coeffs = zeros(R, a.order+1)
+    @inbounds for i = 1:a.order
         coeffs[i+1] = a.coeffs[i] / i
     end
     @inbounds coeffs[1] = convert(R, x)
-    return Taylor1(coeffs, order)
+    return Taylor1(coeffs, a.order)
 end
 integTaylor{T<:Number}(a::Taylor1{T}) = integTaylor(a, zero(T))
 
 ## Evaluates a Taylor1 polynomial on a given point using Horner's rule ##
 function evalTaylor{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
-    orden = a.order
     @inbounds suma = convert(R, a.coeffs[end])
-    @inbounds for k = orden:-1:1
+    @inbounds for k = a.order:-1:1
         suma = suma*dx + a.coeffs[k]
     end
     suma

@@ -1,175 +1,184 @@
-# Simple tests for TaylorSeries implementation
+# Tests for TaylorSeries implementation
 using TaylorSeries
-using Base.Test
+using FactCheck
 using Compat
 
-# Tests for Taylor1 expansions
-xT(a) = Taylor1([a,one(a)],15)
-xT0 = taylor1_variable(Int,15)
-xTI = im*xT0
-z = zero(xT0)
-u = 1.0*one(xT0)
-tol1 = eps(1.0)
+FactCheck.setstyle(:compact)
+# FactCheck.onlystats(true)
 
-@test eltype(convert(Taylor1{Complex128},u)) == Complex128
-@test eltype(convert(Taylor1{Complex128},1)) == Complex128
-@test promote(0,Taylor1(1.0,0)) == (z,u)
-@test eltype(promote(0,Taylor1(u))[1]) == Float64
-@test eltype(promote(1.0+im, z)[1]) == Complex{Float64}
-@test eltype(TaylorSeries.fixshape(z,u)[1]) == Float64
+facts("Tests for Taylor1 expansions") do
 
-@test length(Taylor1(0)) == 0
-@test length(TaylorSeries.fixshape(z,convert(Taylor1{Int64},[0]))[1]) == 15
-@test TaylorSeries.firstnonzero(xT0) == 1
-@test TaylorSeries.firstnonzero(z) == z.order+1
+    ta(a) = Taylor1([a,one(a)],15)
+    t = taylor1_variable(Int,15)
+    tim = im*t
+    zt = zero(t)
+    ot = 1.0*one(t)
+    tol1 = eps(1.0)
 
-@test xT0 == Taylor1(xT(0),15)
-@test u == 1
-@test 0.0 == z
-@test xT0.coeffs[2] == 1
-@test z+1 == u
-@test xT0+xT0 == 2xT0
-@test xT0-xT0 == z
+    @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  => true
+    @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  => true
+    @fact promote(0,Taylor1(1.0,0)) == (zt,ot)  => true
+    @fact eltype(promote(0,Taylor1(ot))[1]) == Float64  => true
+    @fact eltype(promote(1.0+im, zt)[1]) == Complex{Float64}  => true
+    @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  => true
 
-xsquare = Taylor1([0,0,1],15)
-@test xT0^0 == xT0^0.0 == one(xT0)
-@test xT0*xT0 == xsquare
-@test (-xT0)^2 == xsquare
-@test xT0^3 == xsquare*xT0
-@test xsquare/xT0 == xT0
-@test xT0/(xT0*3) == (1/3)*u
-@test xT0/3im == -xTI/3
-@test 1/(1-xT0) == Taylor1(ones(xT0.order+1))
-@test Taylor1([0,1,1])/xT0 == xT0+1
-@test (xT0+im)^2 == xsquare+2im*xT0-1
-@test (xT0+im)^3 == Taylor1([-1im,-3,3im,1],15)
-@test (xT0+im)^4 == Taylor1([1,-4im,-6,4im,1],15)
-@test imag(xsquare+2im*xT0-1) == 2xT0
-@test (Rational(1,2)*xsquare).coeffs[3] == 1//2
-@test xT0^2/xsquare == u
-@test ((1+xT0)^(1/3)).coeffs[3]+1/9 <= tol1
-@test 1-xsquare == (1+xT0)-xT0*(1+xT0)
-@test (1-xsquare)^2 == (1+xT0)^2 * (1-xT0)^2
-@test (sqrt(1+xT0)).coeffs[3] == -1/8
-@test ((1-xsquare)^(1//2))^2 == 1-xsquare
-@test ((1-xT0)^(1//4)).coeffs[15] == -4188908511//549755813888
-@test abs(((1+xT0)^3.2).coeffs[14] + 5.4021062656e-5) < tol1
+    @fact length(Taylor1(0)) == 0  => true
+    @fact length(TaylorSeries.fixshape(zt,convert(Taylor1{Int64},[0]))[1]) ==
+        15  => true
+    @fact TaylorSeries.firstnonzero(t) == 1  => true
+    @fact TaylorSeries.firstnonzero(zt) == zt.order+1  => true
 
-@test isapprox( rem(4.1 + xT0,4).coeffs[1], (0.1 + xT0).coeffs[1] )
-@test isapprox( mod(4.1 + xT0,4).coeffs[1], (0.1 + xT0).coeffs[1] )
-@test isapprox( mod2pi(2pi + 0.1 + xT0).coeffs[1], (0.1 + xT0).coeffs[1] )
+    @fact t == Taylor1(ta(0),15) => true
+    @fact ot == 1  => true
+    @fact 0.0 == zt  => true
+    @fact t.coeffs[2] == 1  => true
+    @fact zt+1 == ot  => true
+    @fact t+t == 2t  => true
+    @fact t-t == zt  => true
 
-@test log(exp(xsquare)) == xsquare
-@test exp(log(1-xsquare)) == 1-xsquare
-@test log((1-xT0)^2) == 2*log(1-xT0)
-@test real(exp(xTI)) == cos(xT0)
-@test imag(exp(xTI)) == sin(xT0)
-@test exp(xTI') == cos(xT0)-im*sin(xT0)
-@test (exp(xT0))^(2im) == cos(2xT0)+im*sin(2xT0)
-@test (exp(xT0))^Taylor1(-5.2im) == cos(5.2xT0)-im*sin(5.2xT0)
-@test abs((tan(xT0)).coeffs[8]- 17/315) < tol1
-@test abs((tan(xT0)).coeffs[14]- 21844/6081075) < tol1
-@test evalTaylor(exp(Taylor1([0,1],17)),1.0) == 1.0*e
-@test evalTaylor(exp(Taylor1([0,1],1))) == 1.0
-@test evalTaylor(exp(xT0),xT0^2) == exp(xT0^2)
+    tsquare = Taylor1([0,0,1],15)
+    @fact t^0 == t^0.0 == one(t)  => true
+    @fact t*t == tsquare  => true
+    @fact (-t)^2 == tsquare  => true
+    @fact t^3 == tsquare*t  => true
+    @fact tsquare/t == t  => true
+    @fact t/(t*3) == (1/3)*ot  => true
+    @fact t/3im == -tim/3  => true
+    @fact 1/(1-t) == Taylor1(ones(t.order+1))  => true
+    @fact Taylor1([0,1,1])/t == t+1  => true
+    @fact (t+im)^2 == tsquare+2im*t-1  => true
+    @fact (t+im)^3 == Taylor1([-1im,-3,3im,1],15)  => true
+    @fact (t+im)^4 == Taylor1([1,-4im,-6,4im,1],15)  => true
+    @fact imag(tsquare+2im*t-1) == 2t  => true
+    @fact (Rational(1,2)*tsquare).coeffs[3] == 1//2  => true
+    @fact t^2/tsquare == ot  => true
+    @fact ((1+t)^(1/3)).coeffs[3]+1/9 <= tol1  => true
+    @fact 1-tsquare == (1+t)-t*(1+t)  => true
+    @fact (1-tsquare)^2 == (1+t)^2.0 * (1-t)^2.0  => true
+    @fact (sqrt(1+t)).coeffs[3] == -1/8  => true
+    @fact ((1-tsquare)^(1//2))^2 == 1-tsquare  => true
+    @fact ((1-t)^(1//4)).coeffs[15] == -4188908511//549755813888  => true
+    @fact abs(((1+t)^3.2).coeffs[14] + 5.4021062656e-5) < tol1  => true
 
-@test deriv( exp(xT(1.0)), 5 ) == exp(1.0)
-@test deriv( exp(xT(1.0pi)), 3 ) == exp(1.0pi)
-@test isapprox( deriv(exp(xT(1.0pi)), 10) , exp(1.0pi) )
-@test integTaylor(diffTaylor(exp(xT0)),1) == exp(xT0)
-@test integTaylor(cos(xT0)) == sin(xT0)
+    @fact isapprox( rem(4.1 + t,4).coeffs[1], (0.1 + t).coeffs[1] )  => true
+    @fact isapprox( mod(4.1 + t,4).coeffs[1], (0.1 + t).coeffs[1] )  => true
+    @fact isapprox( mod2pi(2pi + 0.1 + t).coeffs[1],(0.1 + t).coeffs[1]) => true
 
-@test promote(xT(0.0), xT0) == (xT(0.0),xT(0.0))
+    @fact log(exp(tsquare)) == tsquare  => true
+    @fact exp(log(1-tsquare)) == 1-tsquare  => true
+    @fact log((1-t)^2) == 2*log(1-t)  => true
+    @fact real(exp(tim)) == cos(t)  => true
+    @fact imag(exp(tim)) == sin(t)  => true
+    @fact exp(tim') == cos(t)-im*sin(t)  => true
+    @fact (exp(t))^(2im) == cos(2t)+im*sin(2t)  => true
+    @fact (exp(t))^Taylor1(-5.2im) == cos(5.2t)-im*sin(5.2t)  => true
+    @fact abs((tan(t)).coeffs[8]- 17/315) < tol1  => true
+    @fact abs((tan(t)).coeffs[14]- 21844/6081075) < tol1  => true
+    @fact evalTaylor(exp(Taylor1([0,1],17)),1.0) == 1.0*e  => true
+    @fact evalTaylor(exp(Taylor1([0,1],1))) == 1.0  => true
+    @fact evalTaylor(exp(t),t^2) == exp(t^2)  => true
 
-@test_throws ErrorException 1/xT0
-@test_throws ErrorException z/z
-@test_throws ErrorException xT0^1.5
-@test_throws DomainError xT0^(-2)
-@test_throws ErrorException sqrt(xT0)
-@test_throws ErrorException log(xT0)
-@test_throws ErrorException cos(xT0)/sin(xT0)
-@test_throws AssertionError deriv( exp(xT(1.0pi)), 30 )
+    @fact deriv( exp(ta(1.0)), 5 ) == exp(1.0)  => true
+    @fact deriv( exp(ta(1.0pi)), 3 ) == exp(1.0pi)  => true
+    @fact isapprox( deriv(exp(ta(1.0pi)), 10) , exp(1.0pi) )  => true
+    @fact integTaylor(diffTaylor(exp(t)),1) == exp(t)  => true
+    @fact integTaylor(cos(t)) == sin(t)  => true
 
-# Tests for TaylorN expansions
-set_params_TaylorN(3,4)
-set_numVars(2)
-set_maxOrder(17)
-xH = HomogeneousPolynomial([1,0])
-yH = HomogeneousPolynomial([0,1],1)
-@test get_numVars() == 2
-@test get_maxOrder(yH) == 1
-xTN = TaylorN(xH,17)
-yTN = taylorN_variable(Int64, 2, 17)
-zeroTN = zero( taylorN_variable(Int64, 1) )
-uTN = one(convert(TaylorN{Float64},yTN))
-@test get_coeff(xT,[1,0]) == 1
-@test get_coeff(yH,[1,0]) == 0
+    @fact promote(ta(0.0), t) == (ta(0.0),ta(0.0))  => true
 
-@test HomogeneousPolynomial(xH,1) == HomogeneousPolynomial(xH)
-@test eltype(xH) == Int
-@test length(xH) == 2
-@test zero(xH) == 0*xH
-@test one(yH) == xH+yH
-
-@test TaylorN(zeroTN,5) == 0
-@test TaylorN(uTN) == convert(TaylorN{Complex},1)
-@test get_numVars() == 2
-@test length(uTN) == get_maxOrder()+1
-@test eltype(convert(TaylorN{Complex128},1)) == Complex128
-
-@test TaylorN(1)+xTN+yTN == TaylorN([1,xH,yH])
-@test xTN-yTN == TaylorN([xH-yH])
-@test xTN*yTN == TaylorN([HomogeneousPolynomial([0,1,0],2)])
-@test (1/(1-xTN)).coeffs[4] == HomogeneousPolynomial(1.0,3)
-@test (yTN/(1-xTN)).coeffs[5] == xH^3 * yH
-@test mod(1+xTN,1) == +xTN
-@test (rem(1+xTN,1)).coeffs[1] == 0
-@test diffTaylor(mod2pi(2pi+yTN^3),2) == diffTaylor(yTN^3,2)
-@test diffTaylor(yTN) == zeroTN
-@test -xTN/3im == im*xTN/3
-
-@test diffTaylor(2xTN*yTN^2,1) == 2yTN^2
-@test xTN*xTN^3 == xTN^4
-@test (1+xTN)^(3//2) == ((1+xTN)^0.5)^3
-@test real( exp(1im * xTN)) == cos(xTN)
-@test imag((exp(yTN))^(-1im)) == -sin(yTN)
-@test evalTaylor(exp( xTN+yTN )) == 1
-@test isapprox(evalTaylor(exp( xTN+yTN ), [1,1]), e^2)
-
-g1(xTN,yTN) = xTN^3 + 3yTN^2 - 2xTN^2 * yTN - 7xTN + 2
-g2(xTN,yTN) = yTN + xTN^2 - xTN^4
-f1 = g1(xTN,yTN)
-f2 = g2(xTN,yTN)
-@test ∇(f1) == [TaylorN([HomogeneousPolynomial(-7), HomogeneousPolynomial([3,-4,0],2)]),
-                TaylorN( [HomogeneousPolynomial([0,6],1), HomogeneousPolynomial([-2,0,0],2)])]
-@test ∇(f2) == [TaylorN([HomogeneousPolynomial([2,0],1), HomogeneousPolynomial([-4,0,0,0],3)]),
-                TaylorN( HomogeneousPolynomial(1,0))]
-@test jacobian([f1,f2], [2,1]) == jacobian( [g1(xTN+2,yTN+1), g2(xTN+2,yTN+1)] )
-@test [xTN yTN]*hessian(f1*f2)*[xTN, yTN] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
-@test hessian(f1^2)/2 == [[49,0] [0,12]]
-@test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
-
-#= Testing an identity proved by Euler
-It creates symbols :a1, :b1, ... :a4, :b4
-the independent variables which will be used.
-For this we ser the parameters appropriately
-=#
-set_params_TaylorN(4,8) # order 4, 8 variables
-for i=1:4
-    ai = symbol(string("a",i))
-    bi = symbol(string("b",i))
-    @eval ($ai) = taylorN_variable(Int,$i,4)
-    @eval ($bi) = taylorN_variable(Int,4+($i),4)
+    @fact_throws ErrorException 1/t
+    @fact_throws ErrorException zt/zt
+    @fact_throws ErrorException t^1.5
+    @fact_throws DomainError t^(-2)
+    @fact_throws ErrorException sqrt(t)
+    @fact_throws ErrorException log(t)
+    @fact_throws ErrorException cos(t)/sin(t)
+    # @fact_throws AssertionError deriv( exp(ta(1.0pi)), 30 )
 end
-expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2
-expr_lhs2 = b1^2 + b2^2 + b3^2 + b4^2
-lhs = expr_lhs1 * expr_lhs2
-expr_rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2
-expr_rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2
-expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2
-expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2
-rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
-@test lhs == rhs
 
-#println("    \033[32;1mSUCCESS\033[0m")
+facts("Tests for HomogeneousPolynomial and TaylorN") do
+    @fact set_numVars(2) == (6,2) => true
+    @fact set_maxOrder(6) == (6,2) => true
+    @fact get_maxOrder() == 6 => true
+    @fact get_numVars() == 2 => true
 
+    set_params_TaylorN(17,2)
+    xH = HomogeneousPolynomial([1,0])
+    yH = HomogeneousPolynomial([0,1],1)
+    xT = TaylorN(xH,17)
+    yT = taylorN_variable(Int64, 2, 17)
+    zeroT = zero( TaylorN([xH],1) )
+    uT = one(convert(TaylorN{Float64},yT))
+    @fact get_coeff(xT,[1,0]) == 1 => true
+    @fact get_coeff(yH,[1,0]) == 0 => true
+
+    @fact HomogeneousPolynomial(xH,1) == HomogeneousPolynomial(xH) => true
+    @fact eltype(xH) == Int => true
+    @fact length(xH) == 2 => true
+    @fact zero(xH) == 0*xH => true
+    @fact one(yH) == xH+yH => true
+    @fact get_maxOrder(yH) == 1 => true
+    @fact get_maxOrder(xT) == 17 => true
+
+    @fact TaylorN(zeroT,5) == 0 => true
+    @fact TaylorN(uT) == convert(TaylorN{Complex},1) => true
+    @fact get_numVars() == 2 => true
+    @fact length(uT) == get_maxOrder()+1 => true
+    @fact eltype(convert(TaylorN{Complex128},1)) == Complex128 => true
+
+    @fact 1+xT+yT == TaylorN([1,xH,yH]) => true
+    @fact xT-yT == TaylorN([xH-yH]) => true
+    @fact xT*yT == TaylorN([HomogeneousPolynomial([0,1,0],2)]) => true
+    @fact (1/(1-xT)).coeffs[4] == HomogeneousPolynomial(1.0,3) => true
+    @fact (yT/(1-xT)).coeffs[5] == xH^3 * yH => true
+    @fact mod(1+xT,1) == +xT => true
+    @fact (rem(1+xT,1)).coeffs[1] == 0 => true
+    @fact diffTaylor(mod2pi(2pi+yT^3),2) == diffTaylor(yT^3,2) => true
+    @fact diffTaylor(yT) == zeroT => true
+    @fact -xT/3im == im*xT/3 => true
+
+    @fact diffTaylor(2xT*yT^2,1) == 2yT^2 => true
+    @fact xT*xT^3 == xT^4 => true
+    @fact_throws DomainError yT^(-2)
+    @fact_throws DomainError yT^(-2.0)
+    @fact (1+xT)^(3//2) == ((1+xT)^0.5)^3 => true
+    @fact real( exp(1im * xT)) == cos(xT) => true
+    @fact imag((exp(yT))^(-1im)) == -sin(yT) => true
+    @fact evalTaylor(exp( xT+yT )) == 1 => true
+    @fact isapprox(evalTaylor(exp( xT+yT ), [1,1]), e^2) => true
+
+    g1(xT,yT) = xT^3 + 3yT^2 - 2xT^2 * yT - 7xT + 2
+    g2(xT,yT) = yT + xT^2 - xT^4
+    f1 = g1(xT,yT)
+    f2 = g2(xT,yT)
+    @fact gradient(f1) == [TaylorN([HomogeneousPolynomial(-7), HomogeneousPolynomial([3,-4,0],2)]),
+                    TaylorN( [HomogeneousPolynomial([0,6],1), HomogeneousPolynomial([-2,0,0],2)])] => true
+    @fact ∇(f2) == [TaylorN([HomogeneousPolynomial([2,0],1), HomogeneousPolynomial([-4,0,0,0],3)]),
+                    TaylorN( HomogeneousPolynomial(1,0))] => true
+    @fact jacobian([f1,f2], [2,1]) == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] ) => true
+    @fact [xT yT]*hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2).coeffs[3]) ] => true
+    @fact hessian(f1^2)/2 == [[49,0] [0,12]] => true
+    @fact hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))' => true
+end
+
+facts("Testing an identity proved by Euler (8 variables)") do
+    @fact set_params_TaylorN(4,8) == (4,8) => true  # order 4, 8 variables
+    # This creates symbols :a1, :b1, ... :a4, :b4 which are independent variables
+    for i=1:4
+        ai = symbol(string("a",i))
+        bi = symbol(string("b",i))
+        @eval ($ai) = taylorN_variable(Int,$i,4)
+        @eval ($bi) = taylorN_variable(Int,4+($i),4)
+    end
+    expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2
+    expr_lhs2 = b1^2 + b2^2 + b3^2 + b4^2
+    lhs = expr_lhs1 * expr_lhs2
+    expr_rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2
+    expr_rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2
+    expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2
+    expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2
+    rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
+    @fact lhs == rhs => true
+end
+
+exitstatus()
