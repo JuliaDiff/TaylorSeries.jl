@@ -465,6 +465,8 @@ end
 ## Rational power ##
 ^(a::TaylorN, x::Rational) = a^(x.num/x.den)
 
+^(a::TaylorN, b::TaylorN) = exp( b*log(a) )
+
 ## Real power ##
 function ^{S<:Real}(a::TaylorN, x::S)
     x == zero(x) && return TaylorN( one(eltype(a)) )
@@ -492,7 +494,6 @@ function ^{S<:Real}(a::TaylorN, x::S)
     return TaylorN{T}(coeffs, a.order)
 end
 ^(a::TaylorN, x::Complex) = exp( x*log(a) )
-^(a::TaylorN, b::TaylorN) = exp( b*log(a) )
 
 ## Square ##
 function square(a::HomogeneousPolynomial)

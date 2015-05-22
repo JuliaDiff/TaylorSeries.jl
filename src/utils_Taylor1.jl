@@ -263,6 +263,8 @@ end
 ## Rational power ##
 ^(a::Taylor1,x::Rational) = a^(x.num/x.den)
 
+^(a::Taylor1, b::Taylor1) = exp( b*log(a) )
+
 ## Real power ##
 function ^(a::Taylor1, x::Real)
     x == zero(x) && return one(a)
@@ -295,6 +297,7 @@ function ^(a::Taylor1, x::Real)
 
     Taylor1(coeffs,a.order)
 end
+^(a::Taylor1, x::Complex) = exp( x*log(a) )
 
 # Homogeneous coefficients for real power
 function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
@@ -311,8 +314,6 @@ function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
 
     coefhomog
 end
-^(a::Taylor1, x::Complex) = exp( x*log(a) )
-^(a::Taylor1, b::Taylor1) = exp( b*log(a) )
 
 ## Square ##
 function square(a::Taylor1)
