@@ -1,182 +1,200 @@
 # TaylorSeries.jl
 
-A julia package for Taylor expansions in one or more independent variables.
+A Julia package for Taylor expansions in one or more independent variables.
 
 [![Build Status](https://travis-ci.org/lbenet/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/lbenet/TaylorSeries.jl)
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_nightly.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=nightly)
+[![Coverage Status](https://coveralls.io/repos/lbenet/TaylorSeries.jl/badge.svg)](https://coveralls.io/r/lbenet/TaylorSeries.jl)
 
 #### Authors
 - [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas, Universidad Nacional Autónoma de México (UNAM)
 - [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad de Ciencias, Universidad Nacional Autónoma de México (UNAM)
 
-Comments on the code and suggestions for improvements are welcome and appreciated.
+Comments on the code, suggestions and improvements are welcome and appreciated.
 
 ### Basic of usage
 
-This package computes Taylor expansions using automatic differentiation techniques (see e.g. Alex Haro's [nice paper][1] for a description of the techniques). The module implements the basic operations (+,-,*,/,^), some elementary functions (exp, log, sin, cos, tan), integration, differentiation and evaluation (Horner's rule) of the series on a point. The expansions work for one or more independent variables.
+This package computes Taylor expansions using automatic differentiation techniques (see e.g. Alex Haro's [nice paper][1] for a description of the recurrence relations used). The module implements the basic operations (+,-,*,/,^), some elementary functions (exp, log, sin, cos, tan), integration, differentiation and evaluation (Horner's rule) of the series on a point. The expansions work for one or more independent variables.
 
-Installing `TaylorSeries` is done with `Pkg.add("TaylorSeries")`. The package introduces two types, `Taylor` and `TaylorN`, for the expansions in one or more independent-variable expansions, respectively. Both are subtypes of `AbstractSeries{T,N} <: Number`, with `T` the type of the coefficients and `N` the number of independent variables.
+Installing `TaylorSeries` is done as usual with `Pkg.add("TaylorSeries")`.
 
-`Taylor` is defined by one of the constructors
+The package introduces three new types, `Taylor1`, `HomogeneousPolynomial` and `TaylorN`, for the expansions in one and more independent-variable expansions, respectively. These are subtypes of `Number`.
 
-- `Taylor{T<:Number}(a::Taylor{T}, order::Integer)`
-- `Taylor{T<:Number}(a::Array{T,1}, order::Integer)`
-- `Taylor{T<:Number}(a::T, order::Integer)`
+`Taylor1` is defined by one of the constructors
 
-Thus, Taylor polynomials can be constructed from its coefficients (increasing with the order of the polynomial term), which may be of type `Taylor`, a vector or even a number (`<:Number`). The order of the polynomial can be omitted, which is then fixed from the length of the coefficients (otherwise it is the `max` among the length of the coefficients or the integer specified).
+- `Taylor1{T<:Number}(a::Taylor1{T}, order::Integer)`
+- `Taylor1{T<:Number}(a::Array{T,1}, order::Integer)`
+- `Taylor1{T<:Number}(a::T, order::Integer)`
 
-For `TaylorN` there are two basic functions, `set_maxOrder()` and `set_numVars()`, which fix the overall constants defining the maximum order of the expansions and the number of variables, respectively. These are essential to construct the dictionaries that translate the position of the coefficients vector into the indexes of the multi-variable monomials. It is a good idea to fix this values before defining the `TaylorN` objects; if the number of variables is changed, all `TaylorN` objects must be redefined. (This could be improved in the future.)
+Thus, one-variable Taylor polynomials can be constructed from its coefficients (increasing with the order of the polynomial term), which may be of type `Taylor1`, a vector or simply a number (`<:Number`). The order of the polynomial can be omitted, which is then fixed from the length of the coefficients; otherwise it is the `max` among the length of the coefficients or the integer specified. In order to simplify defining an independent `Taylor1` variable, we have defined the shortcut `taylor1_variable(T::Type, order::Int=1 )`.
 
-`TaylorN` can be constructed by:
+
+`TaylorN` is constructed as a vector of homogeneous polynomials defined by the type `HomogeneousPolynomial`, which is a vector of coefficients of given order (degree). (This new implementation is the **major difference** with respect to the previous released version (v0.0.3), with all adaptations that this implies; this change results in much better performance.) The functions `set_maxOrder()` and `set_numVars()`set the overall constants defining the maximum order (maximum degree) of the expansions and the number of variables, respectively; `set_params_TaylorN` is more efficient for setting both parameters at once. Setting this parameters is *essential* to properly construct the dictionaries that translate the position of the coefficients of `HomogeneousPolynomial` into the corresponding multi-variable monomials. It is a good idea to fix them before defining the `TaylorN` or `HomogeneousPolynomial` objects, to avoid unpleasant surprises. This implementation is
+certainly not the laziest one, though it achieves very good performance.
+
+`TaylorN` can be thus constructed by:
 
 - `TaylorN{T<:Number}(x::TaylorN{T}, order::Int)`
-- `TaylorN{T<:Number}(coeffs::Array{T,1}, order::Int)`
+- `TaylorN{T<:Number}(v::Array{HomogeneousPolynomial{T},1}, order::Int)`
+- `TaylorN{T<:Number}(x::HomogeneousPolynomial{T}, order::Int)`
+- `TaylorN{T<:Number}(x::T, order::Int)`
 
-Again, the order can be omitted, in which case it is fixed by the value set by `set_maxOrder()`, which by default is 4. Similarly, the number of independent variables is by default 2.
+Again, the order can be omitted, in which case it is fixed by the `HomogeneousPolynomial` of maximum order. In order to simplify defining the independent variables, we have defined `taylorN_variable(T::Type, nv::Int, order::Int=1 )`.
 
-By default, the Taylor expansions are implemented around 0; if the expansion around a different value $x_0$ is needed, the trick is simply $x\to x+a$; see the definition of `xT(a)` below.
+In the examples shown below, the output corresponds to Julia version 0.3; `t` is used as the independent `Taylor1` variable whereas `x_{i}` is used for the i-th variable of `HomogeneousPolynomial` and `TaylorN`.
+
+By default, the Taylor expansions are implemented around 0; if the expansion is needed around a different value $ x_0 $, the trick is a simple translation $ x \to x+a $; see the definition of `xT(a)` below.
 
 ```julia
 julia> using TaylorSeries
 
- help> Taylor   #?Taylor
+help?> Taylor1
 INFO: Loading help data...
-DataType   : Taylor{T<:Number} (constructor with 6 methods)
-  supertype: AbstractSeries{T<:Number,1}
+DataType   : Taylor1{T<:Number} (constructor with 6 methods)
+  supertype: Number
   fields   : (:coeffs,:order)
 
-julia> Taylor([0,1,2])
-Taylor{Int64}([0,1,2],2)
+julia> Taylor1([0,1,2])
+ 1⋅t + 2⋅t²
 
-julia> Taylor([0.0,1im])
-Taylor{Complex{Float64}}(Complex{Float64}[0.0+0.0im,0.0+1.0im],1)
+julia> dump(ans)
+Taylor1{Int64}
+  coeffs: Array(Int64,(3,)) [0,1,2]
+  order: Int64 2
 
-julia> xT(a) = Taylor([a, one(a)], 5) # expansion (of order 5) around an arbitrary value `a`
+julia> Taylor1([0.0,1im])
+ ( 1.0 im )⋅t
+
+julia> xT(a) = Taylor1([a, one(a)], 5) # expansion (of order 5) around an arbitrary value `a`
 xT (generic function with 1 method)
 
 julia> xT(1.0)
-Taylor{Float64}([1.0,1.0,0.0,0.0,0.0,0.0],5)
+ 1.0 + 1.0⋅t
 
-julia> xT0 = xT(0.0) # abbreviation of the independent variable for expansions around 0
-Taylor{Float64}([0.0,1.0,0.0,0.0,0.0,0.0],5)
+julia> xT0 = taylor1_variable(5) # abbreviation for the independent variable for expansions around 0
+ 1.0⋅t
 
- help> TaylorN   #?TaylorN
-DataType   : TaylorN{T<:Number} (constructor with 6 methods)
-  supertype: AbstractSeries{T<:Number,2}
-  fields   : (:coeffs,:order,:numVars)
-
- help> TaylorSeries.AbstractSeries
-DataType   : AbstractSeries{T<:Number,N}
+help?> TaylorN
+DataType   : TaylorN{T<:Number} (constructor with 8 methods)
   supertype: Number
-  subtypes : {TaylorN{T<:Number},Taylor{T<:Number}}
+  fields   : (:coeffs,:order)
 
 julia> set_maxOrder(6)
-INFO: MAXORDER is now 6; hash tables regenerated.
-6
+(6,2)
 
 julia> get_numVars()
 2
 
-julia> TaylorN([1,2,3,4])
-TaylorN{Int64}([1,2,3,4,0,0,0,0,0,0,0,0,0,0,0],4,2)
+julia> show_params_TaylorN()
+INFO: `TaylorN` and `HomogeneousPolynomial` parameters:
+    Maximum order       = 6
+    Number of variables = 2
 
-julia> xTN(a) = TaylorN([a,one(a)])
+julia> HomogeneousPolynomial([1,-1])
+ 1⋅x₁ - 1⋅x₂
+
+julia> TaylorN( [HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 4)
+ 1⋅x₁ + 1⋅x₁² + 2⋅x₁⋅x₂ + 3⋅x₂²
+
+julia> xTN(a) = a + taylorN_variable(typeof(a),1,6)  # shifted variable 1 of TaylorN of order 6 (default is get_maxOrder())
 xTN (generic function with 1 method)
 
-julia> yTN(a) = TaylorN([a,zero(a),one(a)])
+julia> yTN(a) = a + taylorN_variable(typeof(a),2)
 yTN (generic function with 1 method)
 
 julia> yTN(1.0pi)
-TaylorN{Float64}([3.14159,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0  …  0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],6,2)
+ 3.141592653589793 + 1.0⋅x₂
+
 ```
 
-The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been extended to work with `Taylor` and `TaylorN` type, including combinations of polynomials and numbers.
+The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been extended to work with `Taylor1` and `TaylorN` type, including combinations of polynomials and numbers. (Some of the arithmetics operations have also been extended for `HomogeneousPolynomial`, whenever the result is a `HomogeneousPolynomial`.)
 
 ```julia
 julia> xT0*(3xT0+2.5)
-Taylor{Float64}([0.0,2.5,3.0,0.0,0.0,0.0],5)
+ 2.5⋅t + 3.0⋅t²
 
 julia> 1/(1-xT0)
-Taylor{Float64}([1.0,1.0,1.0,1.0,1.0,1.0],5)
+ 1.0 + 1.0⋅t + 1.0⋅t² + 1.0⋅t³ + 1.0⋅t⁴ + 1.0⋅t⁵
 
 julia> xT0*(xT0^2-4)/(xT0+2)
-Taylor{Float64}([-0.0,-2.0,1.0,0.0,0.0,0.0],5)
+ - 2.0⋅t + 1.0⋅t²
 
-julia> Taylor([1],5) == 1.0
+julia> Taylor1([1],5) == 1.0
 true
 
-julia> xTI = Taylor([0,im],5)
-Taylor{Complex{Int64}}(Complex{Int64}[0+0im,0+1im,0+0im,0+0im,0+0im,0+0im],5)
+julia> xTI = 1im*xT(0)
+ ( 1 im )⋅t
 
 julia> xTI'
-Taylor{Complex{Int64}}(Complex{Int64}[0+0im,0-1im,0+0im,0+0im,0+0im,0+0im],5)
+ - ( 1 im )⋅t
 
-julia> xTI^4/xT0^4
-WARNING: Factorizing the polynomial.
-The last k=4 Taylor coefficients ARE SET to 0.
-Taylor{Complex{Float64}}(Complex{Float64}[1.0+0.0im,0.0+0.0im,0.0+0.0im,0.0+0.0im,0.0+0.0im,0.0+0.0im],5)
+julia> xTI^4 / xT0^4
+  ( 1.0 )
 
 julia> (1-xT0)^3.2
-Taylor{Float64}([1.0,-3.2,3.52,-1.408,0.0704,0.011264],5)
+ 1.0 - 3.2⋅t + 3.5200000000000005⋅t² - 1.4080000000000004⋅t³ + 0.07040000000000009⋅t⁴ + 0.011264000000000012⋅t⁵
 
 julia> (1+xT0)^xT0
-Taylor{Float64}([1.0,0.0,1.0,-0.5,0.833333,-0.75],5)
+ 1.0 + 1.0⋅t² - 0.5⋅t³ + 0.8333333333333333⋅t⁴ - 0.75⋅t⁵
 
-julia> xTN(1)-yTN(1)
-TaylorN{Int64}([0,1,-1,0,0,0,0,0,0,0  …  0,0,0,0,0,0,0,0,0,0],6,2)
+julia> xTN(1)-yTN(1) # 1+x-(1+y)
+ 1⋅x₁ - 1⋅x₂
 
-julia> xTN(1)*yTN(1)   # (1+x)*(1+y)
-TaylorN{Int64}([1,1,1,0,1,0,0,0,0,0  …  0,0,0,0,0,0,0,0,0,0],6,2)
+julia> xTN(3)*yTN(1)^2  # (3+x)*(1+y)^2
+ 3 + 1⋅x₁ + 6⋅x₂ + 2⋅x₁⋅x₂ + 3⋅x₂² + 1⋅x₁⋅x₂²
 
 julia> 1/xTN(1)
-TaylorN{Float64}([1.0,-1.0,0.0,1.0,0.0,0.0,-1.0,0.0,0.0,0.0  …  0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0],6,2)
+ 1.0 - 1.0⋅x₁ + 1.0⋅x₁² - 1.0⋅x₁³ + 1.0⋅x₁⁴ - 1.0⋅x₁⁵ + 1.0⋅x₁⁶
 
-julia> println(ans)
-TaylorN{Float64}([1.0,-1.0,0.0,1.0,0.0,0.0,-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0],6,2)
 ```
 
 Some elemental functions have been implemented using automatic differentiation techniques, i.e., by computing recursively their coefficients. Some examples include `exp`, `log`, `sqrt`, `sin`, `cos` and `tan`; more functions will be added in the future.
 
 ```julia
 julia> exp(xT0)
-Taylor{Float64}([1.0,1.0,0.5,0.166667,0.0416667,0.00833333],5)
+ 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵
+
+julia> convert(Taylor1{Rational{Int64}}, ans)
+ 1//1 + 1//1⋅t + 1//2⋅t² + 1//6⋅t³ + 1//24⋅t⁴ + 1//120⋅t⁵
 
 julia> log(1-xT0)
-Taylor{Float64}([0.0,-1.0,-0.5,-0.333333,-0.25,-0.2],5)
+ - 1.0⋅t - 0.5⋅t² - 0.3333333333333333⋅t³ - 0.25⋅t⁴ - 0.2⋅t⁵
 
 julia> sqrt(xT0)
-ERROR: First non-vanishing Taylor coefficient must be an EVEN POWER
-to expand SQRT around 0.
-
- in sqrt at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_Taylor1.jl:278
+ERROR: First non-vanishing Taylor1 coefficient must correspond to an **even power**
+to expand `sqrt` around 0.
+ in sqrt at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries/src/utils_Taylor1.jl:339
 
 julia> sqrt( xT(1.0) )   # identic to sqrt( 1+x0 )
-Taylor{Float64}([1.0,0.5,-0.125,0.0625,-0.0390625,0.0273438],5)
+ 1.0 + 0.5⋅t - 0.125⋅t² + 0.0625⋅t³ - 0.0390625⋅t⁴ + 0.02734375⋅t⁵
 
 julia> imag(exp(xTI)')
-Taylor{Float64}([-0.0,-1.0,-0.0,0.166667,-0.0,-0.00833333],5)
+ - 1.0⋅t + 0.16666666666666666⋅t³ - 0.008333333333333333⋅t⁵
 
-julia> real(exp(Taylor([0.0,1im],17))) - cos(Taylor([0.0,1.0],17)) == 0.0
+julia> real(exp(Taylor1([0.0,1im],17))) - cos(Taylor1([0.0,1.0],17)) == 0.0
 true
 
-julia> exp(xTN(0)+yTN(0))
-TaylorN{Float64}([1.0,1.0,1.0,0.5,1.0,0.5,0.166667,0.5,0.5,0.166667  …  0.0833333,0.0416667,0.00833333,0.00138889,0.00833333,0.0208333,0.0277778,0.0208333,0.00833333,0.00138889],6,2)
+julia> exp(xTN(0.0)+yTN(0.0))
+ 1.0 + 1.0⋅x₁ + 1.0⋅x₂ + 0.5⋅x₁² + 1.0⋅x₁⋅x₂ + 0.5⋅x₂² + 0.16666666666666666⋅x₁³ + 0.5⋅x₁²⋅x₂ + 0.5⋅x₁⋅x₂² + 0.16666666666666666⋅x₂³ + 0.041666666666666664⋅x₁⁴ + 0.16666666666666666⋅x₁³⋅x₂ + 0.25⋅x₁²⋅x₂² + 0.16666666666666666⋅x₁⋅x₂³ + 0.041666666666666664⋅x₂⁴ + 0.008333333333333333⋅x₁⁵ + 0.041666666666666664⋅x₁⁴⋅x₂ + 0.08333333333333333⋅x₁³⋅x₂² + 0.08333333333333333⋅x₁²⋅x₂³ + 0.041666666666666664⋅x₁⋅x₂⁴ + 0.008333333333333333⋅x₂⁵ + 0.0013888888888888887⋅x₁⁶ + 0.008333333333333331⋅x₁⁵⋅x₂ + 0.020833333333333332⋅x₁⁴⋅x₂² + 0.027777777777777776⋅x₁³⋅x₂³ + 0.020833333333333332⋅x₁²⋅x₂⁴ + 0.008333333333333331⋅x₁⋅x₂⁵ + 0.0013888888888888887⋅x₂⁶
 
-julia> ans - exp(xTN(0))*exp(yTN(0)) == 0
+julia> exp(xTN(0.0)+yTN(0.0)) - exp(xTN(0.0))*exp(yTN(0.0))  # should yield 0
+ - 1.734723475976807e-18⋅x₁⁵⋅x₂ - 1.734723475976807e-18⋅x₁⋅x₂⁵
+
+julia> ans == 0.0
 true
 ```
 
-Differentiating and integrating is trivial for polynomial expansions in one variable. The last coefficient of the differential is set to zero; for the integral, the integration constant may be set to a different value (the default is zero). The order of the resulting polynomial is not changed. The n-th ($n\ge 0$) derivative is obtained with `deriv(a,n)`, where `a` is a Taylor series; default is n=1. Partial differentiation is also implemented for expansion in more than one variable.
+Differentiating and integrating is trivial for polynomial expansions in one variable. The last coefficient of the differential is simply set to zero; for the integral, an integration constant may be set to a different value (the default is zero). The order of the resulting polynomial is not changed. The n-th (n > 0) derivative is obtained with `deriv(a,n)`, where `a` is a Taylor series; default is n=1. Partial differentiation is also implemented for expansion in more than one variable. Note that integration is not yet implemented for `TaylorN`.
 
 ```julia
 julia> diffTaylor(exp(xT0))
-Taylor{Float64}([1.0,1.0,0.5,0.166667,0.0416667,0.0],5)
+ 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴
 
 julia> integTaylor(exp(xT0))
-Taylor{Float64}([0.0,1.0,0.5,0.166667,0.0416667,0.00833333],5)
+ 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵
 
 julia> integTaylor( ans, 1.0)
-Taylor{Float64}([1.0,1.0,0.5,0.166667,0.0416667,0.00833333],5)
+ 1.0 + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵
 
 julia> integTaylor( diffTaylor( exp(-xT0)), 1.0 ) == exp(-xT0)
 true
@@ -187,110 +205,80 @@ true
 julia> deriv( exp(xT(1.0)), 5) == e
 true
 
-julia> diffTaylor( 3+xTN(0.0)+2yTN(0.0),1 )   # ∂(3+x+2y)/∂x
-TaylorN{Float64}([1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0  …  0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],6,2)
+julia> diffTaylor( 3+xTN(0.0)+2yTN(0.0),1 )   # partial derivative with respect to 1st variable
+ 1.0
 
-julia> diffTaylor( 3+xTN(0.0)+2yTN(0.0),2 )   # ∂(3+x+2y)/∂y
-TaylorN{Float64}([2.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0  …  0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],6,2)
+julia> diffTaylor( 3+xTN(0.0)+2yTN(0.0),2 )   # partial derivative with respect to 2nd variable
+ 2.0
 ```
 
-For the evaluation of a Taylor series, we use Horner's rule and `evalTaylor(a::Taylor, dx::Number)`. Here, $dx$ is the difference with respect to the point $x_0$ where the Taylor expansion is calculated, i.e., the series is evaluated at $x = x_0 + dx$. Omitting $dx$ corresponds to $dx=0$. This function is generalized to admit `TaylorN` objects and vectors (whose length is the number of independent variables) of numbers or `Taylor` objects.
+For the evaluation of a Taylor series, we use Horner's rule in `evalTaylor(a::Taylor1, dx::Number)`. Here, $ dx $ is the difference with respect to the point $ x_0 $ where the Taylor expansion is calculated, i.e., the series is evaluated at $ x = x_0 + dx $. Omitting $ dx $ corresponds to $ dx = 0 $. This function is generalized to admit `TaylorN` objects and vectors of numbers or `Taylor1` objects; the length of these vectors must coincide with the number of independent variables.
 
 ```julia
 julia> evalTaylor( exp( xT(1.0) )) - e ## exp(x) around x0=1 (order 5), evaluated there (dx=0)
 0.0
 
-julia> evalTaylor( exp(xT0), 1) - e    ## exp(x) around x0=0 (order 5), evaluated at x=1
+julia> evalTaylor( exp(xT0), 1.0) - e  ## exp(x) around x0=0 (order 5), evaluated at x=1
 -0.0016151617923783057
 
-julia> evalTaylor( exp( Taylor(xT0, 17) ), 1) - e  ## exp(x) around x0=0 (order 17), evaluated at x=1
+julia> evalTaylor( exp( taylor1_variable(17)), 1.0) - e  ## exp(x) around x0=0 (order 17), evaluated at x=1
 0.0
 
-julia> evalTaylor( exp( Taylor([0,BigFloat("1.0")],50) ), BigFloat("1.0") )
+julia> evalTaylor( exp( taylor1_variable(BigFloat,50) ), one(BigFloat) )
 2.718281828459045235360287471352662497757247093699959574966967627723419298053556e+00 with 256 bits of precision
 
 julia> convert(BigFloat,e) - ans
 6.573322999985292556154129119543257102601105719980995128942636339920549561322098e-67 with 256 bits of precision
 
 julia> evalTaylor(xTN(0.0)+yTN(0.0), [xT0, 2xT0])   # x+y, with x=x0, y=2x0
-Taylor{Float64}([0.0,3.0,0.0,0.0,0.0,0.0],5)
+ 3.0⋅t
 ```
 
-Finally, in order to get a *compact* and more readable display, we have introduced `pretty_print`; we distinguish one-variable expansions with the variable $x0$, and more than one through the variables $x1, x2, \dots$.
+We have also implemented functions to compute gradients, Jacobians and Hessians. The following computes the gradients of $ f(x,y) = x^3 + 2x^2 y - 7 x + 2 $ and $ g(x,y) = y-x^4 $, using either `∇` (\nabla+TAB) or `TaylorSeries.gradient`; the results are of type `Array{TaylorN{T},1}`. In order to compute the Jacobian of a vector field evaluated on a point we use `jacobian`, and for the Hessian of a function we employ `hessian`.
 
 ```julia
-julia> pretty_print( xT0 )
-5-order Taylor{Float64}:
-  1.0 * x0
+julia> f(x,y) = x^3 + 2x^2 * y - 7x + 2
+f (generic function with 1 method)
 
-julia> exp(xTI)
-Taylor{Complex{Float64}}(Complex{Float64}[0.540302+0.841471im,0.540302+0.841471im,0.270151+0.420735im,0.0900504+0.140245im,0.0225126+0.0350613im,0.00450252+0.00701226im],5)
+julia> g(x,y) = y - x^4
+f (generic function with 1 method)
 
-julia> pretty_print( ans )
-5-order Taylor{Complex{Float64}}:
-    ( 0.5403023058681398 + 0.8414709848078965 im )  + ( 0.5403023058681398 + 0.8414709848078965 im ) * x0  + ( 0.2701511529340699 + 0.42073549240394825 im ) * x0^2  + ( 0.09005038431135663 + 0.1402451641346494 im ) * x0^3  + ( 0.022512596077839158 + 0.03506129103366235 im ) * x0^4  + ( 0.004502519215567832 + 0.00701225820673247 im ) * x0^5
+julia> f1 = f(xTN(0),yTN(0))
+ 2 - 7⋅x₁ + 1⋅x₁³ + 2⋅x₁²⋅x₂
 
-julia> convert(Taylor{Rational{Int64}}, exp(xT0))
-Taylor{Rational{Int64}}(Rational{Int64}[1//1,1//1,1//2,1//6,1//24,1//120],5)
+julia> g1 = g(xTN(0),yTN(0))
+ 1⋅x₂ - 1⋅x₁⁴
 
-julia> pretty_print(ans)
-5-order Taylor{Rational{Int64}}:
-  1//1 + 1//1 * x0 + 1//2 * x0^2 + 1//6 * x0^3 + 1//24 * x0^4 + 1//120 * x0^5
+julia> ∇(f1)
+2-element Array{TaylorN{Int64},1}:
+2-element Array{TaylorN{Int64},1}:
+  - 7 + 3⋅x₁² + 4⋅x₁⋅x₂
+                  2⋅x₁²
 
-julia> pretty_print( sin(xTN(0.0)+yTN(0.0)) )
-6-order TaylorN{Float64} in 2 variables:
-  1.0 * x1 + 1.0 * x2 - 0.16666666666666666 * x1^3 - 0.5 * x1^2 * x2 - 0.5 * x1 * x2^2 - 0.16666666666666666 * x2^3 + 0.008333333333333333 * x1^5 + 0.041666666666666664 * x1^4 * x2 + 0.08333333333333333 * x1^3 * x2^2 + 0.08333333333333333 * x1^2 * x2^3 + 0.041666666666666664 * x1 * x2^4 + 0.008333333333333333 * x2^5
-```
-
-Interestingly, one can *easily* compute gradients and Jacobians. The basic idea to remember is that `xTN(0)` and `yTN(0)` defined above represent the *independent variables* $x$ and $y$, indecated below as `x1` and `x2`. So computing the gradient is a straightforward application of `diffTaylor` with respect to each independent variable. The following computes the gradients of $f_1(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $f_2(x,y) = y-x^4$, yielding the expected results ($\nabla f_1 = [3x^2+4 x y -7, 2 x^2]$ and $\nabla f_2 = [ -4 x^3, 1]$), both expressed as Taylor expansions. The Jacobian can also be computed like this; the last instruction computes the Jacobian around (0,0), constructing explicitly the matrix.
-
-```julia
-julia> f1(x,y) = x^3 + 2x^2 * y - 7x + 2
-f1 (generic function with 1 method)
-
-julia> f2(x,y) = y - x^4
-f2 (generic function with 1 method)
-
-julia> ∇f1 = [zero(xTN(0)), zero(yTN(0))]; ∇f2 = [zero(xTN(0)), zero(yTN(0))];
-
-julia> for i = 1:2
-           ∇f1[i] = diffTaylor(f1(xTN(0), yTN(0)), i)
-           ∇f2[i] = diffTaylor(f2(xTN(0), yTN(0)), i)
-       end
-
-julia> pretty_print(∇f1)
-6-order TaylorN{Int64} in 2 variables:
- -7 + 3 * x1^2 + 4 * x1 * x2
-
-6-order TaylorN{Int64} in 2 variables:
-  2 * x1^2
-
-julia> pretty_print(∇f2)
-6-order TaylorN{Int64} in 2 variables:
- -4 * x1^3
-
-6-order TaylorN{Int64} in 2 variables:
-  1
-
-julia> jacobian = reshape([evalTaylor(∇f1[1],[0,0]),evalTaylor(∇f2[1],[0,0]), evalTaylor(∇f1[2],[0,0]),evalTaylor(∇f2[2],[0,0])],(2,2))
+julia> jacobian([f1,g1], [2,1])
 2x2 Array{Int64,2}:
- -7  0
-  0  1
+  13  8
+ -32  1
+
+julia> hessian(f1-g1-2*f1*g1)
+2x2 Array{Int64,2}:
+  0  14
+ 14   0
 
 ```
 
-Some concrete applications of the package will be found in the directory [examples][4]; for the time being we included the integration of [Kepler's problem using Taylor's method][5]).
+Some concrete applications of the package will be found in the directory [examples][4]; for the time being we have only included [Kepler's problem integrated using Taylor's method][5]).
 
-Finally, it is worth pointing out the existing julia packages [Polynomial][2] and [PowerSeries][3] have similar functionality as `TaylorSeries` for one-variable expansions, but using somewhat different approaches.
+Finally, it is worth pointing out the existing Julia packages [Polynomials][2] and [PowerSeries][3] have similar functionality as `TaylorSeries` for one-variable expansions using somewhat different approaches.
 
 
 #### Acknowledgments
 This project began (using `python`) during a Masters' course in the postgraduate programs in Physics and in Mathematics at UNAM, during the second half of 2013. We thank the participants of the course for putting up with the half-baked material and contributing energy and ideas.
 
-We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114, and UNAM PAPIIT grant IG-101113. LB acknowledges support through a *Cátedra Moshinsky* (2013).
+We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114, and DGAPA-PAPIIT grant IG-101113. LB acknowledges support through a *Cátedra Moshinsky* (2013).
 
 [1]: http://www.maia.ub.es/~alex/admcds/admcds.pdf
-[2]: https://github.com/vtjnash/Polynomial.jl
+[2]: https://github.com/keno/Polynomials.jl
 [3]: https://github.com/jwmerrill/PowerSeries.jl
 [4]: https://github.com/lbenet/TaylorSeries.jl/tree/master/examples/
 [5]: http://nbviewer.ipython.org/github/lbenet/TaylorSeries.jl/blob/master/examples/1-KeplerProblem.ipynb

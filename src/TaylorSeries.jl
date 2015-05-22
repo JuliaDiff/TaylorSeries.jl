@@ -2,11 +2,11 @@
 #
 # Julia module for handling Taylor series of arbitrary but finite order
 #
-# utils_Taylor1.jl contains the constructors and methods for 1-variable expansions
+# - utils_Taylor1.jl contains the constructors and methods for 1-variable expansions
 #
-# utils_TaylorN.jl contains the constructors and methods for N-variable expansions
+# - utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2014.06.07
+# Last modification: 2015.05.08
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -14,75 +14,98 @@
 
 module TaylorSeries
 
+## Documentation
+if VERSION < v"0.4.0-dev"
+    using Docile
+end
+
 ## Compatibility v0.3 -> 0.4
 using Compat
+@compat sizehint!
 @compat trunc
-@compat Tuple{Int, Int}
+@compat eachindex
+@compat round
+
+import Base: zero, one, zeros, ones,
+    convert, promote_rule, promote, eltype, length, show,
+    real, imag, conj, ctranspose,
+    rem, mod, mod2pi, gradient,
+    sqrt, exp, log, sin, cos, tan
 
 
-import Base: zero, one
-import Base: convert, promote_rule, promote, eltype, length
-import Base: real, imag, conj, ctranspose
-import Base: rem, mod, mod2pi
-import Base: sqrt, exp, log, sin, cos, tan#, square
+## Exported types and methods
+export Taylor1, TaylorN, HomogeneousPolynomial
+export taylor1_variable, taylorN_variable, get_coeff,
+    diffTaylor, integTaylor, evalTaylor, deriv,
+    set_params_TaylorN, show_params_TaylorN,
+    set_maxOrder, get_maxOrder, set_numVars, get_numVars,
+    ∇, jacobian, hessian
 
-abstract AbstractSeries{T<:Number,N} <: Number
 
 include("utils_Taylor1.jl")
-
+include("hashtables.jl")
 include("utils_TaylorN.jl")
 
-## The following routines combine Taylor and TaylorN, so they must appear defining 
-##   Taylor and TaylorN and some of its functionalities
-
-# infostr
-infostr{T<:Number}(a::Taylor{T}) = 
-    string(a.order, "-order Taylor{", T, "}:\n")
-infostr{T<:Number}(a::TaylorN{T}) = 
-    string(a.order, "-order TaylorN{", T, "} in ", a.numVars, " variables:\n")
 
 # pretty_print
-function pretty_print{T<:Number}(a::Taylor{T})
-    print( infostr(a) )
+function pretty_print{T<:Number}(a::Taylor1{T})
     z = zero(T)
-    space = string(" ")
-    a == zero(a) && (println(string( space, z)); return)
-    strout::ASCIIString = space
+    space = utf8(" ")
+    a == zero(a) && return string(space, z)
+    strout::UTF8String = space
     ifirst = true
-    for i = 0:a.order
-        monom::ASCIIString = i==0 ? string("") : i==1 ? string(" * x_{0}") : string(" * x_{0}^", i)
-        @inbounds c = a.coeffs[i+1]
+    for i in eachindex(a.coeffs)
+        monom::UTF8String = i==1 ? string("") : i==2 ? string("⋅t") :
+            string("⋅t", superscriptify(i-1))
+        @inbounds c = a.coeffs[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
-    println(strout)
-    return
+    strout
+end
+function pretty_print{T<:Number}(a::HomogeneousPolynomial{T})
+    z = zero(T)
+    space = utf8(" ")
+    a == zero(a) && return string(space, z)
+    strout::UTF8String = homogPol2str(a)
+    strout
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
-    print( infostr(a) )
-    a == zero(a) && (println(string( " ", zero(T))); return)
     z = zero(T)
-    space = " "
-    varstring = ASCIIString[]
-    for ivar=1:a.numVars
-        push!(varstring,string(" * x_{", ivar, "}"))
-    end
-    strout = string(" ")
+    space = utf8(" ")
+    a == zero(a) && return string(space, z)
+    strout::UTF8String = utf8("")
     ifirst = true
-    iIndices = zeros(Int, a.numVars)
-    for pos = 1:length(a.coeffs)
-        monom = ""
-        iIndices = indicesTable[end][pos]
-        if pos>1
-            for ivar=1:a.numVars
-                powivar = iIndices[ivar]
-                if powivar == 1
-                    monom = string(monom, varstring[ivar])
-                elseif powivar > 1
-                    monom = string(monom, varstring[ivar], "^", powivar)
-                end
+    for ord in eachindex(a.coeffs)
+        pol = a.coeffs[ord]
+        pol == zero(a.coeffs[ord]) && continue
+        cadena::UTF8String = homogPol2str( pol )
+        strsgn = (ifirst || ord == 1 || cadena[2] == '-') ? string("") : string(" +")
+        strout = string( strout, strsgn, cadena)
+        ifirst = false
+    end
+    strout
+end
+
+function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
+    numVars = _params_taylorN.numVars
+    order = a.order
+    z = zero(T)
+    space = utf8(" ")
+    strout::UTF8String = space
+    ifirst = true
+    iIndices = zeros(Int, numVars)
+    for pos = 1:sizeTable[order+1]
+        monom::UTF8String = string("")
+        @inbounds iIndices[:] = indicesTable[order+1][pos]
+        for ivar = 1:numVars
+            powivar = iIndices[ivar]
+            if powivar == 1
+                monom = string(monom, name_taylorNvar(ivar))
+            elseif powivar > 1
+                monom = string(monom, name_taylorNvar(ivar), superscriptify(powivar))
             end
         end
         @inbounds c = a.coeffs[pos]
@@ -91,29 +114,19 @@ function pretty_print{T<:Number}(a::TaylorN{T})
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
-    println(strout)
-    return
+    return strout[1:end-1]
 end
-function pretty_print{T<:Number}(a::Union(Array{Taylor{T},1},Array{TaylorN{T},1}))
-    for i=1:length(a)
-        pretty_print(a[i])
-        println("")
-    end
-    return
-end
-
-# make string from a number; for complex numbers, use 
 function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
     zz == zero(T) && return string( zz )
-    plusmin = zz > zero(T) ? "+ " : "- "
+    plusmin = zz > zero(T) ? string("+ ") : string("- ")
     if ifirst
-        plusmin = zz > zero(T) ? " " : "-"
+        plusmin = zz > zero(T) ? string("") : string("- ")
     end
     return string(plusmin, abs(zz))
 end
-function numbr2str{T}(zz::Complex{T}, ifirst::Bool=false)
+function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
     zT = zero(T)
-    zz == zero(Complex{T}) && return zT
+    zz == zero(zz) && return string(zT)
     zre, zim = reim(zz)
     cadena = string("")
     if zre > zT
@@ -146,39 +159,38 @@ function numbr2str{T}(zz::Complex{T}, ifirst::Bool=false)
                 cadena = string("+ ( ", abs(zim), " im )")
             end
         else
-            cadena = string(" - ( ", abs(zim), " im )")
+            cadena = string("- ( ", abs(zim), " im )")
         end
     end
     return cadena
 end
 
-# evalTaylor(TaylorN, Array{Taylor,1})
-function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vT::Array{Taylor{S},1})
-    numVars = NUMVARS[end]
-    @assert length(vT) == numVars
-    R = promote_type(T,S)
-    order = length(vT[1])
-    sumaT = Taylor(zero(R), order)
-    z = zero(sumaT)
-    nCoefTot = sizeTable[end]
-    iIndices = zeros(Int, numVars)
-    for pos = nCoefTot:-1:1
-        @inbounds iIndices[1:end] = indicesTable[end][pos]
-        a.coeffs[pos] == zero(T) && continue
-        val = Taylor(a.coeffs[pos], order)
-        for k = 1:numVars
-            @inbounds val = val*(vT[k])^iIndices[k]
-        end
-        sumaT += val
-    end
-    return sumaT
+name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
+
+# subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
+# and is licensed under MIT "Expat".
+# superscriptify is a small variation
+function subscriptify(n::Int)
+    subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
+    dig = reverse(digits(n))
+    join([subscript_digits[i+1] for i in dig])
+end
+function superscriptify(n::Int)
+    superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
+    dig = reverse(digits(n))
+    join([superscript_digits[i+1] for i in dig])
 end
 
-
-## Exports to Taylor and TaylorN ##
-export Taylor, diffTaylor, integTaylor, evalTaylor, deriv, pretty_print
-#
-export TaylorN
-export set_maxOrder, get_maxOrder, set_numVars, get_numVars
-
+# summary
+summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
+function summary{T<:Number}(a::Union(HomogeneousPolynomial{T}, TaylorN{T}))
+    string(a.order, "-order ", typeof(a), " in ", _params_taylorN.numVars, " variables:")
 end
+
+# show
+function show(io::IO, a::Union(Taylor1, HomogeneousPolynomial, TaylorN))
+    # (isa(a, TaylorN) || isa(a, Taylor1)) && println(io, summary(a))
+    print(io, pretty_print(a))
+end
+
+end # module
