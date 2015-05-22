@@ -76,7 +76,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
     z = zero(T)
     space = utf8(" ")
     a == zero(a) && return string(space, z)
-    strout::UTF8String = ""
+    strout::UTF8String = utf8("")
     ifirst = true
     for ord in eachindex(a.coeffs)
         pol = a.coeffs[ord]
@@ -124,10 +124,9 @@ function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
     end
     return string(plusmin, abs(zz))
 end
-function numbr2str(zz::Complex, ifirst::Bool=false)
-    T = typeof(zz.re)
+function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
     zT = zero(T)
-    zz == zero(Complex{T}) && return zT
+    zz == zero(zz) && return string(zT)
     zre, zim = reim(zz)
     cadena = string("")
     if zre > zT
@@ -169,7 +168,8 @@ end
 name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
 
 # subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
-# and superscriptify is a small variation
+# and is licensed under MIT "Expat".
+# superscriptify is a small variation
 function subscriptify(n::Int)
     subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
     dig = reverse(digits(n))
@@ -193,4 +193,4 @@ function show(io::IO, a::Union(Taylor1, HomogeneousPolynomial, TaylorN))
     print(io, pretty_print(a))
 end
 
-end
+end # module

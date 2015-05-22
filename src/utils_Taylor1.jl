@@ -48,15 +48,18 @@ taylor1_variable(T::Type, order::Int=1) = Taylor1{T}( [zero(T), one(T)], order)
 taylor1_variable(order::Int=1) = taylor1_variable(Float64, order)
 
 ## get_coeff
-get_coeff(a::Taylor1, n::Int) = (@assert 0 <= n <= a.order+1; return a.coeffs[n+1])
+get_coeff(a::Taylor1, n::Int) = (@assert 0 <= n <= a.order+1;
+    return a.coeffs[n+1])
 
 ## Type, length ##
 eltype{T<:Number}(::Taylor1{T}) = T
 length{T<:Number}(a::Taylor1{T}) = a.order
 
 ## Conversion and promotion rules ##
-convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1) = Taylor1(convert(Array{T,1}, a.coeffs), a.order)
-convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) = Taylor1(convert(Array{T,1},b))
+convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1) =
+    Taylor1(convert(Array{T,1}, a.coeffs), a.order)
+convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) =
+    Taylor1(convert(Array{T,1},b))
 convert{T<:Number}(::Type{Taylor1{T}}, b::Number) = Taylor1([convert(T,b)], 0)
 convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1{T}) = a
 convert{T<:Number}(::Type{Taylor1{T}}, b::Array{T,1}) = Taylor1(b)
@@ -66,7 +69,8 @@ promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) =
     Taylor1{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Array{S,1}}) =
     Taylor1{promote_type(T, S)}
-promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{S}) = Taylor1{promote_type(T, S)}
+promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{S}) =
+    Taylor1{promote_type(T, S)}
 
 ## Auxiliary function ##
 function firstnonzero{T<:Number}(a::Taylor1{T})
@@ -148,7 +152,8 @@ end
 ## Division ##
 function /(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
-    orddivfact, cdivfact = divfactorization(a, b) # order and coefficient of first factorized term
+    # order and coefficient of first factorized term
+    orddivfact, cdivfact = divfactorization(a, b)
     T = typeof(cdivfact)
     v1 = convert(Array{T,1}, a.coeffs)
     v2 = convert(Array{T,1}, b.coeffs)
@@ -161,7 +166,7 @@ function /(a::Taylor1, b::Taylor1)
 end
 
 function divfactorization(a1::Taylor1, b1::Taylor1)
-    # order of first factorized term; a1 and b1 are assumed to be of the same order (length)
+    # order of first factorized term; a1 and b1 assumed to be of the same order
     a1nz = firstnonzero(a1)
     b1nz = firstnonzero(b1)
     orddivfact = min(a1nz, b1nz)
@@ -229,7 +234,8 @@ function ^{T<:Integer}(a::Taylor1{T}, n::Integer)
     return power_by_squaring(a, n)
 end
 
-## power_by_squaring; slightly modified from base/intfuncs.jl (License MIT)
+## power_by_squaring; slightly modified from base/intfuncs.jl
+## Licensed under MIT "Expat"
 function power_by_squaring(x::Taylor1, p::Integer)
     p == 1 && return copy(x)
     p == 0 && return one(x)
@@ -270,12 +276,13 @@ function ^(a::Taylor1, x::Real)
     # The first non-zero coefficient of the result; must be integer
     lnull = x*l0nz
     !isinteger(lnull) &&
-        error("Integer exponent **required** if the Taylor1 polynomial is expanded around 0.")
+        error("""The 0th order Taylor1 coefficient must be non-zero
+        to raise the Taylor1 polynomial to a non-integer exponent""")
 
-    # Reaching this point, it is possible to implement the power of the Taylor1 polynomial.
-    # The last l0nz coefficients are set to zero.
+    # Reaching this point, it is possible to implement the power of the Taylor1
+    # polynomial. The last l0nz coefficients are set to zero.
     lnull = trunc(Int,lnull)
-    ##l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.\n")
+    #l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.\n")
     @inbounds aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
@@ -340,8 +347,8 @@ function sqrt(a::Taylor1)
     if l0nz > a.order
         return zero(a)
     elseif l0nz%2 == 1 # l0nz must be pair
-        error("First non-vanishing Taylor1 coefficient must correspond to an **even power**\n",
-            "to expand `sqrt` around 0.")
+        error("""First non-vanishing Taylor1 coefficient must correspond
+        to an **even power** in order to expand `sqrt` around 0""")
     end
 
     # Reaching this point, it is possible to implement the sqrt of the Taylor1 polynomial.
@@ -405,7 +412,7 @@ end
 
 ## Log ##
 function log(a::Taylor1)
-    ( firstnonzero(a)>0 ) && error("Not possible to expand `log` around 0.")
+    ( firstnonzero(a)>0 ) && error("Impossible to expand `log` around 0.")
     @inbounds aux = log( a.coeffs[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
@@ -480,7 +487,7 @@ function tan(a::Taylor1)
     Taylor1( coeffs, a.order )
 end
 # Homogeneous coefficients for tan
-function tanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffst2::Array{T,1})
+function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
     kcoef == 0 && return tan( ac[1] )
     coefhomog = zero(T)
     @inbounds for i = 0:kcoef-1

@@ -6,12 +6,13 @@
 # UNAM
 #
 
-@doc """Type structure holding the current parameters for `TaylorN` and `HomogeneousPolynomial`.
-    
+@doc """Type structure holding the current parameters for `TaylorN` and
+`HomogeneousPolynomial`.
+
     Fieldnames:
 
-    - maxOrder: maximim order (degree) of the polynomials
-    - numVars : (maximum) number of variables
+    - maxOrder: maximum order (degree) of the polynomials
+    - numVars : maximum number of variables
 
     These parameters can be changed using `set_params_TaylorN(order,numVars)`
     """ ->
@@ -20,10 +21,12 @@ type ParamsTaylorN
     numVars  :: Int
 end
 
-@doc """Display the current parameters for `TaylorN` and `HomogeneousPolynomial`""" ->
+@doc """Display the current parameters for `TaylorN` and
+`HomogeneousPolynomial`""" ->
 function show_params_TaylorN()
-    info( string("`TaylorN` and `HomogeneousPolynomial` parameters:\n    Maximum order       = ",
-        _params_taylorN.maxOrder, "\n    Number of variables = ", _params_taylorN.numVars, "\n") )
+    info( """`TaylorN` and `HomogeneousPolynomial` parameters:
+    Maximum order       = $(_params_taylorN.maxOrder)
+    Number of variables = $(_params_taylorN.numVars)""" )
     nothing
 end
 
@@ -34,13 +37,16 @@ global const _params_taylorN = ParamsTaylorN(6,2)
 @doc """
   Generates the array of dictionaries `indicesTable`, `sizeTable` and `posTable`:
 
-  - `indicesTable`: vector that contains the dictionaries that link a (lexicographic) position
-  of the monomial with the corresponding indexesfor a homogeneous polynomial of given degree. 
-  The vector entry `[k+1]` corresponds to the homogeneous polynomial of degree `k`.
-  - `sizeTable`: vector containing the number of distinct monomials of the homogeneous polynomial, 
-  ordered by the degree of the polynomial.
-  - `posTable`: vector with the inverse of `indicesTable`, i.e., for a given degree `k` and
-  a vector of indexes, it returns the (lexicographic) position of the corresponding monomial.
+  - `indicesTable`: vector that contains the dictionaries that link the
+  lexicographic position of the monomial with the corresponding indexes of
+  the powers that characterize the monomial of given degree.
+  The vector entry `[k+1]` corresponds to the homogeneous polynomial of
+  degree `k`.
+  - `sizeTable`: vector containing the number of distinct monomials of the
+  homogeneous polynomial, ordered by the degree of the polynomial.
+  - `posTable`: vector with the inverse of `indicesTable`, i.e., for a
+  given degree `k` and a vector of indexes (hashed), it returns the
+  (lexicographic) position of the corresponding monomial.
 """ ->
 function generateTables()
     maxOrd = _params_taylorN.maxOrder
@@ -87,7 +93,7 @@ function generateTables()
     return arrayInd, arraySize, arrayPos
 end
 
-function pos2indices!(iIndices::Array{Int,1}, pos::Int, dict::Dict{Int,Array{Int,1}}, 
+function pos2indices!(iIndices::Array{Int,1}, pos::Int, dict::Dict{Int,Array{Int,1}},
     iV::Int, kDeg::Int )
 
     jVar = iV-1
@@ -110,15 +116,18 @@ const indicesTable, sizeTable, posTable = generateTables()
 gc();
 
 
-## Utilities to get/set the maximum order and number of variables; they reset the hash tables
+## Utilities to get/set the maximum order and number of variables;
+## they reset the hash tables
 get_maxOrder() = _params_taylorN.maxOrder
 set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
 get_numVars() = _params_taylorN.numVars
 set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
 
 function set_params_TaylorN(order::Int, numVars::Int)
-    (order > 0 && numVars>=1) || error("Incorrect order or number of variables")
-    order == _params_taylorN.maxOrder && numVars == _params_taylorN.numVars && return order, numVars
+    (order > 0 && numVars>=1) ||
+        error("Incorrect order (<0) or number of variables (>=1)")
+    order == _params_taylorN.maxOrder && numVars == _params_taylorN.numVars &&
+        return order, numVars
     oldOrder = _params_taylorN.maxOrder
     oldVars = _params_taylorN.numVars
     global _params_taylorN = ParamsTaylorN(order, numVars)

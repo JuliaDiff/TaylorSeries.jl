@@ -109,12 +109,13 @@ ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, a.coeffs), a.order)
 convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) =
-    HomogeneousPolynomial{T}(convert(Array{T,1}, b), 0)
+    HomogeneousPolynomial{T}(convert(Array{T,1}, b), orderH(b))
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Number) =
     HomogeneousPolynomial{T}([convert(T,b)], 0)
-convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial{T}) = a
+convert{T<:Number}(::Type{HomogeneousPolynomial{T}},
+    a::HomogeneousPolynomial{T}) = a
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{T,1}) =
-    HomogeneousPolynomial{T}(b, 0)
+    HomogeneousPolynomial{T}(b, orderH(b))
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::T) =
     HomogeneousPolynomial{T}([b], 0)
 
@@ -210,7 +211,8 @@ convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) =
     TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), a.order)
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{S}) =
     TaylorN{T}( [convert(HomogeneousPolynomial{T}, b)], b.order)
-convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) =
+convert{T<:Number, S<:Number}(::Type{TaylorN{T}},
+    b::Array{HomogeneousPolynomial{S},1}) =
     TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, b), length(b)-1)
 convert{T<:Number}(::Type{TaylorN{T}}, b::Number) =
     TaylorN( [HomogeneousPolynomial(convert(T, b))], 0)
@@ -282,7 +284,7 @@ function iszero{T}(a::HomogeneousPolynomial{T})
     return test
 end
 
-# Addition and substraction ##
+## Addition and substraction ##
 for T in (:HomogeneousPolynomial, :TaylorN), f in (:+, :-)
     @eval begin
         function ($f)(a::($T), b::($T))
@@ -364,7 +366,8 @@ function /(a::TaylorN, b::TaylorN)
     @inbounds b0 = b.coeffs[1].coeffs[1]
     @assert b0 != zero(b0)
     a, b = fixshape(a, b)
-    #!?orddivfact, cdivfact = divfactorization(a, b) # a.order and coefficient of first factorized term
+    # order and coefficient of first factorized term
+    # orddivfact, cdivfact = divfactorization(a, b)
     b0 = inv(b0)
     @inbounds cdivfact = a.coeffs[1] * b0
     T = eltype(cdivfact)
@@ -383,27 +386,7 @@ function /(a::TaylorN, b::TaylorN)
     return TaylorN{T}(coeffs, a.order)
 end
 
-# function divfactorization(a1::Taylor, b1::Taylor)
-#     # order of first factorized term; a1 and b1 are assumed to be of the same order (length)
-#     a1nz = firstnonzero(a1)
-#     b1nz = firstnonzero(b1)
-#     orddivfact = min(a1nz, b1nz)
-#     if orddivfact > a1.order
-#         orddivfact = a1.order
-#     end
-#     cdivfact = a1.coeffs[orddivfact+1] / b1.coeffs[orddivfact+1]
-#     aux = abs2(cdivfact)
-#     # Is the polynomial factorizable?
-#     if isinf(aux) || isnan(aux)
-#         info("Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact)")
-#         error("Division does not define a Taylor polynomial\n",
-#             " or its first non-zero coefficient is Inf/NaN.\n")
-#     ##else orddivfact>0
-#     ##    warn("Factorizing the polynomial.\n",
-#     ##        "The last k=$(orddivfact) Taylor coefficients ARE SET to 0.\n")
-#     end
-#     return orddivfact, cdivfact
-# end
+## TODO: Implement factorization (divfactorization) for TaylorN polynomials
 
 ## Division functions: rem and mod
 for op in (:mod, :rem)
@@ -450,7 +433,7 @@ function ^{T<:Integer}(a::TaylorN{T}, n::Integer)
 end
 
 ## power_by_squaring; slightly modified from base/intfuncs.jl
-## which has an MIT license
+## Licensed under MIT "Expat"
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval begin
         function power_by_squaring(x::($T), p::Integer)
@@ -689,7 +672,8 @@ function tan(a::TaylorN)
 end
 
 ## Differentiation ##
-"Partial differentiation of a HomogeneousPolynomial series with respect to the r-th variable"
+"""Partial differentiation of a HomogeneousPolynomial series with respect
+to the r-th variable"""
 function diffTaylor(a::HomogeneousPolynomial, r::Int)
     @assert 1 <= r <= _params_taylorN.numVars
     T = eltype(a)
@@ -713,7 +697,8 @@ function diffTaylor(a::HomogeneousPolynomial, r::Int)
     return HomogeneousPolynomial{T}(coeffs, a.order-1)
 end
 
-"Partial differentiation of a TaylorN series with respect to the r-th variable"
+"""Partial differentiation of a TaylorN series with respect
+to the r-th variable"""
 function diffTaylor(a::TaylorN, r::Int)
     T = eltype(a)
     coeffs = Array(HomogeneousPolynomial{T},a.order)
@@ -752,7 +737,7 @@ function jacobian{T<:Number}(vf::Array{TaylorN{T},1})
     return transpose(jac)
 end
 
-function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1}, vals::Array{S,1})
+function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1},vals::Array{S,1})
     R = promote_type(T,S)
     numVars = get_numVars()
     @assert length(vf) == numVars == length(vals)
@@ -772,11 +757,13 @@ hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
 hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numVars()) )
 
-# ## TO BE DONE: Integration...
+## TODO: Integration...
 
 ## Evaluates a Taylor polynomial on a given point ##
 # NEEDS REVISION since results are not quite precise
-function evalHomog{T<:Number,S<:Number}(a::HomogeneousPolynomial{T}, vals::Array{S,1} )
+function evalHomog{T<:Number,S<:Number}(a::HomogeneousPolynomial{T},
+        vals::Array{S,1} )
+
     numVars = get_numVars()
     @assert length(vals) == numVars
     R = promote_type(T,S)

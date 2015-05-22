@@ -4,12 +4,13 @@ A Julia package for Taylor expansions in one or more independent variables.
 
 [![Build Status](https://travis-ci.org/lbenet/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/lbenet/TaylorSeries.jl)
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_nightly.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=nightly)
+[![Coverage Status](https://coveralls.io/repos/lbenet/TaylorSeries.jl/badge.svg)](https://coveralls.io/r/lbenet/TaylorSeries.jl)
 
 #### Authors
-- Luis Benet, Instituto de Ciencias Físicas, Universidad Nacional Autónoma de México (UNAM)
-- David P. Sanders, Facultad de Ciencias, Universidad Nacional Autónoma de México (UNAM)
+- [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas, Universidad Nacional Autónoma de México (UNAM)
+- [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad de Ciencias, Universidad Nacional Autónoma de México (UNAM)
 
-Comments on the code and suggestions are welcome and appreciated.
+Comments on the code, suggestions and improvements are welcome and appreciated.
 
 ### Basic of usage
 
@@ -268,16 +269,16 @@ julia> hessian(f1-g1-2*f1*g1)
 
 Some concrete applications of the package will be found in the directory [examples][4]; for the time being we have only included [Kepler's problem integrated using Taylor's method][5]).
 
-Finally, it is worth pointing out the existing Julia packages [Polynomial][2] and [PowerSeries][3] have similar functionality as `TaylorSeries` for one-variable expansions using somewhat different approaches.
+Finally, it is worth pointing out the existing Julia packages [Polynomials][2] and [PowerSeries][3] have similar functionality as `TaylorSeries` for one-variable expansions using somewhat different approaches.
 
 
 #### Acknowledgments
 This project began (using `python`) during a Masters' course in the postgraduate programs in Physics and in Mathematics at UNAM, during the second half of 2013. We thank the participants of the course for putting up with the half-baked material and contributing energy and ideas.
 
-We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114, and PAPIIT grant IG-101113. LB acknowledges support through a *Cátedra Moshinsky* (2013).
+We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and PE-107114, and DGAPA-PAPIIT grant IG-101113. LB acknowledges support through a *Cátedra Moshinsky* (2013).
 
 [1]: http://www.maia.ub.es/~alex/admcds/admcds.pdf
-[2]: https://github.com/vtjnash/Polynomial.jl
+[2]: https://github.com/keno/Polynomials.jl
 [3]: https://github.com/jwmerrill/PowerSeries.jl
 [4]: https://github.com/lbenet/TaylorSeries.jl/tree/master/examples/
 [5]: http://nbviewer.ipython.org/github/lbenet/TaylorSeries.jl/blob/master/examples/1-KeplerProblem.ipynb
