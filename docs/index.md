@@ -31,6 +31,23 @@ TaylorSeries is licensed under the MIT "Expat" license; see
 [LICENSE](https://github.com/lbenet/TaylorSeries.jl/blob/master/LICENSE.md) for
 the full license text.
 
+### Related packages
+
+- [Polynomials.jl](https://github.com/keno/Polynomials.jl): Polynomial
+manipulations
+- [PowerSeries.jl](https://github.com/jwmerrill/PowerSeries.jl): Truncated
+power series for Julia
+- [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) Sparse
+multivariate polynomials in Julia
+
+### References
+
+- W. Tucker, Validated numerics: A short introduction to rigorous
+computations, Princeton University Press (2011).
+-  A. Haro, Automatic differentiation methods in computational dynamical
+systems: Invariant manifolds and normal forms of vector fields at fixed points,
+[preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
+
 ### Acknowledgments
 
 This project began (using `python`) during a Masters' course in the postgraduate
