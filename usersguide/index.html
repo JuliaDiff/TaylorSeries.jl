@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+
+	<title>Users guide - TaylorSeries.jl</title>
+
+        <link href="../css/bootstrap-3.0.3.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+        <link href="../css/base.css" rel="stylesheet">
+        <link href="../css/github.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="..">TaylorSeries.jl</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            <!-- Main navigation -->
+            <ul class="nav navbar-nav">
+            
+            
+                <li >
+                    <a href="..">Home</a>
+                </li>
+            
+            
+            
+                <li >
+                    <a href="../background/">Background</a>
+                </li>
+            
+            
+            
+                <li class="active">
+                    <a href="./">Users guide</a>
+                </li>
+            
+            
+            </ul>
+
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                
+                <li >
+                    <a rel="next" href="../background/">
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li class="disabled">
+                    <a rel="prev" >
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="https://github.com/lbenet/TaylorSeries.jl">
+                        
+                            <i class="fa fa-github"></i>
+                        
+                        GitHub
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#users-guide">Users guide</a></li>
+        
+            <li><a href="#one-variable">One variable</a></li>
+        
+            <li><a href="#many-variables">Many variables</a></li>
+        
+            <li><a href="#two-examples">Two examples</a></li>
+        
+    
+    </ul>
+</div></div>
+            <div class="col-md-9" role="main">
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: { equationNumbers: { autoNumber: "AMS" } }
+  });
+  MathJax.Hub.Config({
+    TeX: { extensions: ["AMSmath.js", "AMSsymbols.js", "autobold.js", "autoload-all.js"] }
+  });
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [['$','$'], ['\\(','\\)']],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
+</script>
+
+<h1 id="users-guide">Users guide</h1>
+<hr />
+<p>TaylorSeries is basically a polynomial algebraic manipulator in one and more
+variables, considering separately these cases. This is done introducing three
+new types, <code>Taylor1</code>, <code>HomogeneousPolynomial</code> and <code>TaylorN</code>, which define the
+one-independent variable
+expansions, homogeneous polynomial on various variables, and the polynomial
+series in many-independent variables, respectively. These types are subtypes
+of <code>Number</code> and are defined parametrically.</p>
+<p>The package is loaded as usual</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="k">using</span> <span class="n">TaylorSeries</span>
+</pre></div>
+
+
+<h3 id="one-variable">One variable</h3>
+<p>Taylor expansions in one variable are represented by the <code>Taylor1</code> type, which
+consists of a vector of coefficients (field <code>coeffs</code>) and the maximum
+order considered for the expansion (field <code>order</code>). The
+coefficients are arranged in ascending order with respect to the power of the
+independent variable; then,
+<code>coeffs[1]</code> is the constant term, <code>coeffs[2]</code> corresponds to the first order,
+etc. This is clearly
+a dense representation of the polynomial. The order of the polynomial can be
+omitted in the constructor, which is
+then fixed from the length of the coefficients; otherwise it is the maximum
+among the length of the coefficients or the integer specified.</p>
+<div class="codehilite"><pre><span class="c"># Polynomial of order 2 with coefficients 1, 2, 3</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">Taylor1</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+ <span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mi">3</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">Taylor1</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mi">1</span><span class="nb">im</span><span class="p">])</span> <span class="c"># Also works with complex numbers</span>
+ <span class="p">(</span> <span class="mf">1.0</span> <span class="nb">im</span> <span class="p">)</span><span class="err">⋅</span><span class="n">t</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">tT</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">taylor1_variable</span><span class="p">(</span><span class="nb">typeof</span><span class="p">(</span><span class="n">a</span><span class="p">),</span><span class="mi">5</span><span class="p">)</span>  <span class="c">## a + t of order 5</span>
+<span class="n">tT</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">tT</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span> <span class="c"># Independent variable `t`</span>
+ <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span>
+</pre></div>
+
+
+<p>The definition of <code>tT(a)</code> above uses the function <code>taylor1_variable</code> which is a
+short cut to define the independent variable of a Taylor expansion,
+of a given type and given order. As we show below, that is one of the
+easiest ways to work with the package.</p>
+<p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been
+extended to work with the <code>Taylor1</code> type, including promotions that involve
+<code>Numbers</code>. Yet, the operations have to be able to return a <em>bona fide</em> Taylor
+expansion (see the last example below, where this does not happen), which has
+the same maximum order.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="n">t</span><span class="o">+</span><span class="mf">2.5</span><span class="p">)</span>
+ <span class="mf">2.5</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">t</span><span class="p">)</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">*</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+ <span class="o">-</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">tI</span> <span class="o">=</span> <span class="nb">im</span><span class="o">*</span><span class="n">t</span>
+ <span class="p">(</span> <span class="mf">1.0</span> <span class="nb">im</span> <span class="p">)</span><span class="err">⋅</span><span class="n">t</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">^</span><span class="mi">6</span>  <span class="c"># order is 5</span>
+ <span class="mf">0.0</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">t</span><span class="p">)</span><span class="o">^</span><span class="mf">3.2</span>
+ <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">3.2</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">3.5200000000000005</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">-</span> <span class="mf">1.4080000000000004</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.07040000000000009</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.011264000000000012</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">t</span><span class="p">)</span><span class="o">^</span><span class="n">t</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">-</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.8333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">-</span> <span class="mf">0.75</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">^</span><span class="mf">3.2</span>
+<span class="n">ERROR</span><span class="p">:</span> <span class="n">Integer</span> <span class="n">exponent</span> <span class="o">**</span><span class="n">required</span><span class="o">**</span> <span class="k">if</span> <span class="n">the</span> <span class="n">Taylor1</span> <span class="n">polynomial</span> <span class="nb">is</span> <span class="n">expanded</span>
+<span class="n">around</span> <span class="mf">0.</span>
+ <span class="k">in</span> <span class="o">^</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_Taylor1</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">272</span>
+</pre></div>
+
+
+<p>Some elemental functions have been implemented by computing recursively their
+coefficients. So far, these functions are <code>exp</code>, <code>log</code>, <code>sqrt</code>, <code>sin</code>, <code>cos</code>
+and <code>tan</code>;
+more functions will be added in the future. Note that this way of obtaining the
+Taylor coefficients is not the <em>laziest</em> way, in particular for many independent
+variables. Yet, it is quite efficient specially for precise integrations of
+ordinary differential equations, which is among the applications we have in mind.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">t</span><span class="p">)</span>
+ <span class="o">-</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">-</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">-</span> <span class="mf">0.3333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">-</span> <span class="mf">0.25</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">-</span> <span class="mf">0.2</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">ERROR</span><span class="p">:</span> <span class="n">First</span> <span class="n">non</span><span class="o">-</span><span class="n">vanishing</span> <span class="n">Taylor1</span> <span class="n">coefficient</span> <span class="n">must</span> <span class="n">correspond</span> <span class="n">to</span> <span class="n">an</span> <span class="o">**</span><span class="n">even</span> <span class="n">power</span><span class="o">**</span>
+<span class="n">to</span> <span class="n">expand</span> <span class="sb">`sqrt`</span> <span class="n">around</span> <span class="mf">0.</span>
+ <span class="k">in</span> <span class="n">sqrt</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_Taylor1</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">346</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">sqrt</span><span class="p">(</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">t</span> <span class="p">)</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span> <span class="o">-</span> <span class="mf">0.125</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.0625</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">-</span> <span class="mf">0.0390625</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.02734375</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">imag</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">tI</span><span class="p">)</span><span class="o">&#39;</span><span class="p">)</span>
+ <span class="o">-</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">-</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">real</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">Taylor1</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mi">1</span><span class="nb">im</span><span class="p">],</span><span class="mi">17</span><span class="p">)))</span> <span class="o">-</span> <span class="n">cos</span><span class="p">(</span><span class="n">Taylor1</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span><span class="mi">17</span><span class="p">))</span> <span class="o">==</span> <span class="mf">0.0</span>
+<span class="n">true</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Taylor1</span><span class="p">{</span><span class="n">Rational</span><span class="p">{</span><span class="kt">Int64</span><span class="p">}},</span> <span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c"># output differes in v0.4</span>
+ <span class="mi">1</span><span class="o">//</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">1</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">2</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">6</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">24</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">120</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+</pre></div>
+
+
+<p>Differentiating and integrating is straightforward for polynomial expansions in
+one variable. The last coefficient of a derivative is set to zero to keep the
+same order as the original polynomial; for the integral, an
+integration constant may be set to a different value (the default is zero). The
+order of the resulting polynomial is not changed. The $n$-th ($n \ge 0$)
+derivative is obtained using <code>deriv(a,n)</code>, where <code>a</code> is a Taylor series;
+default is $n=1$.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">integTaylor</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+ <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">integTaylor</span><span class="p">(</span> <span class="n">ans</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">integTaylor</span><span class="p">(</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">)),</span> <span class="mf">1.0</span> <span class="p">)</span> <span class="o">==</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">)</span>
+<span class="n">true</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">deriv</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">tT</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)))</span> <span class="o">==</span> <span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">true</span>
+
+<span class="c"># Fifth derivative of `exp(1+t)`</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">deriv</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">tT</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)),</span> <span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">true</span>
+</pre></div>
+
+
+<p>For the evaluation of Taylor series', we use Horner's rule through
+<code>evalTaylor(a::Taylor, dt::Number)</code>. Here, $dt$ is the increment with respect
+to the point $t_0$ where the Taylor expansion is calculated, i.e., the series
+is evaluated at $t = t_0 + dt$. Omitting $dt$ corresponds to $dt = 0$.</p>
+<div class="codehilite"><pre><span class="c">## exp(t) around t0=1 (order 5), evaluated there (dt=0)</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span> <span class="n">tT</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="p">))</span> <span class="o">-</span> <span class="n">e</span>
+<span class="mf">0.0</span>
+
+<span class="c">## exp(t) around t0=0 (order 5), evaluated at t=1</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
+<span class="o">-</span><span class="mf">0.0016151617923783057</span>
+
+<span class="c">## exp(t) around t0=0 (order 17), evaluated at t=1</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span> <span class="n">taylor1_variable</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span> <span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
+<span class="mf">0.0</span>
+
+<span class="c">## With BigFloats</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">tBig</span> <span class="o">=</span> <span class="n">Taylor1</span><span class="p">([</span><span class="n">zero</span><span class="p">(</span><span class="n">BigFloat</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">BigFloat</span><span class="p">)],</span><span class="mi">50</span><span class="p">)</span>
+ <span class="mf">1e+00</span><span class="err">⋅</span><span class="n">t</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">tBig</span><span class="p">),</span> <span class="n">one</span><span class="p">(</span><span class="n">BigFloat</span><span class="p">)</span> <span class="p">)</span>
+<span class="mf">2.718281828459045235360287471352662497757247093699959574966967627723419298053556e+00</span> <span class="n">with</span> <span class="mi">256</span> <span class="n">bits</span> <span class="n">of</span> <span class="n">precision</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">-</span> <span class="n">ans</span>
+<span class="mf">6.573322999985292556154129119543257102601105719980995128942636339920549561322098e-67</span> <span class="n">with</span> <span class="mi">256</span> <span class="n">bits</span> <span class="n">of</span> <span class="n">precision</span>
+</pre></div>
+
+
+<h3 id="many-variables">Many variables</h3>
+<p>A polynomial in $N&gt;1$ variables can be represented in two distinct ways:
+As a vector whose coefficients are homogeneous polynomials of fixed degree, or
+as a vector whose coefficients are polynomials in $N-1$ variables. We have opted
+to implement the first option arguing it shows better performance. Yet, an elegant
+(and lazy) implementation of the second representation was discussed in the
+<a href="https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ">julia-users</a> list.</p>
+<p><code>TaylorN</code> is thus constructed as a vector of parameterized homogeneous polynomials
+defined by the type <code>HomogeneousPolynomial</code>, which in turn is a vector of
+coefficients of given order (degree). This implementation imposes that the user
+has to specify the maximum order and the maximum number of independent
+variables. This is done using <code>set_params_TaylorN(maxord, numVars)</code>, where
+<code>maxord</code> is the maximum order (degree)
+of the polynomial considered, and <code>numVars</code> is the number of variables;
+<code>set_maxOrder()</code> and <code>set_numVars()</code> allow to change independently each
+parameter. By default, these parameters are set to 6 and 2, respectively. The
+function <code>`show_params_TaylorN()</code> displays the actual values of these parameters.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">show_params_TaylorN</span><span class="p">()</span>
+<span class="n">INFO</span><span class="p">:</span> <span class="sb">`TaylorN`</span> <span class="n">and</span> <span class="sb">`HomogeneousPolynomial`</span> <span class="n">parameters</span><span class="p">:</span>
+    <span class="n">Maximum</span> <span class="n">order</span>       <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">Number</span> <span class="n">of</span> <span class="n">variables</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">set_params_TaylorN</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">Warning</span><span class="p">:</span> <span class="n">redefining</span> <span class="n">constant</span> <span class="n">_params_taylorN</span>
+<span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Technically (internally), these values define the dictionaries which
+translate the position of the coefficients of a <code>HomogeneousPolynomial</code>
+into the corresponding
+multi-variable monomials. Fixing these values from the beginning is imperative.</p>
+<p>The easiest way of constructing a <code>TaylorN</code> object is by defining a symbol for
+the independent variables, using the function
+<code>taylorN_variable(T::Type{T&lt;:Top}, nv::Int64, order::Int64)</code>;
+omitting the type yields a <code>TaylorN{Float64}</code> object, and omitting the order
+defaults in the maximum order. Again, the Taylor expansions are implemented
+around 0 for all variables; if the expansion
+is needed around a different value, the trick is a simple translation of
+the corresponding
+independent variable $x \to x+a$.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+ <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+ <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="nb">typeof</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">TaylorN</span><span class="p">{</span><span class="kt">Float64</span><span class="p">}</span> <span class="p">(</span><span class="n">constructor</span> <span class="n">with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">.</span><span class="n">order</span>
+<span class="mi">8</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">.</span><span class="n">coeffs</span>
+<span class="mi">9</span><span class="o">-</span><span class="n">element</span> <span class="n">Array</span><span class="p">{</span><span class="n">TaylorSeries</span><span class="o">.</span><span class="n">HomogeneousPolynomial</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span><span class="mi">1</span><span class="p">}:</span>
+     <span class="mf">0.0</span>
+  <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span>
+     <span class="mf">0.0</span>
+     <span class="mf">0.0</span>
+     <span class="mf">0.0</span>
+     <span class="mf">0.0</span>
+     <span class="mf">0.0</span>
+     <span class="mf">0.0</span>
+     <span class="mf">0.0</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_maxOrder</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+<span class="mi">6</span>
+</pre></div>
+
+
+<p>Other ways of constructing <code>TaylorN</code> polynomials involve directly <code>HomogeneousPolynomial</code>
+objects, which is rather uncomfortable.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+ <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">-</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">TaylorN</span><span class="p">(</span> <span class="p">[</span><span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])],</span> <span class="mi">4</span><span class="p">)</span>
+ <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mi">2</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mi">3</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²</span>
+</pre></div>
+
+
+<p>As before, the usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>)
+have been extended to work with <code>TaylorN</code> type, including the appropriate
+promotions to deal with numbers. (Some of the arithmetic operations have
+also been extended for
+<code>HomogeneousPolynomial</code>, whenever the result is a <code>HomogeneousPolynomial</code>;
+division,
+for instance, is not extended.) Also, the elementary functions have been
+implemented
+computing again recursively their coefficients.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">exy</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">)</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.25</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.08333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.08333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶</span> <span class="o">+</span> <span class="mf">0.008333333333333331</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.020833333333333332</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.027777777777777776</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.020833333333333332</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333331</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁶</span> <span class="o">+</span> <span class="mf">0.00019841269841269839</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷</span> <span class="o">+</span> <span class="mf">0.0013888888888888885</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.004166666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.004166666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0013888888888888885</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁶</span> <span class="o">+</span> <span class="mf">0.00019841269841269839</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁷</span> <span class="o">+</span> <span class="mf">2.4801587301587298e-5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁸</span> <span class="o">+</span> <span class="mf">0.00019841269841269836</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.0006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.0017361111111111108</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂⁶</span> <span class="o">+</span> <span class="mf">0.00019841269841269836</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁷</span> <span class="o">+</span> <span class="mf">2.4801587301587298e-5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁸</span>
+</pre></div>
+
+
+<p>Note above that <code>y</code> has been promoted internally so the result corresponds
+to the maximum
+order among <code>x</code> and <code>y</code>. The function <code>get_coeff(a,v)</code> permits to retrieve
+the coefficient
+of <code>x</code> that corresponds to the monomial defined by the vector of powers v.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_coeff</span><span class="p">(</span><span class="n">exy</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="o">/</span><span class="mi">720</span>
+<span class="n">false</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">rationalize</span><span class="p">(</span><span class="n">get_coeff</span><span class="p">(</span><span class="n">exy</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">]))</span>
+<span class="mi">1</span><span class="o">//</span><span class="mi">720</span>
+</pre></div>
+
+
+<p>Partial differentiation is also implemented for many independent variables
+<code>TaylorN</code>
+using <code>diffTaylor</code>; integration is still to be implemented for <code>TaylorN</code>.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">7</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span>
+<span class="n">f</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span>
+<span class="n">g</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span> <span class="mi">1</span> <span class="p">)</span>   <span class="c"># partial derivative with respect to 1st variable</span>
+ <span class="o">-</span> <span class="mf">7.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span> <span class="mi">2</span> <span class="p">)</span>
+ <span class="mf">1.0</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span> <span class="mi">3</span> <span class="p">)</span>   <span class="c"># an error, because we deal with 2 variables</span>
+<span class="n">ERROR</span><span class="p">:</span> <span class="n">assertion</span> <span class="n">failed</span><span class="p">:</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">numVars</span>
+ <span class="k">in</span> <span class="n">diffTaylor</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_TaylorN</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">699</span>
+ <span class="k">in</span> <span class="n">diffTaylor</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_TaylorN</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">728</span>
+</pre></div>
+
+
+<p><code>evalTaylor</code> can also be used for <code>TaylorN</code> objects, both for vectors of
+numbers or vectors of <code>Taylor1</code> objects; the length of the vector must
+coincide with the number
+of independent variables. The implementation still needs some improvements.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="mi">2</span><span class="n">t</span><span class="p">])</span>  <span class="c"># x+y, with x=t, y=2t</span>
+ <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span><span class="n">exy</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="p">,</span><span class="mi">2</span><span class="n">t</span><span class="p">])</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">3.375</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">2.025</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span> <span class="o">+</span> <span class="mf">1.0125</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁶</span> <span class="o">+</span> <span class="mf">0.43392857142857133</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁷</span> <span class="o">+</span> <span class="mf">0.16272321428571423</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁸</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">exp</span><span class="p">(</span><span class="mf">3.0</span><span class="o">*</span><span class="n">taylor1_variable</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+ <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">3.375</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">2.025</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span> <span class="o">+</span> <span class="mf">1.0125</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁶</span> <span class="o">+</span> <span class="mf">0.4339285714285714</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁷</span> <span class="o">+</span> <span class="mf">0.16272321428571426</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁸</span>
+</pre></div>
+
+
+<p>We have also implemented functions to compute the gradient, Jacobian and
+Hessian. Using the
+functions $f(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $g(x,y) = y-x^4$ defined above,
+we may use <code>∇</code> ("\nabla"+TAB) or <code>TaylorSeries.gradient</code>; the results are of
+type
+<code>Array{TaylorN{T},1}</code>. To compute the Jacobian or Hessian of a vector field
+evaluated on a point we use <code>jacobian</code> and <code>hessian</code>.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">f1</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+ <span class="mf">2.0</span> <span class="o">-</span> <span class="mf">7.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+ <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="err">∇</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
+<span class="mi">2</span><span class="o">-</span><span class="n">element</span> <span class="n">Array</span><span class="p">{</span><span class="n">TaylorN</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span><span class="mi">1</span><span class="p">}:</span>
+  <span class="o">-</span> <span class="mf">7.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span>
+                      <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">gradient</span><span class="p">(</span> <span class="n">g1</span> <span class="p">)</span>
+<span class="mi">2</span><span class="o">-</span><span class="n">element</span> <span class="n">Array</span><span class="p">{</span><span class="n">TaylorN</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span><span class="mi">1</span><span class="p">}:</span>
+  <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span>
+        <span class="mf">1.0</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">jacobian</span><span class="p">([</span><span class="n">f1</span><span class="p">,</span><span class="n">g1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="mi">2</span><span class="n">x2</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Float64</span><span class="p">,</span><span class="mi">2</span><span class="p">}:</span>
+  <span class="mf">13.0</span>  <span class="mf">8.0</span>
+ <span class="o">-</span><span class="mf">32.0</span>  <span class="mf">1.0</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">fg</span> <span class="o">=</span> <span class="n">f1</span><span class="o">-</span><span class="n">g1</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">f1</span><span class="o">*</span><span class="n">g1</span>
+ <span class="mf">2.0</span> <span class="o">-</span> <span class="mf">7.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">-</span> <span class="mf">5.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">14.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">5.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span> <span class="o">-</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">-</span> <span class="mf">14.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">hessian</span><span class="p">(</span><span class="n">ans</span><span class="p">)</span>
+<span class="mi">2</span><span class="n">x2</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Float64</span><span class="p">,</span><span class="mi">2</span><span class="p">}:</span>
+  <span class="mf">0.0</span>  <span class="mf">14.0</span>
+ <span class="mf">14.0</span>   <span class="mf">0.0</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span><span class="n">fg</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">+</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mf">1.0</span><span class="p">])</span>
+ <span class="o">-</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="mf">12.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mf">5.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">13.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">20.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">29.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">48.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">8.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">65.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span> <span class="o">+</span> <span class="mf">78.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">52.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵</span> <span class="o">+</span> <span class="mf">60.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">18.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶</span> <span class="o">+</span> <span class="mf">24.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">hessian</span><span class="p">(</span><span class="n">fg</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">])</span>
+<span class="mi">2</span><span class="n">x2</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Float64</span><span class="p">,</span><span class="mi">2</span><span class="p">}:</span>
+ <span class="o">-</span><span class="mf">26.0</span>  <span class="mf">20.0</span>
+  <span class="mf">20.0</span>  <span class="o">-</span><span class="mf">8.0</span>
+</pre></div>
+
+
+<h3 id="two-examples">Two examples</h3>
+<h4 id="1-four-square-identity">1. Four-square identity</h4>
+<p>The first example described below, shows that the four-square identity holds
+\begin{eqnarray}
+(a_1+a_2+a_3+a_4)\cdot(b_1+b_2+b_3+b_4) &amp; = &amp;
+     (a_1 b_1 - a_2 b_2 - a_3 b_3 -a_4 b_4)^2 + \qquad \nonumber \\
+\label{eq:Euler}
+  &amp; &amp; (a_1 b_2 - a_2 b_1 - a_3 b_4 -a_4 b_3)^2 + \\
+  &amp; &amp; (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 + \nonumber \\
+  &amp; &amp; (a_1 b_4 - a_2 b_3 - a_3 b_2 -a_4 b_1)^2, \nonumber
+\end{eqnarray}
+as proved by Euler. The code can we found as one of the tests of the package.</p>
+<p>First, we reset the maximum degree of the polynomial to 4, since the RHS
+of the equation
+has <em>a priori</em> terms of fourth order, and the number of independent variables to
+8.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">set_params_TaylorN</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">Warning</span><span class="p">:</span> <span class="n">redefining</span> <span class="n">constant</span> <span class="n">_params_taylorN</span>
+<span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+
+
+<p>Next, we define <em>all</em> the 8 independent variables</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="k">for</span> <span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span>
+        <span class="n">ai</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">(</span><span class="n">string</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">bi</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">(</span><span class="n">string</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
+        <span class="p">@</span><span class="n">eval</span> <span class="p">(</span><span class="o">$</span><span class="n">ai</span><span class="p">)</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="kt">Int</span><span class="p">,</span><span class="o">$</span><span class="n">i</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+        <span class="p">@</span><span class="n">eval</span> <span class="p">(</span><span class="o">$</span><span class="n">bi</span><span class="p">)</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="kt">Int</span><span class="p">,</span><span class="mi">4</span><span class="o">+</span><span class="p">(</span><span class="o">$</span><span class="n">i</span><span class="p">),</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">end</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">a1</span>
+ <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">b1</span>
+ <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₅</span>
+</pre></div>
+
+
+<p>following with the distinct terms that appear in (\ref{eq:Euler})</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_lhs1</span> <span class="o">=</span> <span class="n">a1</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">a2</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">a3</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">a4</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_lhs2</span> <span class="o">=</span> <span class="n">b1</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b2</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b3</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b4</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs1</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b1</span> <span class="o">-</span> <span class="n">a2</span><span class="o">*</span><span class="n">b2</span> <span class="o">-</span> <span class="n">a3</span><span class="o">*</span><span class="n">b3</span> <span class="o">-</span> <span class="n">a4</span><span class="o">*</span><span class="n">b4</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b2</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">b1</span> <span class="o">+</span> <span class="n">a3</span><span class="o">*</span><span class="n">b4</span> <span class="o">-</span> <span class="n">a4</span><span class="o">*</span><span class="n">b3</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b3</span> <span class="o">-</span> <span class="n">a2</span><span class="o">*</span><span class="n">b4</span> <span class="o">+</span> <span class="n">a3</span><span class="o">*</span><span class="n">b1</span> <span class="o">+</span> <span class="n">a4</span><span class="o">*</span><span class="n">b2</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs4</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b4</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">b3</span> <span class="o">-</span> <span class="n">a3</span><span class="o">*</span><span class="n">b2</span> <span class="o">+</span> <span class="n">a4</span><span class="o">*</span><span class="n">b1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+</pre></div>
+
+
+<p>and, finally, check that the lhs is equal to the rhs</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">lhs</span> <span class="o">=</span> <span class="n">expr_lhs1</span> <span class="o">*</span> <span class="n">expr_lhs2</span>
+ <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₈²</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">rhs</span> <span class="o">=</span> <span class="n">expr_rhs1</span> <span class="o">+</span> <span class="n">expr_rhs2</span> <span class="o">+</span> <span class="n">expr_rhs3</span> <span class="o">+</span> <span class="n">expr_rhs4</span>
+ <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₈²</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">lhs</span> <span class="o">==</span> <span class="n">rhs</span>
+<span class="n">true</span>
+</pre></div>
+
+
+<p>The identity is satisfied $\square$.</p>
+<h4 id="2-fatemans-test">2. Fateman's test</h4>
+<p>Richard J. Fateman, from Berkley, proposed as good test to check
+polynomial multiplication
+to evaluate $s*(s+1)$ explicitly, with $s = (1+x+y+z+w)^{20}$. This is
+implemented in
+the function <code>fatema1</code>. We shall also evaluate the form $s^2+s$ in <code>fateman2</code>,
+which involves less operations (and makes a fair comparison to what
+Mathematica does). Below we use julia v0.4-dev, because it is faster than v0.3.</p>
+<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">set_params_TaylorN</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>   <span class="c"># maxOrder = 40; numVars = 4</span>
+<span class="n">Warning</span><span class="p">:</span> <span class="n">redefining</span> <span class="n">constant</span> <span class="n">_params_taylorN</span>
+<span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="k">function</span><span class="nf"> fateman1</span><span class="p">(</span><span class="n">ndeg</span><span class="p">::</span><span class="kt">Int</span><span class="p">)</span>
+           <span class="n">T</span> <span class="o">=</span> <span class="n">Int128</span>
+           <span class="n">unoH</span> <span class="o">=</span> <span class="n">HomogeneousPolynomial</span><span class="p">(</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span> <span class="p">[</span><span class="n">unoH</span><span class="p">,</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">)],</span><span class="mi">1</span><span class="p">)],</span> <span class="n">ndeg</span> <span class="p">)</span>
+           <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">^</span><span class="n">ndeg</span>
+           <span class="c"># s is converted to order 2*ndeg</span>
+           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">2</span><span class="n">ndeg</span><span class="p">)</span>
+           <span class="k">return</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">s</span><span class="o">+</span><span class="n">TaylorN</span><span class="p">(</span><span class="n">unoH</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">ndeg</span><span class="p">))</span>
+       <span class="k">end</span>
+<span class="n">fateman1</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f1</span> <span class="o">=</span> <span class="n">fateman1</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">0.234384068</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">11</span> <span class="n">MB</span> <span class="n">allocated</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f1</span> <span class="o">=</span> <span class="n">fateman1</span><span class="p">(</span><span class="mi">20</span><span class="p">);</span>
+<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">9.137480042</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">69</span> <span class="n">MB</span> <span class="n">allocated</span><span class="p">,</span> <span class="mf">0.17</span><span class="o">%</span> <span class="n">gc</span> <span class="n">time</span> <span class="k">in</span> <span class="mi">3</span> <span class="n">pauses</span> <span class="n">with</span> <span class="mi">0</span> <span class="n">full</span> <span class="n">sweep</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_coeff</span><span class="p">(</span><span class="n">f1</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">])</span>
+<span class="mi">128358585324486316800</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">ans</span> <span class="o">&gt;</span> <span class="nb">typemax</span><span class="p">(</span><span class="kt">Int</span><span class="p">)</span>  <span class="c"># this is the reason for using Int128</span>
+<span class="n">true</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="k">function</span><span class="nf"> fateman2</span><span class="p">(</span><span class="n">ndeg</span><span class="p">::</span><span class="kt">Int</span><span class="p">)</span>
+           <span class="n">T</span> <span class="o">=</span> <span class="n">Int128</span>
+           <span class="n">unoH</span> <span class="o">=</span> <span class="n">HomogeneousPolynomial</span><span class="p">(</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span> <span class="p">[</span><span class="n">unoH</span><span class="p">,</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">)],</span><span class="mi">1</span><span class="p">)],</span> <span class="n">ndeg</span> <span class="p">)</span>
+           <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">^</span><span class="n">ndeg</span>
+           <span class="c"># s is converted to order 2*ndeg</span>
+           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">2</span><span class="n">ndeg</span><span class="p">)</span>
+           <span class="k">return</span> <span class="n">s</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">s</span>
+       <span class="k">end</span>
+<span class="n">fateman2</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f2</span> <span class="o">=</span> <span class="n">fateman2</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">0.008165855</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">299</span> <span class="n">kB</span> <span class="n">allocated</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f2</span> <span class="o">=</span> <span class="n">fateman2</span><span class="p">(</span><span class="mi">20</span><span class="p">);</span>
+<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">4.783816084</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">116</span> <span class="n">MB</span> <span class="n">allocated</span><span class="p">,</span> <span class="mf">0.30</span><span class="o">%</span> <span class="n">gc</span> <span class="n">time</span> <span class="k">in</span> <span class="mi">6</span> <span class="n">pauses</span> <span class="n">with</span> <span class="mi">0</span> <span class="n">full</span> <span class="n">sweep</span><span class="p">)</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_coeff</span><span class="p">(</span><span class="n">f2</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">])</span>
+<span class="mi">128358585324486316800</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">TaylorSeries</span><span class="o">.</span><span class="n">sizeTable</span><span class="p">)</span> <span class="c"># number of distinct monomials</span>
+<span class="mi">135751</span>
+</pre></div>
+
+
+<p>The tests above show the necessity of using <code>Int128</code> integers, and that
+<code>fateman2</code> is
+about twice as fast in comparison with <code>fateman1</code>, as it was mentioned. We
+mention
+that comparing <code>fateman2</code> against Mathematica, our implementation is roughly
+1.5 times slower than Mathematica, which spends 3.22 sec.</p></div>
+        </div>
+
+	<footer class="col-md-12">
+		<hr>
+		
+		<p>Copyright &copy; 2014, 2015, Luis Benet and David P. Sanders</p>
+		
+		<p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+	</footer>
+
+        
+
+        <script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script src="../js/base.js"></script>
+    </body>
+</html>

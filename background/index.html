@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+
+	<title>Background - TaylorSeries.jl</title>
+
+        <link href="../css/bootstrap-3.0.3.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+        <link href="../css/base.css" rel="stylesheet">
+        <link href="../css/github.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="..">TaylorSeries.jl</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            <!-- Main navigation -->
+            <ul class="nav navbar-nav">
+            
+            
+                <li >
+                    <a href="..">Home</a>
+                </li>
+            
+            
+            
+                <li class="active">
+                    <a href="./">Background</a>
+                </li>
+            
+            
+            
+                <li >
+                    <a href="../usersguide/">Users guide</a>
+                </li>
+            
+            
+            </ul>
+
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                
+                <li >
+                    <a rel="next" href="..">
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li >
+                    <a rel="prev" href="../usersguide/">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="https://github.com/lbenet/TaylorSeries.jl">
+                        
+                            <i class="fa fa-github"></i>
+                        
+                        GitHub
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#background">Background</a></li>
+        
+            <li><a href="#introduction">Introduction</a></li>
+        
+            <li><a href="#arithmetic-operations">Arithmetic operations</a></li>
+        
+            <li><a href="#elementary-functions-of-polynomials">Elementary functions of polynomials</a></li>
+        
+            <li><a href="#references">References</a></li>
+        
+    
+    </ul>
+</div></div>
+            <div class="col-md-9" role="main">
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: { equationNumbers: { autoNumber: "AMS" } }
+  });
+  MathJax.Hub.Config({
+    TeX: { extensions: ["AMSmath.js", "AMSsymbols.js", "autobold.js", "autoload-all.js"] }
+  });
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [['$','$'], ['\\(','\\)']],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
+</script>
+
+<h1 id="background">Background</h1>
+<hr />
+<h3 id="introduction">Introduction</h3>
+<p><a href="https://github.com/lbenet/TaylorSeries.jl">TaylorSeries.jl</a> is an implementation
+of high-order
+<a href="http://en.wikipedia.org/wiki/Automatic_differentiation">automatic differentiation</a>
+as presented in the book by W. Tucker <a href="./#references">[1]</a>. The general
+idea is the following.</p>
+<p>The Taylor series expansion of an analytical function
+$f(t)$ with <em>one</em> independent variable $t$ around $t_0$ can be written as
+\begin{equation}
+f(t) = f_0 + f_1 (t-t_0) + f_2 (t-t_0)^2 + \dots + f_k (t-t_0)^k + \cdots,
+\end{equation}
+where $f_0=f(t_0)$, and the Taylor coefficients $f_k = f_k(t_0)$ are the
+$k$-th <em>normalized derivatives</em> at $t_0$, i.e.,
+\begin{equation}
+f_k = \frac{1}{k!} \frac{{\rm d}^k f} {{\rm d} t^k}(t_0).
+\end{equation}
+Therefore, computing the high-order derivatives of $f(x)$ is equivalent to compute
+its Taylor expansion.</p>
+<p>In the case of <em>many</em> independent variables the same statements hold, though
+things become more subtle. Following Alex's Haro approach
+<a href="./#references">[2]</a>, the Taylor
+expansion is an infinite sum of <em>homogeneous polynomials</em> in the $d$ independent
+variables $x_1, x_2, \dots, x_d$, which takes the form
+\begin{equation}
+f_k (\mathbf{x_0}) = \sum_{m_1+\cdots+m_d = k} f_{m_1,\dots,m_d}
+(x_1-x_{0_1})^{m_1}
+\cdots (x_d-x_{0_d})^{m_d} =
+\sum_{|\mathbf{m}|=k} f_\mathbf{m} (\mathbf{x}-\mathbf{x_0})^\mathbf{m}.
+\end{equation}
+Here, $\mathbf{m}\in \mathbb{Z}^d$ is a multi-index of the $k$-th order
+homogeneous polynomial and $\mathbf{x}=(x_1,x_2,\dots,x_d)$ represents the
+$d$ independent variables.</p>
+<p>Clearly, in both cases, a Taylor series expansion can be represented by a
+vector containing
+its coefficients. The difference among the one and more independent variables
+is that the
+coefficients are, in the former case, real or complex numbers, while in the
+latter case are the coefficients of homogeneous polynomials. This motivates
+to construct the types <code>Taylor</code> and <code>TaylorN</code>, that we describe later.</p>
+<h3 id="arithmetic-operations">Arithmetic operations</h3>
+<p>The arithmetic operations involving Taylor series can be simply expressed as
+the operations involving the coefficients, namely
+\begin{eqnarray}
+(f(x) \pm g(x))_k &amp; = &amp; f_k \pm g_k \, , \\
+\label{eq:multT}
+(f(x) \cdot g(x))_k &amp; = &amp; \sum_{i=0}^k f_i \, g_{k-i} \, ,\\
+\Big(\frac{f(x)}{g(x)}\Big)_k &amp; = &amp; \frac{1}{g_0} \Big[ f_k -
+\sum_{i=0}^{k-1} \big(\frac{f(x)}{g(x)}\big)_i \, g_{k-i} \Big]\, .\\
+\end{eqnarray}</p>
+<p>Equation (\ref{eq:multT}) corresponds to a convolution.</p>
+<h3 id="elementary-functions-of-polynomials">Elementary functions of polynomials</h3>
+<p>Consider a function $y(t)$ that satisfies the ordinary differential equation
+$\dot{y} = f(y)$, $y(t_0)=y_0$, where $t$ is the independent variable. Then,
+writing $y(t)$ and $f(t)$ as Taylor polynomials of $t$, substituting in the
+differential equation and equating equal powers of
+the independent variable, leads to the recursion relation
+\begin{equation}
+\label{eq:rec}
+y_{n+1} = \frac{f_n}{n+1}
+\end{equation}
+Equation (\ref{eq:rec}) with the initial condition define a recurrence relation
+for the Taylor coefficients of $y(t)$ around $t_0$. For more independent
+variables, using the chain rule for the <em>radial derivative</em>
+yields recurrence relations for the homogeneous polynomial coefficients
+of the function; see <a href="./#references">[2]</a>.</p>
+<p>The following are some examples of elementary functions constructed by
+such recurrence relations:</p>
+<p>\begin{eqnarray}
+p(t)=(f(t))^\alpha , \qquad &amp;
+  p_k &amp; = \frac{1}{k \, f_0}\sum_{j=0}^{k-1}\big( \alpha(k-j)-j\big)
+  \, f_{k-j} \, p_j; \\
+e(t) = \exp(t) , \qquad &amp;
+  e_k &amp; = \frac{1}{k}\sum_{j=0}^{k-1} (k-j) \, f_{k-j} \, e_j; \\
+l(t) = \log(t) , \qquad &amp;
+  l_k &amp; = \frac{1}{f_0}\big( f_k - \frac{1}{k}\sum_{j=1}^{k-1} j
+    \, f_{k-j} \, l_j \big); \\
+s(t) = \sin(t) , \qquad &amp;
+  s_k &amp; = \frac{1}{k}\sum_{j=0}^{k-1} (k-j) \, f_{k-j} \, c_j; \\
+c(t) = \cos(t) , \qquad &amp;
+  c_k &amp; = -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) \, f_{k-j} \, s_j.
+\end{eqnarray}</p>
+<p>The recursion relations for $s(t) = \sin(f(t))$ and $c(t) = \cos(f(t))$ depend
+on each other; this reflects the fact that they are solutions of a second-order
+differential equation. All these relations hold for Taylor expansions in one
+and more independent variables; in the latter case, the Taylor coefficients
+$f_k$ correspond to homogeneous polynomials of degree $k$.</p>
+<h3 id="references">References</h3>
+<p>[1] W. Tucker, <em>Validated numerics: A short introduction to rigorous computations</em>, Princeton University  Press (2011).</p>
+<p>[2] A. Haro, <em>Automatic differentiation methods in computational dynamical systems: Invariant manifolds and normal forms of vector fields at fixed points</em>, <a href="http://www.maia.ub.es/~alex/admcds/admcds.pdf">preprint</a>.</p></div>
+        </div>
+
+	<footer class="col-md-12">
+		<hr>
+		
+		<p>Copyright &copy; 2014, 2015, Luis Benet and David P. Sanders</p>
+		
+		<p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+	</footer>
+
+        
+
+        <script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script src="../js/base.js"></script>
+    </body>
+</html>
