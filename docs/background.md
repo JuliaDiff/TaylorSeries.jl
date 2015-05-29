@@ -23,25 +23,25 @@
 
 [TaylorSeries.jl](https://github.com/lbenet/TaylorSeries.jl) is an implementation
 of high-order
-[automatic differentiation](http://en.wikipedia.org/wiki/Automatic_differentiation)
+[automatic differentiation](http://en.wikipedia.org/wiki/Automatic_differentiation),
 as presented in the book by W. Tucker [[1]](background.md#references). The general
 idea is the following.
 
 The Taylor series expansion of an analytical function
 $f(t)$ with *one* independent variable $t$ around $t_0$ can be written as
 \\begin{equation}
-f(t) = f_0 + f_1 (t-t_0) + f_2 (t-t_0)^2 + \\dots + f_k (t-t_0)^k + \\cdots,
+f(t) = f_0 + f_1 (t-t_0) + f_2 (t-t_0)^2 + \\cdots + f_k (t-t_0)^k + \\cdots,
 \\end{equation}
 where $f_0=f(t_0)$, and the Taylor coefficients $f_k = f_k(t_0)$ are the
-$k$-th *normalized derivatives* at $t_0$, i.e.,
+$k$-th *normalized derivatives* at $t_0$:
 \\begin{equation}
 f_k = \\frac{1}{k!} \\frac{{\\rm d}^k f} {{\\rm d} t^k}(t_0).
 \\end{equation}
-Therefore, computing the high-order derivatives of $f(x)$ is equivalent to compute
+Thus, computing the high-order derivatives of $f(x)$ is equivalent to computing
 its Taylor expansion.
 
 In the case of *many* independent variables the same statements hold, though
-things become more subtle. Following Alex's Haro approach
+things become more subtle. Following Alex Haro's approach
 [[2]](background.md#references), the Taylor
 expansion is an infinite sum of *homogeneous polynomials* in the $d$ independent
 variables $x_1, x_2, \dots, x_d$, which takes the form
@@ -51,22 +51,22 @@ f_k (\\mathbf{x_0}) = \\sum_{m_1+\\cdots+m_d = k} f_{m_1,\\dots,m_d}
 \\cdots (x_d-x_{0_d})^{m_d} =
 \\sum_{|\\mathbf{m}|=k} f_\\mathbf{m} (\\mathbf{x}-\\mathbf{x_0})^\\mathbf{m}.
 \\end{equation}
-Here, $\\mathbf{m}\in \\mathbb{Z}^d$ is a multi-index of the $k$-th order
-homogeneous polynomial and $\\mathbf{x}=(x_1,x_2,\\dots,x_d)$ represents the
+Here, $\\mathbf{m}\in \\mathbb{N}^d$ is a multi-index of the $k$-th order
+homogeneous polynomial and $\\mathbf{x}=(x_1,x_2,\\ldots,x_d)$ are the
 $d$ independent variables.
 
-Clearly, in both cases, a Taylor series expansion can be represented by a
+In both cases, a Taylor series expansion can be represented by a
 vector containing
-its coefficients. The difference among the one and more independent variables
+its coefficients. The difference between the cases of one or more independent variables
 is that the
-coefficients are, in the former case, real or complex numbers, while in the
-latter case are the coefficients of homogeneous polynomials. This motivates
-to construct the types `Taylor` and `TaylorN`, that we describe later.
+coefficients are real or complex numbers in the former case, but homogeneous polynomials
+in the latter case. This motivates
+the construction of the `Taylor` and `TaylorN` types, described later.
 
 ### Arithmetic operations
 
-The arithmetic operations involving Taylor series can be simply expressed as
-the operations involving the coefficients, namely
+Arithmetic operations involving Taylor series can be expressed as
+operations on the coefficients:
 \\begin{eqnarray}
 (f(x) \\pm g(x))_k & = & f_k \\pm g_k \\, , \\\\
 \\label{eq:multT}
@@ -80,21 +80,21 @@ Equation (\\ref{eq:multT}) corresponds to a convolution.
 ### Elementary functions of polynomials
 
 Consider a function $y(t)$ that satisfies the ordinary differential equation
-$\\dot{y} = f(y)$, $y(t_0)=y_0$, where $t$ is the independent variable. Then,
-writing $y(t)$ and $f(t)$ as Taylor polynomials of $t$, substituting in the
+$\\dot{y} = f(y)$, $y(t_0)=y_0$, where $t$ is the independent variable.
+Writing $y(t)$ and $f(t)$ as Taylor polynomials of $t$, substituting these in the
 differential equation and equating equal powers of
-the independent variable, leads to the recursion relation
+the independent variable leads to the recursion relation
 \\begin{equation}
 \\label{eq:rec}
-y_{n+1} = \frac{f_n}{n+1}
+y_{n+1} = \frac{f_n}{n+1}.
 \\end{equation}
-Equation (\\ref{eq:rec}) with the initial condition define a recurrence relation
+Equation (\\ref{eq:rec}), together with the corresponding initial condition, defines a recurrence relation
 for the Taylor coefficients of $y(t)$ around $t_0$. For more independent
 variables, using the chain rule for the *radial derivative*
 yields recurrence relations for the homogeneous polynomial coefficients
 of the function; see [[2]](background.md#references).
 
-The following are some examples of elementary functions constructed by
+The following are  examples of elementary functions constructed by
 such recurrence relations:
 
 \\begin{eqnarray}
@@ -116,10 +116,10 @@ The recursion relations for $s(t) = \\sin(f(t))$ and $c(t) = \\cos(f(t))$ depend
 on each other; this reflects the fact that they are solutions of a second-order
 differential equation. All these relations hold for Taylor expansions in one
 and more independent variables; in the latter case, the Taylor coefficients
-$f_k$ correspond to homogeneous polynomials of degree $k$.
+$f_k$ are homogeneous polynomials of degree $k$.
 
 ### References
 
-[1] W. Tucker, *Validated numerics: A short introduction to rigorous computations*, Princeton University  Press (2011).
+[1] W. Tucker, *Validated Numerics: A Short Introduction to Rigorous Computations*, Princeton University Press (2011).
 
 [2] A. Haro, *Automatic differentiation methods in computational dynamical systems: Invariant manifolds and normal forms of vector fields at fixed points*, [preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
