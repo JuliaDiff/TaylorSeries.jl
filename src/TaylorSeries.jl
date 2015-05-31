@@ -51,7 +51,8 @@ include("utils_TaylorN.jl")
 function pretty_print{T<:Number}(a::Taylor1{T})
     z = zero(T)
     space = utf8(" ")
-    a == zero(a) && return string(space, z)
+    bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    a == zero(a) && return string(space, z, space, bigO)
     strout::UTF8String = space
     ifirst = true
     for i in eachindex(a.coeffs)
@@ -63,6 +64,7 @@ function pretty_print{T<:Number}(a::Taylor1{T})
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
+    strout = strout * bigO
     strout
 end
 function pretty_print{T<:Number}(a::HomogeneousPolynomial{T})
@@ -75,7 +77,8 @@ end
 function pretty_print{T<:Number}(a::TaylorN{T})
     z = zero(T)
     space = utf8(" ")
-    a == zero(a) && return string(space, z)
+    bigO::UTF8String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
+    a == zero(a) && return string(space, z, bigO)
     strout::UTF8String = utf8("")
     ifirst = true
     for ord in eachindex(a.coeffs)
@@ -86,6 +89,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
         strout = string( strout, strsgn, cadena)
         ifirst = false
     end
+    strout = strout * bigO
     strout
 end
 
