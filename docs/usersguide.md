@@ -15,44 +15,43 @@
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
 </script>
 
-# Users guide
+# User guide
 
 ---
 
-TaylorSeries is basically a polynomial algebraic manipulator in one and more
-variables, considering separately these cases. This is done introducing three
-new types, `Taylor1`, `HomogeneousPolynomial` and `TaylorN`, which define the
-one-independent variable
-expansions, homogeneous polynomial on various variables, and the polynomial
-series in many-independent variables, respectively. These types are subtypes
+`TaylorSeries.jl` can be thought of as a polynomial algebraic manipulator in one or more
+variables; these two cases are treated separately.  Three new types are defined,
+`Taylor1`, `HomogeneousPolynomial` and `TaylorN`, which correspond to
+expansions in one independent variable, homogeneous polynomials of various variables, and the polynomial
+series in many independent variables, respectively. These types are subtypes
 of `Number` and are defined parametrically.
 
-The package is loaded as usual
+The package is loaded as usual:
 
 ```julia
 julia> using TaylorSeries
 ```
 
-### One variable
+## One variable
 
 Taylor expansions in one variable are represented by the `Taylor1` type, which
 consists of a vector of coefficients (field `coeffs`) and the maximum
 order considered for the expansion (field `order`). The
 coefficients are arranged in ascending order with respect to the power of the
-independent variable; then,
-`coeffs[1]` is the constant term, `coeffs[2]` corresponds to the first order,
-etc. This is clearly
-a dense representation of the polynomial. The order of the polynomial can be
-omitted in the constructor, which is
-then fixed from the length of the coefficients; otherwise it is the maximum
-among the length of the coefficients or the integer specified.
+independent variable, so that
+`coeffs[1]` is the constant term, `coeffs[2]` gives the first order term,
+etc. This is a dense representation of the polynomial.
+The order of the polynomial can be
+omitted in the constructor, which is then fixed from the length of the
+vector of coefficients; otherwise, the maximum
+of the length of the vector of coefficients and the given integer is taken.
 
 ```julia
 # Polynomial of order 2 with coefficients 1, 2, 3
-julia> Taylor1([1,2,3])
+julia> Taylor1([1, 2, 3])
  1 + 2⋅t + 3⋅t²
 
-julia> Taylor1([0.0,1im]) # Also works with complex numbers
+julia> Taylor1([0.0, 1im]) # Also works with complex numbers
  ( 1.0 im )⋅t
 
 julia> tT(a) = a + taylor1_variable(typeof(a),5)  ## a + t of order 5
@@ -62,16 +61,15 @@ julia> t = tT(0.0) # Independent variable `t`
  1.0⋅t
 
 ```
-The definition of `tT(a)` above uses the function `taylor1_variable` which is a
-short cut to define the independent variable of a Taylor expansion,
-of a given type and given order. As we show below, that is one of the
+The above definition of `tT(a)` uses the function `taylor1_variable`, which is a
+shortcut to define the independent variable of a Taylor expansion,
+with a given type and given order. As we show below, this is one of the
 easiest ways to work with the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
 extended to work with the `Taylor1` type, including promotions that involve
-`Numbers`. Yet, the operations have to be able to return a *bona fide* Taylor
-expansion (see the last example below, where this does not happen), which has
-the same maximum order.
+`Number`s. The operations return a valid Taylor expansion with the same
+maximum order; compare the last example below, where this is not possible:
 
 ```julia
 julia> t*(3t+2.5)
@@ -96,18 +94,18 @@ julia> (1+t)^t
  1.0 + 1.0⋅t² - 0.5⋅t³ + 0.8333333333333333⋅t⁴ - 0.75⋅t⁵
 
 julia> t^3.2
-ERROR: Integer exponent **required** if the Taylor1 polynomial is expanded
-around 0.
- in ^ at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries/src/utils_Taylor1.jl:272
+ERROR: The 0th order Taylor1 coefficient must be non-zero
+to raise the Taylor1 polynomial to a non-integer exponent
+ in ^ at /Users/dsanders/.julia/v0.4/TaylorSeries/src/utils_Taylor1.jl:280
 
 ```
 
-Some elemental functions have been implemented by computing recursively their
-coefficients. So far, these functions are `exp`, `log`, `sqrt`, `sin`, `cos`
+Several elementary functions have been implemented; these compute their
+coefficients recursively. So far, these functions are `exp`, `log`, `sqrt`, `sin`, `cos`
 and `tan`;
-more functions will be added in the future. Note that this way of obtaining the
+more will be added in the future. Note that this way of obtaining the
 Taylor coefficients is not the *laziest* way, in particular for many independent
-variables. Yet, it is quite efficient specially for precise integrations of
+variables. Yet, it is quite efficient, especially for the integration of
 ordinary differential equations, which is among the applications we have in mind.
 
 ```julia
@@ -122,7 +120,7 @@ ERROR: First non-vanishing Taylor1 coefficient must correspond to an **even powe
 to expand `sqrt` around 0.
  in sqrt at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries/src/utils_Taylor1.jl:346
 
-julia> sqrt( 1 + t )
+julia> sqrt(1 + t)
  1.0 + 0.5⋅t - 0.125⋅t² + 0.0625⋅t³ - 0.0390625⋅t⁴ + 0.02734375⋅t⁵
 
 julia> imag(exp(tI)')
@@ -142,7 +140,7 @@ same order as the original polynomial; for the integral, an
 integration constant may be set to a different value (the default is zero). The
 order of the resulting polynomial is not changed. The $n$-th ($n \ge 0$)
 derivative is obtained using `deriv(a,n)`, where `a` is a Taylor series;
-default is $n=1$.
+the default is $n=1$.
 
 ```julia
 julia> diffTaylor(exp(t))
@@ -165,9 +163,9 @@ julia> deriv( exp(tT(1.0)), 5) == exp(1.0)
 true
 ```
 
-For the evaluation of Taylor series', we use Horner's rule through
-`evalTaylor(a::Taylor, dt::Number)`. Here, $dt$ is the increment with respect
-to the point $t_0$ where the Taylor expansion is calculated, i.e., the series
+To evaluate a Taylor series at a point, Horner's rule is used via the function
+`evalTaylor(a::Taylor, dt::Number)`. Here, $dt$ is the increment from
+the point $t_0$ where the Taylor expansion is calculated, i.e., the series
 is evaluated at $t = t_0 + dt$. Omitting $dt$ corresponds to $dt = 0$.
 
 ```julia
@@ -195,13 +193,13 @@ julia> e - ans
 ```
 
 
-### Many variables
+## Many variables
 
 A polynomial in $N>1$ variables can be represented in two distinct ways:
 As a vector whose coefficients are homogeneous polynomials of fixed degree, or
 as a vector whose coefficients are polynomials in $N-1$ variables. We have opted
-to implement the first option arguing it shows better performance. Yet, an elegant
-(and lazy) implementation of the second representation was discussed in the
+to implement the first option, which seems to show better performance. An elegant
+(lazy) implementation of the second representation was discussed on the
 [julia-users](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ) list.
 
 `TaylorN` is thus constructed as a vector of parameterized homogeneous polynomials
@@ -213,7 +211,7 @@ variables. This is done using `set_params_TaylorN(maxord, numVars)`, where
 of the polynomial considered, and `numVars` is the number of variables;
 `set_maxOrder()` and `set_numVars()` allow to change independently each
 parameter. By default, these parameters are set to 6 and 2, respectively. The
-function ``show_params_TaylorN()` displays the actual values of these parameters.
+function ``show_params_TaylorN()` displays the current values of these parameters.
 
 ```julia
 julia> show_params_TaylorN()
@@ -226,16 +224,16 @@ Warning: redefining constant _params_taylorN
 (8,2)
 ```
 
-Technically (internally), these values define the dictionaries which
+Technically (internally), these values define dictionaries that
 translate the position of the coefficients of a `HomogeneousPolynomial`
 into the corresponding
-multi-variable monomials. Fixing these values from the beginning is imperative.
+multi-variable monomials. Fixing these values from the start is imperative.
 
 The easiest way of constructing a `TaylorN` object is by defining a symbol for
 the independent variables, using the function
 `taylorN_variable(T::Type{T<:Top}, nv::Int64, order::Int64)`;
 omitting the type yields a `TaylorN{Float64}` object, and omitting the order
-defaults in the maximum order. Again, the Taylor expansions are implemented
+defaults to the maximum order. Again, the Taylor expansions are implemented
 around 0 for all variables; if the expansion
 is needed around a different value, the trick is a simple translation of
 the corresponding
@@ -270,8 +268,8 @@ julia> get_maxOrder(y)
 6
 ```
 
-Other ways of constructing `TaylorN` polynomials involve directly `HomogeneousPolynomial`
-objects, which is rather uncomfortable.
+Other ways of constructing `TaylorN` polynomials involve using `HomogeneousPolynomial`
+objects directly, which is uncomfortable:
 
 ```julia
 julia> HomogeneousPolynomial([1,-1])
@@ -282,14 +280,12 @@ julia> TaylorN( [HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 
 ```
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
-have been extended to work with `TaylorN` type, including the appropriate
+have been extended to work with `TaylorN` objects, including the appropriate
 promotions to deal with numbers. (Some of the arithmetic operations have
 also been extended for
 `HomogeneousPolynomial`, whenever the result is a `HomogeneousPolynomial`;
-division,
-for instance, is not extended.) Also, the elementary functions have been
-implemented
-computing again recursively their coefficients.
+division, for instance, is not extended.) Also, the elementary functions have been
+implemented, again by computing their coefficients recursively:
 
 ```julia
 julia> exy = exp(x+y)
@@ -297,10 +293,9 @@ julia> exy = exp(x+y)
 ```
 
 Note above that `y` has been promoted internally so the result corresponds
-to the maximum
-order among `x` and `y`. The function `get_coeff(a,v)` permits to retrieve
-the coefficient
-of `x` that corresponds to the monomial defined by the vector of powers v.
+to the maximum of the orders of `x` and `y`. The function `get_coeff(a,v)`
+gives the coefficient of `x` that corresponds to the monomial
+specified by the vector of powers `v`:
 ```julia
 julia> get_coeff(exy, [3,5]) == 1/720
 false
@@ -309,9 +304,9 @@ julia> rationalize(get_coeff(exy, [3,5]))
 1//720
 ```
 
-Partial differentiation is also implemented for many independent variables
-`TaylorN`
-using `diffTaylor`; integration is still to be implemented for `TaylorN`.
+Partial differentiation is also implemented for
+`TaylorN` objects,
+using `diffTaylor`; integration is yet to be implemented.
 
 ```julia
 julia> f(x,y) = x^3 + 2x^2 * y - 7x + 2
@@ -326,7 +321,7 @@ julia> diffTaylor( f(x,y), 1 )   # partial derivative with respect to 1st variab
 julia> diffTaylor( g(x,y), 2 )
  1.0
 
-julia> diffTaylor( g(x,y), 3 )   # an error, because we deal with 2 variables
+julia> diffTaylor( g(x,y), 3 )   # error, since we are dealing with 2 variables
 ERROR: assertion failed: 1 <= r <= numVars
  in diffTaylor at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries/src/utils_TaylorN.jl:699
  in diffTaylor at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries/src/utils_TaylorN.jl:728
@@ -348,13 +343,12 @@ julia> exp(3.0*taylor1_variable(8))
  1.0 + 3.0⋅t + 4.5⋅t² + 4.5⋅t³ + 3.375⋅t⁴ + 2.025⋅t⁵ + 1.0125⋅t⁶ + 0.4339285714285714⋅t⁷ + 0.16272321428571426⋅t⁸
 ```
 
-We have also implemented functions to compute the gradient, Jacobian and
-Hessian. Using the
+Functions to compute the gradient, Jacobian and
+Hessian have also been implemented. Using the
 functions $f(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $g(x,y) = y-x^4$ defined above,
-we may use `∇` ("\nabla"+TAB) or `TaylorSeries.gradient`; the results are of
-type
-`Array{TaylorN{T},1}`. To compute the Jacobian or Hessian of a vector field
-evaluated on a point we use `jacobian` and `hessian`.
+we may use `∇` (`\nabla+TAB`) or `TaylorSeries.gradient`; the results are of
+type `Array{TaylorN{T},1}`. To compute the Jacobian or Hessian of a vector field
+evaluated at a point, we use `jacobian` and `hessian`:
 
 ```julia
 julia> f1 = f(x,y)
@@ -396,11 +390,11 @@ julia> hessian(fg, [1.0,1.0])
 ```
 
 
-### Two examples
+## Examples
 
-#### 1. Four-square identity
+### 1. Four-square identity
 
-The first example described below, shows that the four-square identity holds
+The first example described below, shows that the four-square identity holds:
 \\begin{eqnarray}
 (a_1+a_2+a_3+a_4)\\cdot(b_1+b_2+b_3+b_4) & = &
      (a_1 b_1 - a_2 b_2 - a_3 b_3 -a_4 b_4)^2 + \\qquad \\nonumber \\\\
@@ -409,7 +403,7 @@ The first example described below, shows that the four-square identity holds
   & & (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 + \\nonumber \\\\
   & & (a_1 b_4 - a_2 b_3 - a_3 b_2 -a_4 b_1)^2, \\nonumber
 \\end{eqnarray}
-as proved by Euler. The code can we found as one of the tests of the package.
+as proved by Euler. The code can we found in one of the tests of the package.
 
 First, we reset the maximum degree of the polynomial to 4, since the RHS
 of the equation
@@ -422,7 +416,7 @@ Warning: redefining constant _params_taylorN
 (4,8)
 ```
 
-Next, we define *all* the 8 independent variables
+Next, we define the 8 independent variables
 
 ```julia
 julia> for i=1:4
@@ -439,7 +433,7 @@ julia> b1
  1⋅x₅
 ```
 
-following with the distinct terms that appear in (\\ref{eq:Euler})
+followed by the distinct terms that appear in (\\ref{eq:Euler}):
 ```julia
 julia> expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
 
@@ -453,7 +447,7 @@ julia> expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2 ;
 
 julia> expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2 ;
 ```
-and, finally, check that the lhs is equal to the rhs
+and, finally, check that the LHS is equal to the RHS:
 ```julia
 julia> lhs = expr_lhs1 * expr_lhs2
  1⋅x₁²⋅x₅² + 1⋅x₂²⋅x₅² + 1⋅x₃²⋅x₅² + 1⋅x₄²⋅x₅² + 1⋅x₁²⋅x₆² + 1⋅x₂²⋅x₆² + 1⋅x₃²⋅x₆² + 1⋅x₄²⋅x₆² + 1⋅x₁²⋅x₇² + 1⋅x₂²⋅x₇² + 1⋅x₃²⋅x₇² + 1⋅x₄²⋅x₇² + 1⋅x₁²⋅x₈² + 1⋅x₂²⋅x₈² + 1⋅x₃²⋅x₈² + 1⋅x₄²⋅x₈²
@@ -466,15 +460,15 @@ true
 ```
 The identity is satisfied $\\square$.
 
-#### 2. Fateman's test
+### 2. Fateman's test
 
-Richard J. Fateman, from Berkley, proposed as good test to check
-polynomial multiplication
-to evaluate $s*(s+1)$ explicitly, with $s = (1+x+y+z+w)^{20}$. This is
+Richard J. Fateman, from Berkley, proposed as a stringent test
+of polynomial multiplication
+the evaluation of $s*(s+1)$, where $s = (1+x+y+z+w)^{20}$. This is
 implemented in
-the function `fatema1`. We shall also evaluate the form $s^2+s$ in `fateman2`,
-which involves less operations (and makes a fair comparison to what
-Mathematica does). Below we use julia v0.4-dev, because it is faster than v0.3.
+the function `fateman1`. We shall also evaluate the form $s^2+s$ in `fateman2`,
+which involves fewer operations (and makes a fairer comparison to what
+Mathematica does). Below we use Julia v0.4, since it is faster than v0.3.
 
 ```julia
 julia> set_params_TaylorN(40,4)   # maxOrder = 40; numVars = 4
@@ -528,9 +522,8 @@ julia> sum(TaylorSeries.sizeTable) # number of distinct monomials
 135751
 ```
 
-The tests above show the necessity of using `Int128` integers, and that
+The tests above show the necessity of using integers of type `Int128`, and that
 `fateman2` is
-about twice as fast in comparison with `fateman1`, as it was mentioned. We
-mention
-that comparing `fateman2` against Mathematica, our implementation is roughly
-1.5 times slower than Mathematica, which spends 3.22 sec.
+about twice as fast as `fateman1`. We
+mention that our implementation of `fateman2` is roughly
+1.5 times slower than Mathematica, which takes 3.22 sec.

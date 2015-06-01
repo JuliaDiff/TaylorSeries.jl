@@ -42,15 +42,15 @@ multivariate polynomials in Julia
 
 ### References
 
-- W. Tucker, Validated numerics: A short introduction to rigorous
-computations, Princeton University Press (2011).
--  A. Haro, Automatic differentiation methods in computational dynamical
-systems: Invariant manifolds and normal forms of vector fields at fixed points,
+- W. Tucker, *Validated Numerics: A Short Introduction to Rigorous
+Computations*, Princeton University Press (2011).
+-  A. Haro, *Automatic differentiation methods in computational dynamical
+systems: Invariant manifolds and normal forms of vector fields at fixed points*,
 [preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
 
 ### Acknowledgments
 
-This project began (using `python`) during a Masters' course in the postgraduate
+This project began (using Python) during a Masters' course in the postgraduate
 programs in Physics and in Mathematics at UNAM, during the second half of 2013.
 We thank the participants of the course for putting up with the half-baked
 material and contributing energy and ideas.
