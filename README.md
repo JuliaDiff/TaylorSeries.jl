@@ -3,7 +3,7 @@
 A [Julia](http://julialang.org) package for Taylor expansions in one or more 
 independent variables.
 
-[![Build Status](https://travis-ci.org/lbenet/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/lbenet/TaylorSeries.jl)
+[![Build Status](https://travis-ci.org/JuliaDiff/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/JuliaDiff/TaylorSeries.jl)
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_nightly.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=nightly)
 [![Coverage Status](https://coveralls.io/repos/lbenet/TaylorSeries.jl/badge.svg)](https://coveralls.io/r/lbenet/TaylorSeries.jl)
 
