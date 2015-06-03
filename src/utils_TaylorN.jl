@@ -800,3 +800,105 @@ function evalTaylor{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
 end
 
 evalTaylor{T<:Number}(a::TaylorN{T}) = evalTaylor(a, zeros(T, get_numVars()))
+
+#=
+WIP: improve evalTaylor
+
+evalTaylor (above) yields *not so accurate* results due to accumulation of 
+round-off errors. Below, I implement a different algorithm, which essentially
+consists on applying Horner's rule for one variable.
+
+So far, this has only be tested in 2-variable expansions.
+
+Functions are not exported
+=#
+function evalHomogNew{T<:Number,S<:Number}(a::HomogeneousPolynomial{T}, vals::Array{S,1} )
+    numVars = get_numVars()
+    @assert length(vals) == numVars
+    R = promote_type(T,S)
+    suma = convert(TaylorN{R}, a)
+
+    for nv = 1:numVars
+        suma = hornerHomog(suma, (nv, vals[nv]))
+    end
+
+    return suma
+end
+
+function evalTaylorNew{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
+    numVars = get_numVars()
+    @assert length(vals) == numVars
+    R = promote_type(T,S)
+    suma = convert(TaylorN{R}, a)
+
+    for nv = 1:numVars
+        suma = hornerTaylorN(suma, (nv, vals[nv]))
+    end
+
+    return suma
+end
+
+evalTaylorNew{T<:Number}(a::TaylorN{T}) = evalTaylorNew(a, zeros(T, get_numVars()))
+
+## Evaluates HomogineousPolynomials and TaylorN on a val of the nv variable
+function hornerHomog{T<:Number,S<:Number}(a::HomogeneousPolynomial{T}, b::Tuple{Int,S} )
+    nv, val = b
+    numVars = get_numVars()
+    @assert 1 <= nv <= numVars
+    R = promote_type(T,S)
+    @inbounds indTb = indicesTable[a.order+1]
+    suma = TaylorN(zero(R), a.order)
+
+    # Horner's rule on the nv variable
+    for ord = a.order : -1 : 0
+        suma_ord = TaylorN(zero(R), a.order)
+        posOrd = order_posTb(a.order, nv, ord)
+        neworder = a.order-ord
+        for pos in posOrd
+            c = a.coeffs[pos]
+            iIndices = copy(indTb[pos])
+            iIndices[nv] = 0
+            kdic = hash(iIndices)
+            newpos = posTable[neworder+1][kdic]
+            zhp = HomogeneousPolynomial(zero(R), neworder)
+            zhp.coeffs[newpos] = a.coeffs[pos]
+            suma_ord += TaylorN(zhp, a.order)
+        end
+        if ord == a.order
+            suma += suma_ord
+        else
+            suma = suma*val + suma_ord
+        end
+    end
+
+    return suma
+end
+function hornerTaylorN{T<:Number,S<:Number}(a::TaylorN{T}, b::Tuple{Int,S} )
+    nv, val = b
+    @assert 1 <= nv <= get_numVars()
+    R = promote_type(T,S)
+
+    suma = TaylorN(zero(R), a.order)
+    for ord = a.order:-1:0
+        @inbounds polH = a.coeffs[ord+1]
+        suma += hornerHomog( polH, b)
+    end
+    suma
+end
+
+@doc """
+Returns the vector position (of the homogeneous-polynomial) of order `order`, where 
+the variable `nv` has order `ord`
+""" ->
+function order_posTb(order::Int, nv::Int, ord::Int)
+    @assert order <= get_maxOrder()
+    @inbounds indTb = indicesTable[order+1]
+    @inbounds nCoefH = sizeTable[order+1]
+    posV = Int[]
+    for pos = 1:nCoefH
+        @inbounds indTb[pos][nv] != ord && continue
+        push!(posV, pos)
+    end
+    posV
+end
+

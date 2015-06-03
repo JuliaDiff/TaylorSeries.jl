@@ -160,8 +160,13 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact (1+xT)^(3//2) == ((1+xT)^0.5)^3  => true
     @fact real( exp(1im * xT)) == cos(xT)  => true
     @fact imag((exp(yT))^(-1im)') == sin(yT)  => true
-    @fact evalTaylor(exp( xT+yT )) == 1  => true
-    @fact isapprox(evalTaylor(exp( xT+yT ), [1,1]), e^2)  => true
+    exy = exp( xT+yT )
+    @fact evalTaylor(exy) == 1  => true
+    @show evalTaylor(exy, [1,1]) - e^2
+    @fact isapprox(evalTaylor(exy, [1,1]), e^2)  => true
+    @fact TaylorSeries.evalTaylorNew(exy) == 1  => true
+    @show get_coeff(TaylorSeries.evalTaylorNew(exy, [1,1]),[0,0]) - e^2
+    @fact isapprox( get_coeff(TaylorSeries.evalTaylorNew(exy, [1,1]),[0,0]), e^2)  => true
     txy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == txy  => true
 
