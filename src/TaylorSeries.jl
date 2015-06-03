@@ -169,7 +169,8 @@ function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
     return cadena
 end
 
-name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
+#name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
+name_taylorNvar(i::Int) = _params_taylorN.variable_names[i]
 
 # subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
 # and is licensed under MIT "Expat".

@@ -19,6 +19,7 @@
 type ParamsTaylorN
     maxOrder :: Int
     numVars  :: Int
+    variable_names :: Array{UTF8String,1}
 end
 
 @doc """Display the current parameters for `TaylorN` and
@@ -26,11 +27,13 @@ end
 function show_params_TaylorN()
     info( """`TaylorN` and `HomogeneousPolynomial` parameters:
     Maximum order       = $(_params_taylorN.maxOrder)
-    Number of variables = $(_params_taylorN.numVars)""" )
+    Number of variables = $(_params_taylorN.numVars)
+    Variable names = $(_params_taylorN.variable_names)
+    """)
     nothing
 end
 
-global const _params_taylorN = ParamsTaylorN(6,2)
+global const _params_taylorN = ParamsTaylorN(6,2, ["x", "y", "z", "t"])
 
 
 ## Hash tables
@@ -122,6 +125,8 @@ get_maxOrder() = _params_taylorN.maxOrder
 set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
 get_numVars() = _params_taylorN.numVars
 set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
+
+set_variable_names(names::Vector{UTF8String}) = _params_taylorN.variable_names = names
 
 function set_params_TaylorN(order::Int, numVars::Int)
     (order > 0 && numVars>=1) ||

@@ -185,6 +185,8 @@ end
 taylorN_variable(nv::Int, order::Int=_params_taylorN.maxOrder) =
     taylorN_variable(Float64, nv, order)
 
+variables() = [taylorN_variable(i) for i in 1:get_numVars()]
+
 ## get_coeff
 function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
     @assert length(v) == _params_taylorN.numVars
