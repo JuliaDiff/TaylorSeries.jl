@@ -841,7 +841,7 @@ end
 evalTaylorNew{T<:Number}(a::TaylorN{T}) = evalTaylorNew(a, zeros(T, get_numVars()))
 
 ## Evaluates HomogineousPolynomials and TaylorN on a val of the nv variable
-function hornerHomog{T<:Number,S<:Number}(a::HomogeneousPolynomial{T}, b::Tuple{Int,S} )
+function hornerHomog{T<:Number,S<:Number}(a::HomogeneousPolynomial{T}, @compat b::Tuple{Int,S} )
     nv, val = b
     numVars = get_numVars()
     @assert 1 <= nv <= numVars
@@ -873,7 +873,7 @@ function hornerHomog{T<:Number,S<:Number}(a::HomogeneousPolynomial{T}, b::Tuple{
 
     return suma
 end
-function hornerTaylorN{T<:Number,S<:Number}(a::TaylorN{T}, b::Tuple{Int,S} )
+function hornerTaylorN{T<:Number,S<:Number}(a::TaylorN{T}, @compat b::Tuple{Int,S} )
     nv, val = b
     @assert 1 <= nv <= get_numVars()
     R = promote_type(T,S)
