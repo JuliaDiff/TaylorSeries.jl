@@ -165,8 +165,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact isapprox(evalTaylor(exy, [1,1]), e^2)  => true
     @fact TaylorSeries.evalTaylorNew(exy) == 1  => true
     @fact isapprox( get_coeff(TaylorSeries.evalTaylorNew(exy, [1,1]),[0,0]), e^2)  => true
-    txy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
-    @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == txy  => true
+    txy = tan(xT+yT)
+    @fact get_coeff(txy,[8,7]) == 929569/99225  => true
+    ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
+    @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == ptxy  => true
 
     g1(xT,yT) = xT^3 + 3yT^2 - 2xT^2 * yT - 7xT + 2
     g2(xT,yT) = yT + xT^2 - xT^4
