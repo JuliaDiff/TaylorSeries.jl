@@ -71,7 +71,6 @@
 
             <!-- Search, Navigation and Repo links -->
             <ul class="nav navbar-nav navbar-right">
-                
                 <li >
                     <a rel="next" href="../background/">
                         <i class="fa fa-arrow-left"></i> Previous
@@ -101,13 +100,13 @@
             <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#users-guide">Users guide</a></li>
+        <li class="main active"><a href="#user-guide">User guide</a></li>
         
             <li><a href="#one-variable">One variable</a></li>
         
             <li><a href="#many-variables">Many variables</a></li>
         
-            <li><a href="#two-examples">Two examples</a></li>
+            <li><a href="#examples">Examples</a></li>
         
     
     </ul>
@@ -132,115 +131,110 @@
 <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
 </script>
 
-<h1 id="users-guide">Users guide</h1>
+<h1 id="user-guide">User guide</h1>
 <hr />
-<p>TaylorSeries is basically a polynomial algebraic manipulator in one and more
-variables, considering separately these cases. This is done introducing three
-new types, <code>Taylor1</code>, <code>HomogeneousPolynomial</code> and <code>TaylorN</code>, which define the
-one-independent variable
-expansions, homogeneous polynomial on various variables, and the polynomial
-series in many-independent variables, respectively. These types are subtypes
+<p><code>TaylorSeries.jl</code> can be thought of as a polynomial algebraic manipulator in one or more
+variables; these two cases are treated separately.  Three new types are defined,
+<code>Taylor1</code>, <code>HomogeneousPolynomial</code> and <code>TaylorN</code>, which correspond to
+expansions in one independent variable, homogeneous polynomials of various variables, and the polynomial
+series in many independent variables, respectively. These types are subtypes
 of <code>Number</code> and are defined parametrically.</p>
-<p>The package is loaded as usual</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="k">using</span> <span class="n">TaylorSeries</span>
-</pre></div>
+<p>The package is loaded as usual:</p>
+<pre><code class="julia">julia&gt; using TaylorSeries
+</code></pre>
 
-
-<h3 id="one-variable">One variable</h3>
+<h2 id="one-variable">One variable</h2>
 <p>Taylor expansions in one variable are represented by the <code>Taylor1</code> type, which
 consists of a vector of coefficients (field <code>coeffs</code>) and the maximum
 order considered for the expansion (field <code>order</code>). The
 coefficients are arranged in ascending order with respect to the power of the
-independent variable; then,
-<code>coeffs[1]</code> is the constant term, <code>coeffs[2]</code> corresponds to the first order,
-etc. This is clearly
-a dense representation of the polynomial. The order of the polynomial can be
-omitted in the constructor, which is
-then fixed from the length of the coefficients; otherwise it is the maximum
-among the length of the coefficients or the integer specified.</p>
-<div class="codehilite"><pre><span class="c"># Polynomial of order 2 with coefficients 1, 2, 3</span>
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">Taylor1</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
- <span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mi">3</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span>
+independent variable, so that
+<code>coeffs[1]</code> is the constant term, <code>coeffs[2]</code> gives the first order term,
+etc. This is a dense representation of the polynomial.
+The order of the polynomial can be
+omitted in the constructor, which is then fixed from the length of the
+vector of coefficients; otherwise, the maximum
+of the length of the vector of coefficients and the given integer is taken.</p>
+<pre><code class="julia">julia&gt; Taylor1([1, 2, 3]) # Polynomial of order 2 with coefficients 1, 2, 3
+ 1 + 2⋅t + 3⋅t² + 𝒪(t³)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">Taylor1</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mi">1</span><span class="nb">im</span><span class="p">])</span> <span class="c"># Also works with complex numbers</span>
- <span class="p">(</span> <span class="mf">1.0</span> <span class="nb">im</span> <span class="p">)</span><span class="err">⋅</span><span class="n">t</span>
+julia&gt; Taylor1([0.0, 1im]) # Also works with complex numbers
+ ( 1.0 im )⋅t + 𝒪(t²)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">tT</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="n">taylor1_variable</span><span class="p">(</span><span class="nb">typeof</span><span class="p">(</span><span class="n">a</span><span class="p">),</span><span class="mi">5</span><span class="p">)</span>  <span class="c">## a + t of order 5</span>
-<span class="n">tT</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+julia&gt; affine(a) = a + taylor1_variable(typeof(a),5)  ## a + t of order 5
+affine (generic function with 1 method)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">tT</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span> <span class="c"># Independent variable `t`</span>
- <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span>
-</pre></div>
+julia&gt; t = affine(0.0) # Independent variable `t`
+ 1.0⋅t + 𝒪(t⁶)
+</code></pre>
 
-
-<p>The definition of <code>tT(a)</code> above uses the function <code>taylor1_variable</code> which is a
-short cut to define the independent variable of a Taylor expansion,
-of a given type and given order. As we show below, that is one of the
+<p>Note that the information about the maximum order considered is displayed
+using a big-O notation.</p>
+<p>The definition of <code>affine(a)</code> uses the function <code>taylor1_variable</code>, which is a
+shortcut to define the independent variable of a Taylor expansion,
+with a given type and given order. As we show below, this is one of the
 easiest ways to work with the package.</p>
 <p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been
 extended to work with the <code>Taylor1</code> type, including promotions that involve
-<code>Numbers</code>. Yet, the operations have to be able to return a <em>bona fide</em> Taylor
-expansion (see the last example below, where this does not happen), which has
-the same maximum order.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="n">t</span><span class="o">+</span><span class="mf">2.5</span><span class="p">)</span>
- <span class="mf">2.5</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span>
+<code>Number</code>s. The operations return a valid Taylor expansion with the same
+maximum order; compare the last example below, where this is not possible:</p>
+<pre><code class="julia">julia&gt; t*(3t+2.5)
+ 2.5⋅t + 3.0⋅t² + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">t</span><span class="p">)</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; 1/(1-t)
+ 1.0 + 1.0⋅t + 1.0⋅t² + 1.0⋅t³ + 1.0⋅t⁴ + 1.0⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">*</span><span class="p">(</span><span class="n">t</span><span class="o">^</span><span class="mi">2</span><span class="o">-</span><span class="mi">4</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">t</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
- <span class="o">-</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span>
+julia&gt; t*(t^2-4)/(t+2)
+ - 2.0⋅t + 1.0⋅t² + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">tI</span> <span class="o">=</span> <span class="nb">im</span><span class="o">*</span><span class="n">t</span>
- <span class="p">(</span> <span class="mf">1.0</span> <span class="nb">im</span> <span class="p">)</span><span class="err">⋅</span><span class="n">t</span>
+julia&gt; tI = im*t
+ ( 1.0 im )⋅t + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">^</span><span class="mi">6</span>  <span class="c"># order is 5</span>
- <span class="mf">0.0</span>
+julia&gt; t^6  # order is 5
+ 0.0 + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">t</span><span class="p">)</span><span class="o">^</span><span class="mf">3.2</span>
- <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">3.2</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">3.5200000000000005</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">-</span> <span class="mf">1.4080000000000004</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.07040000000000009</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.011264000000000012</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; (1-t)^3.2
+ 1.0 - 3.2⋅t + 3.5200000000000005⋅t² - 1.4080000000000004⋅t³ + 0.07040000000000009⋅t⁴ + 0.011264000000000012⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">t</span><span class="p">)</span><span class="o">^</span><span class="n">t</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">-</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.8333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">-</span> <span class="mf">0.75</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; (1+t)^t
+ 1.0 + 1.0⋅t² - 0.5⋅t³ + 0.8333333333333333⋅t⁴ - 0.75⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">^</span><span class="mf">3.2</span>
-<span class="n">ERROR</span><span class="p">:</span> <span class="n">Integer</span> <span class="n">exponent</span> <span class="o">**</span><span class="n">required</span><span class="o">**</span> <span class="k">if</span> <span class="n">the</span> <span class="n">Taylor1</span> <span class="n">polynomial</span> <span class="nb">is</span> <span class="n">expanded</span>
-<span class="n">around</span> <span class="mf">0.</span>
- <span class="k">in</span> <span class="o">^</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_Taylor1</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">272</span>
-</pre></div>
+julia&gt; t^3.2
+ERROR: The 0th order Taylor1 coefficient must be non-zero
+to raise the Taylor1 polynomial to a non-integer exponent
+ in ^ at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_Taylor1.jl:280
+</code></pre>
 
-
-<p>Some elemental functions have been implemented by computing recursively their
-coefficients. So far, these functions are <code>exp</code>, <code>log</code>, <code>sqrt</code>, <code>sin</code>, <code>cos</code>
+<p>Several elementary functions have been implemented; these compute their
+coefficients recursively. So far, these functions are <code>exp</code>, <code>log</code>, <code>sqrt</code>, <code>sin</code>, <code>cos</code>
 and <code>tan</code>;
-more functions will be added in the future. Note that this way of obtaining the
+more will be added in the future. Note that this way of obtaining the
 Taylor coefficients is not the <em>laziest</em> way, in particular for many independent
-variables. Yet, it is quite efficient specially for precise integrations of
+variables. Yet, it is quite efficient, especially for the integration of
 ordinary differential equations, which is among the applications we have in mind.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+<pre><code class="julia">julia&gt; exp(t)
+ 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">log</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">t</span><span class="p">)</span>
- <span class="o">-</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">-</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">-</span> <span class="mf">0.3333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">-</span> <span class="mf">0.25</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">-</span> <span class="mf">0.2</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; log(1-t)
+ - 1.0⋅t - 0.5⋅t² - 0.3333333333333333⋅t³ - 0.25⋅t⁴ - 0.2⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-<span class="n">ERROR</span><span class="p">:</span> <span class="n">First</span> <span class="n">non</span><span class="o">-</span><span class="n">vanishing</span> <span class="n">Taylor1</span> <span class="n">coefficient</span> <span class="n">must</span> <span class="n">correspond</span> <span class="n">to</span> <span class="n">an</span> <span class="o">**</span><span class="n">even</span> <span class="n">power</span><span class="o">**</span>
-<span class="n">to</span> <span class="n">expand</span> <span class="sb">`sqrt`</span> <span class="n">around</span> <span class="mf">0.</span>
- <span class="k">in</span> <span class="n">sqrt</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_Taylor1</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">346</span>
+julia&gt; sqrt(t)
+ERROR: First non-vanishing Taylor1 coefficient must correspond
+to an **even power** in order to expand `sqrt` around 0
+ in sqrt at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_Taylor1.jl:351
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">sqrt</span><span class="p">(</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">t</span> <span class="p">)</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span> <span class="o">-</span> <span class="mf">0.125</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.0625</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">-</span> <span class="mf">0.0390625</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.02734375</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; sqrt(1 + t)
+ 1.0 + 0.5⋅t - 0.125⋅t² + 0.0625⋅t³ - 0.0390625⋅t⁴ + 0.02734375⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">imag</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">tI</span><span class="p">)</span><span class="o">&#39;</span><span class="p">)</span>
- <span class="o">-</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">-</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; imag(exp(tI)')
+ - 1.0⋅t + 0.16666666666666666⋅t³ - 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">real</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">Taylor1</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mi">1</span><span class="nb">im</span><span class="p">],</span><span class="mi">17</span><span class="p">)))</span> <span class="o">-</span> <span class="n">cos</span><span class="p">(</span><span class="n">Taylor1</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">],</span><span class="mi">17</span><span class="p">))</span> <span class="o">==</span> <span class="mf">0.0</span>
-<span class="n">true</span>
+julia&gt; real(exp(Taylor1([0.0,1im],17))) - cos(Taylor1([0.0,1.0],17)) == 0.0
+true
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="nb">convert</span><span class="p">(</span><span class="n">Taylor1</span><span class="p">{</span><span class="n">Rational</span><span class="p">{</span><span class="kt">Int64</span><span class="p">}},</span> <span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c"># output differes in v0.4</span>
- <span class="mi">1</span><span class="o">//</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">1</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">2</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">6</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">24</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mi">1</span><span class="o">//</span><span class="mi">120</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
-</pre></div>
-
+julia&gt; convert(Taylor1{Rational{Int64}}, exp(t))  # output differes in v0.4
+ 1//1 + 1//1⋅t + 1//2⋅t² + 1//6⋅t³ + 1//24⋅t⁴ + 1//120⋅t⁵ + 𝒪(t⁶)
+</code></pre>
 
 <p>Differentiating and integrating is straightforward for polynomial expansions in
 one variable. The last coefficient of a derivative is set to zero to keep the
@@ -248,62 +242,55 @@ same order as the original polynomial; for the integral, an
 integration constant may be set to a different value (the default is zero). The
 order of the resulting polynomial is not changed. The $n$-th ($n \ge 0$)
 derivative is obtained using <code>deriv(a,n)</code>, where <code>a</code> is a Taylor series;
-default is $n=1$.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span>
+the default is $n=1$.</p>
+<pre><code class="julia">julia&gt; diffTaylor(exp(t))
+ 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">integTaylor</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
- <span class="mf">1.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; integTaylor(exp(t))
+ 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">integTaylor</span><span class="p">(</span> <span class="n">ans</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span>
+julia&gt; integTaylor( ans, 1.0)
+ 1.0 + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">integTaylor</span><span class="p">(</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">)),</span> <span class="mf">1.0</span> <span class="p">)</span> <span class="o">==</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span><span class="p">)</span>
-<span class="n">true</span>
+julia&gt; integTaylor( diffTaylor( exp(-t)), 1.0 ) == exp(-t)
+true
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">deriv</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">tT</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)))</span> <span class="o">==</span> <span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="n">true</span>
+julia&gt; deriv( exp(affine(1.0))) == exp(1.0)
+true
 
-<span class="c"># Fifth derivative of `exp(1+t)`</span>
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">deriv</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">tT</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)),</span> <span class="mi">5</span><span class="p">)</span> <span class="o">==</span> <span class="n">exp</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="n">true</span>
-</pre></div>
+julia&gt; deriv( exp(affine(1.0)), 5) == exp(1.0) # Fifth derivative of `exp(1+t)`
+true
+</code></pre>
 
-
-<p>For the evaluation of Taylor series', we use Horner's rule through
-<code>evalTaylor(a::Taylor, dt::Number)</code>. Here, $dt$ is the increment with respect
-to the point $t_0$ where the Taylor expansion is calculated, i.e., the series
+<p>To evaluate a Taylor series at a point, Horner's rule is used via the function
+<code>evalTaylor(a::Taylor, dt::Number)</code>. Here, $dt$ is the increment from
+the point $t_0$ where the Taylor expansion is calculated, i.e., the series
 is evaluated at $t = t_0 + dt$. Omitting $dt$ corresponds to $dt = 0$.</p>
-<div class="codehilite"><pre><span class="c">## exp(t) around t0=1 (order 5), evaluated there (dt=0)</span>
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span> <span class="n">tT</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="p">))</span> <span class="o">-</span> <span class="n">e</span>
-<span class="mf">0.0</span>
+<pre><code class="julia">julia&gt; evalTaylor(exp(affine(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
+0.0
 
-<span class="c">## exp(t) around t0=0 (order 5), evaluated at t=1</span>
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">t</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
-<span class="o">-</span><span class="mf">0.0016151617923783057</span>
+julia&gt; evalTaylor(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
+-0.0016151617923783057
 
-<span class="c">## exp(t) around t0=0 (order 17), evaluated at t=1</span>
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span> <span class="n">taylor1_variable</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span> <span class="p">),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">e</span>
-<span class="mf">0.0</span>
+julia&gt; evalTaylor( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order 17), evaluated at t=1
+0.0
 
-<span class="c">## With BigFloats</span>
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">tBig</span> <span class="o">=</span> <span class="n">Taylor1</span><span class="p">([</span><span class="n">zero</span><span class="p">(</span><span class="n">BigFloat</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">BigFloat</span><span class="p">)],</span><span class="mi">50</span><span class="p">)</span>
- <span class="mf">1e+00</span><span class="err">⋅</span><span class="n">t</span>
+julia&gt; tBig = Taylor1([zero(BigFloat),one(BigFloat)],50) # With BigFloats
+ 1e+00⋅t + 𝒪(t⁵¹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span> <span class="n">exp</span><span class="p">(</span><span class="n">tBig</span><span class="p">),</span> <span class="n">one</span><span class="p">(</span><span class="n">BigFloat</span><span class="p">)</span> <span class="p">)</span>
-<span class="mf">2.718281828459045235360287471352662497757247093699959574966967627723419298053556e+00</span> <span class="n">with</span> <span class="mi">256</span> <span class="n">bits</span> <span class="n">of</span> <span class="n">precision</span>
+julia&gt; evalTaylor( exp(tBig), one(BigFloat) )
+2.718281828459045235360287471352662497757247093699959574966967627723419298053556e+00 with 256 bits of precision
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">e</span> <span class="o">-</span> <span class="n">ans</span>
-<span class="mf">6.573322999985292556154129119543257102601105719980995128942636339920549561322098e-67</span> <span class="n">with</span> <span class="mi">256</span> <span class="n">bits</span> <span class="n">of</span> <span class="n">precision</span>
-</pre></div>
+julia&gt; e - ans
+6.573322999985292556154129119543257102601105719980995128942636339920549561322098e-67 with 256 bits of precision
+</code></pre>
 
-
-<h3 id="many-variables">Many variables</h3>
+<h2 id="many-variables">Many variables</h2>
 <p>A polynomial in $N&gt;1$ variables can be represented in two distinct ways:
 As a vector whose coefficients are homogeneous polynomials of fixed degree, or
 as a vector whose coefficients are polynomials in $N-1$ variables. We have opted
-to implement the first option arguing it shows better performance. Yet, an elegant
-(and lazy) implementation of the second representation was discussed in the
+to implement the first option, which seems to show better performance. An elegant
+(lazy) implementation of the second representation was discussed on the
 <a href="https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ">julia-users</a> list.</p>
 <p><code>TaylorN</code> is thus constructed as a vector of parameterized homogeneous polynomials
 defined by the type <code>HomogeneousPolynomial</code>, which in turn is a vector of
@@ -314,183 +301,171 @@ variables. This is done using <code>set_params_TaylorN(maxord, numVars)</code>, 
 of the polynomial considered, and <code>numVars</code> is the number of variables;
 <code>set_maxOrder()</code> and <code>set_numVars()</code> allow to change independently each
 parameter. By default, these parameters are set to 6 and 2, respectively. The
-function <code>`show_params_TaylorN()</code> displays the actual values of these parameters.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">show_params_TaylorN</span><span class="p">()</span>
-<span class="n">INFO</span><span class="p">:</span> <span class="sb">`TaylorN`</span> <span class="n">and</span> <span class="sb">`HomogeneousPolynomial`</span> <span class="n">parameters</span><span class="p">:</span>
-    <span class="n">Maximum</span> <span class="n">order</span>       <span class="o">=</span> <span class="mi">6</span>
-    <span class="n">Number</span> <span class="n">of</span> <span class="n">variables</span> <span class="o">=</span> <span class="mi">2</span>
+function <code>`show_params_TaylorN()</code> displays the current values of these parameters.</p>
+<pre><code class="julia">julia&gt; show_params_TaylorN()
+INFO: `TaylorN` and `HomogeneousPolynomial` parameters:
+    Maximum order       = 6
+    Number of variables = 2
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">set_params_TaylorN</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">Warning</span><span class="p">:</span> <span class="n">redefining</span> <span class="n">constant</span> <span class="n">_params_taylorN</span>
-<span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
-</pre></div>
+julia&gt; set_params_TaylorN(8,2)
+Warning: redefining constant _params_taylorN
+(8,2)
+</code></pre>
 
-
-<p>Technically (internally), these values define the dictionaries which
+<p>Technically (internally), these values define dictionaries that
 translate the position of the coefficients of a <code>HomogeneousPolynomial</code>
 into the corresponding
-multi-variable monomials. Fixing these values from the beginning is imperative.</p>
+multi-variable monomials. Fixing these values from the start is imperative.</p>
 <p>The easiest way of constructing a <code>TaylorN</code> object is by defining a symbol for
 the independent variables, using the function
 <code>taylorN_variable(T::Type{T&lt;:Top}, nv::Int64, order::Int64)</code>;
 omitting the type yields a <code>TaylorN{Float64}</code> object, and omitting the order
-defaults in the maximum order. Again, the Taylor expansions are implemented
+defaults to the maximum order. Again, the Taylor expansions are implemented
 around 0 for all variables; if the expansion
 is needed around a different value, the trick is a simple translation of
 the corresponding
 independent variable $x \to x+a$.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
- <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span>
+<pre><code class="julia">julia&gt; x = taylorN_variable(1)
+ 1.0⋅x₁ + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">y</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
- <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span>
+julia&gt; y = taylorN_variable(2,6)
+ 1.0⋅x₂ + 𝒪(‖x‖⁷)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="nb">typeof</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="n">TaylorN</span><span class="p">{</span><span class="kt">Float64</span><span class="p">}</span> <span class="p">(</span><span class="n">constructor</span> <span class="n">with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+julia&gt; typeof(x)
+TaylorN{Float64} (constructor with 1 method)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">.</span><span class="n">order</span>
-<span class="mi">8</span>
+julia&gt; x.order
+8
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">x</span><span class="o">.</span><span class="n">coeffs</span>
-<span class="mi">9</span><span class="o">-</span><span class="n">element</span> <span class="n">Array</span><span class="p">{</span><span class="n">TaylorSeries</span><span class="o">.</span><span class="n">HomogeneousPolynomial</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span><span class="mi">1</span><span class="p">}:</span>
-     <span class="mf">0.0</span>
-  <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span>
-     <span class="mf">0.0</span>
-     <span class="mf">0.0</span>
-     <span class="mf">0.0</span>
-     <span class="mf">0.0</span>
-     <span class="mf">0.0</span>
-     <span class="mf">0.0</span>
-     <span class="mf">0.0</span>
+julia&gt; x.coeffs
+9-element Array{HomogeneousPolynomial{Float64},1}:
+     0.0
+  1.0⋅x₁
+     0.0
+     0.0
+     0.0
+     0.0
+     0.0
+     0.0
+     0.0
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_maxOrder</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-<span class="mi">6</span>
-</pre></div>
+julia&gt; get_maxOrder(y)
+6
+</code></pre>
 
+<p>Other ways of constructing <code>TaylorN</code> polynomials involve using <code>HomogeneousPolynomial</code>
+objects directly, which is uncomfortable:</p>
+<pre><code class="julia">julia&gt; HomogeneousPolynomial([1,-1])
+ 1⋅x₁ - 1⋅x₂
 
-<p>Other ways of constructing <code>TaylorN</code> polynomials involve directly <code>HomogeneousPolynomial</code>
-objects, which is rather uncomfortable.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
- <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">-</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span>
-
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">TaylorN</span><span class="p">(</span> <span class="p">[</span><span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])],</span> <span class="mi">4</span><span class="p">)</span>
- <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mi">2</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mi">3</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²</span>
-</pre></div>
-
+julia&gt; TaylorN( [HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 4)
+ 1⋅x₁ + 1⋅x₁² + 2⋅x₁⋅x₂ + 3⋅x₂² + 𝒪(‖x‖⁵)
+</code></pre>
 
 <p>As before, the usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>)
-have been extended to work with <code>TaylorN</code> type, including the appropriate
+have been extended to work with <code>TaylorN</code> objects, including the appropriate
 promotions to deal with numbers. (Some of the arithmetic operations have
 also been extended for
 <code>HomogeneousPolynomial</code>, whenever the result is a <code>HomogeneousPolynomial</code>;
-division,
-for instance, is not extended.) Also, the elementary functions have been
-implemented
-computing again recursively their coefficients.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">exy</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">)</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.25</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.16666666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.08333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.08333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.041666666666666664</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333333</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶</span> <span class="o">+</span> <span class="mf">0.008333333333333331</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.020833333333333332</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.027777777777777776</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.020833333333333332</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.008333333333333331</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁶</span> <span class="o">+</span> <span class="mf">0.00019841269841269839</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷</span> <span class="o">+</span> <span class="mf">0.0013888888888888885</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.004166666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.004166666666666666</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0013888888888888885</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁶</span> <span class="o">+</span> <span class="mf">0.00019841269841269839</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁷</span> <span class="o">+</span> <span class="mf">2.4801587301587298e-5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁸</span> <span class="o">+</span> <span class="mf">0.00019841269841269836</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">0.0006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂³</span> <span class="o">+</span> <span class="mf">0.0017361111111111108</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂⁴</span> <span class="o">+</span> <span class="mf">0.0013888888888888887</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂⁵</span> <span class="o">+</span> <span class="mf">0.0006944444444444443</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂⁶</span> <span class="o">+</span> <span class="mf">0.00019841269841269836</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂⁷</span> <span class="o">+</span> <span class="mf">2.4801587301587298e-5</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂⁸</span>
-</pre></div>
-
+division, for instance, is not extended.) Also, the elementary functions have been
+implemented, again by computing their coefficients recursively:</p>
+<pre><code class="julia">julia&gt; exy = exp(x+y)
+ 1.0 + 1.0⋅x₁ + 1.0⋅x₂ + 0.5⋅x₁² + 1.0⋅x₁⋅x₂ + 0.5⋅x₂² + 0.16666666666666666⋅x₁³ + 0.5⋅x₁²⋅x₂ + 0.5⋅x₁⋅x₂² + 0.16666666666666666⋅x₂³ + 0.041666666666666664⋅x₁⁴ + 0.16666666666666666⋅x₁³⋅x₂ + 0.25⋅x₁²⋅x₂² + 0.16666666666666666⋅x₁⋅x₂³ + 0.041666666666666664⋅x₂⁴ + 0.008333333333333333⋅x₁⁵ + 0.041666666666666664⋅x₁⁴⋅x₂ + 0.08333333333333333⋅x₁³⋅x₂² + 0.08333333333333333⋅x₁²⋅x₂³ + 0.041666666666666664⋅x₁⋅x₂⁴ + 0.008333333333333333⋅x₂⁵ + 0.0013888888888888887⋅x₁⁶ + 0.008333333333333331⋅x₁⁵⋅x₂ + 0.020833333333333332⋅x₁⁴⋅x₂² + 0.027777777777777776⋅x₁³⋅x₂³ + 0.020833333333333332⋅x₁²⋅x₂⁴ + 0.008333333333333331⋅x₁⋅x₂⁵ + 0.0013888888888888887⋅x₂⁶ + 0.00019841269841269839⋅x₁⁷ + 0.0013888888888888885⋅x₁⁶⋅x₂ + 0.004166666666666666⋅x₁⁵⋅x₂² + 0.006944444444444443⋅x₁⁴⋅x₂³ + 0.006944444444444443⋅x₁³⋅x₂⁴ + 0.004166666666666666⋅x₁²⋅x₂⁵ + 0.0013888888888888885⋅x₁⋅x₂⁶ + 0.00019841269841269839⋅x₂⁷ + 2.4801587301587298e-5⋅x₁⁸ + 0.00019841269841269836⋅x₁⁷⋅x₂ + 0.0006944444444444443⋅x₁⁶⋅x₂² + 0.0013888888888888887⋅x₁⁵⋅x₂³ + 0.0017361111111111108⋅x₁⁴⋅x₂⁴ + 0.0013888888888888887⋅x₁³⋅x₂⁵ + 0.0006944444444444443⋅x₁²⋅x₂⁶ + 0.00019841269841269836⋅x₁⋅x₂⁷ + 2.4801587301587298e-5⋅x₂⁸ + 𝒪(‖x‖⁹)
+</code></pre>
 
 <p>Note above that <code>y</code> has been promoted internally so the result corresponds
-to the maximum
-order among <code>x</code> and <code>y</code>. The function <code>get_coeff(a,v)</code> permits to retrieve
-the coefficient
-of <code>x</code> that corresponds to the monomial defined by the vector of powers v.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_coeff</span><span class="p">(</span><span class="n">exy</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="o">/</span><span class="mi">720</span>
-<span class="n">false</span>
+to the maximum of the orders of <code>x</code> and <code>y</code>. The function <code>get_coeff(a,v)</code>
+gives the coefficient of <code>x</code> that corresponds to the monomial
+specified by the vector of powers <code>v</code>:</p>
+<pre><code class="julia">julia&gt; get_coeff(exy, [3,5]) == 1/720
+false
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">rationalize</span><span class="p">(</span><span class="n">get_coeff</span><span class="p">(</span><span class="n">exy</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">]))</span>
-<span class="mi">1</span><span class="o">//</span><span class="mi">720</span>
-</pre></div>
+julia&gt; rationalize(get_coeff(exy, [3,5]))
+1//720
+</code></pre>
 
+<p>Partial differentiation is also implemented for
+<code>TaylorN</code> objects,
+using <code>diffTaylor</code>; integration is yet to be implemented.</p>
+<pre><code class="julia">julia&gt; f(x,y) = x^3 + 2x^2 * y - 7x + 2
+f (generic function with 1 method)
 
-<p>Partial differentiation is also implemented for many independent variables
-<code>TaylorN</code>
-using <code>diffTaylor</code>; integration is still to be implemented for <code>TaylorN</code>.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">7</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span>
-<span class="n">f</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+julia&gt; g(x,y) = y - x^4
+g (generic function with 1 method)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">^</span><span class="mi">4</span>
-<span class="n">g</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+julia&gt; diffTaylor( f(x,y), 1 )   # partial derivative with respect to 1st variable
+ - 7.0 + 3.0⋅x₁² + 4.0⋅x₁⋅x₂ + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span> <span class="mi">1</span> <span class="p">)</span>   <span class="c"># partial derivative with respect to 1st variable</span>
- <span class="o">-</span> <span class="mf">7.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span>
+julia&gt; diffTaylor( g(x,y), 2 )
+ 1.0 + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span> <span class="mi">2</span> <span class="p">)</span>
- <span class="mf">1.0</span>
-
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">diffTaylor</span><span class="p">(</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span> <span class="mi">3</span> <span class="p">)</span>   <span class="c"># an error, because we deal with 2 variables</span>
-<span class="n">ERROR</span><span class="p">:</span> <span class="n">assertion</span> <span class="n">failed</span><span class="p">:</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">r</span> <span class="o">&lt;=</span> <span class="n">numVars</span>
- <span class="k">in</span> <span class="n">diffTaylor</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_TaylorN</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">699</span>
- <span class="k">in</span> <span class="n">diffTaylor</span> <span class="n">at</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">benet</span><span class="o">/</span><span class="n">Fisica</span><span class="o">/</span><span class="mi">6</span><span class="o">-</span><span class="n">IntervalArithmetics</span><span class="o">/</span><span class="n">TaylorSeries</span><span class="o">/</span><span class="n">src</span><span class="o">/</span><span class="n">utils_TaylorN</span><span class="o">.</span><span class="n">jl</span><span class="p">:</span><span class="mi">728</span>
-</pre></div>
-
+julia&gt; diffTaylor( g(x,y), 3 )   # error, since we are dealing with 2 variables
+ERROR: assertion failed: 1 &lt;= r &lt;= _params_taylorN.numVars
+ in diffTaylor at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_TaylorN.jl:679
+ in diffTaylor at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_TaylorN.jl:709
+</code></pre>
 
 <p><code>evalTaylor</code> can also be used for <code>TaylorN</code> objects, both for vectors of
 numbers or vectors of <code>Taylor1</code> objects; the length of the vector must
 coincide with the number
 of independent variables. The implementation still needs some improvements.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="mi">2</span><span class="n">t</span><span class="p">])</span>  <span class="c"># x+y, with x=t, y=2t</span>
- <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span>
+<pre><code class="julia">julia&gt; evalTaylor(x+y, [t, 2t])  # x+y, with x=t, y=2t
+ 3.0⋅t + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span><span class="n">exy</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="p">,</span><span class="mi">2</span><span class="n">t</span><span class="p">])</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">3.375</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">2.025</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span> <span class="o">+</span> <span class="mf">1.0125</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁶</span> <span class="o">+</span> <span class="mf">0.43392857142857133</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁷</span> <span class="o">+</span> <span class="mf">0.16272321428571423</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁸</span>
+julia&gt; evalTaylor(exy, [t,2t])
+ 1.0 + 3.0⋅t + 4.5⋅t² + 4.5⋅t³ + 3.375⋅t⁴ + 2.025⋅t⁵ + 𝒪(t⁶)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">exp</span><span class="p">(</span><span class="mf">3.0</span><span class="o">*</span><span class="n">taylor1_variable</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
- <span class="mf">1.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">t</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">²</span> <span class="o">+</span> <span class="mf">4.5</span><span class="err">⋅</span><span class="n">t</span><span class="err">³</span> <span class="o">+</span> <span class="mf">3.375</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁴</span> <span class="o">+</span> <span class="mf">2.025</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁵</span> <span class="o">+</span> <span class="mf">1.0125</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁶</span> <span class="o">+</span> <span class="mf">0.4339285714285714</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁷</span> <span class="o">+</span> <span class="mf">0.16272321428571426</span><span class="err">⋅</span><span class="n">t</span><span class="err">⁸</span>
-</pre></div>
+julia&gt; exp(3.0*taylor1_variable(8))
+ 1.0 + 3.0⋅t + 4.5⋅t² + 4.5⋅t³ + 3.375⋅t⁴ + 2.025⋅t⁵ + 1.0125⋅t⁶ + 0.4339285714285714⋅t⁷ + 0.16272321428571426⋅t⁸ + 𝒪(t⁹)
+</code></pre>
 
-
-<p>We have also implemented functions to compute the gradient, Jacobian and
-Hessian. Using the
+<p>Functions to compute the gradient, Jacobian and
+Hessian have also been implemented. Using the
 functions $f(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $g(x,y) = y-x^4$ defined above,
-we may use <code>∇</code> ("\nabla"+TAB) or <code>TaylorSeries.gradient</code>; the results are of
-type
-<code>Array{TaylorN{T},1}</code>. To compute the Jacobian or Hessian of a vector field
-evaluated on a point we use <code>jacobian</code> and <code>hessian</code>.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">f1</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
- <span class="mf">2.0</span> <span class="o">-</span> <span class="mf">7.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span>
+we may use <code>∇</code> (<code>\nabla+TAB</code>) or <code>TaylorSeries.gradient</code>; the results are of
+type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian or Hessian of a vector field
+evaluated at a point, we use <code>jacobian</code> and <code>hessian</code>:</p>
+<pre><code class="julia">julia&gt; f1 = f(x,y)
+ 2.0 - 7.0⋅x₁ + 1.0⋅x₁³ + 2.0⋅x₁²⋅x₂ + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">g1</span> <span class="o">=</span> <span class="n">g</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
- <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span>
+julia&gt; g1 = g(x,y)
+ 1.0⋅x₂ - 1.0⋅x₁⁴ + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="err">∇</span><span class="p">(</span><span class="n">f1</span><span class="p">)</span>
-<span class="mi">2</span><span class="o">-</span><span class="n">element</span> <span class="n">Array</span><span class="p">{</span><span class="n">TaylorN</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span><span class="mi">1</span><span class="p">}:</span>
-  <span class="o">-</span> <span class="mf">7.0</span> <span class="o">+</span> <span class="mf">3.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span>
-                      <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span>
+julia&gt; ∇(f1)
+2-element Array{TaylorN{Float64},1}:
+  - 7.0 + 3.0⋅x₁² + 4.0⋅x₁⋅x₂ + 𝒪(‖x‖⁹)
+                      2.0⋅x₁² + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">gradient</span><span class="p">(</span> <span class="n">g1</span> <span class="p">)</span>
-<span class="mi">2</span><span class="o">-</span><span class="n">element</span> <span class="n">Array</span><span class="p">{</span><span class="n">TaylorN</span><span class="p">{</span><span class="kt">Float64</span><span class="p">},</span><span class="mi">1</span><span class="p">}:</span>
-  <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span>
-        <span class="mf">1.0</span>
+julia&gt; gradient( g1 )
+2-element Array{TaylorN{Float64},1}:
+  - 4.0⋅x₁³ + 𝒪(‖x‖⁹)
+        1.0 + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">jacobian</span><span class="p">([</span><span class="n">f1</span><span class="p">,</span><span class="n">g1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
-<span class="mi">2</span><span class="n">x2</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Float64</span><span class="p">,</span><span class="mi">2</span><span class="p">}:</span>
-  <span class="mf">13.0</span>  <span class="mf">8.0</span>
- <span class="o">-</span><span class="mf">32.0</span>  <span class="mf">1.0</span>
+julia&gt; jacobian([f1,g1], [2,1])
+2x2 Array{Float64,2}:
+  13.0  8.0
+ -32.0  1.0
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">fg</span> <span class="o">=</span> <span class="n">f1</span><span class="o">-</span><span class="n">g1</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">f1</span><span class="o">*</span><span class="n">g1</span>
- <span class="mf">2.0</span> <span class="o">-</span> <span class="mf">7.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">-</span> <span class="mf">5.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">14.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">1.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">5.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span> <span class="o">-</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">-</span> <span class="mf">14.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂</span>
+julia&gt; fg = f1-g1-2*f1*g1
+ 2.0 - 7.0⋅x₁ - 5.0⋅x₂ + 14.0⋅x₁⋅x₂ + 1.0⋅x₁³ + 2.0⋅x₁²⋅x₂ + 5.0⋅x₁⁴ - 2.0⋅x₁³⋅x₂ - 4.0⋅x₁²⋅x₂² - 14.0⋅x₁⁵ + 2.0⋅x₁⁷ + 4.0⋅x₁⁶⋅x₂ + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">hessian</span><span class="p">(</span><span class="n">ans</span><span class="p">)</span>
-<span class="mi">2</span><span class="n">x2</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Float64</span><span class="p">,</span><span class="mi">2</span><span class="p">}:</span>
-  <span class="mf">0.0</span>  <span class="mf">14.0</span>
- <span class="mf">14.0</span>   <span class="mf">0.0</span>
+julia&gt; hessian(ans)
+2x2 Array{Float64,2}:
+  0.0  14.0
+ 14.0   0.0
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">evalTaylor</span><span class="p">(</span><span class="n">fg</span><span class="p">,</span> <span class="p">[</span><span class="n">x</span><span class="o">+</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">y</span><span class="o">+</span><span class="mf">1.0</span><span class="p">])</span>
- <span class="o">-</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="mf">12.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span> <span class="o">+</span> <span class="mf">5.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">13.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²</span> <span class="o">+</span> <span class="mf">20.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">29.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³</span> <span class="o">+</span> <span class="mf">48.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">8.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">65.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴</span> <span class="o">+</span> <span class="mf">78.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁³⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">-</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₂²</span> <span class="o">+</span> <span class="mf">52.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵</span> <span class="o">+</span> <span class="mf">60.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁴⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">18.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶</span> <span class="o">+</span> <span class="mf">24.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁵⋅</span><span class="n">x</span><span class="err">₂</span> <span class="o">+</span> <span class="mf">2.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁷</span> <span class="o">+</span> <span class="mf">4.0</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁⁶⋅</span><span class="n">x</span><span class="err">₂</span>
+julia&gt; evalTaylor(fg, [x+1.0, y+1.0])
+ - 2.0 - 12.0⋅x₁ + 5.0⋅x₂ - 13.0⋅x₁² + 20.0⋅x₁⋅x₂ - 4.0⋅x₂² + 29.0⋅x₁³ + 48.0⋅x₁²⋅x₂ - 8.0⋅x₁⋅x₂² + 65.0⋅x₁⁴ + 78.0⋅x₁³⋅x₂ - 4.0⋅x₁²⋅x₂² + 52.0⋅x₁⁵ + 60.0⋅x₁⁴⋅x₂ + 18.0⋅x₁⁶ + 24.0⋅x₁⁵⋅x₂ + 2.0⋅x₁⁷ + 4.0⋅x₁⁶⋅x₂ + 𝒪(‖x‖⁹)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">hessian</span><span class="p">(</span><span class="n">fg</span><span class="p">,</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">])</span>
-<span class="mi">2</span><span class="n">x2</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Float64</span><span class="p">,</span><span class="mi">2</span><span class="p">}:</span>
- <span class="o">-</span><span class="mf">26.0</span>  <span class="mf">20.0</span>
-  <span class="mf">20.0</span>  <span class="o">-</span><span class="mf">8.0</span>
-</pre></div>
+julia&gt; hessian(fg, [1.0,1.0])
+2x2 Array{Float64,2}:
+ -26.0  20.0
+  20.0  -8.0
+</code></pre>
 
-
-<h3 id="two-examples">Two examples</h3>
-<h4 id="1-four-square-identity">1. Four-square identity</h4>
-<p>The first example described below, shows that the four-square identity holds
+<h2 id="examples">Examples</h2>
+<h3 id="1-four-square-identity">1. Four-square identity</h3>
+<p>The first example described below, shows that the four-square identity holds:
 \begin{eqnarray}
 (a_1+a_2+a_3+a_4)\cdot(b_1+b_2+b_3+b_4) &amp; = &amp;
      (a_1 b_1 - a_2 b_2 - a_3 b_3 -a_4 b_4)^2 + \qquad \nonumber \\
@@ -499,138 +474,130 @@ evaluated on a point we use <code>jacobian</code> and <code>hessian</code>.</p>
   &amp; &amp; (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 + \nonumber \\
   &amp; &amp; (a_1 b_4 - a_2 b_3 - a_3 b_2 -a_4 b_1)^2, \nonumber
 \end{eqnarray}
-as proved by Euler. The code can we found as one of the tests of the package.</p>
+as proved by Euler. The code can we found in one of the tests of the package.</p>
 <p>First, we reset the maximum degree of the polynomial to 4, since the RHS
 of the equation
 has <em>a priori</em> terms of fourth order, and the number of independent variables to
 8.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">set_params_TaylorN</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
-<span class="n">Warning</span><span class="p">:</span> <span class="n">redefining</span> <span class="n">constant</span> <span class="n">_params_taylorN</span>
-<span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
-</pre></div>
+<pre><code class="julia">julia&gt; set_params_TaylorN(4,8)
+Warning: redefining constant _params_taylorN
+(4,8)
+</code></pre>
 
+<p>Next, we define the 8 independent variables</p>
+<pre><code class="julia">julia&gt; for i=1:4
+           ai = symbol(string(&quot;a&quot;,i))
+           bi = symbol(string(&quot;b&quot;,i))
+           @eval ($ai) = taylorN_variable(Int,$i,4)
+           @eval ($bi) = taylorN_variable(Int,4+($i),4)
+       end
 
-<p>Next, we define <em>all</em> the 8 independent variables</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="k">for</span> <span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span>
-        <span class="n">ai</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">(</span><span class="n">string</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
-        <span class="n">bi</span> <span class="o">=</span> <span class="n">symbol</span><span class="p">(</span><span class="n">string</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">))</span>
-        <span class="p">@</span><span class="n">eval</span> <span class="p">(</span><span class="o">$</span><span class="n">ai</span><span class="p">)</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="kt">Int</span><span class="p">,</span><span class="o">$</span><span class="n">i</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
-        <span class="p">@</span><span class="n">eval</span> <span class="p">(</span><span class="o">$</span><span class="n">bi</span><span class="p">)</span> <span class="o">=</span> <span class="n">taylorN_variable</span><span class="p">(</span><span class="kt">Int</span><span class="p">,</span><span class="mi">4</span><span class="o">+</span><span class="p">(</span><span class="o">$</span><span class="n">i</span><span class="p">),</span><span class="mi">4</span><span class="p">)</span>
-    <span class="k">end</span>
+julia&gt; a1
+ 1⋅x₁ + 𝒪(‖x‖⁵)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">a1</span>
- <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁</span>
+julia&gt; b1
+ 1⋅x₅ + 𝒪(‖x‖⁵)
+</code></pre>
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">b1</span>
- <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₅</span>
-</pre></div>
+<p>followed by the distinct terms that appear in (\ref{eq:Euler}):</p>
+<pre><code class="julia">julia&gt; expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
 
+julia&gt; expr_lhs2 = b1^2 + b2^2 + b3^2 + b4^2 ;
 
-<p>following with the distinct terms that appear in (\ref{eq:Euler})</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_lhs1</span> <span class="o">=</span> <span class="n">a1</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">a2</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">a3</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">a4</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+julia&gt; expr_rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2 ;
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_lhs2</span> <span class="o">=</span> <span class="n">b1</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b2</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b3</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b4</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+julia&gt; expr_rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2 ;
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs1</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b1</span> <span class="o">-</span> <span class="n">a2</span><span class="o">*</span><span class="n">b2</span> <span class="o">-</span> <span class="n">a3</span><span class="o">*</span><span class="n">b3</span> <span class="o">-</span> <span class="n">a4</span><span class="o">*</span><span class="n">b4</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+julia&gt; expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2 ;
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs2</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b2</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">b1</span> <span class="o">+</span> <span class="n">a3</span><span class="o">*</span><span class="n">b4</span> <span class="o">-</span> <span class="n">a4</span><span class="o">*</span><span class="n">b3</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+julia&gt; expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2 ;
+</code></pre>
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs3</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b3</span> <span class="o">-</span> <span class="n">a2</span><span class="o">*</span><span class="n">b4</span> <span class="o">+</span> <span class="n">a3</span><span class="o">*</span><span class="n">b1</span> <span class="o">+</span> <span class="n">a4</span><span class="o">*</span><span class="n">b2</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
+<p>and, finally, check that the LHS is equal to the RHS:</p>
+<pre><code class="julia">julia&gt; lhs = expr_lhs1 * expr_lhs2
+ 1⋅x₁²⋅x₅² + 1⋅x₂²⋅x₅² + 1⋅x₃²⋅x₅² + 1⋅x₄²⋅x₅² + 1⋅x₁²⋅x₆² + 1⋅x₂²⋅x₆² + 1⋅x₃²⋅x₆² + 1⋅x₄²⋅x₆² + 1⋅x₁²⋅x₇² + 1⋅x₂²⋅x₇² + 1⋅x₃²⋅x₇² + 1⋅x₄²⋅x₇² + 1⋅x₁²⋅x₈² + 1⋅x₂²⋅x₈² + 1⋅x₃²⋅x₈² + 1⋅x₄²⋅x₈² + 𝒪(‖x‖⁵)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">expr_rhs4</span> <span class="o">=</span> <span class="p">(</span><span class="n">a1</span><span class="o">*</span><span class="n">b4</span> <span class="o">+</span> <span class="n">a2</span><span class="o">*</span><span class="n">b3</span> <span class="o">-</span> <span class="n">a3</span><span class="o">*</span><span class="n">b2</span> <span class="o">+</span> <span class="n">a4</span><span class="o">*</span><span class="n">b1</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span> <span class="p">;</span>
-</pre></div>
+julia&gt; rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
+ 1⋅x₁²⋅x₅² + 1⋅x₂²⋅x₅² + 1⋅x₃²⋅x₅² + 1⋅x₄²⋅x₅² + 1⋅x₁²⋅x₆² + 1⋅x₂²⋅x₆² + 1⋅x₃²⋅x₆² + 1⋅x₄²⋅x₆² + 1⋅x₁²⋅x₇² + 1⋅x₂²⋅x₇² + 1⋅x₃²⋅x₇² + 1⋅x₄²⋅x₇² + 1⋅x₁²⋅x₈² + 1⋅x₂²⋅x₈² + 1⋅x₃²⋅x₈² + 1⋅x₄²⋅x₈² + 𝒪(‖x‖⁵)
 
-
-<p>and, finally, check that the lhs is equal to the rhs</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">lhs</span> <span class="o">=</span> <span class="n">expr_lhs1</span> <span class="o">*</span> <span class="n">expr_lhs2</span>
- <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₈²</span>
-
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">rhs</span> <span class="o">=</span> <span class="n">expr_rhs1</span> <span class="o">+</span> <span class="n">expr_rhs2</span> <span class="o">+</span> <span class="n">expr_rhs3</span> <span class="o">+</span> <span class="n">expr_rhs4</span>
- <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₅²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₆²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₇²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₁²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₂²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₃²⋅</span><span class="n">x</span><span class="err">₈²</span> <span class="o">+</span> <span class="mi">1</span><span class="err">⋅</span><span class="n">x</span><span class="err">₄²⋅</span><span class="n">x</span><span class="err">₈²</span>
-
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">lhs</span> <span class="o">==</span> <span class="n">rhs</span>
-<span class="n">true</span>
-</pre></div>
-
+julia&gt; lhs == rhs
+true
+</code></pre>
 
 <p>The identity is satisfied $\square$.</p>
-<h4 id="2-fatemans-test">2. Fateman's test</h4>
-<p>Richard J. Fateman, from Berkley, proposed as good test to check
-polynomial multiplication
-to evaluate $s*(s+1)$ explicitly, with $s = (1+x+y+z+w)^{20}$. This is
+<h3 id="2-fatemans-test">2. Fateman's test</h3>
+<p>Richard J. Fateman, from Berkley, proposed as a stringent test
+of polynomial multiplication
+the evaluation of $s*(s+1)$, where $s = (1+x+y+z+w)^{20}$. This is
 implemented in
-the function <code>fatema1</code>. We shall also evaluate the form $s^2+s$ in <code>fateman2</code>,
-which involves less operations (and makes a fair comparison to what
-Mathematica does). Below we use julia v0.4-dev, because it is faster than v0.3.</p>
-<div class="codehilite"><pre><span class="n">julia</span><span class="o">&gt;</span> <span class="n">set_params_TaylorN</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>   <span class="c"># maxOrder = 40; numVars = 4</span>
-<span class="n">Warning</span><span class="p">:</span> <span class="n">redefining</span> <span class="n">constant</span> <span class="n">_params_taylorN</span>
-<span class="p">(</span><span class="mi">40</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+the function <code>fateman1</code>. We shall also evaluate the form $s^2+s$ in <code>fateman2</code>,
+which involves fewer operations (and makes a fairer comparison to what
+Mathematica does). Below we use Julia v0.4, since it is faster than v0.3.</p>
+<pre><code class="julia">julia&gt; set_params_TaylorN(40,4)   # maxOrder = 40; numVars = 4
+(40,4)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="k">function</span><span class="nf"> fateman1</span><span class="p">(</span><span class="n">ndeg</span><span class="p">::</span><span class="kt">Int</span><span class="p">)</span>
-           <span class="n">T</span> <span class="o">=</span> <span class="n">Int128</span>
-           <span class="n">unoH</span> <span class="o">=</span> <span class="n">HomogeneousPolynomial</span><span class="p">(</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span> <span class="p">[</span><span class="n">unoH</span><span class="p">,</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">)],</span><span class="mi">1</span><span class="p">)],</span> <span class="n">ndeg</span> <span class="p">)</span>
-           <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">^</span><span class="n">ndeg</span>
-           <span class="c"># s is converted to order 2*ndeg</span>
-           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">2</span><span class="n">ndeg</span><span class="p">)</span>
-           <span class="k">return</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">s</span><span class="o">+</span><span class="n">TaylorN</span><span class="p">(</span><span class="n">unoH</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">ndeg</span><span class="p">))</span>
-       <span class="k">end</span>
-<span class="n">fateman1</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+julia&gt; function fateman1(ndeg::Int)
+           T = Int128
+           unoH = HomogeneousPolynomial(one(T), 0)
+           s = TaylorN( [unoH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], ndeg )
+           s = s^ndeg
+           # s is converted to order 2*ndeg
+           s = TaylorN(s, 2ndeg)
+           return s * (s+TaylorN(unoH, 2*ndeg))
+       end
+fateman1 (generic function with 1 method)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f1</span> <span class="o">=</span> <span class="n">fateman1</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">0.234384068</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">11</span> <span class="n">MB</span> <span class="n">allocated</span><span class="p">)</span>
+julia&gt; @time f1 = fateman1(0);
+   7.379 milliseconds (8346 allocations: 361 KB)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f1</span> <span class="o">=</span> <span class="n">fateman1</span><span class="p">(</span><span class="mi">20</span><span class="p">);</span>
-<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">9.137480042</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">69</span> <span class="n">MB</span> <span class="n">allocated</span><span class="p">,</span> <span class="mf">0.17</span><span class="o">%</span> <span class="n">gc</span> <span class="n">time</span> <span class="k">in</span> <span class="mi">3</span> <span class="n">pauses</span> <span class="n">with</span> <span class="mi">0</span> <span class="n">full</span> <span class="n">sweep</span><span class="p">)</span>
+julia&gt; @time f1 = fateman1(20);
+   9.339 seconds      (6150 allocations: 58698 KB, 0.07% gc time)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_coeff</span><span class="p">(</span><span class="n">f1</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">])</span>
-<span class="mi">128358585324486316800</span>
+julia&gt; get_coeff(f1,[1,6,7,20])
+128358585324486316800
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">ans</span> <span class="o">&gt;</span> <span class="nb">typemax</span><span class="p">(</span><span class="kt">Int</span><span class="p">)</span>  <span class="c"># this is the reason for using Int128</span>
-<span class="n">true</span>
+julia&gt; ans &gt; typemax(Int)  # this is the reason for using Int128
+true
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="k">function</span><span class="nf"> fateman2</span><span class="p">(</span><span class="n">ndeg</span><span class="p">::</span><span class="kt">Int</span><span class="p">)</span>
-           <span class="n">T</span> <span class="o">=</span> <span class="n">Int128</span>
-           <span class="n">unoH</span> <span class="o">=</span> <span class="n">HomogeneousPolynomial</span><span class="p">(</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
-           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span> <span class="p">[</span><span class="n">unoH</span><span class="p">,</span> <span class="n">HomogeneousPolynomial</span><span class="p">([</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">),</span><span class="n">one</span><span class="p">(</span><span class="n">T</span><span class="p">)],</span><span class="mi">1</span><span class="p">)],</span> <span class="n">ndeg</span> <span class="p">)</span>
-           <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">^</span><span class="n">ndeg</span>
-           <span class="c"># s is converted to order 2*ndeg</span>
-           <span class="n">s</span> <span class="o">=</span> <span class="n">TaylorN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">2</span><span class="n">ndeg</span><span class="p">)</span>
-           <span class="k">return</span> <span class="n">s</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">s</span>
-       <span class="k">end</span>
-<span class="n">fateman2</span> <span class="p">(</span><span class="n">generic</span> <span class="k">function</span><span class="nf"> with</span> <span class="mi">1</span> <span class="n">method</span><span class="p">)</span>
+julia&gt; function fateman2(ndeg::Int)
+           T = Int128
+           unoH = HomogeneousPolynomial(one(T), 0)
+           s = TaylorN( [unoH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], ndeg )
+           s = s^ndeg
+           # s is converted to order 2*ndeg
+           s = TaylorN(s, 2ndeg)
+           return s^2 + s
+       end
+fateman2 (generic function with 1 method)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f2</span> <span class="o">=</span> <span class="n">fateman2</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">0.008165855</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">299</span> <span class="n">kB</span> <span class="n">allocated</span><span class="p">)</span>
+julia&gt; @time f2 = fateman2(0);
+  10.840 milliseconds (6805 allocations: 297 KB, 41.42% gc time)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="p">@</span><span class="n">time</span> <span class="n">f2</span> <span class="o">=</span> <span class="n">fateman2</span><span class="p">(</span><span class="mi">20</span><span class="p">);</span>
-<span class="n">elapsed</span> <span class="n">time</span><span class="p">:</span> <span class="mf">4.783816084</span> <span class="n">seconds</span> <span class="p">(</span><span class="mi">116</span> <span class="n">MB</span> <span class="n">allocated</span><span class="p">,</span> <span class="mf">0.30</span><span class="o">%</span> <span class="n">gc</span> <span class="n">time</span> <span class="k">in</span> <span class="mi">6</span> <span class="n">pauses</span> <span class="n">with</span> <span class="mi">0</span> <span class="n">full</span> <span class="n">sweep</span><span class="p">)</span>
+julia&gt; @time f2 = fateman2(20);
+   4.737 seconds      (4870 allocations: 42049 KB, 0.09% gc time)
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">get_coeff</span><span class="p">(</span><span class="n">f2</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">20</span><span class="p">])</span>
-<span class="mi">128358585324486316800</span>
+julia&gt; get_coeff(f2,[1,6,7,20])
+128358585324486316800
 
-<span class="n">julia</span><span class="o">&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">TaylorSeries</span><span class="o">.</span><span class="n">sizeTable</span><span class="p">)</span> <span class="c"># number of distinct monomials</span>
-<span class="mi">135751</span>
-</pre></div>
+julia&gt; sum(TaylorSeries.sizeTable) # number of distinct monomials
+135751
+</code></pre>
 
-
-<p>The tests above show the necessity of using <code>Int128</code> integers, and that
+<p>The tests above show the necessity of using integers of type <code>Int128</code>, and that
 <code>fateman2</code> is
-about twice as fast in comparison with <code>fateman1</code>, as it was mentioned. We
-mention
-that comparing <code>fateman2</code> against Mathematica, our implementation is roughly
-1.5 times slower than Mathematica, which spends 3.22 sec.</p></div>
+about twice as fast as <code>fateman1</code>. We
+mention that our implementation of <code>fateman2</code> is roughly
+1.5 times slower than Mathematica, which takes 3.22 sec.</p></div>
         </div>
 
 	<footer class="col-md-12">
 		<hr>
 		
-		<p>Copyright &copy; 2014, 2015, Luis Benet and David P. Sanders</p>
+		<center>Copyright &copy; 2014, 2015, Luis Benet and David P. Sanders</center>
 		
-		<p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+		<center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
 	</footer>
 
-        
 
         <script src="../js/jquery-1.10.2.min.js"></script>
         <script src="../js/bootstrap-3.0.3.min.js"></script>
