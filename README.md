@@ -21,7 +21,7 @@ Comments, suggestions and improvements are welcome and appreciated.
 
 #### Documentation
 
-The documentation is available [here](http://lbenet.github.io/TaylorSeries.jl/). 
+The documentation is available [here](http://www.juliadiff.org/TaylorSeries.jl/). 
 Some examples can also found in the examples directory.
 
 #### License
