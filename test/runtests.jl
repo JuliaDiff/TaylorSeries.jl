@@ -75,9 +75,9 @@ facts("Tests for Taylor1 expansions") do
     @fact (exp(t))^Taylor1(-5.2im) == cos(5.2t)-im*sin(5.2t)  => true
     @fact abs((tan(t)).coeffs[8]- 17/315) < tol1  => true
     @fact abs((tan(t)).coeffs[14]- 21844/6081075) < tol1  => true
-    @fact evalTaylor(exp(Taylor1([0,1],17)),1.0) == 1.0*e  => true
-    @fact evalTaylor(exp(Taylor1([0,1],1))) == 1.0  => true
-    @fact evalTaylor(exp(t),t^2) == exp(t^2)  => true
+    @fact evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e  => true
+    @fact evaluate(exp(Taylor1([0,1],1))) == 1.0  => true
+    @fact evaluate(exp(t),t^2) == exp(t^2)  => true
 
     @fact deriv( exp(ta(1.0)), 5 ) == exp(1.0)  => true
     @fact deriv( exp(ta(1.0pi)), 3 ) == exp(1.0pi)  => true
@@ -161,10 +161,11 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact real( exp(1im * xT)) == cos(xT)  => true
     @fact imag((exp(yT))^(-1im)') == sin(yT)  => true
     exy = exp( xT+yT )
-    @fact evalTaylor(exy) == 1  => true
-    @fact isapprox(evalTaylor(exy, [1,1]), e^2)  => true
-    @fact TaylorSeries.evalTaylorNew(exy) == 1  => true
-    @fact isapprox( get_coeff(TaylorSeries.evalTaylorNew(exy, [1,1]),[0,0]), e^2)  => true
+    @fact evaluate(exy) == 1  => true
+    @fact isapprox(evaluate(exy, [1,1]), e^2)  => true
+    @fact TaylorSeries.evaluateNew(exy) == 1  => true
+    @fact isapprox( get_coeff(TaylorSeries.evaluateNew(exy, [1,1]),[0,0]),
+        e^2)  => true
     txy = tan(xT+yT)
     @fact get_coeff(txy,[8,7]) == 929569/99225  => true
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2

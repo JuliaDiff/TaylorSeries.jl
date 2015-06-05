@@ -521,7 +521,7 @@ end
 integTaylor{T<:Number}(a::Taylor1{T}) = integTaylor(a, zero(T))
 
 ## Evaluates a Taylor1 polynomial on a given point using Horner's rule ##
-function evalTaylor{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
+function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
     @inbounds suma = convert(R, a.coeffs[end])
     @inbounds for k = a.order:-1:1
@@ -529,9 +529,9 @@ function evalTaylor{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     end
     suma
 end
-evalTaylor{T<:Number}(a::Taylor1{T}) = evalTaylor(a, zero(T))
+evaluate{T<:Number}(a::Taylor1{T}) = a.coeffs[1]
 
-function evalTaylor{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
+function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
     a, x = fixshape(a, x)
     @inbounds suma = a.coeffs[end]
     @inbounds for k = a.order:-1:1
