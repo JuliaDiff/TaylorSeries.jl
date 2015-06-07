@@ -39,7 +39,9 @@ export taylor1_variable, taylorN_variable, get_coeff,
     diffTaylor, integTaylor, evaluate, deriv,
     set_params_TaylorN, show_params_TaylorN,
     set_maxOrder, get_maxOrder, set_numVars, get_numVars,
+    set_variables,
     ∇, jacobian, hessian
+
 
 
 include("utils_Taylor1.jl")

@@ -126,7 +126,32 @@ set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
 get_numVars() = _params_taylorN.numVars
 set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
 
-set_variable_names(names::Vector{UTF8String}) = _params_taylorN.variable_names = names
+set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names = names
+
+function set_variables{T}(names::Vector{T}, order=6)
+    set_variable_names(names)
+    set_numVars(length(names))
+    set_maxOrder(order)
+
+    [taylorN_variable(i) for i in 1:get_numVars()]
+end
+
+function set_variables{T<:String}(names::T, order=6; numvars=-1)
+    variable_names = split(names)
+    if length(variable_names) == 1 && numvars >= 1
+        name=variable_names[1]
+        variable_names = [string(name, subscriptify(i)) for i in 1:numvars]
+    end
+
+    variables = set_variables(variable_names, order)
+
+    set_maxOrder(order)
+
+    variables
+
+end
+
+
 
 function set_params_TaylorN(order::Int, numVars::Int)
     (order > 0 && numVars>=1) ||
@@ -135,7 +160,7 @@ function set_params_TaylorN(order::Int, numVars::Int)
         return order, numVars
     oldOrder = _params_taylorN.maxOrder
     oldVars = _params_taylorN.numVars
-    global _params_taylorN = ParamsTaylorN(order, numVars)
+    global _params_taylorN = ParamsTaylorN(order, numVars, _params_taylorN.variable_names)
 
     resize!(indicesTable,order+1)
     resize!(sizeTable,order+1)
