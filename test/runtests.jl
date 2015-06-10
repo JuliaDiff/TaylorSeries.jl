@@ -297,4 +297,6 @@ facts("High order polynomials test inspired by Fateman (takes a few seconds))") 
     @fact get_coeff(f2,[1,6,7,20]) == c --> true
 end
 
+include("taylorrec_tests.jl")
+
 exitstatus()
