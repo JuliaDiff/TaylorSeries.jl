@@ -25,10 +25,10 @@ end
 @doc """Display the current parameters for `TaylorN` and
 `HomogeneousPolynomial`""" ->
 function show_params_TaylorN()
-    info( """`TaylorN` and `HomogeneousPolynomial` parameters:
+    info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
     Maximum order       = $(_params_taylorN.maxOrder)
     Number of variables = $(_params_taylorN.numVars)
-    Variable names = $(_params_taylorN.variable_names)
+    Variable names      = $(_params_taylorN.variable_names)
     """)
     nothing
 end
@@ -131,6 +131,9 @@ gc();
 
 get_variable_names() = _params_taylorN.variable_names
 set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names = names
+
+@doc doc"""`set_variables` sets the names and number of the Taylor variables,
+as well as the order of the Taylor expansion.""" ->
 
 function set_variables{T}(names::Vector{T}; order=6)
 

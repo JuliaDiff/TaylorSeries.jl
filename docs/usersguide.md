@@ -189,7 +189,7 @@ julia> e - ans
 
 ## Many variables
 
-A polynomial in $N>1$ variables can be represented in two distinct ways:
+A polynomial in $N>1$ variables can be represented in (at least) two ways:
 As a vector whose coefficients are homogeneous polynomials of fixed degree, or
 as a vector whose coefficients are polynomials in $N-1$ variables. We have opted
 to implement the first option, which seems to show better performance. An elegant
@@ -199,78 +199,93 @@ to implement the first option, which seems to show better performance. An elegan
 `TaylorN` is thus constructed as a vector of parameterized homogeneous polynomials
 defined by the type `HomogeneousPolynomial`, which in turn is a vector of
 coefficients of given order (degree). This implementation imposes that the user
-has to specify the maximum order and the maximum number of independent
-variables. This is done using `set_params_TaylorN(maxord, numVars)`, where
-`maxord` is the maximum order (degree)
-of the polynomial considered, and `numVars` is the number of variables;
-`set_maxOrder()` and `set_numVars()` allow to change independently each
-parameter. By default, these parameters are set to 6 and 2, respectively. The
-function ``show_params_TaylorN()` displays the current values of these parameters.
+has to specify the (maximum) order and the number of independent
+variables, which is done using the `set_variables(names)` function.
+`names` is a string consisting of the desired *output* names of the variables,
+separated by spaces. A vector of the resulting Taylor variables is returned:
+
+```julia
+julia> x, y = set_variables("x y")
+2-element Array{TaylorSeries.TaylorN{Float64},1}:
+  1.0 x + 𝒪(‖x‖⁷)
+  1.0 y + 𝒪(‖x‖⁷)
+```
+
+The resulting objects are of `TaylorN{Float64}` type:
+
+julia> x
+1.0 x + 𝒪(‖x‖⁷)
+
+julia> typeof(x)
+TaylorSeries.TaylorN{Float64}
+
+julia> x.order
+6
+
+julia> x.coeffs
+7-element Array{TaylorSeries.HomogeneousPolynomial{Float64},1}:
+   0.0
+ 1.0 x
+   0.0
+   0.0
+   0.0
+   0.0
+   0.0
+```
+
+There is an optional `order` keyword argument for `set_variables`:
+
+```julia
+julia> set_variables("x y", order=10)
+2-element Array{TaylorSeries.TaylorN{Float64},1}:
+  1.0 x + 𝒪(‖x‖¹¹)
+  1.0 y + 𝒪(‖x‖¹¹)
+```
+
+Numbered variables are also available by specifying a single
+variable name and the optional keyword argument `numvars`:
+```julia
+julia> set_variables("α", numvars=3)
+3-element Array{TaylorSeries.TaylorN{Float64},1}:
+  1.0 α₁ + 𝒪(‖x‖⁷)
+  1.0 α₂ + 𝒪(‖x‖⁷)
+  1.0 α₃ + 𝒪(‖x‖⁷)
+```
+
+The function ``show_params_TaylorN()` displays the current values of the parameters:
 
 ```julia
 julia> show_params_TaylorN()
-INFO: `TaylorN` and `HomogeneousPolynomial` parameters:
-    Maximum order       = 6
-    Number of variables = 2
-
-julia> set_params_TaylorN(8,2)
-Warning: redefining constant _params_taylorN
-(8,2)
+INFO: Parameters for `TaylorN` and `HomogeneousPolynomial`:
+Maximum order       = 6
+Number of variables = 2
+Variable names      = UTF8String["x","y"]
 ```
 
-Technically (internally), these values define dictionaries that
+Technically (internally), changing these parameters defines dictionaries that
 translate the position of the coefficients of a `HomogeneousPolynomial`
 into the corresponding
 multi-variable monomials. Fixing these values from the start is imperative.
 
-The easiest way of constructing a `TaylorN` object is by defining a symbol for
-the independent variables, using the function
-`taylorN_variable(T::Type{T<:Top}, nv::Int64, order::Int64)`;
-omitting the type yields a `TaylorN{Float64}` object, and omitting the order
-defaults to the maximum order. Again, the Taylor expansions are implemented
+The easiest way to construct a `TaylorN` object is by defining symbols for
+the independent variables, as above. Again, the Taylor expansions are implemented
 around 0 for all variables; if the expansion
 is needed around a different value, the trick is a simple translation of
 the corresponding
 independent variable $x \to x+a$.
 
-```julia
-julia> x = taylorN_variable(1)
- 1.0⋅x₁ + 𝒪(‖x‖⁹)
-
-julia> y = taylorN_variable(2,6)
- 1.0⋅x₂ + 𝒪(‖x‖⁷)
-
-julia> typeof(x)
-TaylorN{Float64} (constructor with 1 method)
-
-julia> x.order
-8
-
-julia> x.coeffs
-9-element Array{HomogeneousPolynomial{Float64},1}:
-     0.0
-  1.0⋅x₁
-     0.0
-     0.0
-     0.0
-     0.0
-     0.0
-     0.0
-     0.0
-
-julia> get_maxOrder(y)
-6
-```
 
 Other ways of constructing `TaylorN` polynomials involve using `HomogeneousPolynomial`
 objects directly, which is uncomfortable:
 
 ```julia
+julia> set_variables("x", numvars=2);
+
 julia> HomogeneousPolynomial([1,-1])
- 1⋅x₁ - 1⋅x₂
+ 1 x₁ - 1 x₂
 
 julia> TaylorN( [HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 4)
- 1⋅x₁ + 1⋅x₁² + 2⋅x₁⋅x₂ + 3⋅x₂² + 𝒪(‖x‖⁵)
+ 1 x₁ + 1x₁² + 2 x₁ x₂ + 3 x₂² + 𝒪(‖x‖⁵)
 ```
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
@@ -282,6 +297,9 @@ division, for instance, is not extended.) Also, the elementary functions have be
 implemented, again by computing their coefficients recursively:
 
 ```julia
+
+julia> x, y = set_variables("x", numvars=2);
+
 julia> exy = exp(x+y)
  1.0 + 1.0⋅x₁ + 1.0⋅x₂ + 0.5⋅x₁² + 1.0⋅x₁⋅x₂ + 0.5⋅x₂² + 0.16666666666666666⋅x₁³ + 0.5⋅x₁²⋅x₂ + 0.5⋅x₁⋅x₂² + 0.16666666666666666⋅x₂³ + 0.041666666666666664⋅x₁⁴ + 0.16666666666666666⋅x₁³⋅x₂ + 0.25⋅x₁²⋅x₂² + 0.16666666666666666⋅x₁⋅x₂³ + 0.041666666666666664⋅x₂⁴ + 0.008333333333333333⋅x₁⁵ + 0.041666666666666664⋅x₁⁴⋅x₂ + 0.08333333333333333⋅x₁³⋅x₂² + 0.08333333333333333⋅x₁²⋅x₂³ + 0.041666666666666664⋅x₁⋅x₂⁴ + 0.008333333333333333⋅x₂⁵ + 0.0013888888888888887⋅x₁⁶ + 0.008333333333333331⋅x₁⁵⋅x₂ + 0.020833333333333332⋅x₁⁴⋅x₂² + 0.027777777777777776⋅x₁³⋅x₂³ + 0.020833333333333332⋅x₁²⋅x₂⁴ + 0.008333333333333331⋅x₁⋅x₂⁵ + 0.0013888888888888887⋅x₂⁶ + 0.00019841269841269839⋅x₁⁷ + 0.0013888888888888885⋅x₁⁶⋅x₂ + 0.004166666666666666⋅x₁⁵⋅x₂² + 0.006944444444444443⋅x₁⁴⋅x₂³ + 0.006944444444444443⋅x₁³⋅x₂⁴ + 0.004166666666666666⋅x₁²⋅x₂⁵ + 0.0013888888888888885⋅x₁⋅x₂⁶ + 0.00019841269841269839⋅x₂⁷ + 2.4801587301587298e-5⋅x₁⁸ + 0.00019841269841269836⋅x₁⁷⋅x₂ + 0.0006944444444444443⋅x₁⁶⋅x₂² + 0.0013888888888888887⋅x₁⁵⋅x₂³ + 0.0017361111111111108⋅x₁⁴⋅x₂⁴ + 0.0013888888888888887⋅x₁³⋅x₂⁵ + 0.0006944444444444443⋅x₁²⋅x₂⁶ + 0.00019841269841269836⋅x₁⋅x₂⁷ + 2.4801587301587298e-5⋅x₂⁸ + 𝒪(‖x‖⁹)
 ```
