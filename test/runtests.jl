@@ -98,13 +98,17 @@ facts("Tests for Taylor1 expansions") do
 end
 
 facts("Tests for HomogeneousPolynomial and TaylorN") do
-    set_params_TaylorN(6,2)
-    @fact set_numVars(2) == (6,2)  => true
-    @fact set_maxOrder(6) == (6,2)  => true
+
+    x, y = set_variables("x", numvars=2, order=6)
+
     @fact get_maxOrder() == 6  => true
     @fact get_numVars() == 2  => true
 
-    set_params_TaylorN(17,2)
+    @fact x.order == 6 => true
+
+
+    set_variables("x", numvars=2, order=17)
+
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
     xT = TaylorN(xH,17)
@@ -187,22 +191,25 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do
-    @fact set_params_TaylorN(4,8) == (4,8)  => true  # order 4, 8 variables
-    # This creates symbols :a1, :b1, ... :a4, :b4 which are independent variables
-    for i=1:4
-        ai = symbol(string("a",i))
-        bi = symbol(string("b",i))
-        @eval ($ai) = taylorN_variable(Int,$i,4)
-        @eval ($bi) = taylorN_variable(Int,4+($i),4)
-    end
+
+    make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))
+
+    variable_names = [make_variable("α", i) for i in 1:4]
+    append!(variable_names, [make_variable("β", i) for i in 1:4])
+
+    a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4)
+
     expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2
     expr_lhs2 = b1^2 + b2^2 + b3^2 + b4^2
     lhs = expr_lhs1 * expr_lhs2
+
     expr_rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2
     expr_rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2
     expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2
     expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2
+
     rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
+
     @fact lhs == rhs  => true
 end
 
