@@ -1,6 +1,6 @@
 site_name: TaylorSeries.jl
 
-site_description: [TaylorSeries.jl: A julia package to manipulate Taylor expansions]
+site_description: 'TaylorSeries.jl: A julia package to manipulate Taylor expansions'
 
 repo_url: https://github.com/lbenet/TaylorSeries.jl
 
@@ -9,11 +9,12 @@ theme: bootstrap
 
 #extra_css: ['css/github.css']
 
-markdown_extensions: [codehilite, toc]
+markdown_extensions:
+    - toc
 
 copyright: Copyright &copy; 2014, 2015, Luis Benet and David P. Sanders
 
 pages:
-- ['index.md', 'Home']
-- ['background.md', 'Background']
-- ['usersguide.md', 'Users guide']
+    - 'Home': 'index.md'
+    - 'Background': 'background.md'
+    - 'Users guide': 'usersguide.md'
