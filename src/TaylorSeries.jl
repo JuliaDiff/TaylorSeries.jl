@@ -37,8 +37,8 @@ import Base: zero, one, zeros, ones,
 export Taylor1, TaylorN, HomogeneousPolynomial
 export taylor1_variable, taylorN_variable, get_coeff,
     diffTaylor, integTaylor, evaluate, deriv,
-    set_params_TaylorN, show_params_TaylorN,
-    set_maxOrder, get_maxOrder, set_numVars, get_numVars,
+    show_params_TaylorN,
+    get_maxOrder, get_numVars,
     set_variables,
     ∇, jacobian, hessian
 
