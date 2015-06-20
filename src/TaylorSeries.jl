@@ -43,6 +43,23 @@ export taylor1_variable, taylorN_variable, get_coeff,
     ∇, jacobian, hessian
 
 
+# subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
+# and is licensed under MIT "Expat".
+# superscriptify is a small variation
+
+const subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
+const superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
+
+function subscriptify(n::Int)
+    dig = reverse(digits(n))
+    join([subscript_digits[i+1] for i in dig])
+end
+function superscriptify(n::Int)
+    dig = reverse(digits(n))
+    join([superscript_digits[i+1] for i in dig])
+end
+
+
 
 include("utils_Taylor1.jl")
 include("hashtables.jl")
@@ -174,19 +191,6 @@ end
 #name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
 name_taylorNvar(i::Int) = string(" ", _params_taylorN.variable_names[i])
 
-# subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
-# and is licensed under MIT "Expat".
-# superscriptify is a small variation
-function subscriptify(n::Int)
-    subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
-    dig = reverse(digits(n))
-    join([subscript_digits[i+1] for i in dig])
-end
-function superscriptify(n::Int)
-    superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
-    dig = reverse(digits(n))
-    join([superscript_digits[i+1] for i in dig])
-end
 
 # summary
 summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")

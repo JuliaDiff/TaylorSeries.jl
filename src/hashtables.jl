@@ -33,7 +33,9 @@ function show_params_TaylorN()
     nothing
 end
 
-global const _params_taylorN = ParamsTaylorN(6, 2, [])
+global const _params_taylorN = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
+
+
 
 
 ## Utilities to get/set the maximum order and number of variables;
@@ -132,6 +134,9 @@ gc();
 get_variable_names() = _params_taylorN.variable_names
 set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names = names
 
+
+
+
 @doc doc"""`set_variables` sets the names and number of the Taylor variables,
 as well as the order of the Taylor expansion.""" ->
 
@@ -174,8 +179,6 @@ function set_variables{T<:String}(names::T; order=6, numvars=-1)
     set_variables(variable_names, order=order)
 
 end
-
-
 
 
 
