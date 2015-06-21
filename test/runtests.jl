@@ -75,9 +75,9 @@ facts("Tests for Taylor1 expansions") do
     @fact (exp(t))^Taylor1(-5.2im) == cos(5.2t)-im*sin(5.2t)  => true
     @fact abs((tan(t)).coeffs[8]- 17/315) < tol1  => true
     @fact abs((tan(t)).coeffs[14]- 21844/6081075) < tol1  => true
-    @fact evalTaylor(exp(Taylor1([0,1],17)),1.0) == 1.0*e  => true
-    @fact evalTaylor(exp(Taylor1([0,1],1))) == 1.0  => true
-    @fact evalTaylor(exp(t),t^2) == exp(t^2)  => true
+    @fact evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e  => true
+    @fact evaluate(exp(Taylor1([0,1],1))) == 1.0  => true
+    @fact evaluate(exp(t),t^2) == exp(t^2)  => true
 
     @fact deriv( exp(ta(1.0)), 5 ) == exp(1.0)  => true
     @fact deriv( exp(ta(1.0pi)), 3 ) == exp(1.0pi)  => true
@@ -160,10 +160,13 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact (1+xT)^(3//2) == ((1+xT)^0.5)^3  => true
     @fact real( exp(1im * xT)) == cos(xT)  => true
     @fact imag((exp(yT))^(-1im)') == sin(yT)  => true
-    @fact evalTaylor(exp( xT+yT )) == 1  => true
-    @fact isapprox(evalTaylor(exp( xT+yT ), [1,1]), e^2)  => true
-    txy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
-    @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == txy  => true
+    exy = exp( xT+yT )
+    @fact evaluate(exy) == 1  => true
+    @fact isapprox(evaluate(exy, [1,1]), e^2)  => true
+    txy = tan(xT+yT)
+    @fact get_coeff(txy,[8,7]) == 929569/99225  => true
+    ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
+    @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == ptxy  => true
 
     g1(xT,yT) = xT^3 + 3yT^2 - 2xT^2 * yT - 7xT + 2
     g2(xT,yT) = yT + xT^2 - xT^4
@@ -182,7 +185,7 @@ end
 
 facts("Testing an identity proved by Euler (8 variables)") do
     @fact set_params_TaylorN(4,8) == (4,8)  => true  # order 4, 8 variables
-    # This creates symbols :a1, :b1, ... :a4, :b4 which are independent variables
+    # This creates independent variables as symbols :a1, :b1, ... :a4, :b4
     for i=1:4
         ai = symbol(string("a",i))
         bi = symbol(string("b",i))
@@ -198,6 +201,8 @@ facts("Testing an identity proved by Euler (8 variables)") do
     expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2
     rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
     @fact lhs == rhs  => true
+    v = randn(8)
+    @fact evaluate( rhs, v) == evaluate( lhs, v)  => true
 end
 
 exitstatus()
