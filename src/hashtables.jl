@@ -19,18 +19,32 @@
 type ParamsTaylorN
     maxOrder :: Int
     numVars  :: Int
+    variable_names :: Array{UTF8String,1}
 end
 
 @doc """Display the current parameters for `TaylorN` and
 `HomogeneousPolynomial`""" ->
 function show_params_TaylorN()
-    info( """`TaylorN` and `HomogeneousPolynomial` parameters:
+    info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
     Maximum order       = $(_params_taylorN.maxOrder)
-    Number of variables = $(_params_taylorN.numVars)""" )
+    Number of variables = $(_params_taylorN.numVars)
+    Variable names      = $(_params_taylorN.variable_names)
+    """)
     nothing
 end
 
-global const _params_taylorN = ParamsTaylorN(6,2)
+global const _params_taylorN = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
+
+
+
+
+## Utilities to get/set the maximum order and number of variables;
+## they reset the hash tables
+get_maxOrder() = _params_taylorN.maxOrder
+# set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
+
+get_numVars() = _params_taylorN.numVars
+# set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
 
 
 ## Hash tables
@@ -49,8 +63,9 @@ global const _params_taylorN = ParamsTaylorN(6,2)
   (lexicographic) position of the corresponding monomial.
 """ ->
 function generateTables()
-    maxOrd = _params_taylorN.maxOrder
-    numVars = _params_taylorN.numVars
+    maxOrd = get_maxOrder()
+    numVars = get_numVars()
+
     arrayInd  = Array(Dict{Int,Array{Int,1}},maxOrd+1)
     arraySize = Array(Int,maxOrd+1)
     arrayPos  = Array(Dict{UInt,Int},maxOrd+1)
@@ -116,28 +131,70 @@ const indicesTable, sizeTable, posTable = generateTables()
 gc();
 
 
-## Utilities to get/set the maximum order and number of variables;
-## they reset the hash tables
-get_maxOrder() = _params_taylorN.maxOrder
-set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
-get_numVars() = _params_taylorN.numVars
-set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
+get_variable_names() = _params_taylorN.variable_names
+set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names = names
 
-function set_params_TaylorN(order::Int, numVars::Int)
-    (order > 0 && numVars>=1) ||
-        error("Incorrect order (<0) or number of variables (>=1)")
-    order == _params_taylorN.maxOrder && numVars == _params_taylorN.numVars &&
-        return order, numVars
-    oldOrder = _params_taylorN.maxOrder
-    oldVars = _params_taylorN.numVars
-    global _params_taylorN = ParamsTaylorN(order, numVars)
 
-    resize!(indicesTable,order+1)
-    resize!(sizeTable,order+1)
-    resize!(posTable,order+1)
-    indicesTable[:], sizeTable[:], posTable[:] = generateTables()
-    gc();
-    # show_params_TaylorN()
 
-    return order, numVars
+
+@doc doc"""`set_variables` sets the names and number of the Taylor variables,
+as well as the order of the Taylor expansion.""" ->
+
+function set_variables{T}(names::Vector{T}; order=6)
+
+    order >= 1 || error("Order must be at least 1")
+
+    num_vars = length(names)
+    num_vars >= 1 || error("Number of variables must be at least 1")
+
+    _params_taylorN.variable_names = names
+
+    if !(order == _params_taylorN.maxOrder && num_vars == _params_taylorN.numVars)
+        # if these are unchanged, no need to regenerate tables
+
+        _params_taylorN.maxOrder = order
+        _params_taylorN.numVars = num_vars
+
+        resize!(indicesTable,order+1)
+        resize!(sizeTable,order+1)
+        resize!(posTable,order+1)
+
+        indicesTable[:], sizeTable[:], posTable[:] = generateTables()
+        gc();
+    end
+
+    # return a list of the new variables
+    [taylorN_variable(i) for i in 1:get_numVars()]
 end
+
+
+function set_variables{T<:String}(names::T; order=6, numvars=-1)
+    variable_names = split(names)
+
+    if length(variable_names) == 1 && numvars >= 1
+        name = variable_names[1]
+        variable_names = [string(name, subscriptify(i)) for i in 1:numvars]
+    end
+
+    set_variables(variable_names, order=order)
+
+end
+
+
+
+# function set_params_TaylorN(order::Int, numVars::Int)
+#     (order > 0 && numVars>=1) ||
+#         error("Incorrect order (<0) or number of variables (>=1)")
+
+#     order == _params_taylorN.maxOrder && numVars == _params_taylorN.numVars &&
+#         return order, numVars
+#     global _params_taylorN = ParamsTaylorN(order, numVars, _params_taylorN.variable_names)
+
+#     resize!(indicesTable,order+1)
+#     resize!(sizeTable,order+1)
+#     resize!(posTable,order+1)
+#     indicesTable[:], sizeTable[:], posTable[:] = generateTables()
+#     gc();
+
+#     return order, numVars
+# end

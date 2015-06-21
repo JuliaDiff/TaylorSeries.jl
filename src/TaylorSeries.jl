@@ -37,9 +37,28 @@ import Base: zero, one, zeros, ones,
 export Taylor1, TaylorN, HomogeneousPolynomial
 export taylor1_variable, taylorN_variable, get_coeff,
     diffTaylor, integTaylor, evaluate, deriv,
-    set_params_TaylorN, show_params_TaylorN,
-    set_maxOrder, get_maxOrder, set_numVars, get_numVars,
+    show_params_TaylorN,
+    get_maxOrder, get_numVars,
+    set_variables,
     ∇, jacobian, hessian
+
+
+# subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
+# and is licensed under MIT "Expat".
+# superscriptify is a small variation
+
+const subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
+const superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
+
+function subscriptify(n::Int)
+    dig = reverse(digits(n))
+    join([subscript_digits[i+1] for i in dig])
+end
+function superscriptify(n::Int)
+    dig = reverse(digits(n))
+    join([superscript_digits[i+1] for i in dig])
+end
+
 
 
 include("utils_Taylor1.jl")
@@ -169,21 +188,9 @@ function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
     return cadena
 end
 
-name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
+#name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
+name_taylorNvar(i::Int) = string(" ", _params_taylorN.variable_names[i])
 
-# subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
-# and is licensed under MIT "Expat".
-# superscriptify is a small variation
-function subscriptify(n::Int)
-    subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
-    dig = reverse(digits(n))
-    join([subscript_digits[i+1] for i in dig])
-end
-function superscriptify(n::Int)
-    superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
-    dig = reverse(digits(n))
-    join([superscript_digits[i+1] for i in dig])
-end
 
 # summary
 summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
