@@ -762,61 +762,27 @@ hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numVars()) )
 
 ## TODO: Integration...
 
-## Evaluates a Taylor polynomial on a given point ##
-# NEEDS REVISION since results are not quite precise
-function evaluate{T<:Number,S<:Number}(a::HomogeneousPolynomial{T},
-        vals::Array{S,1} )
+#=
+Evaluates a Taylor polynomial on a given point, by applying Horner's
+rule in each variable. Returns the independent coefficient of the
+TaylorN result.
+=#
+function evaluate{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
+    vals::Array{S,1} )
 
     numVars = get_numVars()
     @assert length(vals) == numVars
     R = promote_type(T,S)
-    suma = zero(R)
-    order = a.order
-    @inbounds indTb = indicesTable[order+1]
-    num_coeffs = sizeTable[order+1]
+    suma = convert(TaylorN{R}, a)
 
-    for pos = num_coeffs:-1:1
-        @inbounds iIndices = indTb[pos]
-        @inbounds c = a.coeffs[pos]
-        c == zero(R) && continue
-        @inbounds for k = 1:numVars
-            c *= vals[k]^iIndices[k]
-        end
-        suma += c
+    for nv = 1:numVars
+        suma = horner(suma, (nv, vals[nv]))
     end
 
-    return suma
+    return suma.coeffs[1].coeffs[1]
 end
 
 function evaluate{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
-    @assert length(vals) == get_numVars()
-    R = promote_type(T,S)
-    suma = zero(R)
-
-    for ord = a.order:-1:0
-        @inbounds polH = a.coeffs[ord+1]
-        suma += evaluate( polH, vals )
-    end
-
-    return suma
-end
-
-evaluate{T<:Number}(a::TaylorN{T}) = a.coeffs[1].coeffs[1]
-
-#=
-WIP: improve evaluate
-
-evaluate (above) yields *not so accurate* results due to accumulation of
-round-off errors. Below, I implement a different algorithm (evaluateNew),
-which essentially consists on applying Horner's rule for one variable.
-
-So far, this has only be tested in 2-variable expansions.
-
-Functions are not exported
-=#
-function evaluateNew{T<:Number,S<:Number}(a::HomogeneousPolynomial{T},
-        vals::Array{S,1} )
-
     numVars = get_numVars()
     @assert length(vals) == numVars
     R = promote_type(T,S)
@@ -826,23 +792,10 @@ function evaluateNew{T<:Number,S<:Number}(a::HomogeneousPolynomial{T},
         suma = horner(suma, (nv, vals[nv]))
     end
 
-    return suma
+    return suma.coeffs[1].coeffs[1]
 end
 
-function evaluateNew{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
-    numVars = get_numVars()
-    @assert length(vals) == numVars
-    R = promote_type(T,S)
-    suma = convert(TaylorN{R}, a)
-
-    for nv = 1:numVars
-        suma = horner(suma, (nv, vals[nv]))
-    end
-
-    return suma
-end
-
-evaluateNew{T<:Number}(a::TaylorN{T}) = evaluateNew(a, zeros(T, get_numVars()))
+evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numVars()))
 
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable

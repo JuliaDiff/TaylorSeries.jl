@@ -167,9 +167,6 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     exy = exp( xT+yT )
     @fact evaluate(exy) == 1  => true
     @fact isapprox(evaluate(exy, [1,1]), e^2)  => true
-    @fact TaylorSeries.evaluateNew(exy) == 1  => true
-    @fact isapprox( get_coeff(TaylorSeries.evaluateNew(exy, [1,1]),[0,0]),
-        e^2)  => true
     txy = tan(xT+yT)
     @fact get_coeff(txy,[8,7]) == 929569/99225  => true
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
@@ -191,7 +188,6 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do
-
     make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))
 
     variable_names = [make_variable("α", i) for i in 1:4]
@@ -211,6 +207,8 @@ facts("Testing an identity proved by Euler (8 variables)") do
     rhs = rhs1 + rhs2 + rhs3 + rhs4
 
     @fact lhs == rhs  => true
+    v = randn(8)
+    @fact evaluate( rhs, v) == evaluate( lhs, v)  => true
 end
 
 exitstatus()
