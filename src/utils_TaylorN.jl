@@ -782,7 +782,9 @@ function evaluate{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     return suma.coeffs[1].coeffs[1]
 end
 
-function evaluate{T<:Number,S<:Number}(a::TaylorN{T}, vals::Array{S,1} )
+function evaluate{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
+    vals::Array{S,1} )
+
     numVars = get_numVars()
     @assert length(vals) == numVars
     R = promote_type(T,S)
@@ -799,8 +801,8 @@ evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numVars()))
 
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable
-function horner{T<:Number,S<:Number}(a::HomogeneousPolynomial{T},
-        @compat b::Tuple{Int,S} )
+function horner{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
+    @compat b::Tuple{Int,S} )
 
     nv, val = b
     numVars = get_numVars()
@@ -834,7 +836,7 @@ function horner{T<:Number,S<:Number}(a::HomogeneousPolynomial{T},
     return suma
 end
 
-function horner{T<:Number,S<:Number}(a::TaylorN{T},
+function horner{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
     @compat b::Tuple{Int,S} )
 
     nv, val = b
@@ -850,8 +852,8 @@ function horner{T<:Number,S<:Number}(a::TaylorN{T},
 end
 
 @doc """
-Returns the vector position (of the homogeneous-polynomial) of order `order`, where
-the variable `nv` has order `ord`
+Returns the vector position (of the homogeneous-polynomial) of order `order`,
+where the variable `nv` has order `ord`
 """ ->
 function order_posTb(order::Int, nv::Int, ord::Int)
     @assert order <= get_maxOrder()
