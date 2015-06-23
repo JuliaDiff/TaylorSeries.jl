@@ -17,4 +17,4 @@ copyright: Copyright &copy; 2014, 2015, Luis Benet and David P. Sanders
 pages:
     - 'Home': 'index.md'
     - 'Background': 'background.md'
-    - 'Users guide': 'usersguide.md'
+    - 'User guide': 'user_guide.md'
