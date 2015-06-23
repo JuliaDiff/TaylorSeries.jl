@@ -33,30 +33,38 @@ deriv( exp(affine(1.0))) == exp(1.0)
 deriv( exp(affine(1.0)), 5) == exp(1.0) # Fifth derivative of `exp(1+t)`
 
 
-evalTaylor(exp(affine(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
-evalTaylor(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
-evalTaylor( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order 17), evaluated at t=1
+evaluate(exp(affine(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
+evaluate(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
+evaluate( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order 17), evaluated at t=1
 tBig = Taylor1([zero(BigFloat),one(BigFloat)],50) # With BigFloats
-evalTaylor( exp(tBig), one(BigFloat) )
+evaluate( exp(tBig), one(BigFloat) )
 e - ans
 
 
-show_params_TaylorN()
-set_params_TaylorN(8,2)
+x, y = set_variables("x y")
 
 
-x = taylorN_variable(1)
-y = taylorN_variable(2,6)
+x
 typeof(x)
 x.order
 x.coeffs
-get_maxOrder(y)
 
 
+set_variables("x y", order=10)
+
+
+set_variables("α", numvars=3)
+
+
+show_params_TaylorN()
+
+
+set_variables("x", numvars=2);
 HomogeneousPolynomial([1,-1])
 TaylorN( [HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 4)
 
 
+x, y = set_variables("x", numvars=2, order=10);
 exy = exp(x+y)
 
 
@@ -71,9 +79,11 @@ diffTaylor( g(x,y), 2 )
 diffTaylor( g(x,y), 3 )   # error, since we are dealing with 2 variables
 
 
-evalTaylor(x+y, [t, 2t])  # x+y, with x=t, y=2t
-evalTaylor(exy, [t,2t])
-exp(3.0*taylor1_variable(8))
+
+# NEEDS RE-IMPLEMENTATION
+# evaluate(x+y, [t, 2t])  # x+y, with x=t, y=2t
+# evaluate(exy, [t,2t])
+# exp(3.0*taylor1_variable(8))
 
 
 f1 = f(x,y)
@@ -83,61 +93,75 @@ gradient( g1 )
 jacobian([f1,g1], [2,1])
 fg = f1-g1-2*f1*g1
 hessian(ans)
-evalTaylor(fg, [x+1.0, y+1.0])
+fg1 = f(x+1.0,y+1.0)-g(x+1.0,y+1.0)-2*f(x+1.0,y+1.0)*g(x+1.0,y+1.0)
 hessian(fg, [1.0,1.0])
+ans == hessian(fg1)
 
 
 
 
 
-set_params_TaylorN(4,8)
+# set_params_TaylorN(4,8)
+#
+# for i=1:4
+#     ai = symbol(string("a",i))
+#     bi = symbol(string("b",i))
+#     @eval ($ai) = taylorN_variable(Int,$i,4)
+#     @eval ($bi) = taylorN_variable(Int,4+($i),4)
+# end
+# a1
+# b1
 
-for i=1:4
-    ai = symbol(string("a",i))
-    bi = symbol(string("b",i))
-    @eval ($ai) = taylorN_variable(Int,$i,4)
-    @eval ($bi) = taylorN_variable(Int,4+($i),4)
-end
+# Define the variables α₁, ..., α₄, β₁, ..., β₄
+make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))
+variable_names = [make_variable("α", i) for i in 1:4]
+append!(variable_names, [make_variable("β", i) for i in 1:4])
+# Create the Taylor objects (order 4, numvars=8)
+a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4);
 a1
-b1
 
 
-expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
-expr_lhs2 = b1^2 + b2^2 + b3^2 + b4^2 ;
-expr_rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2 ;
-expr_rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2 ;
-expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2 ;
-expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2 ;
+lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
+lhs2 = b1^2 + b2^2 + b3^2 + b4^2 ;
+rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2 ;
+rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2 ;
+rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2 ;
+rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2 ;
 
 
-lhs = expr_lhs1 * expr_lhs2
-rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
+lhs = lhs1 * lhs2
+rhs = rhs1 + rhs2 + rhs3 + rhs4
 lhs == rhs
 
 
 
 
-set_params_TaylorN(40,4)   # maxOrder = 40; numVars = 4
-function fateman1(ndeg::Int)
+# change number of variables and maxOrder
+set_variables("x", numvars=4, order=40)
+function fateman1(degree::Int)
     T = Int128
-    unoH = HomogeneousPolynomial(one(T), 0)
-    s = TaylorN( [unoH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], ndeg )
-    s = s^ndeg
+    oneH = HomogeneousPolynomial(one(T), 0)
+    # s = 1 + x + y + z + w
+    s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
+    s = s^degree
     # s is converted to order 2*ndeg
-    s = TaylorN(s, 2ndeg)
-    return s * (s+TaylorN(unoH, 2*ndeg))
+    s = TaylorN(s, 2*degree)
+
+    s * ( s+TaylorN(oneH, 2*degree) )
 end
 @time f1 = fateman1(0);
 @time f1 = fateman1(20);
 get_coeff(f1,[1,6,7,20])
 ans > typemax(Int)  # this is the reason for using Int128
-function fateman2(ndeg::Int)
+
+
+function fateman2(degree::Int)
     T = Int128
-    unoH = HomogeneousPolynomial(one(T), 0)
-    s = TaylorN( [unoH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], ndeg )
-    s = s^ndeg
+    oneH = HomogeneousPolynomial(one(T), 0)
+    s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
+    s = s^degree
     # s is converted to order 2*ndeg
-    s = TaylorN(s, 2ndeg)
+    s = TaylorN(s, 2*degree)
     return s^2 + s
 end
 @time f2 = fateman2(0);
