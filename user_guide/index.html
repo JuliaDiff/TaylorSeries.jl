@@ -9,7 +9,7 @@
         
         <link rel="shortcut icon" href="../img/favicon.ico">
 
-	<title>Users guide - TaylorSeries.jl</title>
+	<title>User guide - TaylorSeries.jl</title>
 
         <link href="../css/bootstrap-3.0.3.min.css" rel="stylesheet">
         <link href="../css/font-awesome-4.0.3.css" rel="stylesheet">
@@ -63,7 +63,7 @@
             
             
                 <li class="active">
-                    <a href="./">Users guide</a>
+                    <a href="./">User guide</a>
                 </li>
             
             
@@ -202,7 +202,7 @@ julia&gt; (1+t)^t
 julia&gt; t^3.2
 ERROR: The 0th order Taylor1 coefficient must be non-zero
 to raise the Taylor1 polynomial to a non-integer exponent
- in ^ at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_Taylor1.jl:280
+ in ^ at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_Taylor1.jl:280
 </code></pre>
 
 <p>Several elementary functions have been implemented; these compute their
@@ -221,7 +221,7 @@ julia&gt; log(1-t)
 julia&gt; sqrt(t)
 ERROR: First non-vanishing Taylor1 coefficient must correspond
 to an **even power** in order to expand `sqrt` around 0
- in sqrt at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_Taylor1.jl:351
+ in sqrt at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_Taylor1.jl:351
 
 julia&gt; sqrt(1 + t)
  1.0 + 0.5⋅t - 0.125⋅t² + 0.0625⋅t³ - 0.0390625⋅t⁴ + 0.02734375⋅t⁵ + 𝒪(t⁶)
@@ -266,19 +266,19 @@ true
 <code>evalTaylor(a::Taylor, dt::Number)</code>. Here, $dt$ is the increment from
 the point $t_0$ where the Taylor expansion is calculated, i.e., the series
 is evaluated at $t = t_0 + dt$. Omitting $dt$ corresponds to $dt = 0$.</p>
-<pre><code class="julia">julia&gt; evalTaylor(exp(affine(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
+<pre><code class="julia">julia&gt; evaluate(exp(affine(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
 0.0
 
-julia&gt; evalTaylor(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
+julia&gt; evaluate(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
 -0.0016151617923783057
 
-julia&gt; evalTaylor( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order 17), evaluated at t=1
+julia&gt; evaluate( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order 17), evaluated at t=1
 0.0
 
 julia&gt; tBig = Taylor1([zero(BigFloat),one(BigFloat)],50) # With BigFloats
  1e+00⋅t + 𝒪(t⁵¹)
 
-julia&gt; evalTaylor( exp(tBig), one(BigFloat) )
+julia&gt; evaluate( exp(tBig), one(BigFloat) )
 2.718281828459045235360287471352662497757247093699959574966967627723419298053556e+00 with 256 bits of precision
 
 julia&gt; e - ans
@@ -300,33 +300,35 @@ variables, which is done using the <code>set_variables(names)</code> function.
 <code>names</code> is a string consisting of the desired <em>output</em> names of the variables,
 separated by spaces. A vector of the resulting Taylor variables is returned:</p>
 <pre><code class="julia">julia&gt; x, y = set_variables(&quot;x y&quot;)
-2-element Array{TaylorSeries.TaylorN{Float64},1}:
+2-element Array{TaylorN{Float64},1}:
   1.0 x + 𝒪(‖x‖⁷)
   1.0 y + 𝒪(‖x‖⁷)
 </code></pre>
 
 <p>The resulting objects are of <code>TaylorN{Float64}</code> type:</p>
-<p>julia&gt; x
-1.0 x + 𝒪(‖x‖⁷)</p>
-<p>julia&gt; typeof(x)
-TaylorSeries.TaylorN{Float64}</p>
-<p>julia&gt; x.order
-6</p>
-<p>julia&gt; x.coeffs
-7-element Array{TaylorSeries.HomogeneousPolynomial{Float64},1}:
-   0.0
- 1.0 x
-   0.0
-   0.0
-   0.0
-   0.0
-   0.0</p>
-<pre><code>
-There is an optional `order` keyword argument for `set_variables`:
+<pre><code class="julia">julia&gt; x
+ 1.0 x + 𝒪(‖x‖⁷)
 
-```julia
-julia&gt; set_variables(&quot;x y&quot;, order=10)
-2-element Array{TaylorSeries.TaylorN{Float64},1}:
+julia&gt; typeof(x)
+TaylorN{Float64} (constructor with 1 method)
+
+julia&gt; x.order
+6
+
+julia&gt; x.coeffs
+7-element Array{HomogeneousPolynomial{Float64},1}:
+    0.0
+  1.0 x
+    0.0
+    0.0
+    0.0
+    0.0
+    0.0
+</code></pre>
+
+<p>There is an optional <code>order</code> keyword argument for <code>set_variables</code>:</p>
+<pre><code class="julia">julia&gt; set_variables(&quot;x y&quot;, order=10)
+2-element Array{TaylorN{Float64},1}:
   1.0 x + 𝒪(‖x‖¹¹)
   1.0 y + 𝒪(‖x‖¹¹)
 </code></pre>
@@ -334,18 +336,19 @@ julia&gt; set_variables(&quot;x y&quot;, order=10)
 <p>Numbered variables are also available by specifying a single
 variable name and the optional keyword argument <code>numvars</code>:</p>
 <pre><code class="julia">julia&gt; set_variables(&quot;α&quot;, numvars=3)
-3-element Array{TaylorSeries.TaylorN{Float64},1}:
+3-element Array{TaylorN{Float64},1}:
   1.0 α₁ + 𝒪(‖x‖⁷)
   1.0 α₂ + 𝒪(‖x‖⁷)
   1.0 α₃ + 𝒪(‖x‖⁷)
 </code></pre>
 
-<p>The function <code>`show_params_TaylorN()</code> displays the current values of the parameters:</p>
+<p>The function <code>show_params_TaylorN()</code> displays the current values of the
+parameters:</p>
 <pre><code class="julia">julia&gt; show_params_TaylorN()
 INFO: Parameters for `TaylorN` and `HomogeneousPolynomial`:
 Maximum order       = 6
-Number of variables = 2
-Variable names      = UTF8String[&quot;x&quot;,&quot;y&quot;]
+Number of variables = 3
+Variable names      = UTF8String[&quot;α₁&quot;,&quot;α₂&quot;,&quot;α₃&quot;]
 </code></pre>
 
 <p>Technically (internally), changing these parameters defines dictionaries that
@@ -365,8 +368,8 @@ objects directly, which is uncomfortable:</p>
 julia&gt; HomogeneousPolynomial([1,-1])
  1 x₁ - 1 x₂
 
-julia&gt; TaylorN( [HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 4)
- 1 x₁ + 1x₁² + 2 x₁ x₂ + 3 x₂² + 𝒪(‖x‖⁵)
+julia&gt; TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
+ 1 x₁ + 1 x₁² + 2 x₁ x₂ + 3 x₂² + 𝒪(‖x‖⁵)
 </code></pre>
 
 <p>As before, the usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>)
@@ -376,15 +379,13 @@ also been extended for
 <code>HomogeneousPolynomial</code>, whenever the result is a <code>HomogeneousPolynomial</code>;
 division, for instance, is not extended.) Also, the elementary functions have been
 implemented, again by computing their coefficients recursively:</p>
-<pre><code class="julia">
-julia&gt; x, y = set_variables(&quot;x&quot;, numvars=2);
+<pre><code class="julia">julia&gt; x, y = set_variables(&quot;x&quot;, numvars=2, order=10);
 
 julia&gt; exy = exp(x+y)
- 1.0 + 1.0⋅x₁ + 1.0⋅x₂ + 0.5⋅x₁² + 1.0⋅x₁⋅x₂ + 0.5⋅x₂² + 0.16666666666666666⋅x₁³ + 0.5⋅x₁²⋅x₂ + 0.5⋅x₁⋅x₂² + 0.16666666666666666⋅x₂³ + 0.041666666666666664⋅x₁⁴ + 0.16666666666666666⋅x₁³⋅x₂ + 0.25⋅x₁²⋅x₂² + 0.16666666666666666⋅x₁⋅x₂³ + 0.041666666666666664⋅x₂⁴ + 0.008333333333333333⋅x₁⁵ + 0.041666666666666664⋅x₁⁴⋅x₂ + 0.08333333333333333⋅x₁³⋅x₂² + 0.08333333333333333⋅x₁²⋅x₂³ + 0.041666666666666664⋅x₁⋅x₂⁴ + 0.008333333333333333⋅x₂⁵ + 0.0013888888888888887⋅x₁⁶ + 0.008333333333333331⋅x₁⁵⋅x₂ + 0.020833333333333332⋅x₁⁴⋅x₂² + 0.027777777777777776⋅x₁³⋅x₂³ + 0.020833333333333332⋅x₁²⋅x₂⁴ + 0.008333333333333331⋅x₁⋅x₂⁵ + 0.0013888888888888887⋅x₂⁶ + 0.00019841269841269839⋅x₁⁷ + 0.0013888888888888885⋅x₁⁶⋅x₂ + 0.004166666666666666⋅x₁⁵⋅x₂² + 0.006944444444444443⋅x₁⁴⋅x₂³ + 0.006944444444444443⋅x₁³⋅x₂⁴ + 0.004166666666666666⋅x₁²⋅x₂⁵ + 0.0013888888888888885⋅x₁⋅x₂⁶ + 0.00019841269841269839⋅x₂⁷ + 2.4801587301587298e-5⋅x₁⁸ + 0.00019841269841269836⋅x₁⁷⋅x₂ + 0.0006944444444444443⋅x₁⁶⋅x₂² + 0.0013888888888888887⋅x₁⁵⋅x₂³ + 0.0017361111111111108⋅x₁⁴⋅x₂⁴ + 0.0013888888888888887⋅x₁³⋅x₂⁵ + 0.0006944444444444443⋅x₁²⋅x₂⁶ + 0.00019841269841269836⋅x₁⋅x₂⁷ + 2.4801587301587298e-5⋅x₂⁸ + 𝒪(‖x‖⁹)
+ 1.0 + 1.0 x₁ + 1.0 x₂ + 0.5 x₁² + 1.0 x₁ x₂ + 0.5 x₂² + 0.16666666666666666 x₁³ + 0.5 x₁² x₂ + 0.5 x₁ x₂² + 0.16666666666666666 x₂³ + 0.041666666666666664 x₁⁴ + 0.16666666666666666 x₁³ x₂ + 0.25 x₁² x₂² + 0.16666666666666666 x₁ x₂³ + 0.041666666666666664 x₂⁴ + 0.008333333333333333 x₁⁵ + 0.041666666666666664 x₁⁴ x₂ + 0.08333333333333333 x₁³ x₂² + 0.08333333333333333 x₁² x₂³ + 0.041666666666666664 x₁ x₂⁴ + 0.008333333333333333 x₂⁵ + 0.0013888888888888887 x₁⁶ + 0.008333333333333331 x₁⁵ x₂ + 0.020833333333333332 x₁⁴ x₂² + 0.027777777777777776 x₁³ x₂³ + 0.020833333333333332 x₁² x₂⁴ + 0.008333333333333331 x₁ x₂⁵ + 0.0013888888888888887 x₂⁶ + 0.00019841269841269839 x₁⁷ + 0.0013888888888888885 x₁⁶ x₂ + 0.004166666666666666 x₁⁵ x₂² + 0.006944444444444443 x₁⁴ x₂³ + 0.006944444444444443 x₁³ x₂⁴ + 0.004166666666666666 x₁² x₂⁵ + 0.0013888888888888885 x₁ x₂⁶ + 0.00019841269841269839 x₂⁷ + 2.4801587301587298e-5 x₁⁸ + 0.00019841269841269836 x₁⁷ x₂ + 0.0006944444444444443 x₁⁶ x₂² + 0.0013888888888888887 x₁⁵ x₂³ + 0.0017361111111111108 x₁⁴ x₂⁴ + 0.0013888888888888887 x₁³ x₂⁵ + 0.0006944444444444443 x₁² x₂⁶ + 0.00019841269841269836 x₁ x₂⁷ + 2.4801587301587298e-5 x₂⁸ + 2.7557319223985884e-6 x₁⁹ + 2.4801587301587295e-5 x₁⁸ x₂ + 9.920634920634918e-5 x₁⁷ x₂² + 0.0002314814814814814 x₁⁶ x₂³ + 0.0003472222222222221 x₁⁵ x₂⁴ + 0.0003472222222222221 x₁⁴ x₂⁵ + 0.0002314814814814814 x₁³ x₂⁶ + 9.920634920634918e-5 x₁² x₂⁷ + 2.4801587301587295e-5 x₁ x₂⁸ + 2.7557319223985884e-6 x₂⁹ + 2.7557319223985883e-7 x₁¹⁰ + 2.7557319223985884e-6 x₁⁹ x₂ + 1.2400793650793647e-5 x₁⁸ x₂² + 3.306878306878306e-5 x₁⁷ x₂³ + 5.787037037037036e-5 x₁⁶ x₂⁴ + 6.944444444444443e-5 x₁⁵ x₂⁵ + 5.787037037037036e-5 x₁⁴ x₂⁶ + 3.306878306878306e-5 x₁³ x₂⁷ + 1.2400793650793647e-5 x₁² x₂⁸ + 2.7557319223985884e-6 x₁ x₂⁹ + 2.7557319223985883e-7 x₂¹⁰ + 𝒪(‖x‖¹¹)
 </code></pre>
 
-<p>Note above that <code>y</code> has been promoted internally so the result corresponds
-to the maximum of the orders of <code>x</code> and <code>y</code>. The function <code>get_coeff(a,v)</code>
+<p>The function <code>get_coeff(a,v)</code>
 gives the coefficient of <code>x</code> that corresponds to the monomial
 specified by the vector of powers <code>v</code>:</p>
 <pre><code class="julia">julia&gt; get_coeff(exy, [3,5]) == 1/720
@@ -404,29 +405,22 @@ julia&gt; g(x,y) = y - x^4
 g (generic function with 1 method)
 
 julia&gt; diffTaylor( f(x,y), 1 )   # partial derivative with respect to 1st variable
- - 7.0 + 3.0⋅x₁² + 4.0⋅x₁⋅x₂ + 𝒪(‖x‖⁹)
+ - 7.0 + 3.0 x₁² + 4.0 x₁ x₂ + 𝒪(‖x‖¹¹)
 
 julia&gt; diffTaylor( g(x,y), 2 )
- 1.0 + 𝒪(‖x‖⁹)
+ 1.0 + 𝒪(‖x‖¹¹)
 
 julia&gt; diffTaylor( g(x,y), 3 )   # error, since we are dealing with 2 variables
 ERROR: assertion failed: 1 &lt;= r &lt;= _params_taylorN.numVars
- in diffTaylor at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_TaylorN.jl:679
- in diffTaylor at /Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/utils_TaylorN.jl:709
+ in diffTaylor at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_TaylorN.jl:681
+ in diffTaylor at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_TaylorN.jl:711
 </code></pre>
 
-<p><code>evalTaylor</code> can also be used for <code>TaylorN</code> objects, both for vectors of
-numbers or vectors of <code>Taylor1</code> objects; the length of the vector must
-coincide with the number
-of independent variables. The implementation still needs some improvements.</p>
-<pre><code class="julia">julia&gt; evalTaylor(x+y, [t, 2t])  # x+y, with x=t, y=2t
- 3.0⋅t + 𝒪(t⁶)
-
-julia&gt; evalTaylor(exy, [t,2t])
- 1.0 + 3.0⋅t + 4.5⋅t² + 4.5⋅t³ + 3.375⋅t⁴ + 2.025⋅t⁵ + 𝒪(t⁶)
-
-julia&gt; exp(3.0*taylor1_variable(8))
- 1.0 + 3.0⋅t + 4.5⋅t² + 4.5⋅t³ + 3.375⋅t⁴ + 2.025⋅t⁵ + 1.0125⋅t⁶ + 0.4339285714285714⋅t⁷ + 0.16272321428571426⋅t⁸ + 𝒪(t⁹)
+<p><code>evaluate</code> can also be used for <code>TaylorN</code> objects, using it on vectors of
+numbers (<code>Real</code> or <code>Complex</code>); the length of the vector must coincide with the number
+of independent variables.</p>
+<pre><code class="julia">julia&gt; evaluate(exy, [.1,.02]) == e^0.12
+true
 </code></pre>
 
 <p>Functions to compute the gradient, Jacobian and
@@ -436,20 +430,20 @@ we may use <code>∇</code> (<code>\nabla+TAB</code>) or <code>TaylorSeries.grad
 type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian or Hessian of a vector field
 evaluated at a point, we use <code>jacobian</code> and <code>hessian</code>:</p>
 <pre><code class="julia">julia&gt; f1 = f(x,y)
- 2.0 - 7.0⋅x₁ + 1.0⋅x₁³ + 2.0⋅x₁²⋅x₂ + 𝒪(‖x‖⁹)
+ 2.0 - 7.0 x₁ + 1.0 x₁³ + 2.0 x₁² x₂ + 𝒪(‖x‖¹¹)
 
 julia&gt; g1 = g(x,y)
- 1.0⋅x₂ - 1.0⋅x₁⁴ + 𝒪(‖x‖⁹)
+ 1.0 x₂ - 1.0 x₁⁴ + 𝒪(‖x‖¹¹)
 
 julia&gt; ∇(f1)
 2-element Array{TaylorN{Float64},1}:
-  - 7.0 + 3.0⋅x₁² + 4.0⋅x₁⋅x₂ + 𝒪(‖x‖⁹)
-                      2.0⋅x₁² + 𝒪(‖x‖⁹)
+  - 7.0 + 3.0 x₁² + 4.0 x₁ x₂ + 𝒪(‖x‖¹¹)
+                      2.0 x₁² + 𝒪(‖x‖¹¹)
 
 julia&gt; gradient( g1 )
 2-element Array{TaylorN{Float64},1}:
-  - 4.0⋅x₁³ + 𝒪(‖x‖⁹)
-        1.0 + 𝒪(‖x‖⁹)
+  - 4.0 x₁³ + 𝒪(‖x‖¹¹)
+        1.0 + 𝒪(‖x‖¹¹)
 
 julia&gt; jacobian([f1,g1], [2,1])
 2x2 Array{Float64,2}:
@@ -457,20 +451,23 @@ julia&gt; jacobian([f1,g1], [2,1])
  -32.0  1.0
 
 julia&gt; fg = f1-g1-2*f1*g1
- 2.0 - 7.0⋅x₁ - 5.0⋅x₂ + 14.0⋅x₁⋅x₂ + 1.0⋅x₁³ + 2.0⋅x₁²⋅x₂ + 5.0⋅x₁⁴ - 2.0⋅x₁³⋅x₂ - 4.0⋅x₁²⋅x₂² - 14.0⋅x₁⁵ + 2.0⋅x₁⁷ + 4.0⋅x₁⁶⋅x₂ + 𝒪(‖x‖⁹)
+ 2.0 - 7.0 x₁ - 5.0 x₂ + 14.0 x₁ x₂ + 1.0 x₁³ + 2.0 x₁² x₂ + 5.0 x₁⁴ - 2.0 x₁³ x₂ - 4.0 x₁² x₂² - 14.0 x₁⁵ + 2.0 x₁⁷ + 4.0 x₁⁶ x₂ + 𝒪(‖x‖¹¹)
 
-julia&gt; hessian(ans)
+julia&gt; hessian(ans) # hessian at zero
 2x2 Array{Float64,2}:
   0.0  14.0
  14.0   0.0
 
-julia&gt; evalTaylor(fg, [x+1.0, y+1.0])
- - 2.0 - 12.0⋅x₁ + 5.0⋅x₂ - 13.0⋅x₁² + 20.0⋅x₁⋅x₂ - 4.0⋅x₂² + 29.0⋅x₁³ + 48.0⋅x₁²⋅x₂ - 8.0⋅x₁⋅x₂² + 65.0⋅x₁⁴ + 78.0⋅x₁³⋅x₂ - 4.0⋅x₁²⋅x₂² + 52.0⋅x₁⁵ + 60.0⋅x₁⁴⋅x₂ + 18.0⋅x₁⁶ + 24.0⋅x₁⁵⋅x₂ + 2.0⋅x₁⁷ + 4.0⋅x₁⁶⋅x₂ + 𝒪(‖x‖⁹)
+ julia&gt; fg1 = f(x+1.0,y+1.0)-g(x+1.0,y+1.0)-2*f(x+1.0,y+1.0)*g(x+1.0,y+1.0)
+  - 2.0 - 12.0 x₁ + 5.0 x₂ - 13.0 x₁² + 20.0 x₁ x₂ - 4.0 x₂² + 29.0 x₁³ + 48.0 x₁² x₂ - 8.0 x₁ x₂² + 65.0 x₁⁴ + 78.0 x₁³ x₂ - 4.0 x₁² x₂² + 52.0 x₁⁵ + 60.0 x₁⁴ x₂ + 18.0 x₁⁶ + 24.0 x₁⁵ x₂ + 2.0 x₁⁷ + 4.0 x₁⁶ x₂ + 𝒪(‖x‖¹¹)
 
 julia&gt; hessian(fg, [1.0,1.0])
 2x2 Array{Float64,2}:
  -26.0  20.0
   20.0  -8.0
+
+julia&gt; ans == hessian(fg1)
+true
 </code></pre>
 
 <h2 id="examples">Examples</h2>
@@ -489,52 +486,64 @@ as proved by Euler. The code can we found in one of the tests of the package.</p
 of the equation
 has <em>a priori</em> terms of fourth order, and the number of independent variables to
 8.</p>
-<pre><code class="julia">julia&gt; set_params_TaylorN(4,8)
-Warning: redefining constant _params_taylorN
-(4,8)
-</code></pre>
+<pre><code class="julia">julia&gt; # Define the variables α₁, ..., α₄, β₁, ..., β₄
+       make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))
+make_variable (generic function with 1 method)
 
-<p>Next, we define the 8 independent variables</p>
-<pre><code class="julia">julia&gt; for i=1:4
-           ai = symbol(string(&quot;a&quot;,i))
-           bi = symbol(string(&quot;b&quot;,i))
-           @eval ($ai) = taylorN_variable(Int,$i,4)
-           @eval ($bi) = taylorN_variable(Int,4+($i),4)
-       end
+julia&gt; variable_names = [make_variable(&quot;α&quot;, i) for i in 1:4]
+4-element Array{UTF8String,1}:
+ &quot;α₁&quot;
+ &quot;α₂&quot;
+ &quot;α₃&quot;
+ &quot;α₄&quot;
+
+julia&gt; append!(variable_names, [make_variable(&quot;β&quot;, i) for i in 1:4])
+8-element Array{UTF8String,1}:
+ &quot;α₁&quot;
+ &quot;α₂&quot;
+ &quot;α₃&quot;
+ &quot;α₄&quot;
+ &quot;β₁&quot;
+ &quot;β₂&quot;
+ &quot;β₃&quot;
+ &quot;β₄&quot;
+
+julia&gt; # Create the Taylor objects (order 4, numvars=8)
+       a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4);
 
 julia&gt; a1
- 1⋅x₁ + 𝒪(‖x‖⁵)
+1.0 α₁ + 𝒪(‖x‖⁵)
 
 julia&gt; b1
- 1⋅x₅ + 𝒪(‖x‖⁵)
+ 1.0 β₁ + 𝒪(‖x‖⁵)
 </code></pre>
 
-<p>followed by the distinct terms that appear in (\ref{eq:Euler}):</p>
-<pre><code class="julia">julia&gt; expr_lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
+<p>Now we define the terms that appear in (\ref{eq:Euler}):</p>
+<pre><code class="julia">julia&gt; lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
 
-julia&gt; expr_lhs2 = b1^2 + b2^2 + b3^2 + b4^2 ;
+julia&gt; lhs2 = b1^2 + b2^2 + b3^2 + b4^2 ;
 
-julia&gt; expr_rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2 ;
+julia&gt; rhs1 = (a1*b1 - a2*b2 - a3*b3 - a4*b4)^2 ;
 
-julia&gt; expr_rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2 ;
+julia&gt; rhs2 = (a1*b2 + a2*b1 + a3*b4 - a4*b3)^2 ;
 
-julia&gt; expr_rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2 ;
+julia&gt; rhs3 = (a1*b3 - a2*b4 + a3*b1 + a4*b2)^2 ;
 
-julia&gt; expr_rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2 ;
+julia&gt; rhs4 = (a1*b4 + a2*b3 - a3*b2 + a4*b1)^2 ;
 </code></pre>
 
-<p>and, finally, check that the LHS is equal to the RHS:</p>
-<pre><code class="julia">julia&gt; lhs = expr_lhs1 * expr_lhs2
- 1⋅x₁²⋅x₅² + 1⋅x₂²⋅x₅² + 1⋅x₃²⋅x₅² + 1⋅x₄²⋅x₅² + 1⋅x₁²⋅x₆² + 1⋅x₂²⋅x₆² + 1⋅x₃²⋅x₆² + 1⋅x₄²⋅x₆² + 1⋅x₁²⋅x₇² + 1⋅x₂²⋅x₇² + 1⋅x₃²⋅x₇² + 1⋅x₄²⋅x₇² + 1⋅x₁²⋅x₈² + 1⋅x₂²⋅x₈² + 1⋅x₃²⋅x₈² + 1⋅x₄²⋅x₈² + 𝒪(‖x‖⁵)
+<p>Finally, we check that the LHS is indeed equal to the RHS:</p>
+<pre><code class="julia">julia&gt; lhs = lhs1 * lhs2
+ 1.0 α₁² β₁² + 1.0 α₂² β₁² + 1.0 α₃² β₁² + 1.0 α₄² β₁² + 1.0 α₁² β₂² + 1.0 α₂² β₂² + 1.0 α₃² β₂² + 1.0 α₄² β₂² + 1.0 α₁² β₃² + 1.0 α₂² β₃² + 1.0 α₃² β₃² + 1.0 α₄² β₃² + 1.0 α₁² β₄² + 1.0 α₂² β₄² + 1.0 α₃² β₄² + 1.0 α₄² β₄² + 𝒪(‖x‖⁵)
 
-julia&gt; rhs = expr_rhs1 + expr_rhs2 + expr_rhs3 + expr_rhs4
- 1⋅x₁²⋅x₅² + 1⋅x₂²⋅x₅² + 1⋅x₃²⋅x₅² + 1⋅x₄²⋅x₅² + 1⋅x₁²⋅x₆² + 1⋅x₂²⋅x₆² + 1⋅x₃²⋅x₆² + 1⋅x₄²⋅x₆² + 1⋅x₁²⋅x₇² + 1⋅x₂²⋅x₇² + 1⋅x₃²⋅x₇² + 1⋅x₄²⋅x₇² + 1⋅x₁²⋅x₈² + 1⋅x₂²⋅x₈² + 1⋅x₃²⋅x₈² + 1⋅x₄²⋅x₈² + 𝒪(‖x‖⁵)
+julia&gt; rhs = rhs1 + rhs2 + rhs3 + rhs4
+ 1.0 α₁² β₁² + 1.0 α₂² β₁² + 1.0 α₃² β₁² + 1.0 α₄² β₁² + 1.0 α₁² β₂² + 1.0 α₂² β₂² + 1.0 α₃² β₂² + 1.0 α₄² β₂² + 1.0 α₁² β₃² + 1.0 α₂² β₃² + 1.0 α₃² β₃² + 1.0 α₄² β₃² + 1.0 α₁² β₄² + 1.0 α₂² β₄² + 1.0 α₃² β₄² + 1.0 α₄² β₄² + 𝒪(‖x‖⁵)
 
 julia&gt; lhs == rhs
 true
 </code></pre>
 
-<p>The identity is satisfied $\square$.</p>
+<p>The identity is thus satisfied. $\square$.</p>
 <h3 id="2-fatemans-test">2. Fateman's test</h3>
 <p>Richard J. Fateman, from Berkley, proposed as a stringent test
 of polynomial multiplication
@@ -543,48 +552,45 @@ implemented in
 the function <code>fateman1</code>. We shall also evaluate the form $s^2+s$ in <code>fateman2</code>,
 which involves fewer operations (and makes a fairer comparison to what
 Mathematica does). Below we use Julia v0.4, since it is faster than v0.3.</p>
-<pre><code class="julia">julia&gt; set_params_TaylorN(40,4)   # maxOrder = 40; numVars = 4
-(40,4)
+<pre><code class="julia">julia&gt; # change number of variables and maxOrder
+       set_variables(&quot;x&quot;, numvars=4, order=40);
 
-julia&gt; function fateman1(ndeg::Int)
-           T = Int128
-           unoH = HomogeneousPolynomial(one(T), 0)
-           s = TaylorN( [unoH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], ndeg )
-           s = s^ndeg
-           # s is converted to order 2*ndeg
-           s = TaylorN(s, 2ndeg)
-           return s * (s+TaylorN(unoH, 2*ndeg))
-       end
+julia&gt; function fateman1(degree::Int)
+          T = Int128
+          oneH = HomogeneousPolynomial(one(T), 0)
+          # s = 1 + x + y + z + w
+          s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
+          s = s^degree  
+          # s is converted to order 2*ndeg
+          s = TaylorN(s, 2*degree)
+
+          s * ( s+TaylorN(oneH, 2*degree) )
+      end
 fateman1 (generic function with 1 method)
 
 julia&gt; @time f1 = fateman1(0);
-   7.379 milliseconds (8346 allocations: 361 KB)
+elapsed time: 0.193653166 seconds (8318304 bytes allocated)
 
 julia&gt; @time f1 = fateman1(20);
-   9.339 seconds      (6150 allocations: 58698 KB, 0.07% gc time)
+</code></pre>
 
-julia&gt; get_coeff(f1,[1,6,7,20])
-128358585324486316800
-
-julia&gt; ans &gt; typemax(Int)  # this is the reason for using Int128
-true
-
-julia&gt; function fateman2(ndeg::Int)
+<p>The last instruction shows that we indeed need <code>Int128</code> arithmetic.</p>
+<pre><code class="julia">julia&gt; function fateman2(degree::Int)
            T = Int128
-           unoH = HomogeneousPolynomial(one(T), 0)
-           s = TaylorN( [unoH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], ndeg )
-           s = s^ndeg
+           oneH = HomogeneousPolynomial(one(T), 0)
+           s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
+           s = s^degree
            # s is converted to order 2*ndeg
-           s = TaylorN(s, 2ndeg)
+           s = TaylorN(s, 2*degree)
            return s^2 + s
        end
 fateman2 (generic function with 1 method)
 
 julia&gt; @time f2 = fateman2(0);
-  10.840 milliseconds (6805 allocations: 297 KB, 41.42% gc time)
+elapsed time: 0.004246911 seconds (151832 bytes allocated)
 
 julia&gt; @time f2 = fateman2(20);
-   4.737 seconds      (4870 allocations: 42049 KB, 0.09% gc time)
+elapsed time: 8.260762578 seconds (1412298112 bytes allocated, 18.28% gc time)
 
 julia&gt; get_coeff(f2,[1,6,7,20])
 128358585324486316800
@@ -593,11 +599,11 @@ julia&gt; sum(TaylorSeries.sizeTable) # number of distinct monomials
 135751
 </code></pre>
 
-<p>The tests above show the necessity of using integers of type <code>Int128</code>, and that
-<code>fateman2</code> is
-about twice as fast as <code>fateman1</code>. We
-mention that our implementation of <code>fateman2</code> is roughly
-1.5 times slower than Mathematica, which takes 3.22 sec.</p></div>
+<p>The tests above show the necessity of using integers of type <code>Int128</code>, that
+<code>fateman2</code> is about twice as fast as <code>fateman1</code>, and that the series has 135751
+monomials on 4 variables.</p>
+<p>We mention that our implementation of <code>fateman2</code> (in julia v0.4) is roughly
+1.5 times slower than Mathematica.</p></div>
         </div>
 
 	<footer class="col-md-12">
