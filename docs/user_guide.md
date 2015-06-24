@@ -212,6 +212,7 @@ julia> x, y = set_variables("x y")
 ```
 
 The resulting objects are of `TaylorN{Float64}` type:
+
 ```julia
 julia> x
  1.0 x + 𝒪(‖x‖⁷)
@@ -244,6 +245,7 @@ julia> set_variables("x y", order=10)
 
 Numbered variables are also available by specifying a single
 variable name and the optional keyword argument `numvars`:
+
 ```julia
 julia> set_variables("α", numvars=3)
 3-element Array{TaylorN{Float64},1}:
@@ -252,8 +254,9 @@ julia> set_variables("α", numvars=3)
   1.0 α₃ + 𝒪(‖x‖⁷)
 ```
 
-The function ``show_params_TaylorN()` displays the current values of the
+The function `show_params_TaylorN()` displays the current values of the
 parameters:
+
 ```julia
 julia> show_params_TaylorN()
 INFO: Parameters for `TaylorN` and `HomogeneousPolynomial`:
@@ -274,7 +277,6 @@ is needed around a different value, the trick is a simple translation of
 the corresponding
 independent variable $x \to x+a$.
 
-
 Other ways of constructing `TaylorN` polynomials involve using `HomogeneousPolynomial`
 objects directly, which is uncomfortable:
 
@@ -284,7 +286,7 @@ julia> set_variables("x", numvars=2);
 julia> HomogeneousPolynomial([1,-1])
  1 x₁ - 1 x₂
 
-julia> TaylorN( [HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 4)
+julia> TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
  1 x₁ + 1 x₁² + 2 x₁ x₂ + 3 x₂² + 𝒪(‖x‖⁵)
 ```
 
