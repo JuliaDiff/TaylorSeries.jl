@@ -75,8 +75,8 @@ function pretty_print{T<:Number}(a::Taylor1{T})
     strout::UTF8String = space
     ifirst = true
     for i in eachindex(a.coeffs)
-        monom::UTF8String = i==1 ? string("") : i==2 ? string("⋅t") :
-            string("⋅t", superscriptify(i-1))
+        monom::UTF8String = i==1 ? string("") : i==2 ? string(" t") :
+            string(" t", superscriptify(i-1))
         @inbounds c = a.coeffs[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)

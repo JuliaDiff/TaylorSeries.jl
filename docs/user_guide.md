@@ -48,16 +48,16 @@ of the length of the vector of coefficients and the given integer is taken.
 
 ```julia
 julia> Taylor1([1, 2, 3]) # Polynomial of order 2 with coefficients 1, 2, 3
- 1 + 2⋅t + 3⋅t² + 𝒪(t³)
+ 1 + 2 t + 3 t² + 𝒪(t³)
 
 julia> Taylor1([0.0, 1im]) # Also works with complex numbers
- ( 1.0 im )⋅t + 𝒪(t²)
+ ( 1.0 im ) t + 𝒪(t²)
 
 julia> affine(a) = a + taylor1_variable(typeof(a),5)  ## a + t of order 5
 affine (generic function with 1 method)
 
 julia> t = affine(0.0) # Independent variable `t`
- 1.0⋅t + 𝒪(t⁶)
+ 1.0 t + 𝒪(t⁶)
 ```
 Note that the information about the maximum order considered is displayed
 using a big-O notation.
@@ -74,25 +74,25 @@ maximum order; compare the last example below, where this is not possible:
 
 ```julia
 julia> t*(3t+2.5)
- 2.5⋅t + 3.0⋅t² + 𝒪(t⁶)
+ 2.5 t + 3.0 t² + 𝒪(t⁶)
 
 julia> 1/(1-t)
- 1.0 + 1.0⋅t + 1.0⋅t² + 1.0⋅t³ + 1.0⋅t⁴ + 1.0⋅t⁵ + 𝒪(t⁶)
+ 1.0 + 1.0 t + 1.0 t² + 1.0 t³ + 1.0 t⁴ + 1.0 t⁵ + 𝒪(t⁶)
 
 julia> t*(t^2-4)/(t+2)
- - 2.0⋅t + 1.0⋅t² + 𝒪(t⁶)
+ - 2.0 t + 1.0 t² + 𝒪(t⁶)
 
 julia> tI = im*t
- ( 1.0 im )⋅t + 𝒪(t⁶)
+ ( 1.0 im ) t + 𝒪(t⁶)
 
 julia> t^6  # order is 5
  0.0 + 𝒪(t⁶)
 
 julia> (1-t)^3.2
- 1.0 - 3.2⋅t + 3.5200000000000005⋅t² - 1.4080000000000004⋅t³ + 0.07040000000000009⋅t⁴ + 0.011264000000000012⋅t⁵ + 𝒪(t⁶)
+ 1.0 - 3.2 t + 3.5200000000000005 t² - 1.4080000000000004 t³ + 0.07040000000000009 t⁴ + 0.011264000000000012 t⁵ + 𝒪(t⁶)
 
 julia> (1+t)^t
- 1.0 + 1.0⋅t² - 0.5⋅t³ + 0.8333333333333333⋅t⁴ - 0.75⋅t⁵ + 𝒪(t⁶)
+ 1.0 + 1.0 t² - 0.5 t³ + 0.8333333333333333 t⁴ - 0.75 t⁵ + 𝒪(t⁶)
 
 julia> t^3.2
 ERROR: The 0th order Taylor1 coefficient must be non-zero
@@ -110,10 +110,10 @@ ordinary differential equations, which is among the applications we have in mind
 
 ```julia
 julia> exp(t)
- 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
+ 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 0.041666666666666664 t⁴ + 0.008333333333333333 t⁵ + 𝒪(t⁶)
 
 julia> log(1-t)
- - 1.0⋅t - 0.5⋅t² - 0.3333333333333333⋅t³ - 0.25⋅t⁴ - 0.2⋅t⁵ + 𝒪(t⁶)
+ - 1.0 t - 0.5 t² - 0.3333333333333333 t³ - 0.25 t⁴ - 0.2 t⁵ + 𝒪(t⁶)
 
 julia> sqrt(t)
 ERROR: First non-vanishing Taylor1 coefficient must correspond
@@ -121,16 +121,16 @@ to an **even power** in order to expand `sqrt` around 0
  in sqrt at /Users/benet/.julia/v0.3/TaylorSeries/src/utils_Taylor1.jl:351
 
 julia> sqrt(1 + t)
- 1.0 + 0.5⋅t - 0.125⋅t² + 0.0625⋅t³ - 0.0390625⋅t⁴ + 0.02734375⋅t⁵ + 𝒪(t⁶)
+ 1.0 + 0.5 t - 0.125 t² + 0.0625 t³ - 0.0390625 t⁴ + 0.02734375 t⁵ + 𝒪(t⁶)
 
 julia> imag(exp(tI)')
- - 1.0⋅t + 0.16666666666666666⋅t³ - 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
+ - 1.0 t + 0.16666666666666666 t³ - 0.008333333333333333 t⁵ + 𝒪(t⁶)
 
 julia> real(exp(Taylor1([0.0,1im],17))) - cos(Taylor1([0.0,1.0],17)) == 0.0
 true
 
 julia> convert(Taylor1{Rational{Int64}}, exp(t))  # output differes in v0.4
- 1//1 + 1//1⋅t + 1//2⋅t² + 1//6⋅t³ + 1//24⋅t⁴ + 1//120⋅t⁵ + 𝒪(t⁶)
+ 1//1 + 1//1 t + 1//2 t² + 1//6 t³ + 1//24 t⁴ + 1//120 t⁵ + 𝒪(t⁶)
 ```
 
 Differentiating and integrating is straightforward for polynomial expansions in
@@ -143,13 +143,13 @@ the default is $n=1$.
 
 ```julia
 julia> diffTaylor(exp(t))
- 1.0 + 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 𝒪(t⁶)
+ 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 0.041666666666666664 t⁴ + 𝒪(t⁶)
 
 julia> integTaylor(exp(t))
- 1.0⋅t + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
+ 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 0.041666666666666664 t⁴ + 0.008333333333333333 t⁵ + 𝒪(t⁶)
 
 julia> integTaylor( ans, 1.0)
- 1.0 + 0.5⋅t² + 0.16666666666666666⋅t³ + 0.041666666666666664⋅t⁴ + 0.008333333333333333⋅t⁵ + 𝒪(t⁶)
+ 1.0 + 0.5 t² + 0.16666666666666666 t³ + 0.041666666666666664 t⁴ + 0.008333333333333333 t⁵ + 𝒪(t⁶)
 
 julia> integTaylor( diffTaylor( exp(-t)), 1.0 ) == exp(-t)
 true
@@ -177,7 +177,7 @@ julia> evaluate( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order
 0.0
 
 julia> tBig = Taylor1([zero(BigFloat),one(BigFloat)],50) # With BigFloats
- 1e+00⋅t + 𝒪(t⁵¹)
+ 1e+00 t + 𝒪(t⁵¹)
 
 julia> evaluate( exp(tBig), one(BigFloat) )
 2.718281828459045235360287471352662497757247093699959574966967627723419298053556e+00 with 256 bits of precision

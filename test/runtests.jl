@@ -73,6 +73,8 @@ facts("Tests for Taylor1 expansions") do
     @fact exp(tim') == cos(t)-im*sin(t)  => true
     @fact (exp(t))^(2im) == cos(2t)+im*sin(2t)  => true
     @fact (exp(t))^Taylor1(-5.2im) == cos(5.2t)-im*sin(5.2t)  => true
+    cr = convert(Taylor1{Rational{Int}},cos(t))
+    @fact get_coeff(cr,8) == 1//factorial(8)  => true
     @fact abs((tan(t)).coeffs[8]- 17/315) < tol1  => true
     @fact abs((tan(t)).coeffs[14]- 21844/6081075) < tol1  => true
     @fact evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e  => true
@@ -163,6 +165,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact_throws DomainError yT^(-2.0)
     @fact (1+xT)^(3//2) == ((1+xT)^0.5)^3  => true
     @fact real( exp(1im * xT)) == cos(xT)  => true
+    cr = convert(TaylorN{Rational{Int}},cos(xT))
+    @fact get_coeff(cr,[4,0]) == 1//factorial(4)  => true
     @fact imag((exp(yT))^(-1im)') == sin(yT)  => true
     exy = exp( xT+yT )
     @fact evaluate(exy) == 1  => true

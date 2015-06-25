@@ -58,6 +58,15 @@ length{T<:Number}(a::Taylor1{T}) = a.order
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1) =
     Taylor1(convert(Array{T,1}, a.coeffs), a.order)
+function convert{T<:Integer, S<:FloatingPoint}(::Type{Taylor1{Rational{T}}},
+    a::Taylor1{S})
+    v = Array(Rational{T}, length(a.coeffs))
+    for i in eachindex(v)
+        # v[i] = convert(Rational{T}, a.coeffs[i])
+        v[i] = rationalize(a.coeffs[i], tol=eps(one(S)))
+    end
+    Taylor1(v)
+end
 convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) =
     Taylor1(convert(Array{T,1},b))
 convert{T<:Number}(::Type{Taylor1{T}}, b::Number) = Taylor1([convert(T,b)], 0)

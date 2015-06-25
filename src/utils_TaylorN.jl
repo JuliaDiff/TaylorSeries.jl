@@ -108,6 +108,15 @@ ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, a.coeffs), a.order)
+function convert{T<:Integer, S<:FloatingPoint}(
+    ::Type{HomogeneousPolynomial{Rational{T}}}, a::HomogeneousPolynomial{S})
+    v = Array(Rational{T}, length(a.coeffs))
+    for i in eachindex(v)
+        # v[i] = convert(Rational{T}, a.coeffs[i])
+        v[i] = rationalize(a.coeffs[i], tol=eps(one(S)))
+    end
+    HomogeneousPolynomial(v, a.order)
+end
 convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, b), orderH(b))
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Number) =
