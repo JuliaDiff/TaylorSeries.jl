@@ -129,7 +129,7 @@ for f in (:+, :-)
             a, b = fixshape(a, b)
             v = similar(a.coeffs)
             @simd for i in eachindex(a.coeffs)
-                @inbounds v[i] = ($f)(a.coeffs[i], b.coeffs[i])
+                v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
             return Taylor1(v, a.order)
         end
@@ -141,8 +141,8 @@ end
 function *(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
     coeffs = similar(a.coeffs)
-    @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
-    @inbounds for k = 1:a.order
+    coeffs[1] = a.coeffs[1] * b.coeffs[1]
+    for k = 1:a.order
         coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
     end
     Taylor1(coeffs, a.order)
@@ -152,7 +152,7 @@ end
 function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
     coefhomog = zero(T)
-    @inbounds for i = 0:kcoef
+    for i = 0:kcoef
         coefhomog += ac[i+1] * bc[kcoef-i+1]
     end
     coefhomog
@@ -167,8 +167,8 @@ function /(a::Taylor1, b::Taylor1)
     v1 = convert(Array{T,1}, a.coeffs)
     v2 = convert(Array{T,1}, b.coeffs)
     coeffs = zeros(T, a.order+1)
-    @inbounds coeffs[1] = cdivfact
-    @inbounds for k = orddivfact+1:a.order
+    coeffs[1] = cdivfact
+    for k = orddivfact+1:a.order
         coeffs[k-orddivfact+1] = divHomogCoef(k, v1, v2, coeffs, orddivfact)
     end
     Taylor1(coeffs, a.order)
@@ -203,9 +203,9 @@ end
 function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
     coeffs::Array{T,1}, ordfact::Int)
     #
-    @inbounds kcoef == ordfact && return ac[ordfact+1] / bc[ordfact+1]
+    kcoef == ordfact && return ac[ordfact+1] / bc[ordfact+1]
     coefhomog = mulHomogCoef(kcoef, coeffs, bc)
-    @inbounds coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordfact+1]
+    coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordfact+1]
     coefhomog
 end
 
@@ -214,7 +214,7 @@ for op in (:mod, :rem)
     @eval begin
         function ($op){T<:Real}(a::Taylor1{T}, x::Real)
             coeffs = copy(a.coeffs)
-            @inbounds coeffs[1] = ($op)(a.coeffs[1], x)
+            coeffs[1] = ($op)(a.coeffs[1], x)
             return Taylor1(coeffs, a.order)
         end
     end
@@ -222,7 +222,7 @@ end
 
 function mod2pi{T<:Real}(a::Taylor1{T})
     coeffs = copy(a.coeffs)
-    @inbounds coeffs[1] = mod2pi( a.coeffs[1] )
+    coeffs[1] = mod2pi( a.coeffs[1] )
     return Taylor1( coeffs, a.order)
 end
 
@@ -294,13 +294,13 @@ function ^(a::Taylor1, x::Real)
     # polynomial. The last l0nz coefficients are set to zero.
     lnull = trunc(Int,lnull)
     #l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.\n")
-    @inbounds aux = (a.coeffs[l0nz+1])^x
+    aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = zeros(T, a.order+1)
-    @inbounds coeffs[lnull+1] = aux
+    coeffs[lnull+1] = aux
     k0 = lnull+l0nz
-    @inbounds for k = k0+1:a.order
+    for k = k0+1:a.order
         coeffs[k-l0nz+1] = powHomogCoef(k, v, x, coeffs, l0nz)
     end
 
@@ -316,10 +316,10 @@ function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
     coefhomog = zero(T)
     for i = 0:kcoef-knull-1
         aux = x*(kcoef-i)-i
-        @inbounds coefhomog += aux*ac[kcoef-i+1]*coeffs[i+1]
+        coefhomog += aux*ac[kcoef-i+1]*coeffs[i+1]
     end
     aux = kcoef - knull*(x+1)
-    @inbounds coefhomog = coefhomog / (aux*ac[knull+1])
+    coefhomog = coefhomog / (aux*ac[knull+1])
 
     coefhomog
 end
@@ -328,7 +328,7 @@ end
 function square(a::Taylor1)
     coeffs = Array(eltype(a), a.order+1)
     coeffs[1] = a.coeffs[1]^2
-    @inbounds for k = 1:a.order
+    for k = 1:a.order
         coeffs[k+1] = squareHomogCoef(k, a.coeffs)
     end
     Taylor1(coeffs,a.order)
@@ -340,12 +340,12 @@ function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     coefhomog = zero(T)
     kodd = kcoef%2
     kend = div(kcoef - 2 + kodd, 2)
-    @inbounds for i = 0:kend
+    for i = 0:kend
         coefhomog += ac[i+1]*ac[kcoef-i+1]
     end
     coefhomog = convert(T,2) * coefhomog
     if kodd == 0
-        @inbounds coefhomog += ac[div(kcoef,2)+1]^2
+        coefhomog += ac[div(kcoef,2)+1]^2
     end
     coefhomog
 end
@@ -365,12 +365,12 @@ function sqrt(a::Taylor1)
     # The last l0nz coefficients are set to zero.
     ##l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.\n")
     lnull = div(l0nz, 2)
-    @inbounds aux = sqrt(a.coeffs[l0nz+1])
+    aux = sqrt(a.coeffs[l0nz+1])
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = zeros(T, a.order+1)
-    @inbounds coeffs[lnull+1] = aux
-    @inbounds for k = lnull+1:a.order-l0nz
+    coeffs[lnull+1] = aux
+    for k = lnull+1:a.order-l0nz
         coeffs[k+1] = sqrtHomogCoef(k, v, coeffs, lnull)
     end
     Taylor1(coeffs, a.order)
@@ -383,27 +383,27 @@ function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}
     kodd = (kcoef - knull)%2
     kend = div(kcoef - knull - 2 + kodd, 2)
     two = convert(T,2)
-    @inbounds for i = knull+1:knull+kend
+    for i = knull+1:knull+kend
         coefhomog += coeffs[i+1]*coeffs[kcoef+knull-i+1]
     end
-    @inbounds aux = ac[kcoef+knull+1] - two*coefhomog
+    aux = ac[kcoef+knull+1] - two*coefhomog
 
     if kodd == 0
-        @inbounds aux = aux - (coeffs[kend+knull+2])^2
+        aux = aux - (coeffs[kend+knull+2])^2
     end
-    @inbounds coefhomog = aux / (two*coeffs[knull+1])
+    coefhomog = aux / (two*coeffs[knull+1])
 
     coefhomog
 end
 
 ## Exp ##
 function exp(a::Taylor1)
-    @inbounds aux = exp( a.coeffs[1] )
+    aux = exp( a.coeffs[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = similar(v)
-    @inbounds coeffs[1] = aux
-    @inbounds for k = 1:a.order
+    coeffs[1] = aux
+    for k = 1:a.order
         coeffs[k+1] = expHomogCoef(k, v, coeffs)
     end
     Taylor1( coeffs, a.order )
@@ -413,7 +413,7 @@ end
 function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return exp(ac[1])
     coefhomog = zero(T)
-    @inbounds for i = 0:kcoef-1
+    for i = 0:kcoef-1
         coefhomog += (kcoef-i) * ac[kcoef-i+1] * coeffs[i+1]
     end
     coefhomog = coefhomog/kcoef
@@ -423,12 +423,12 @@ end
 ## Log ##
 function log(a::Taylor1)
     ( firstnonzero(a)>0 ) && error("Impossible to expand `log` around 0.")
-    @inbounds aux = log( a.coeffs[1] )
+    aux = log( a.coeffs[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
     coeffs = similar(ac)
-    @inbounds coeffs[1] = aux
-    @inbounds for k = 1:a.order
+    coeffs[1] = aux
+    for k = 1:a.order
         coeffs[k+1] = logHomogCoef(k, ac, coeffs)
     end
     Taylor1( coeffs, a.order )
@@ -438,10 +438,10 @@ end
 function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return log( ac[1] )
     coefhomog = zero(T)
-    @inbounds for i = 1:kcoef-1
+    for i = 1:kcoef-1
         coefhomog += (kcoef-i) * ac[i+1] * coeffs[kcoef-i+1]
     end
-    @inbounds coefhomog = (ac[kcoef+1] -coefhomog/kcoef) / ac[1]
+    coefhomog = (ac[kcoef+1] -coefhomog/kcoef) / ac[1]
     coefhomog
 end
 
@@ -449,14 +449,14 @@ end
 sin(a::Taylor1) = sincos(a)[1]
 cos(a::Taylor1) = sincos(a)[2]
 function sincos(a::Taylor1)
-    @inbounds aux = sin( a.coeffs[1] )
+    aux = sin( a.coeffs[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     sincoeffs = similar(v)
     coscoeffs = similar(v)
-    @inbounds sincoeffs[1] = aux
-    @inbounds coscoeffs[1] = cos( a.coeffs[1] )
-    @inbounds for k = 1:a.order
+    sincoeffs[1] = aux
+    coscoeffs[1] = cos( a.coeffs[1] )
+    for k = 1:a.order
         sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
     end
     return Taylor1(sincoeffs, a.order), Taylor1(coscoeffs, a.order)
@@ -470,7 +470,7 @@ function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
     sincoefhom = zero(T)
     coscoefhom = zero(T)
 
-    @inbounds for i = 1:kcoef
+    for i = 1:kcoef
         x = i * ac[i+1]
         sincoefhom += x * ccoeffs[kcoef-i+1]
         coscoefhom -= x * scoeffs[kcoef-i+1]
@@ -488,9 +488,9 @@ function tan(a::Taylor1)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = similar(v)
     coeffst2 = similar(v)
-    @inbounds coeffs[1] = aux
-    @inbounds coeffst2[1] = aux^2
-    @inbounds for k = 1:a.order
+    coeffs[1] = aux
+    coeffst2[1] = aux^2
+    for k = 1:a.order
         coeffs[k+1] = tanHomogCoef(k, v, coeffst2)
         coeffst2[k+1] = squareHomogCoef(k, coeffs)
     end
@@ -500,18 +500,18 @@ end
 function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
     kcoef == 0 && return tan( ac[1] )
     coefhomog = zero(T)
-    @inbounds for i = 0:kcoef-1
+    for i = 0:kcoef-1
         coefhomog += (kcoef-i)*ac[kcoef-i+1]*coeffst2[i+1]
     end
-    @inbounds coefhomog = ac[kcoef+1] + coefhomog/kcoef
+    coefhomog = ac[kcoef+1] + coefhomog/kcoef
     coefhomog
 end
 
 ## Differentiating ##
 function diffTaylor(a::Taylor1)
     coeffs = zero(a.coeffs)
-    @inbounds coeffs[1] = a.coeffs[2]
-    @inbounds for i = 1:a.order
+    coeffs[1] = a.coeffs[2]
+    for i = 1:a.order
         coeffs[i] = i*a.coeffs[i+1]
     end
     return Taylor1(coeffs, a.order)
@@ -521,10 +521,10 @@ end
 function integTaylor{T<:Number}(a::Taylor1{T}, x::Number)
     R = promote_type(T, typeof(a.coeffs[1] / 1), typeof(x))
     coeffs = zeros(R, a.order+1)
-    @inbounds for i = 1:a.order
+    for i = 1:a.order
         coeffs[i+1] = a.coeffs[i] / i
     end
-    @inbounds coeffs[1] = convert(R, x)
+    coeffs[1] = convert(R, x)
     return Taylor1(coeffs, a.order)
 end
 integTaylor{T<:Number}(a::Taylor1{T}) = integTaylor(a, zero(T))
@@ -532,8 +532,8 @@ integTaylor{T<:Number}(a::Taylor1{T}) = integTaylor(a, zero(T))
 ## Evaluates a Taylor1 polynomial on a given point using Horner's rule ##
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
-    @inbounds suma = convert(R, a.coeffs[end])
-    @inbounds for k = a.order:-1:1
+    suma = convert(R, a.coeffs[end])
+    for k = a.order:-1:1
         suma = suma*dx + a.coeffs[k]
     end
     suma
@@ -542,8 +542,8 @@ evaluate{T<:Number}(a::Taylor1{T}) = a.coeffs[1]
 
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
     a, x = fixshape(a, x)
-    @inbounds suma = a.coeffs[end]
-    @inbounds for k = a.order:-1:1
+    suma = a.coeffs[end]
+    for k = a.order:-1:1
         suma = suma*x + a.coeffs[k]
     end
     suma
