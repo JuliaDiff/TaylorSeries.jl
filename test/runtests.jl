@@ -24,22 +24,26 @@ facts("Tests for Taylor1 expansions") do
     @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  => true
 
     @fact length(Taylor1(0)) == 0  => true
-    @fact length(TaylorSeries.fixshape(zt,convert(Taylor1{Int64},[0]))[1]) ==
-        15  => true
+    @fact length(TaylorSeries.fixshape(zt,Taylor1([1.0]))[2]) == 15  => true
+    @fact eltype(TaylorSeries.fixshape(zt,Taylor1([1.0]))[1]) == Float64  => true
     @fact TaylorSeries.firstnonzero(t) == 1  => true
     @fact TaylorSeries.firstnonzero(zt) == zt.order+1  => true
 
     @fact t == Taylor1(ta(0),15)  => true
     @fact ot == 1  => true
     @fact 0.0 == zt  => true
-    @fact get_coeff(t,1) == 1  => true
-    @fact zt+1 == ot  => true
+    @fact get_coeff(tim,1) == complex(0,1)  => true
+    @fact zt+1.0 == ot  => true
+    @fact 1.0-ot == zt  => true
     @fact t+t == 2t  => true
     @fact t-t == zt  => true
+    @fact +t == -(-t)  => true
 
     tsquare = Taylor1([0,0,1],15)
     @fact t^0 == t^0.0 == one(t)  => true
     @fact t*t == tsquare  => true
+    @fact t*1 == t =>  true
+    @fact 0*t == zt =>  true
     @fact (-t)^2 == tsquare  => true
     @fact t^3 == tsquare*t  => true
     @fact tsquare/t == t  => true
@@ -146,7 +150,7 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact eltype(convert(TaylorN{Complex128},1)) == Complex128  => true
 
     @fact 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)  => true
-    @fact xT-yT == TaylorN([xH-yH])  => true
+    @fact xT-yT-1 == TaylorN([-1,xH-yH])  => true
     @fact xT*yT == TaylorN([HomogeneousPolynomial([0,1,0],2)])  => true
     @fact (1/(1-xT)).coeffs[4] == HomogeneousPolynomial(1.0,3)  => true
     @fact (yT/(1-xT)).coeffs[5] == xH^3 * yH  => true

@@ -6,10 +6,12 @@
 #
 # - utils_TaylorN.jl contains the constructors and methods for N-variable expansions
 #
-# Last modification: 2015.05.08
+# Last modification: 2015.07.03
 #
 # Luis Benet & David P. Sanders
 # UNAM
+#
+# MIT Expat license
 #
 
 module TaylorSeries

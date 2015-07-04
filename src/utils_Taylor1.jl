@@ -1,9 +1,11 @@
 # utils_Taylor1.jl: 1-variable Taylor expansions
 #
-# Last modification: 2015.05.08
+# Last modification: 2015.07.03
 #
 # Luis Benet & David P. Sanders
 # UNAM
+#
+# MIT Expat license
 #
 
 
@@ -133,7 +135,31 @@ for f in (:+, :-)
             end
             return Taylor1(v, a.order)
         end
-        ($f)(a::Taylor1) = Taylor1(($f)(a.coeffs), a.order)
+        function ($f)(a::Taylor1)
+            v = similar(a.coeffs)
+            @simd for i in eachindex(v)
+                @inbounds v[i] = ($f)(a.coeffs[i])
+            end
+            return Taylor1(v, a.order)
+        end
+        function ($f)(a::Taylor1, b::Union(Real,Complex))
+            @inbounds aux = ($f)(a.coeffs[1], b)
+            v = Array(eltype(aux), length(a.coeffs))
+            @simd for i in eachindex(v)
+                @inbounds v[i] = a.coeffs[i]
+            end
+            @inbounds v[1] = aux
+            Taylor1(v, a.order)
+        end
+        function ($f)(a::Union(Real,Complex), b::Taylor1)
+            @inbounds aux = ($f)(a, b.coeffs[1])
+            v = Array(eltype(aux), length(b.coeffs))
+            @simd for i in eachindex(v)
+                @inbounds v[i] = ($f)(b.coeffs[i])
+            end
+            @inbounds v[1] = aux
+            Taylor1(v, b.order)
+        end
     end
 end
 
@@ -148,6 +174,19 @@ function *(a::Taylor1, b::Taylor1)
     Taylor1(coeffs, a.order)
 end
 
+# The following two functions are included to avoid a warning, due to the next two
+*(a::Bool, b::Taylor1) = *(promote(a,b)...)
+*(a::Taylor1, b::Bool) = b*a
+function *(a::Union(Real,Complex), b::Taylor1)
+    @inbounds aux = a * b.coeffs[1]
+    v = Array(eltype(aux), length(b.coeffs))
+    @simd for i in eachindex(v)
+        @inbounds v[i] = a * b.coeffs[i]
+    end
+    Taylor1(v, b.order)
+end
+*(a::Taylor1, b::Union(Real,Complex)) = b * a
+
 # Homogeneous coefficient for the multiplication
 function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
@@ -159,6 +198,9 @@ function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
 end
 
 ## Division ##
+/(a::Taylor1, b::Real) = a * inv(b)
+/(a::Taylor1, b::Complex) = a * inv(b)
+
 function /(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
     # order and coefficient of first factorized term
