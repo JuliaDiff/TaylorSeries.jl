@@ -15,6 +15,7 @@ facts("Tests for Taylor1 expansions") do
     tol1 = eps(1.0)
 
     @fact Taylor1([0,1,0,0]) == taylor1_variable(3)  => true
+    @fact get_coeff(taylor1_variable(Complex128,3),1) == complex(1.0,0.0)  => true
     @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  => true
     @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  => true
     @fact convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t  => true
@@ -112,7 +113,6 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
 
     @fact x.order == 6 => true
 
-
     set_variables("x", numvars=2, order=17)
 
     xH = HomogeneousPolynomial([1,0])
@@ -132,6 +132,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact convert(TaylorN{Float64}, yH) == 1.0*yT  => true
     @fact convert(TaylorN{Float64}, [xH,yH]) == xT+1.0*yT  => true
     @fact convert(TaylorN{Int}, [xH,yH]) == xT+yT  => true
+    @fact promote(xH, [1,1])[2] == xH+yH  => true
+    @fact promote(xH, yT)[1] == xT  => true
+    @fact promote(xT, [xH,yH])[2] == xT+yT  => true
+    @fact typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}  => true
     @fact TaylorSeries.fixorder(taylorN_variable(1,1),17) == xT  => true
     @fact TaylorSeries.iszero(zeroT.coeffs[2])  =>  true
 
@@ -143,6 +147,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact get_maxOrder(yH) == 1  => true
     @fact get_maxOrder(xT) == 17  => true
 
+    @fact xT == TaylorN([xH])  => true
+    @fact one(xT) == TaylorN(1,5)  => true
     @fact TaylorN(zeroT,5) == 0  => true
     @fact TaylorN(uT) == convert(TaylorN{Complex},1)  => true
     @fact get_numVars() == 2  => true
@@ -168,6 +174,9 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact_throws DomainError yT^(-2)
     @fact_throws DomainError yT^(-2.0)
     @fact (1+xT)^(3//2) == ((1+xT)^0.5)^3  => true
+    @fact real(xH) == xH  => true
+    @fact imag(xH) == zero(xH)  => true
+    @fact conj(im*yH) == (im*yH)'  => true
     @fact real( exp(1im * xT)) == cos(xT)  => true
     cr = convert(TaylorN{Rational{Int}},cos(xT))
     @fact get_coeff(cr,[4,0]) == 1//factorial(4)  => true
