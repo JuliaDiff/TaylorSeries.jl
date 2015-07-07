@@ -1,9 +1,11 @@
 # utils_TaylorN.jl: N-variables Taylor expansions through homogeneous polynomials
 #
-# Last modification: 2015.05.08
+# Last modification: 2015.07.03
 #
 # Luis Benet & David P. Sanders
 # UNAM
+#
+# MIT Expat license
 #
 
 
@@ -315,8 +317,45 @@ for T in (:HomogeneousPolynomial, :TaylorN), f in (:+, :-)
         end
     end
 end
+for f in (:+, :-)
+    @eval begin
+        function ($f)(a::TaylorN, b::Union(Real,Complex))
+            @inbounds aux = ($f)(a.coeffs[1], b)
+            S = eltype(aux)
+            coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
+            @simd for i in eachindex(coeffs)
+                @inbounds coeffs[i] = a.coeffs[i]
+            end
+            @inbounds coeffs[1] = aux
+            return TaylorN{S}(coeffs, a.order)
+        end
+        function ($f)(b::Union(Real,Complex), a::TaylorN)
+            @inbounds aux = ($f)(b, a.coeffs[1])
+            S = eltype(aux)
+            coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
+            @simd for i in eachindex(coeffs)
+                @inbounds coeffs[i] = ($f)(a.coeffs[i])
+            end
+            @inbounds coeffs[1] = aux
+            return TaylorN{S}(coeffs, a.order)
+        end
+    end
+end
 
 ## Multiplication ##
+*(a::Bool, b::HomogeneousPolynomial) = *(promote(a,b)...)
+*(a::HomogeneousPolynomial, b::Bool) = b * a
+function *{T<:Union(Real,Complex)}(a::HomogeneousPolynomial, b::T)
+    @inbounds aux = a.coeffs[1] * b
+    S = typeof(aux)
+    coeffs = Array(S,length(a.coeffs))
+    @simd for i in eachindex(coeffs)
+        @inbounds coeffs[i] = a.coeffs[i] * b
+    end
+    return HomogeneousPolynomial{S}(coeffs, a.order)
+end
+*{T<:Union(Real,Complex)}(b::T, a::HomogeneousPolynomial) = a * b
+
 function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     T = promote_type( eltype(a), eltype(b) )
     order = a.order + b.order
@@ -355,6 +394,19 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     return HomogeneousPolynomial{T}(coeffs, order)
 end
 
+*(a::Bool, b::TaylorN) = *(promote(a,b)...)
+*(a::TaylorN, b::Bool) = b * a
+function *{T<:Union(Real,Complex)}(a::TaylorN, b::T)
+    @inbounds aux = a.coeffs[1] * b
+    S = eltype(aux)
+    coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
+    @simd for i in eachindex(coeffs)
+        @inbounds coeffs[i] = a.coeffs[i] * b
+    end
+    return TaylorN{S}(coeffs, a.order)
+end
+*{T<:Union(Real,Complex)}(b::T, a::TaylorN) = a * b
+
 function *(a::TaylorN, b::TaylorN)
     a, b = fixshape(a, b)
     T = eltype(a)
@@ -373,6 +425,8 @@ end
 ## Division ##
 /(a::HomogeneousPolynomial, x::Real) = a*inv(x)
 /(a::HomogeneousPolynomial, x::Complex) = a*inv(x)
+/(a::TaylorN, x::Real) = a*inv(x)
+/(a::TaylorN, x::Complex) = a*inv(x)
 function /(a::TaylorN, b::TaylorN)
     @inbounds b0 = b.coeffs[1].coeffs[1]
     @assert b0 != zero(b0)
