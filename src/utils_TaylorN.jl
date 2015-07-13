@@ -343,19 +343,6 @@ for f in (:+, :-)
 end
 
 ## Multiplication ##
-*(a::Bool, b::HomogeneousPolynomial) = *(promote(a,b)...)
-*(a::HomogeneousPolynomial, b::Bool) = b * a
-function *{T<:Union(Real,Complex)}(a::HomogeneousPolynomial, b::T)
-    @inbounds aux = a.coeffs[1] * b
-    S = typeof(aux)
-    coeffs = Array(S,length(a.coeffs))
-    @simd for i in eachindex(coeffs)
-        @inbounds coeffs[i] = a.coeffs[i] * b
-    end
-    return HomogeneousPolynomial{S}(coeffs, a.order)
-end
-*{T<:Union(Real,Complex)}(b::T, a::HomogeneousPolynomial) = a * b
-
 function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     T = promote_type( eltype(a), eltype(b) )
     order = a.order + b.order
@@ -393,6 +380,19 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 
     return HomogeneousPolynomial{T}(coeffs, order)
 end
+*(a::Bool, b::HomogeneousPolynomial) = *(promote(a,b)...)
+*(a::HomogeneousPolynomial, b::Bool) = b * a
+function *{T<:Union(Real,Complex)}(a::HomogeneousPolynomial, b::T)
+    @inbounds aux = a.coeffs[1] * b
+    S = typeof(aux)
+    coeffs = Array(S,length(a.coeffs))
+    @simd for i in eachindex(coeffs)
+        @inbounds coeffs[i] = a.coeffs[i] * b
+    end
+    return HomogeneousPolynomial{S}(coeffs, a.order)
+end
+*{T<:Union(Real,Complex)}(b::T, a::HomogeneousPolynomial) = a * b
+
 
 *(a::Bool, b::TaylorN) = *(promote(a,b)...)
 *(a::TaylorN, b::Bool) = b * a

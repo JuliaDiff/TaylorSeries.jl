@@ -164,17 +164,6 @@ for f in (:+, :-)
 end
 
 ## Multiplication ##
-function *(a::Taylor1, b::Taylor1)
-    a, b = fixshape(a, b)
-    coeffs = similar(a.coeffs)
-    @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
-    @inbounds for k = 1:a.order
-        coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
-    end
-    Taylor1(coeffs, a.order)
-end
-
-# The following two functions are included to avoid a warning, due to the next two
 *(a::Bool, b::Taylor1) = *(promote(a,b)...)
 *(a::Taylor1, b::Bool) = b*a
 function *(a::Union(Real,Complex), b::Taylor1)
@@ -186,6 +175,15 @@ function *(a::Union(Real,Complex), b::Taylor1)
     Taylor1(v, b.order)
 end
 *(a::Taylor1, b::Union(Real,Complex)) = b * a
+function *(a::Taylor1, b::Taylor1)
+    a, b = fixshape(a, b)
+    coeffs = similar(a.coeffs)
+    @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
+    @inbounds for k = 1:a.order
+        coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
+    end
+    Taylor1(coeffs, a.order)
+end
 
 # Homogeneous coefficient for the multiplication
 function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
