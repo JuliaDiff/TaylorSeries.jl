@@ -139,9 +139,7 @@ set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names
 
 @doc doc"""`set_variables` sets the names and number of the Taylor variables,
 as well as the order of the Taylor expansion.""" ->
-
-function set_variables{T}(names::Vector{T}; order=6)
-
+function set_variables{T}(R::Type, names::Vector{T}; order=6)
     order >= 1 || error("Order must be at least 1")
 
     num_vars = length(names)
@@ -164,11 +162,11 @@ function set_variables{T}(names::Vector{T}; order=6)
     end
 
     # return a list of the new variables
-    [taylorN_variable(i) for i in 1:get_numVars()]
+    TaylorN{R}[taylorN_variable(R,i) for i in 1:get_numVars()]
 end
+set_variables{T}(names::Vector{T}; order=6) = set_variables(Float64, names, order=order)
 
-
-function set_variables{T<:String}(names::T; order=6, numvars=-1)
+function set_variables{T<:String}(R::Type, names::T; order=6, numvars=-1)
     variable_names = split(names)
 
     if length(variable_names) == 1 && numvars >= 1
@@ -176,10 +174,10 @@ function set_variables{T<:String}(names::T; order=6, numvars=-1)
         variable_names = [string(name, subscriptify(i)) for i in 1:numvars]
     end
 
-    set_variables(variable_names, order=order)
-
+    set_variables(R, variable_names, order=order)
 end
-
+set_variables{T<:String}(names::T; order=6, numvars=-1) = 
+    set_variables(Float64, names, order=order, numvars=numvars)
 
 
 # function set_params_TaylorN(order::Int, numVars::Int)

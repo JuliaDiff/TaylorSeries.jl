@@ -106,11 +106,15 @@ end
 
 facts("Tests for HomogeneousPolynomial and TaylorN") do
 
-    x, y = set_variables("x", numvars=2, order=6)
+    @fact eltype(set_variables(Int, "x", numvars=2, order=6))  => TaylorN{Int}
+    @fact eltype(set_variables("x", numvars=2, order=6))  => TaylorN{Float64}
+    @fact eltype(set_variables(BigInt, "x y", order=6))  => TaylorN{BigInt}
+    @fact eltype(set_variables("x y", order=6))  => TaylorN{Float64}
 
     @fact get_maxOrder() == 6  => true
     @fact get_numVars() == 2  => true
 
+    x, y = set_variables("x y", order=6)
     @fact x.order == 6 => true
 
     set_variables("x", numvars=2, order=17)
