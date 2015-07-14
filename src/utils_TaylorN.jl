@@ -123,8 +123,8 @@ convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, b), orderH(b))
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Number) =
     HomogeneousPolynomial{T}([convert(T,b)], 0)
-convert{T<:Number}(::Type{HomogeneousPolynomial{T}},
-    a::HomogeneousPolynomial{T}) = a
+# convert{T<:Number}(::Type{HomogeneousPolynomial{T}},
+#     a::HomogeneousPolynomial{T}) = a
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{T,1}) =
     HomogeneousPolynomial{T}(b, orderH(b))
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::T) =
@@ -196,7 +196,7 @@ end
 taylorN_variable(nv::Int, order::Int=_params_taylorN.maxOrder) =
     taylorN_variable(Float64, nv, order)
 
-variables() = [taylorN_variable(i) for i in 1:get_numVars()]
+# variables() = [taylorN_variable(i) for i in 1:get_numVars()]
 
 ## get_coeff
 function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
@@ -229,7 +229,7 @@ convert{T<:Number, S<:Number}(::Type{TaylorN{T}},
     TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, b), length(b)-1)
 convert{T<:Number}(::Type{TaylorN{T}}, b::Number) =
     TaylorN( [HomogeneousPolynomial(convert(T, b))], 0)
-convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN{T}) = a
+# convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN{T}) = a
 convert{T<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) =
     TaylorN{T}( [b], b.order)
 convert{T<:Number}(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) =

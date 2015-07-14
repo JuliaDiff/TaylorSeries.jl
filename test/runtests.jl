@@ -19,7 +19,9 @@ facts("Tests for Taylor1 expansions") do
     @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  => true
     @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  => true
     @fact convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t  => true
+    @fact convert(Taylor1{BigFloat},[0.0, 1.0]) == ta(big(0.0))  => true
     @fact promote(0,Taylor1(1.0,0)) == (zt,ot)  => true
+    @fact eltype(promote(ta(0.0),zeros(Int,2))[2]) == Float64  => true
     @fact eltype(promote(0,Taylor1(ot))[1]) == Float64  => true
     @fact eltype(promote(1.0+im, zt)[1]) == Complex{Float64}  => true
     @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  => true
@@ -41,6 +43,8 @@ facts("Tests for Taylor1 expansions") do
     @fact +t == -(-t)  => true
 
     tsquare = Taylor1([0,0,1],15)
+    @fact t * true == t  => true
+    @fact false * t == zero(t)  => true
     @fact t^0 == t^0.0 == one(t)  => true
     @fact t*t == tsquare  => true
     @fact t*1 == t =>  true
@@ -75,11 +79,11 @@ facts("Tests for Taylor1 expansions") do
     @fact log((1-t)^2) == 2*log(1-t)  => true
     @fact real(exp(tim)) == cos(t)  => true
     @fact imag(exp(tim)) == sin(t)  => true
-    @fact exp(tim') == cos(t)-im*sin(t)  => true
+    @fact exp(conj(tim)) == cos(t)-im*sin(t) == exp(tim')  => true
     @fact (exp(t))^(2im) == cos(2t)+im*sin(2t)  => true
     @fact (exp(t))^Taylor1(-5.2im) == cos(5.2t)-im*sin(5.2t)  => true
-    cr = convert(Taylor1{Rational{Int}},cos(t))
-    @fact get_coeff(cr,8) == 1//factorial(8)  => true
+    @fact get_coeff(convert(Taylor1{Rational{Int}},cos(t)),8) ==
+        1//factorial(8)  => true
     @fact abs((tan(t)).coeffs[8]- 17/315) < tol1  => true
     @fact abs((tan(t)).coeffs[14]- 21844/6081075) < tol1  => true
     @fact evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e  => true
@@ -116,6 +120,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
 
     x, y = set_variables("x y", order=6)
     @fact x.order == 6 => true
+    @fact TaylorSeries.set_variable_names(["x","y"]) == ["x", "y"]  => true
+    @fact TaylorSeries.get_variable_names() == ["x", "y"]  => true
 
     set_variables("x", numvars=2, order=17)
 
@@ -148,8 +154,12 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact length(xH) == 2  => true
     @fact zero(xH) == 0*xH  => true
     @fact one(yH) == xH+yH  => true
+    @fact xH * true == xH  => true
+    @fact false * yH == zero(yH)  => true
     @fact get_maxOrder(yH) == 1  => true
     @fact get_maxOrder(xT) == 17  => true
+    @fact xT * true == xT  => true
+    @fact false * yT == zero(yT)  => true
 
     @fact xT == TaylorN([xH])  => true
     @fact one(xT) == TaylorN(1,5)  => true
@@ -181,17 +191,22 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact real(xH) == xH  => true
     @fact imag(xH) == zero(xH)  => true
     @fact conj(im*yH) == (im*yH)'  => true
+    @fact conj(im*yT) == (im*yT)'  => true
     @fact real( exp(1im * xT)) == cos(xT)  => true
+    @fact get_coeff(convert(TaylorN{Rational{Int}},cos(xT)),[4,0]) ==
+        1//factorial(4)  => true
     cr = convert(TaylorN{Rational{Int}},cos(xT))
     @fact get_coeff(cr,[4,0]) == 1//factorial(4)  => true
     @fact imag((exp(yT))^(-1im)') == sin(yT)  => true
     exy = exp( xT+yT )
     @fact evaluate(exy) == 1  => true
+    @fact evaluate(exy,[0.1im,0.01im]) == exp(0.11im)  => true
     @fact isapprox(evaluate(exy, [1,1]), e^2)  => true
     txy = tan(xT+yT)
     @fact get_coeff(txy,[8,7]) == 929569/99225  => true
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == ptxy  => true
+    @fact evaluate(xH*yH,[1.0,2.0]) == 2.0  => true
 
     g1(xT,yT) = xT^3 + 3yT^2 - 2xT^2 * yT - 7xT + 2
     g2(xT,yT) = yT + xT^2 - xT^4

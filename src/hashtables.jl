@@ -135,8 +135,6 @@ get_variable_names() = _params_taylorN.variable_names
 set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names = names
 
 
-
-
 @doc doc"""`set_variables` sets the names and number of the Taylor variables,
 as well as the order of the Taylor expansion.""" ->
 function set_variables{T}(R::Type, names::Vector{T}; order=6)
@@ -176,23 +174,5 @@ function set_variables{T<:String}(R::Type, names::T; order=6, numvars=-1)
 
     set_variables(R, variable_names, order=order)
 end
-set_variables{T<:String}(names::T; order=6, numvars=-1) = 
+set_variables{T<:String}(names::T; order=6, numvars=-1) =
     set_variables(Float64, names, order=order, numvars=numvars)
-
-
-# function set_params_TaylorN(order::Int, numVars::Int)
-#     (order > 0 && numVars>=1) ||
-#         error("Incorrect order (<0) or number of variables (>=1)")
-
-#     order == _params_taylorN.maxOrder && numVars == _params_taylorN.numVars &&
-#         return order, numVars
-#     global _params_taylorN = ParamsTaylorN(order, numVars, _params_taylorN.variable_names)
-
-#     resize!(indicesTable,order+1)
-#     resize!(sizeTable,order+1)
-#     resize!(posTable,order+1)
-#     indicesTable[:], sizeTable[:], posTable[:] = generateTables()
-#     gc();
-
-#     return order, numVars
-# end
