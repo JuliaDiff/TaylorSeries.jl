@@ -5,7 +5,7 @@ independent variables.
 
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.3.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=release)
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_nightly.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=nightly)
-[![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
+[![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
 #### Authors
 - [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas, 
