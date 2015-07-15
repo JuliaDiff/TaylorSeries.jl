@@ -107,11 +107,8 @@ facts("Tests for Taylor1 expansions") do
     @fact_throws ErrorException cos(t)/sin(t)
     # @fact_throws AssertionError deriv( exp(ta(1.0pi)), 30 )
 
-    buffer = IOBuffer()
-    show(buffer, ta(-3))
-    @fact bytestring(buffer) == string(" - 3 + 1 t + 𝒪(t¹⁶)")  => true
-    @fact TaylorSeries.pretty_print(ta(3im)) == 
-        string(" ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)")  => true
+    @fact string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"  => true
+    @fact TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"  => true
 end
 
 facts("Tests for HomogeneousPolynomial and TaylorN") do
@@ -123,7 +120,7 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
 
     @fact TaylorSeries.indicesTable[2][1] == [1,0]  => true
     @fact TaylorSeries.posTable[4][hash([2,1])] == 2  => true
-    
+
     @fact get_maxOrder() == 6  => true
     @fact get_numVars() == 2  => true
 
@@ -232,15 +229,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'  => true
     @fact hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))  => true
 
-    buffer = IOBuffer(); show(buffer, -xH)
-    @fact bytestring(buffer) == string(" - 1 x₁")  => true
-    buffer = IOBuffer(); show(buffer, xT^2)
-    @fact bytestring(buffer) == string(" 1 x₁² + 𝒪(‖x‖¹⁸)")  => true
-    buffer = IOBuffer(); show(buffer, 1im*yT)
-    @fact bytestring(buffer) == string(" ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)")  => true
-    buffer = IOBuffer(); show(buffer, xT-im*yT)
-    @fact bytestring(buffer) ==
-        string("  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)")  => true
+    @fact string(-xH) == " - 1 x₁"  => true
+    @fact string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"  => true
+    @fact string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"  => true
+    @fact string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"  => true
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do
