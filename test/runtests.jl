@@ -106,6 +106,12 @@ facts("Tests for Taylor1 expansions") do
     @fact_throws ErrorException log(t)
     @fact_throws ErrorException cos(t)/sin(t)
     # @fact_throws AssertionError deriv( exp(ta(1.0pi)), 30 )
+
+    buffer = IOBuffer()
+    show(buffer, ta(-3))
+    @fact bytestring(buffer) == string(" - 3 + 1 t + 𝒪(t¹⁶)")  => true
+    @fact TaylorSeries.pretty_print(ta(3im)) == 
+        string(" ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)")  => true
 end
 
 facts("Tests for HomogeneousPolynomial and TaylorN") do
@@ -115,6 +121,9 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact eltype(set_variables(BigInt, "x y", order=6))  => TaylorN{BigInt}
     @fact eltype(set_variables("x y", order=6))  => TaylorN{Float64}
 
+    @fact TaylorSeries.indicesTable[2][1] == [1,0]  => true
+    @fact TaylorSeries.posTable[4][hash([2,1])] == 2  => true
+    
     @fact get_maxOrder() == 6  => true
     @fact get_numVars() == 2  => true
 
@@ -173,6 +182,7 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact xT-yT-1 == TaylorN([-1,xH-yH])  => true
     @fact xT*yT == TaylorN([HomogeneousPolynomial([0,1,0],2)])  => true
     @fact (1/(1-xT)).coeffs[4] == HomogeneousPolynomial(1.0,3)  => true
+    @fact xH^20 == HomogeneousPolynomial([0],get_maxOrder())  => true
     @fact (yT/(1-xT)).coeffs[5] == xH^3 * yH  => true
     @fact mod(1+xT,1) == +xT  => true
     @fact (rem(1+xT,1)).coeffs[1] == 0  => true
@@ -221,6 +231,16 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact hessian(f1^2)/2 == [ [49,0] [0,12] ]  => true
     @fact hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'  => true
     @fact hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))  => true
+
+    buffer = IOBuffer(); show(buffer, -xH)
+    @fact bytestring(buffer) == string(" - 1 x₁")  => true
+    buffer = IOBuffer(); show(buffer, xT^2)
+    @fact bytestring(buffer) == string(" 1 x₁² + 𝒪(‖x‖¹⁸)")  => true
+    buffer = IOBuffer(); show(buffer, 1im*yT)
+    @fact bytestring(buffer) == string(" ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)")  => true
+    buffer = IOBuffer(); show(buffer, xT-im*yT)
+    @fact bytestring(buffer) ==
+        string("  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)")  => true
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do

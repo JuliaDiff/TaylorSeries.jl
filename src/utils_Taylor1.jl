@@ -72,8 +72,6 @@ end
 convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) =
     Taylor1(convert(Array{T,1},b))
 convert{T<:Number}(::Type{Taylor1{T}}, b::Number) = Taylor1([convert(T,b)], 0)
-# convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1{T}) = a
-# convert{T<:Number,S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) = Taylor1(convert(T,b))
 convert{T<:Number}(::Type{Taylor1{T}}, b::T) = Taylor1([b], 0)
 
 promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) =
