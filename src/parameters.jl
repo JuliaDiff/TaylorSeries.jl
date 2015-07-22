@@ -61,7 +61,7 @@ function set_variables{T}(R::Type, names::Vector{T}; order=6)
         resize!(size_table,order+1)
         resize!(pos_table,order+1)
 
-        index_table[:], size_table[:], pos_table[:] = generateTables()
+        index_table[:], size_table[:], pos_table[:] = generate_tables(num_vars, order)
         gc();
     end
 

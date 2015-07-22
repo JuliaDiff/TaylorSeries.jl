@@ -16,9 +16,7 @@
   given degree `k` and a vector of indexes (hashed), it returns the
   (lexicographic) position of the corresponding monomial.
 """ ->
-function generateTables()
-    maxOrd = get_order()
-    numVars = get_numvars()
+function generate_tables(numVars, maxOrd)
 
     arrayInd  = Array(Dict{Int,Array{Int,1}},maxOrd+1)
     arraySize = Array(Int,maxOrd+1)
@@ -81,6 +79,6 @@ function pos2indices!(iIndices::Array{Int,1}, pos::Int, dict::Dict{Int,Array{Int
     return pos, iIndices[1:end]
 end
 
-const index_table, size_table, pos_table = generateTables()
+const index_table, size_table, pos_table = generate_tables(get_numvars(), get_order())
 gc();
 
