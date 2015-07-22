@@ -1,12 +1,6 @@
-# utils_TaylorN.jl: N-variables Taylor expansions through homogeneous polynomials
-#
-# Last modification: 2015.07.03
-#
-# Luis Benet & David P. Sanders
-# UNAM
-#
-# MIT Expat license
-#
+# This file is part of TaylorSeries.jl, MIT licensed
+
+# HomogeneousPolynomial and TaylorN types, and functions defined on them
 
 
 ## Minimum order of a HomogeneousPolynomial compatible with the vector's length
