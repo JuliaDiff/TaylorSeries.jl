@@ -238,7 +238,7 @@ end
 facts("Testing an identity proved by Euler (8 variables)") do
     make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))
 
-    variable_names = [make_variable("α", i) for i in 1:4]
+    variable_names = UTF8String[make_variable("α", i) for i in 1:4]
     append!(variable_names, [make_variable("β", i) for i in 1:4])
 
     a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4)

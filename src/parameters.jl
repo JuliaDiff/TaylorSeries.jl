@@ -26,9 +26,9 @@ global const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
 `HomogeneousPolynomial`""" ->
 function show_params_TaylorN()
     info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = $(_params_TaylorN_.order)
-    Number of variables = $(_params_TaylorN_.numvars)
-    Variable names      = $(_params_TaylorN_.variable_names)
+    Maximum order       = $(get_order())
+    Number of variables = $(get_numvars())
+    Variable names      = $(get_variable_names())
     """)
     nothing
 end
@@ -45,7 +45,7 @@ set_variable_names{T<:String}(names::Vector{T}) = _params_TaylorN_.variable_name
 @doc doc"""`set_variables` sets the names and number of the Taylor variables,
 as well as the order of the Taylor expansion.""" ->
 
-function set_variables{T}(R::Type, names::Vector{T}; order=6)
+function set_variables{T<:String}(R::Type, names::Vector{T}; order=6)
     order >= 1 || error("Order must be at least 1")
 
     num_vars = length(names)
