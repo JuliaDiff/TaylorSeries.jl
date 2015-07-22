@@ -63,12 +63,12 @@ end
 
 
 # one variable:
-include("utils_Taylor1.jl")
+include("Taylor1.jl")
 
 # several variables:
 include("parameters.jl")
 include("hash_tables.jl")
-include("utils_TaylorN.jl")
+include("TaylorN.jl")
 
 include("printing.jl")
 
