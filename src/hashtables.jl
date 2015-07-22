@@ -40,10 +40,10 @@ global const _params_taylorN = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
 
 ## Utilities to get/set the maximum order and number of variables;
 ## they reset the hash tables
-get_maxOrder() = _params_taylorN.maxOrder
+get_order() = _params_taylorN.maxOrder
 # set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
 
-get_numVars() = _params_taylorN.numVars
+get_numvars() = _params_taylorN.numVars
 # set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
 
 
@@ -63,8 +63,8 @@ get_numVars() = _params_taylorN.numVars
   (lexicographic) position of the corresponding monomial.
 """ ->
 function generateTables()
-    maxOrd = get_maxOrder()
-    numVars = get_numVars()
+    maxOrd = get_order()
+    numVars = get_numvars()
 
     arrayInd  = Array(Dict{Int,Array{Int,1}},maxOrd+1)
     arraySize = Array(Int,maxOrd+1)
@@ -160,7 +160,7 @@ function set_variables{T}(R::Type, names::Vector{T}; order=6)
     end
 
     # return a list of the new variables
-    TaylorN{R}[taylorN_variable(R,i) for i in 1:get_numVars()]
+    TaylorN{R}[taylorN_variable(R,i) for i in 1:get_numvars()]
 end
 set_variables{T}(names::Vector{T}; order=6) = set_variables(Float64, names, order=order)
 

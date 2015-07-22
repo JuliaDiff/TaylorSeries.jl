@@ -40,7 +40,7 @@ export Taylor1, TaylorN, HomogeneousPolynomial
 export taylor1_variable, taylorN_variable, get_coeff,
     diffTaylor, integTaylor, evaluate, deriv,
     show_params_TaylorN,
-    get_maxOrder, get_numVars,
+    get_order, get_numvars,
     set_variables,
     ∇, jacobian, hessian
 

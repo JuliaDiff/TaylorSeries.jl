@@ -65,7 +65,7 @@ HomogeneousPolynomial{T<:Number}(x::T) = HomogeneousPolynomial{T}([x], 0)
 
 eltype{T<:Number}(::HomogeneousPolynomial{T}) = T
 length(a::HomogeneousPolynomial) = length( a.coeffs )
-get_maxOrder(a::HomogeneousPolynomial) = a.order
+get_order(a::HomogeneousPolynomial) = a.order
 
 
 ## zero and one ##
@@ -210,7 +210,7 @@ end
 ## Type, length ##
 eltype{T<:Number}(::TaylorN{T}) = T
 length(a::TaylorN) = length( a.coeffs )
-get_maxOrder(x::TaylorN) = x.order
+get_order(x::TaylorN) = x.order
 
 ## zero and one ##
 zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(T), a.order)
@@ -777,7 +777,7 @@ diffTaylor(a::TaylorN) = diffTaylor(a, 1)
 ## Gradient, jacobian and hessian
 function gradient(f::TaylorN)
     T = eltype(f)
-    numVars = get_numVars()
+    numVars = get_numvars()
     grad = Array(TaylorN{T}, numVars)
     @inbounds for nv = 1:numVars
         grad[nv] = diffTaylor(f, nv)
@@ -788,7 +788,7 @@ end
 ∇(f::TaylorN) = gradient(f)
 
 function jacobian{T<:Number}(vf::Array{TaylorN{T},1})
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vf) == numVars
     jac = Array(T, (numVars,numVars))
 
@@ -801,7 +801,7 @@ end
 
 function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1},vals::Array{S,1})
     R = promote_type(T,S)
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vf) == numVars == length(vals)
     jac = Array(R, (numVars,numVars))
 
@@ -817,7 +817,7 @@ end
 
 hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
-hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numVars()) )
+hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numvars()) )
 
 ## TODO: Integration...
 
@@ -829,7 +829,7 @@ TaylorN result.
 function evaluate{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     vals::Array{S,1} )
 
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vals) == numVars
     R = promote_type(T,S)
     suma = convert(TaylorN{R}, a)
@@ -844,7 +844,7 @@ end
 function evaluate{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
     vals::Array{S,1} )
 
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vals) == numVars
     R = promote_type(T,S)
     suma = convert(TaylorN{R}, a)
@@ -856,7 +856,7 @@ function evaluate{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
     return suma.coeffs[1].coeffs[1]
 end
 
-evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numVars()))
+evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
 
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable
@@ -864,7 +864,7 @@ function horner{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     @compat b::Tuple{Int,S} )
 
     nv, val = b
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert 1 <= nv <= numVars
     R = promote_type(T,S)
     @inbounds indTb = indicesTable[a.order+1]
@@ -899,7 +899,7 @@ function horner{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
     @compat b::Tuple{Int,S} )
 
     nv, val = b
-    @assert 1 <= nv <= get_numVars()
+    @assert 1 <= nv <= get_numvars()
     R = promote_type(T,S)
 
     suma = TaylorN(zero(R), a.order)
@@ -915,7 +915,7 @@ Returns the vector position (of the homogeneous-polynomial) of order `order`,
 where the variable `nv` has order `ord`
 """ ->
 function order_posTb(order::Int, nv::Int, ord::Int)
-    @assert order <= get_maxOrder()
+    @assert order <= get_order()
     @inbounds indTb = indicesTable[order+1]
     @inbounds num_coeffs = sizeTable[order+1]
     posV = Int[]
