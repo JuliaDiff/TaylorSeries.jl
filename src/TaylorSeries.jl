@@ -45,23 +45,6 @@ export taylor1_variable, taylorN_variable, get_coeff,
     ∇, jacobian, hessian
 
 
-# subscriptify is taken from ValidatedNumerics/src/nterval_definition.jl
-# and is licensed under MIT "Expat".
-# superscriptify is a small variation
-
-const subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
-const superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
-
-function subscriptify(n::Int)
-    dig = reverse(digits(n))
-    join([subscript_digits[i+1] for i in dig])
-end
-function superscriptify(n::Int)
-    dig = reverse(digits(n))
-    join([superscript_digits[i+1] for i in dig])
-end
-
-
 # one variable:
 include("Taylor1.jl")
 

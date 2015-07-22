@@ -2,6 +2,23 @@
 
 # Printing of TaylorSeries objects
 
+# subscriptify is taken from the ValidatedNumerics.jl package, licensed under MIT "Expat".
+# superscriptify is a small variation
+
+const subscript_digits = [c for c in "₀₁₂₃₄₅₆₇₈₉"]
+const superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
+
+function subscriptify(n::Int)
+    dig = reverse(digits(n))
+    join([subscript_digits[i+1] for i in dig])
+end
+
+function superscriptify(n::Int)
+    dig = reverse(digits(n))
+    join([superscript_digits[i+1] for i in dig])
+end
+
+
 function pretty_print{T<:Number}(a::Taylor1{T})
     z = zero(T)
     space = utf8(" ")
