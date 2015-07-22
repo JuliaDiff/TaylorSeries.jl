@@ -118,8 +118,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact eltype(set_variables(BigInt, "x y", order=6))  => TaylorN{BigInt}
     @fact eltype(set_variables("x y", order=6))  => TaylorN{Float64}
 
-    @fact TaylorSeries.indicesTable[2][1] == [1,0]  => true
-    @fact TaylorSeries.posTable[4][hash([2,1])] == 2  => true
+    @fact TaylorSeries.index_table[2][1] == [1,0]  => true
+    @fact TaylorSeries.pos_table[4][hash([2,1])] == 2  => true
 
     @fact get_order() == 6  => true
     @fact get_numvars() == 2  => true

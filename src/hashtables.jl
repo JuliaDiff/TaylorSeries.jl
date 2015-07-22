@@ -44,16 +44,16 @@ get_numvars() = _params_TaylorN_.num_vars
 
 ## Hash tables
 @doc """
-  Generates the array of dictionaries `indicesTable`, `sizeTable` and `posTable`:
+  Generates the array of dictionaries `index_table`, `size_table` and `pos_table`:
 
-  - `indicesTable`: vector that contains the dictionaries that link the
+  - `index_table`: vector that contains the dictionaries that link the
   lexicographic position of the monomial with the corresponding indexes of
   the powers that characterize the monomial of given degree.
   The vector entry `[k+1]` corresponds to the homogeneous polynomial of
   degree `k`.
-  - `sizeTable`: vector containing the number of distinct monomials of the
+  - `size_table`: vector containing the number of distinct monomials of the
   homogeneous polynomial, ordered by the degree of the polynomial.
-  - `posTable`: vector with the inverse of `indicesTable`, i.e., for a
+  - `pos_table`: vector with the inverse of `index_table`, i.e., for a
   given degree `k` and a vector of indexes (hashed), it returns the
   (lexicographic) position of the corresponding monomial.
 """ ->
@@ -122,7 +122,7 @@ function pos2indices!(iIndices::Array{Int,1}, pos::Int, dict::Dict{Int,Array{Int
     return pos, iIndices[1:end]
 end
 
-const indicesTable, sizeTable, posTable = generateTables()
+const index_table, size_table, pos_table = generateTables()
 gc();
 
 
@@ -146,11 +146,11 @@ function set_variables{T}(R::Type, names::Vector{T}; order=6)
         _params_TaylorN_.order = order
         _params_TaylorN_.num_vars = num_vars
 
-        resize!(indicesTable,order+1)
-        resize!(sizeTable,order+1)
-        resize!(posTable,order+1)
+        resize!(index_table,order+1)
+        resize!(size_table,order+1)
+        resize!(pos_table,order+1)
 
-        indicesTable[:], sizeTable[:], posTable[:] = generateTables()
+        index_table[:], size_table[:], pos_table[:] = generateTables()
         gc();
     end
 

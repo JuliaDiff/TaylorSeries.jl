@@ -122,9 +122,9 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
     strout::UTF8String = space
     ifirst = true
     iIndices = zeros(Int, numVars)
-    for pos = 1:sizeTable[order+1]
+    for pos = 1:size_table[order+1]
         monom::UTF8String = string("")
-        @inbounds iIndices[:] = indicesTable[order+1][pos]
+        @inbounds iIndices[:] = index_table[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]
             if powivar == 1
