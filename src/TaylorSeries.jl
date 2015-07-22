@@ -115,7 +115,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
 end
 
 function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
-    numVars = _params_TaylorN_.numVars
+    numVars = get_numvars()
     order = a.order
     z = zero(T)
     space = utf8(" ")
@@ -197,7 +197,7 @@ name_taylorNvar(i::Int) = string(" ", _params_TaylorN_.variable_names[i])
 # summary
 summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
 function summary{T<:Number}(a::Union(HomogeneousPolynomial{T}, TaylorN{T}))
-    string(a.order, "-order ", typeof(a), " in ", _params_TaylorN_.numVars, " variables:")
+    string(a.order, "-order ", typeof(a), " in ", get_numvars(), " variables:")
 end
 
 # show

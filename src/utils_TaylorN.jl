@@ -13,7 +13,7 @@
 function orderH{T}(coeffs::Array{T,1})
     ord = 0
     ll = length(coeffs)
-    for i = 1:_params_TaylorN_.maxOrder+1
+    for i = 1:get_order()+1
         @inbounds num_coeffs = sizeTable[i]
         ll <= num_coeffs && break
         ord += 1
@@ -38,7 +38,7 @@ immutable HomogeneousPolynomial{T<:Number} <: Number
     order   :: Int
 
     function HomogeneousPolynomial( coeffs::Array{T,1}, order::Int )
-        maxOrder = _params_TaylorN_.maxOrder
+        maxOrder = get_order()
         @assert order <= maxOrder
         lencoef = length( coeffs )
         @inbounds num_coeffs = sizeTable[order+1]
@@ -185,19 +185,19 @@ TaylorN{T<:Number}(x::T,order::Int) =
 TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogeneousPolynomial(x)], 0)
 
 ## Shortcut to define TaylorN independent variables
-function taylorN_variable(T::Type, nv::Int, order::Int=_params_TaylorN_.maxOrder)
-    @assert 0 < nv <= _params_TaylorN_.numVars
-    v = zeros(T, _params_TaylorN_.numVars)
+function taylorN_variable(T::Type, nv::Int, order::Int=get_order())
+    @assert 0 < nv <= get_numvars()
+    v = zeros(T, get_numvars())
     @inbounds v[nv] = one(T)
     return TaylorN( HomogeneousPolynomial(v,1), order )
 end
-taylorN_variable(nv::Int, order::Int=_params_TaylorN_.maxOrder) =
+taylorN_variable(nv::Int, order::Int=get_order()) =
     taylorN_variable(Float64, nv, order)
 
 
 ## get_coeff
 function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
-    @assert length(v) == _params_TaylorN_.numVars
+    @assert length(v) == get_numvars()
     kdic = hash(v)
     @inbounds n = posTable[a.order+1][kdic]
     a.coeffs[n]
@@ -342,8 +342,8 @@ end
 function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     T = promote_type( eltype(a), eltype(b) )
     order = a.order + b.order
-    if order > _params_TaylorN_.maxOrder
-        return HomogeneousPolynomial(zero(T), _params_TaylorN_.maxOrder)
+    if order > get_order()
+        return HomogeneousPolynomial(zero(T), get_order())
     end
     (iszero(a) || iszero(b)) && return HomogeneousPolynomial(zero(T), order)
 
@@ -355,7 +355,7 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     end
 
     coeffs = zeros(T, num_coeffs)
-    iaux = zeros(Int, _params_TaylorN_.numVars)
+    iaux = zeros(Int, get_numvars())
     @inbounds posTb = posTable[order+1]
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
@@ -365,7 +365,7 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
             cb = b.coeffs[nb]
             cb == zero(T) && continue
             indb = indicesTable[b.order+1][nb]
-            @simd for i = 1:_params_TaylorN_.numVars
+            @simd for i = 1:get_numvars()
                 @inbounds iaux[i] = inda[i]+indb[i]
             end
             kdic = hash(iaux)
@@ -560,21 +560,21 @@ end
 function square(a::HomogeneousPolynomial)
     T = eltype(a)
     order = 2*a.order
-    if order > _params_TaylorN_.maxOrder
-        return HomogeneousPolynomial(zero(T), _params_TaylorN_.maxOrder)
+    if order > get_order()
+        return HomogeneousPolynomial(zero(T), get_order())
     end
     @inbounds num_coeffs_a = sizeTable[a.order+1]
     @inbounds num_coeffs  = sizeTable[order+1]
     two = convert(T,2)
     coeffs = zeros(T, num_coeffs)
-    iaux = zeros( _params_TaylorN_.numVars )
+    iaux = zeros( get_numvars() )
     @inbounds posTb = posTable[order+1]
 
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
         ca == zero(T) && continue
         inda = indicesTable[a.order+1][na]
-        @inbounds for i = 1:_params_TaylorN_.numVars
+        @inbounds for i = 1:get_numvars()
             iaux[i] = 2inda[i]
         end
         kdic = hash(iaux)
@@ -584,7 +584,7 @@ function square(a::HomogeneousPolynomial)
             cb = a.coeffs[nb]
             cb == zero(T) && continue
             indb = indicesTable[a.order+1][nb]
-            @simd for i = 1:_params_TaylorN_.numVars
+            @simd for i = 1:get_numvars()
                 @inbounds iaux[i] = inda[i]+indb[i]
             end
             kdic = hash(iaux)
@@ -737,7 +737,7 @@ end
 """Partial differentiation of a HomogeneousPolynomial series with respect
 to the r-th variable"""
 function diffTaylor(a::HomogeneousPolynomial, r::Int)
-    @assert 1 <= r <= _params_TaylorN_.numVars
+    @assert 1 <= r <= get_numvars()
     T = eltype(a)
     a.order == 0 && return HomogeneousPolynomial(zero(T))
     @inbounds num_coeffs = sizeTable[a.order]
