@@ -376,6 +376,23 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 
     return HomogeneousPolynomial{T}(coeffs, order)
 end
+
+function *(a::TaylorN, b::TaylorN)
+    a, b = fixshape(a, b)
+    T = eltype(a)
+    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
+
+    for ord in eachindex(coeffs)
+        @inbounds for i = 0:ord-1
+            (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
+            coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
+        end
+    end
+
+    return TaylorN{T}(coeffs, a.order)
+end
+
+
 *(a::Bool, b::HomogeneousPolynomial) = *(promote(a,b)...)
 *(a::HomogeneousPolynomial, b::Bool) = b * a
 function *{T<:Union(Real,Complex)}(a::HomogeneousPolynomial, b::T)
@@ -403,20 +420,6 @@ function *{T<:Union(Real,Complex)}(a::TaylorN, b::T)
 end
 *{T<:Union(Real,Complex)}(b::T, a::TaylorN) = a * b
 
-function *(a::TaylorN, b::TaylorN)
-    a, b = fixshape(a, b)
-    T = eltype(a)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-
-    for ord in eachindex(coeffs)
-        @inbounds for i = 0:ord-1
-            (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
-            coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
-        end
-    end
-
-    return TaylorN{T}(coeffs, a.order)
-end
 
 ## Division ##
 /(a::HomogeneousPolynomial, x::Real) = a*inv(x)
