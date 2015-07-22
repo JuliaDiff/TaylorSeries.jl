@@ -26,25 +26,25 @@ end
 `HomogeneousPolynomial`""" ->
 function show_params_TaylorN()
     info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = $(_params_taylorN.maxOrder)
-    Number of variables = $(_params_taylorN.numVars)
-    Variable names      = $(_params_taylorN.variable_names)
+    Maximum order       = $(_params_TaylorN_.maxOrder)
+    Number of variables = $(_params_TaylorN_.numVars)
+    Variable names      = $(_params_TaylorN_.variable_names)
     """)
     nothing
 end
 
-global const _params_taylorN = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
+global const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
 
 
 
 
 ## Utilities to get/set the maximum order and number of variables;
 ## they reset the hash tables
-get_order() = _params_taylorN.maxOrder
-# set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
+get_order() = _params_TaylorN_.maxOrder
+# set_maxOrder(n::Int) = set_params_TaylorN(n, _params_TaylorN_.numVars)
 
-get_numvars() = _params_taylorN.numVars
-# set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
+get_numvars() = _params_TaylorN_.numVars
+# set_numVars(n::Int) = set_params_TaylorN(_params_TaylorN_.maxOrder, n)
 
 
 ## Hash tables
@@ -131,8 +131,8 @@ const indicesTable, sizeTable, posTable = generateTables()
 gc();
 
 
-get_variable_names() = _params_taylorN.variable_names
-set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names = names
+get_variable_names() = _params_TaylorN_.variable_names
+set_variable_names{T<:String}(names::Vector{T}) = _params_TaylorN_.variable_names = names
 
 
 @doc doc"""`set_variables` sets the names and number of the Taylor variables,
@@ -143,13 +143,13 @@ function set_variables{T}(R::Type, names::Vector{T}; order=6)
     num_vars = length(names)
     num_vars >= 1 || error("Number of variables must be at least 1")
 
-    _params_taylorN.variable_names = names
+    _params_TaylorN_.variable_names = names
 
-    if !(order == _params_taylorN.maxOrder && num_vars == _params_taylorN.numVars)
+    if !(order == _params_TaylorN_.maxOrder && num_vars == _params_TaylorN_.numVars)
         # if these are unchanged, no need to regenerate tables
 
-        _params_taylorN.maxOrder = order
-        _params_taylorN.numVars = num_vars
+        _params_TaylorN_.maxOrder = order
+        _params_TaylorN_.numVars = num_vars
 
         resize!(indicesTable,order+1)
         resize!(sizeTable,order+1)
