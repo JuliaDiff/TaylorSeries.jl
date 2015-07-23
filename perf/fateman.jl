@@ -1,6 +1,6 @@
 using TaylorSeries
 
-set_variables("x", numvars=4, order=40)
+x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)
 
 function fateman1(degree::Int)
     T = Int128
@@ -14,10 +14,6 @@ function fateman1(degree::Int)
     s * ( s+TaylorN(oneH, 2*degree) )
 end
 
-f1 = fateman1(0)
-println("Fateman 1:")
-@time f1 = fateman1(20)
-
 function fateman2(degree::Int)
     T = Int128
     oneH = HomogeneousPolynomial(one(T), 0)
@@ -29,6 +25,32 @@ function fateman2(degree::Int)
     return s^2 + s
 end
 
-f2 = fateman2(0);
-println("Fateman 2:")
-@time f2 = fateman2(20);
+function fateman3(degree::Int)
+    s = x + y + z + w + 1
+    s = s^degree
+    s * (s+1)
+end
+
+function fateman4(degree::Int)
+    s = x + y + z + w + 1
+    s = s^degree
+    s^2 + s
+end
+
+function run_fateman(N)
+    results = Any[]
+
+    for f in (fateman1, fateman2, fateman3, fateman4)
+        f(0)
+        println("Running $f")
+        @time result = f(N)
+        push!(results, result)
+    end
+
+    results
+end
+
+
+
+
+#@show f1==f2==f3==f4
