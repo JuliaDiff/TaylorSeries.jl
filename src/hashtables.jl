@@ -11,40 +11,35 @@
 
     Fieldnames:
 
-    - maxOrder: maximum order (degree) of the polynomials
-    - numVars : maximum number of variables
+    - order:     order (degree) of the polynomials
+    - num_vars : number of variables
 
     These parameters can be changed using `set_params_TaylorN(order,numVars)`
     """ ->
 type ParamsTaylorN
-    maxOrder :: Int
-    numVars  :: Int
+    order :: Int
+    num_vars  :: Int
     variable_names :: Array{UTF8String,1}
 end
+
+global const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
+
 
 @doc """Display the current parameters for `TaylorN` and
 `HomogeneousPolynomial`""" ->
 function show_params_TaylorN()
     info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = $(_params_taylorN.maxOrder)
-    Number of variables = $(_params_taylorN.numVars)
-    Variable names      = $(_params_taylorN.variable_names)
+    Maximum order       = $(_params_TaylorN_.order)
+    Number of variables = $(_params_TaylorN_.numvars)
+    Variable names      = $(_params_TaylorN_.variable_names)
     """)
     nothing
 end
 
-global const _params_taylorN = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
 
-
-
-
-## Utilities to get/set the maximum order and number of variables;
-## they reset the hash tables
-get_maxOrder() = _params_taylorN.maxOrder
-# set_maxOrder(n::Int) = set_params_TaylorN(n, _params_taylorN.numVars)
-
-get_numVars() = _params_taylorN.numVars
-# set_numVars(n::Int) = set_params_TaylorN(_params_taylorN.maxOrder, n)
+## Utilities to get the maximum order and number of variables
+get_order() = _params_TaylorN_.order
+get_numvars() = _params_TaylorN_.num_vars
 
 
 ## Hash tables
@@ -63,8 +58,8 @@ get_numVars() = _params_taylorN.numVars
   (lexicographic) position of the corresponding monomial.
 """ ->
 function generateTables()
-    maxOrd = get_maxOrder()
-    numVars = get_numVars()
+    maxOrd = get_order()
+    numVars = get_numvars()
 
     arrayInd  = Array(Dict{Int,Array{Int,1}},maxOrd+1)
     arraySize = Array(Int,maxOrd+1)
@@ -131,8 +126,8 @@ const indicesTable, sizeTable, posTable = generateTables()
 gc();
 
 
-get_variable_names() = _params_taylorN.variable_names
-set_variable_names{T<:String}(names::Vector{T}) = _params_taylorN.variable_names = names
+get_variable_names() = _params_TaylorN_.variable_names
+set_variable_names{T<:String}(names::Vector{T}) = _params_TaylorN_.variable_names = names
 
 
 @doc doc"""`set_variables` sets the names and number of the Taylor variables,
@@ -143,13 +138,13 @@ function set_variables{T}(R::Type, names::Vector{T}; order=6)
     num_vars = length(names)
     num_vars >= 1 || error("Number of variables must be at least 1")
 
-    _params_taylorN.variable_names = names
+    _params_TaylorN_.variable_names = names
 
-    if !(order == _params_taylorN.maxOrder && num_vars == _params_taylorN.numVars)
+    if !(order == get_order() && num_vars == get_numvars())
         # if these are unchanged, no need to regenerate tables
 
-        _params_taylorN.maxOrder = order
-        _params_taylorN.numVars = num_vars
+        _params_TaylorN_.order = order
+        _params_TaylorN_.num_vars = num_vars
 
         resize!(indicesTable,order+1)
         resize!(sizeTable,order+1)
@@ -160,7 +155,7 @@ function set_variables{T}(R::Type, names::Vector{T}; order=6)
     end
 
     # return a list of the new variables
-    TaylorN{R}[taylorN_variable(R,i) for i in 1:get_numVars()]
+    TaylorN{R}[taylorN_variable(R,i) for i in 1:get_numvars()]
 end
 set_variables{T}(names::Vector{T}; order=6) = set_variables(Float64, names, order=order)
 

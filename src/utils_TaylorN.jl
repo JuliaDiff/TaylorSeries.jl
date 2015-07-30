@@ -13,7 +13,7 @@
 function orderH{T}(coeffs::Array{T,1})
     ord = 0
     ll = length(coeffs)
-    for i = 1:_params_taylorN.maxOrder+1
+    for i = 1:get_order()+1
         @inbounds num_coeffs = sizeTable[i]
         ll <= num_coeffs && break
         ord += 1
@@ -38,7 +38,7 @@ immutable HomogeneousPolynomial{T<:Number} <: Number
     order   :: Int
 
     function HomogeneousPolynomial( coeffs::Array{T,1}, order::Int )
-        maxOrder = _params_taylorN.maxOrder
+        maxOrder = get_order()
         @assert order <= maxOrder
         lencoef = length( coeffs )
         @inbounds num_coeffs = sizeTable[order+1]
@@ -65,7 +65,7 @@ HomogeneousPolynomial{T<:Number}(x::T) = HomogeneousPolynomial{T}([x], 0)
 
 eltype{T<:Number}(::HomogeneousPolynomial{T}) = T
 length(a::HomogeneousPolynomial) = length( a.coeffs )
-get_maxOrder(a::HomogeneousPolynomial) = a.order
+get_order(a::HomogeneousPolynomial) = a.order
 
 
 ## zero and one ##
@@ -185,19 +185,19 @@ TaylorN{T<:Number}(x::T,order::Int) =
 TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogeneousPolynomial(x)], 0)
 
 ## Shortcut to define TaylorN independent variables
-function taylorN_variable(T::Type, nv::Int, order::Int=_params_taylorN.maxOrder)
-    @assert 0 < nv <= _params_taylorN.numVars
-    v = zeros(T, _params_taylorN.numVars)
+function taylorN_variable(T::Type, nv::Int, order::Int=get_order())
+    @assert 0 < nv <= get_numvars()
+    v = zeros(T, get_numvars())
     @inbounds v[nv] = one(T)
     return TaylorN( HomogeneousPolynomial(v,1), order )
 end
-taylorN_variable(nv::Int, order::Int=_params_taylorN.maxOrder) =
+taylorN_variable(nv::Int, order::Int=get_order()) =
     taylorN_variable(Float64, nv, order)
 
 
 ## get_coeff
 function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
-    @assert length(v) == _params_taylorN.numVars
+    @assert length(v) == get_numvars()
     kdic = hash(v)
     @inbounds n = posTable[a.order+1][kdic]
     a.coeffs[n]
@@ -210,7 +210,7 @@ end
 ## Type, length ##
 eltype{T<:Number}(::TaylorN{T}) = T
 length(a::TaylorN) = length( a.coeffs )
-get_maxOrder(x::TaylorN) = x.order
+get_order(x::TaylorN) = x.order
 
 ## zero and one ##
 zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(T), a.order)
@@ -342,8 +342,8 @@ end
 function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     T = promote_type( eltype(a), eltype(b) )
     order = a.order + b.order
-    if order > _params_taylorN.maxOrder
-        return HomogeneousPolynomial(zero(T), _params_taylorN.maxOrder)
+    if order > get_order()
+        return HomogeneousPolynomial(zero(T), get_order())
     end
     (iszero(a) || iszero(b)) && return HomogeneousPolynomial(zero(T), order)
 
@@ -355,7 +355,7 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     end
 
     coeffs = zeros(T, num_coeffs)
-    iaux = zeros(Int, _params_taylorN.numVars)
+    iaux = zeros(Int, get_numvars())
     @inbounds posTb = posTable[order+1]
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
@@ -365,7 +365,7 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
             cb = b.coeffs[nb]
             cb == zero(T) && continue
             indb = indicesTable[b.order+1][nb]
-            @simd for i = 1:_params_taylorN.numVars
+            @simd for i = 1:get_numvars()
                 @inbounds iaux[i] = inda[i]+indb[i]
             end
             kdic = hash(iaux)
@@ -560,21 +560,21 @@ end
 function square(a::HomogeneousPolynomial)
     T = eltype(a)
     order = 2*a.order
-    if order > _params_taylorN.maxOrder
-        return HomogeneousPolynomial(zero(T), _params_taylorN.maxOrder)
+    if order > get_order()
+        return HomogeneousPolynomial(zero(T), get_order())
     end
     @inbounds num_coeffs_a = sizeTable[a.order+1]
     @inbounds num_coeffs  = sizeTable[order+1]
     two = convert(T,2)
     coeffs = zeros(T, num_coeffs)
-    iaux = zeros( _params_taylorN.numVars )
+    iaux = zeros( get_numvars() )
     @inbounds posTb = posTable[order+1]
 
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
         ca == zero(T) && continue
         inda = indicesTable[a.order+1][na]
-        @inbounds for i = 1:_params_taylorN.numVars
+        @inbounds for i = 1:get_numvars()
             iaux[i] = 2inda[i]
         end
         kdic = hash(iaux)
@@ -584,7 +584,7 @@ function square(a::HomogeneousPolynomial)
             cb = a.coeffs[nb]
             cb == zero(T) && continue
             indb = indicesTable[a.order+1][nb]
-            @simd for i = 1:_params_taylorN.numVars
+            @simd for i = 1:get_numvars()
                 @inbounds iaux[i] = inda[i]+indb[i]
             end
             kdic = hash(iaux)
@@ -737,7 +737,7 @@ end
 """Partial differentiation of a HomogeneousPolynomial series with respect
 to the r-th variable"""
 function diffTaylor(a::HomogeneousPolynomial, r::Int)
-    @assert 1 <= r <= _params_taylorN.numVars
+    @assert 1 <= r <= get_numvars()
     T = eltype(a)
     a.order == 0 && return HomogeneousPolynomial(zero(T))
     @inbounds num_coeffs = sizeTable[a.order]
@@ -777,7 +777,7 @@ diffTaylor(a::TaylorN) = diffTaylor(a, 1)
 ## Gradient, jacobian and hessian
 function gradient(f::TaylorN)
     T = eltype(f)
-    numVars = get_numVars()
+    numVars = get_numvars()
     grad = Array(TaylorN{T}, numVars)
     @inbounds for nv = 1:numVars
         grad[nv] = diffTaylor(f, nv)
@@ -788,7 +788,7 @@ end
 ∇(f::TaylorN) = gradient(f)
 
 function jacobian{T<:Number}(vf::Array{TaylorN{T},1})
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vf) == numVars
     jac = Array(T, (numVars,numVars))
 
@@ -801,7 +801,7 @@ end
 
 function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1},vals::Array{S,1})
     R = promote_type(T,S)
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vf) == numVars == length(vals)
     jac = Array(R, (numVars,numVars))
 
@@ -817,7 +817,7 @@ end
 
 hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
-hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numVars()) )
+hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numvars()) )
 
 ## TODO: Integration...
 
@@ -829,7 +829,7 @@ TaylorN result.
 function evaluate{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     vals::Array{S,1} )
 
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vals) == numVars
     R = promote_type(T,S)
     suma = convert(TaylorN{R}, a)
@@ -844,7 +844,7 @@ end
 function evaluate{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
     vals::Array{S,1} )
 
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert length(vals) == numVars
     R = promote_type(T,S)
     suma = convert(TaylorN{R}, a)
@@ -856,7 +856,7 @@ function evaluate{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
     return suma.coeffs[1].coeffs[1]
 end
 
-evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numVars()))
+evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
 
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable
@@ -864,7 +864,7 @@ function horner{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     @compat b::Tuple{Int,S} )
 
     nv, val = b
-    numVars = get_numVars()
+    numVars = get_numvars()
     @assert 1 <= nv <= numVars
     R = promote_type(T,S)
     @inbounds indTb = indicesTable[a.order+1]
@@ -899,7 +899,7 @@ function horner{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
     @compat b::Tuple{Int,S} )
 
     nv, val = b
-    @assert 1 <= nv <= get_numVars()
+    @assert 1 <= nv <= get_numvars()
     R = promote_type(T,S)
 
     suma = TaylorN(zero(R), a.order)
@@ -915,7 +915,7 @@ Returns the vector position (of the homogeneous-polynomial) of order `order`,
 where the variable `nv` has order `ord`
 """ ->
 function order_posTb(order::Int, nv::Int, ord::Int)
-    @assert order <= get_maxOrder()
+    @assert order <= get_order()
     @inbounds indTb = indicesTable[order+1]
     @inbounds num_coeffs = sizeTable[order+1]
     posV = Int[]

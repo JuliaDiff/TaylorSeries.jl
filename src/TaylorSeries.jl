@@ -40,7 +40,7 @@ export Taylor1, TaylorN, HomogeneousPolynomial
 export taylor1_variable, taylorN_variable, get_coeff,
     diffTaylor, integTaylor, evaluate, deriv,
     show_params_TaylorN,
-    get_maxOrder, get_numVars,
+    get_order, get_numvars,
     set_variables,
     ∇, jacobian, hessian
 
@@ -115,7 +115,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
 end
 
 function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
-    numVars = _params_taylorN.numVars
+    numVars = get_numvars()
     order = a.order
     z = zero(T)
     space = utf8(" ")
@@ -191,13 +191,13 @@ function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
 end
 
 #name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
-name_taylorNvar(i::Int) = string(" ", _params_taylorN.variable_names[i])
+name_taylorNvar(i::Int) = string(" ", _params_TaylorN_.variable_names[i])
 
 
 # summary
 summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
 function summary{T<:Number}(a::Union(HomogeneousPolynomial{T}, TaylorN{T}))
-    string(a.order, "-order ", typeof(a), " in ", _params_taylorN.numVars, " variables:")
+    string(a.order, "-order ", typeof(a), " in ", get_numvars(), " variables:")
 end
 
 # show

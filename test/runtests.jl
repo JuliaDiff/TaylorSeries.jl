@@ -121,8 +121,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact TaylorSeries.indicesTable[2][1] == [1,0]  => true
     @fact TaylorSeries.posTable[4][hash([2,1])] == 2  => true
 
-    @fact get_maxOrder() == 6  => true
-    @fact get_numVars() == 2  => true
+    @fact get_order() == 6  => true
+    @fact get_numvars() == 2  => true
 
     x, y = set_variables("x y", order=6)
     @fact x.order == 6 => true
@@ -140,7 +140,7 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact ones(xH,1) == [HomogeneousPolynomial(1), xH+yH]  => true
     @fact ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial(1+0im)]  => true
-    @fact get_maxOrder(zeroT) == 1  => true
+    @fact get_order(zeroT) == 1  => true
     @fact get_coeff(xT,[1,0]) == 1  => true
     @fact get_coeff(yH,[1,0]) == 0  => true
     @fact convert(HomogeneousPolynomial{Int64},[1,1]) == xH+yH  => true
@@ -162,8 +162,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact one(yH) == xH+yH  => true
     @fact xH * true == xH  => true
     @fact false * yH == zero(yH)  => true
-    @fact get_maxOrder(yH) == 1  => true
-    @fact get_maxOrder(xT) == 17  => true
+    @fact get_order(yH) == 1  => true
+    @fact get_order(xT) == 17  => true
     @fact xT * true == xT  => true
     @fact false * yT == zero(yT)  => true
 
@@ -171,15 +171,15 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact one(xT) == TaylorN(1,5)  => true
     @fact TaylorN(zeroT,5) == 0  => true
     @fact TaylorN(uT) == convert(TaylorN{Complex},1)  => true
-    @fact get_numVars() == 2  => true
-    @fact length(uT) == get_maxOrder()+1  => true
+    @fact get_numvars() == 2  => true
+    @fact length(uT) == get_order()+1  => true
     @fact eltype(convert(TaylorN{Complex128},1)) == Complex128  => true
 
     @fact 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)  => true
     @fact xT-yT-1 == TaylorN([-1,xH-yH])  => true
     @fact xT*yT == TaylorN([HomogeneousPolynomial([0,1,0],2)])  => true
     @fact (1/(1-xT)).coeffs[4] == HomogeneousPolynomial(1.0,3)  => true
-    @fact xH^20 == HomogeneousPolynomial([0],get_maxOrder())  => true
+    @fact xH^20 == HomogeneousPolynomial([0],get_order())  => true
     @fact (yT/(1-xT)).coeffs[5] == xH^3 * yH  => true
     @fact mod(1+xT,1) == +xT  => true
     @fact (rem(1+xT,1)).coeffs[1] == 0  => true
