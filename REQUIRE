@@ -1,4 +1,4 @@
 julia 0.3
 Compat
 Docile
-FactCheck
+FactCheck 0.3.0
