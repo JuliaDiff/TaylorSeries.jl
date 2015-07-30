@@ -1,12 +1,6 @@
-# utils_TaylorN.jl: N-variables Taylor expansions through homogeneous polynomials
-#
-# Last modification: 2015.07.03
-#
-# Luis Benet & David P. Sanders
-# UNAM
-#
-# MIT Expat license
-#
+# This file is part of TaylorSeries.jl, MIT licensed
+
+# HomogeneousPolynomial and TaylorN types, and functions defined on them
 
 
 ## Minimum order of a HomogeneousPolynomial compatible with the vector's length
@@ -14,7 +8,7 @@ function orderH{T}(coeffs::Array{T,1})
     ord = 0
     ll = length(coeffs)
     for i = 1:get_order()+1
-        @inbounds num_coeffs = sizeTable[i]
+        @inbounds num_coeffs = size_table[i]
         ll <= num_coeffs && break
         ord += 1
     end
@@ -29,7 +23,7 @@ DataType for *homogenous* polynomials in many (>1) independent variables
 Fieldnames:
 
 - `coeffs`: vector containing the expansion coefficients; the vector components
-are related to the monomials by `indicesTables` and `posTable`
+are related to the monomials by `index_tables` and `pos_table`
 
 - `order` : order (degree) of the homogenous polynomial
 """ ->
@@ -41,7 +35,7 @@ immutable HomogeneousPolynomial{T<:Number} <: Number
         maxOrder = get_order()
         @assert order <= maxOrder
         lencoef = length( coeffs )
-        @inbounds num_coeffs = sizeTable[order+1]
+        @inbounds num_coeffs = size_table[order+1]
         @assert lencoef <= num_coeffs
         num_coeffs == lencoef && return new(coeffs, order)
         resize!(coeffs, num_coeffs)
@@ -71,7 +65,7 @@ get_order(a::HomogeneousPolynomial) = a.order
 ## zero and one ##
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
     a.order == 0 && return HomogeneousPolynomial(zero(T), 0)
-    @inbounds num_coeffs = sizeTable[a.order+1]
+    @inbounds num_coeffs = size_table[a.order+1]
     return HomogeneousPolynomial{T}( zeros(T,num_coeffs), a.order)
 end
 
@@ -79,7 +73,7 @@ function zeros{T<:Number}(::HomogeneousPolynomial{T}, order::Int)
     order == 0 && return [HomogeneousPolynomial(zero(T),0)]
     v = Array(HomogeneousPolynomial{T}, order+1)
     @simd for ord in eachindex(v)
-        @inbounds num_coeffs = sizeTable[ord]
+        @inbounds num_coeffs = size_table[ord]
         @inbounds v[ord] = HomogeneousPolynomial(zeros(T,num_coeffs),ord-1)
     end
     return v
@@ -90,7 +84,7 @@ zeros{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
 
 function one{T<:Number}(a::HomogeneousPolynomial{T})
     a.order == 0 && return HomogeneousPolynomial(one(T), 0)
-    @inbounds num_coeffs = sizeTable[a.order+1]
+    @inbounds num_coeffs = size_table[a.order+1]
     return HomogeneousPolynomial{T}( ones(T,num_coeffs), a.order)
 end
 
@@ -98,7 +92,7 @@ function ones{T<:Number}(::HomogeneousPolynomial{T}, order::Int)
     order == 0 && return [HomogeneousPolynomial(one(T),0)]
     v = Array(HomogeneousPolynomial{T}, order+1)
     @simd for ord in eachindex(v)
-        @inbounds num_coeffs = sizeTable[ord]
+        @inbounds num_coeffs = size_table[ord]
         @inbounds v[ord] = HomogeneousPolynomial(ones(T,num_coeffs),ord-1)
     end
     return v
@@ -199,7 +193,7 @@ taylorN_variable(nv::Int, order::Int=get_order()) =
 function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
     @assert length(v) == get_numvars()
     kdic = hash(v)
-    @inbounds n = posTable[a.order+1][kdic]
+    @inbounds n = pos_table[a.order+1][kdic]
     a.coeffs[n]
 end
 function get_coeff(a::TaylorN, v::Array{Int,1})
@@ -347,24 +341,24 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     end
     (iszero(a) || iszero(b)) && return HomogeneousPolynomial(zero(T), order)
 
-    @inbounds num_coeffs_a = sizeTable[a.order+1]
-    @inbounds num_coeffs_b = sizeTable[b.order+1]
-    @inbounds num_coeffs  = sizeTable[order+1]
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs_b = size_table[b.order+1]
+    @inbounds num_coeffs  = size_table[order+1]
     if eltype(a) != eltype(b)
         a, b = promote(a, b)
     end
 
     coeffs = zeros(T, num_coeffs)
     iaux = zeros(Int, get_numvars())
-    @inbounds posTb = posTable[order+1]
+    @inbounds posTb = pos_table[order+1]
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
         ca == zero(T) && continue
-        inda = indicesTable[a.order+1][na]
+        inda = index_table[a.order+1][na]
         @inbounds for nb = 1:num_coeffs_b
             cb = b.coeffs[nb]
             cb == zero(T) && continue
-            indb = indicesTable[b.order+1][nb]
+            indb = index_table[b.order+1][nb]
             @simd for i = 1:get_numvars()
                 @inbounds iaux[i] = inda[i]+indb[i]
             end
@@ -376,6 +370,23 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 
     return HomogeneousPolynomial{T}(coeffs, order)
 end
+
+function *(a::TaylorN, b::TaylorN)
+    a, b = fixshape(a, b)
+    T = eltype(a)
+    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
+
+    for ord in eachindex(coeffs)
+        @inbounds for i = 0:ord-1
+            (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
+            coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
+        end
+    end
+
+    return TaylorN{T}(coeffs, a.order)
+end
+
+
 *(a::Bool, b::HomogeneousPolynomial) = *(promote(a,b)...)
 *(a::HomogeneousPolynomial, b::Bool) = b * a
 function *{T<:Union(Real,Complex)}(a::HomogeneousPolynomial, b::T)
@@ -403,20 +414,6 @@ function *{T<:Union(Real,Complex)}(a::TaylorN, b::T)
 end
 *{T<:Union(Real,Complex)}(b::T, a::TaylorN) = a * b
 
-function *(a::TaylorN, b::TaylorN)
-    a, b = fixshape(a, b)
-    T = eltype(a)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-
-    for ord in eachindex(coeffs)
-        @inbounds for i = 0:ord-1
-            (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
-            coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
-        end
-    end
-
-    return TaylorN{T}(coeffs, a.order)
-end
 
 ## Division ##
 /(a::HomogeneousPolynomial, x::Real) = a*inv(x)
@@ -563,17 +560,17 @@ function square(a::HomogeneousPolynomial)
     if order > get_order()
         return HomogeneousPolynomial(zero(T), get_order())
     end
-    @inbounds num_coeffs_a = sizeTable[a.order+1]
-    @inbounds num_coeffs  = sizeTable[order+1]
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs  = size_table[order+1]
     two = convert(T,2)
     coeffs = zeros(T, num_coeffs)
     iaux = zeros( get_numvars() )
-    @inbounds posTb = posTable[order+1]
+    @inbounds posTb = pos_table[order+1]
 
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
         ca == zero(T) && continue
-        inda = indicesTable[a.order+1][na]
+        inda = index_table[a.order+1][na]
         @inbounds for i = 1:get_numvars()
             iaux[i] = 2inda[i]
         end
@@ -583,7 +580,7 @@ function square(a::HomogeneousPolynomial)
         @inbounds for nb = na+1:num_coeffs_a
             cb = a.coeffs[nb]
             cb == zero(T) && continue
-            indb = indicesTable[a.order+1][nb]
+            indb = index_table[a.order+1][nb]
             @simd for i = 1:get_numvars()
                 @inbounds iaux[i] = inda[i]+indb[i]
             end
@@ -740,13 +737,13 @@ function diffTaylor(a::HomogeneousPolynomial, r::Int)
     @assert 1 <= r <= get_numvars()
     T = eltype(a)
     a.order == 0 && return HomogeneousPolynomial(zero(T))
-    @inbounds num_coeffs = sizeTable[a.order]
+    @inbounds num_coeffs = size_table[a.order]
     coeffs = zeros(T,num_coeffs)
-    @inbounds posTb = posTable[a.order]
-    @inbounds num_coeffs = sizeTable[a.order+1]
+    @inbounds posTb = pos_table[a.order]
+    @inbounds num_coeffs = size_table[a.order+1]
 
     @inbounds for i = 1:num_coeffs
-        iind = indicesTable[a.order+1][i]
+        iind = index_table[a.order+1][i]
         n = iind[r]
         n == 0 && continue
         iind[r] -= 1
@@ -867,7 +864,7 @@ function horner{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     numVars = get_numvars()
     @assert 1 <= nv <= numVars
     R = promote_type(T,S)
-    @inbounds indTb = indicesTable[a.order+1]
+    @inbounds indTb = index_table[a.order+1]
     suma = TaylorN(zero(R), a.order)
 
     # Horner's rule on the nv variable
@@ -880,7 +877,7 @@ function horner{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
             iIndices = copy(indTb[pos])
             iIndices[nv] = 0
             kdic = hash(iIndices)
-            newpos = posTable[neworder+1][kdic]
+            newpos = pos_table[neworder+1][kdic]
             zhp = HomogeneousPolynomial(zero(R), neworder)
             zhp.coeffs[newpos] = a.coeffs[pos]
             suma_ord += TaylorN(zhp, a.order)
@@ -916,8 +913,8 @@ where the variable `nv` has order `ord`
 """ ->
 function order_posTb(order::Int, nv::Int, ord::Int)
     @assert order <= get_order()
-    @inbounds indTb = indicesTable[order+1]
-    @inbounds num_coeffs = sizeTable[order+1]
+    @inbounds indTb = index_table[order+1]
+    @inbounds num_coeffs = size_table[order+1]
     posV = Int[]
     for pos = 1:num_coeffs
         @inbounds indTb[pos][nv] != ord && continue
