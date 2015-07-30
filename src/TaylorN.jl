@@ -359,11 +359,12 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
             cb = b.coeffs[nb]
             cb == zero(T) && continue
             indb = index_table[b.order+1][nb]
-            @simd for i = 1:get_numvars()
-                @inbounds iaux[i] = inda[i]+indb[i]
-            end
-            kdic = hash(iaux)
-            pos = posTb[kdic]
+            #@simd for i = 1:get_numvars()
+            #    @inbounds iaux[i] = inda[i]+indb[i]
+            #end
+            iaux = inda + indb
+            #kdic = hash(iaux)
+            pos = posTb[iaux]
             coeffs[pos] += ca * cb
         end
     end
@@ -570,23 +571,23 @@ function square(a::HomogeneousPolynomial)
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
         ca == zero(T) && continue
-        inda = index_table[a.order+1][na]
-        @inbounds for i = 1:get_numvars()
-            iaux[i] = 2inda[i]
-        end
-        kdic = hash(iaux)
-        pos = posTb[kdic]
-        coeffs[pos] += ca * ca
+        @inbounds inda = index_table[a.order+1][na]
+        #@inbounds for i = 1:get_numvars()
+        #    iaux[i] = 2inda[i]
+        #end
+        #kdic = hash(iaux)
+        @inbounds pos = posTb[2*inda]
+        @inbounds coeffs[pos] += ca * ca
         @inbounds for nb = na+1:num_coeffs_a
-            cb = a.coeffs[nb]
+            @inbounds cb = a.coeffs[nb]
             cb == zero(T) && continue
-            indb = index_table[a.order+1][nb]
-            @simd for i = 1:get_numvars()
-                @inbounds iaux[i] = inda[i]+indb[i]
-            end
-            kdic = hash(iaux)
-            pos = posTb[kdic]
-            coeffs[pos] += two * ca * cb
+            @inbounds indb = index_table[a.order+1][nb]
+            #@simd for i = 1:get_numvars()
+            #   @inbounds iaux[i] = inda[i]+indb[i]
+            #end
+            #kdic = hash(iaux)
+            @inbounds pos = posTb[inda+indb]
+            @inbounds coeffs[pos] += two * ca * cb
         end
     end
 
