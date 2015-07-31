@@ -141,7 +141,7 @@ function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
 end
 
 #name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
-name_taylorNvar(i::Int) = string(" ", _params_TaylorN_.variable_names[i])
+name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
 
 
 # summary
