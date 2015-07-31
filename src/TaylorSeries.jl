@@ -1,27 +1,13 @@
-# TaylorSeries.jl
+# This file is part of the TaylorSeries.jl Julia package, MIT license
 #
-# Julia module for handling Taylor series of arbitrary but finite order
-#
-# - utils_Taylor1.jl contains the constructors and methods for 1-variable expansions
-#
-# - utils_TaylorN.jl contains the constructors and methods for N-variable expansions
-#
-# Last modification: 2015.07.03
-#
-# Luis Benet & David P. Sanders
-# UNAM
-#
-# MIT Expat license
-#
+# Handles Taylor series of arbitrary but finite order
 
 module TaylorSeries
 
-## Documentation
 if VERSION < v"0.4.0-dev"
     using Docile
 end
 
-## Compatibility v0.3 -> 0.4
 using Compat
 @compat sizehint!
 @compat trunc
@@ -35,7 +21,6 @@ import Base: zero, one, zeros, ones,
     sqrt, exp, log, sin, cos, tan
 
 
-## Exported types and methods
 export Taylor1, TaylorN, HomogeneousPolynomial
 export taylor1_variable, taylorN_variable, get_coeff,
     diffTaylor, integTaylor, evaluate, deriv,
