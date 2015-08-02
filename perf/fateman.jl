@@ -51,6 +51,11 @@ function run_fateman(N)
 end
 
 
+order = 20
+println("Running Fateman with order $order...")
 
+results = run_fateman(order);
 
-#@show f1==f2==f3==f4
+println("Done.")
+
+@assert results[1] == results[2] == results[3] == results[4]
