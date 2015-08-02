@@ -261,7 +261,7 @@ facts("Testing an identity proved by Euler (8 variables)") do
     @fact evaluate( rhs, v) == evaluate( lhs, v)  --> true
 end
 
-facts("A test inspired on a test by Fateman (takes few seconds))") do
+facts("Test of high order polynomials inspired by Fateman (takes a few seconds))") do
     x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)
 
     function fateman2(degree::Int)
