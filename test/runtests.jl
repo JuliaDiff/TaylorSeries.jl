@@ -118,8 +118,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact eltype(set_variables(BigInt, "x y", order=6))  --> TaylorN{BigInt}
     @fact eltype(set_variables("x y", order=6))  --> TaylorN{Float64}
 
-    @fact TaylorSeries.index_table[2][1] == [1,0]  --> true
-    @fact TaylorSeries.pos_table[4][hash([2,1])] == 2  --> true
+    @fact TaylorSeries.coeff_table[2][1] == [1,0]  --> true
+    @fact TaylorSeries.index_table[2][1] == 7  --> true
+    @fact TaylorSeries.in_base(get_order(),[2,1]) == 15  --> true
+    @fact TaylorSeries.pos_table[4][15] == 2  --> true
 
     @fact get_order() == 6  --> true
     @fact get_numvars() == 2  --> true
@@ -257,6 +259,33 @@ facts("Testing an identity proved by Euler (8 variables)") do
     @fact lhs == rhs  --> true
     v = randn(8)
     @fact evaluate( rhs, v) == evaluate( lhs, v)  --> true
+end
+
+facts("A test inspired on a test by Fateman (takes few seconds))") do
+    x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)
+
+    function fateman2(degree::Int)
+        T = Int128
+        oneH = HomogeneousPolynomial(one(T), 0)
+        # s = 1 + x + y + z + w
+        s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
+        s = s^degree
+        # s is converted to order 2*ndeg
+        s = TaylorN(s, 2*degree)
+        return s^2 + s
+    end
+
+    function fateman3(degree::Int)
+        s = x + y + z + w + 1
+        s = s^degree
+        s * (s+1)
+    end
+
+    f2 = fateman2(20)
+    f3 = fateman3(20)
+    c = get_coeff(f2,[1,6,7,20])
+    @fact c == 128358585324486316800 --> true
+    @fact get_coeff(f2,[1,6,7,20]) == c --> true
 end
 
 exitstatus()

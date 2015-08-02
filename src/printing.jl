@@ -74,7 +74,7 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
     iIndices = zeros(Int, numVars)
     for pos = 1:size_table[order+1]
         monom::UTF8String = string("")
-        @inbounds iIndices[:] = index_table[order+1][pos]
+        @inbounds iIndices[:] = coeff_table[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]
             if powivar == 1
@@ -141,7 +141,7 @@ function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
 end
 
 #name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
-name_taylorNvar(i::Int) = string(" ", _params_TaylorN_.variable_names[i])
+name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
 
 
 # summary

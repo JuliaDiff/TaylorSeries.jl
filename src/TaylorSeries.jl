@@ -14,6 +14,7 @@ using Compat
 @compat eachindex
 @compat round
 
+import Base: ==, +, -, *, /, ^
 import Base: zero, one, zeros, ones,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,

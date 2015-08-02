@@ -21,12 +21,14 @@
 
 function generate_tables(num_vars, order)
 
-    index_table = [generate_index_vectors(num_vars, i) for i in 0:order]
+    coeff_table = [generate_index_vectors(num_vars, i) for i in 0:order]
+
+    index_table = Vector{Int}[map(x->in_base(order, x), coeffs) for coeffs in coeff_table]
 
     pos_table = map(make_inverse_dict, index_table)
     size_table = map(length, index_table)
 
-    index_table, size_table, pos_table
+    coeff_table, index_table, size_table, pos_table
 
 end
 
@@ -56,10 +58,23 @@ function make_forward_dict(v::Vector)
 end
 
 function make_inverse_dict(v::Vector)
-    Dict([hash(x)=>i for (i,x) in enumerate(v)])
+    Dict([x=>i for (i,x) in enumerate(v)])
+end
+
+@doc "Convert vector v of non-negative integers to base order+1" ->
+function in_base(order, v)
+    order = order+1
+
+    result = 0
+
+    for i in v
+        result = result*order + i
+    end
+
+    result
 end
 
 
-const index_table, size_table, pos_table = generate_tables(get_numvars(), get_order())
+const coeff_table, index_table, size_table, pos_table = generate_tables(get_numvars(), get_order())
 gc();
 

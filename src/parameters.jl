@@ -60,11 +60,12 @@ function set_variables{T<:String}(R::Type, names::Vector{T}; order=6)
         _params_TaylorN_.order = order
         _params_TaylorN_.num_vars = num_vars
 
+        resize!(coeff_table,order+1)
         resize!(index_table,order+1)
         resize!(size_table,order+1)
         resize!(pos_table,order+1)
 
-        index_table[:], size_table[:], pos_table[:] = generate_tables(num_vars, order)
+        coeff_table[:], index_table[:], size_table[:], pos_table[:] = generate_tables(num_vars, order)
         gc();
     end
 
