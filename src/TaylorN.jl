@@ -334,12 +334,15 @@ end
 
 ## Multiplication ##
 function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+
     T = promote_type( eltype(a), eltype(b) )
     order = a.order + b.order
     if order > get_order()
         return HomogeneousPolynomial(zero(T), get_order())
     end
-    (iszero(a) || iszero(b)) && return HomogeneousPolynomial(zero(T), order)
+
+    iszero(b) && return HomogeneousPolynomial(zero(T), order)
+    # the code below checks quickly whether a is zero
 
     @inbounds num_coeffs_a = size_table[a.order+1]
     @inbounds num_coeffs_b = size_table[b.order+1]
@@ -349,18 +352,19 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     end
 
     coeffs = zeros(T, num_coeffs)
-    iaux = zeros(Int, get_numvars())
     @inbounds posTb = pos_table[order+1]
+
     @inbounds for na = 1:num_coeffs_a
         ca = a.coeffs[na]
         ca == zero(T) && continue
         inda = index_table[a.order+1][na]
+
         @inbounds for nb = 1:num_coeffs_b
             cb = b.coeffs[nb]
             cb == zero(T) && continue
             indb = index_table[b.order+1][nb]
-            iaux = inda + indb
-            pos = posTb[iaux]
+
+            pos = posTb[inda + indb]
             coeffs[pos] += ca * cb
         end
     end
@@ -561,7 +565,6 @@ function square(a::HomogeneousPolynomial)
     @inbounds num_coeffs  = size_table[order+1]
     two = convert(T,2)
     coeffs = zeros(T, num_coeffs)
-    iaux = zeros( get_numvars() )
     @inbounds posTb = pos_table[order+1]
 
     @inbounds for na = 1:num_coeffs_a
