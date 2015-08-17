@@ -45,8 +45,13 @@ function run_fateman(N)
         println("Running $f")
         @time result = f(N)
         push!(results, result)
+        t = Inf
+        for i = 1:5
+            ti = @elapsed f(N)
+            t = min(t,ti)
+        end
+        println("\t Min time of 5 runs:", t)
     end
-
     results
 end
 
