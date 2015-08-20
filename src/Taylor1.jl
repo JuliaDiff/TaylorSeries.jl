@@ -225,13 +225,10 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
 
     # Is the polynomial factorizable?
     if isinf(aux) || isnan(aux)
-        # info("Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact)")
-        error("Division does not define a Taylor1 polynomial\n",
-            " or its first non-zero coefficient is Inf/NaN.\n",
-            "Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact).")
-    ##else orddivfact>0
-    ##    warn("Factorizing the polynomial.\n",
-    ##        "The last k=$(orddivfact) Taylor1 coefficients ARE SET to 0.\n")
+        throw(ArgumentError(
+        """Division does not define a Taylor1 polynomial
+        or its first non-zero coefficient is Inf/NaN.
+        Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact).\n"""))
     end
 
     return orddivfact, cdivfact
@@ -325,8 +322,9 @@ function ^(a::Taylor1, x::Real)
     # The first non-zero coefficient of the result; must be integer
     lnull = x*l0nz
     !isinteger(lnull) &&
-        error("""The 0th order Taylor1 coefficient must be non-zero
-        to raise the Taylor1 polynomial to a non-integer exponent""")
+        throw(ArgumentError(
+        """The 0th order Taylor1 coefficient must be non-zero
+        to raise the Taylor1 polynomial to a non-integer exponent"""))
 
     # Reaching this point, it is possible to implement the power of the Taylor1
     # polynomial. The last l0nz coefficients are set to zero.
@@ -395,8 +393,9 @@ function sqrt(a::Taylor1)
     if l0nz > a.order
         return zero(a)
     elseif l0nz%2 == 1 # l0nz must be pair
-        error("""First non-vanishing Taylor1 coefficient must correspond
-        to an **even power** in order to expand `sqrt` around 0""")
+        throw(ArgumentError(
+        """First non-vanishing Taylor1 coefficient must correspond
+        to an **even power** in order to expand `sqrt` around 0"""))
     end
 
     # Reaching this point, it is possible to implement the sqrt of the Taylor1 polynomial.
@@ -460,7 +459,8 @@ end
 
 ## Log ##
 function log(a::Taylor1)
-    ( firstnonzero(a)>0 ) && error("Impossible to expand `log` around 0.")
+    ( firstnonzero(a)>0 ) && throw(
+        ArgumentError("Impossible to expand `log` around 0."))
     @inbounds aux = log( a.coeffs[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
