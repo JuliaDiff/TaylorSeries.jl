@@ -1,6 +1,7 @@
 using TaylorSeries
 
-x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)
+const order = 20
+const x, y, z, w = set_variables(Int128, "x", numvars=4, order=2order)
 
 function fateman1(degree::Int)
     T = Int128
@@ -39,28 +40,30 @@ end
 
 function run_fateman(N)
     results = Any[]
-
+    nn = 5
     for f in (fateman1, fateman2, fateman3, fateman4)
         f(0)
         println("Running $f")
         @time result = f(N)
-        push!(results, result)
+        # push!(results, result) # This may take a lot of memory
         t = Inf
-        for i = 1:5
+        tav = 0.0
+        for i = 1:nn
             ti = @elapsed f(N)
+            tav += ti
             t = min(t,ti)
         end
-        println("\t Min time of 5 runs:", t)
+        println("\tAverage time of $nn runs: ", tav/nn)
+        println("\tMinimum time of $nn runs: ", t)
     end
     results
 end
 
 
-order = 20
 println("Running Fateman with order $order...")
 
 results = run_fateman(order);
 
 println("Done.")
 
-@assert results[1] == results[2] == results[3] == results[4]
+# @assert results[1] == results[2] == results[3] == results[4]
