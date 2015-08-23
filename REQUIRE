@@ -1,4 +1,4 @@
 julia 0.3
-Compat
+Compat 0.6
 Docile
 FactCheck 0.3.0
