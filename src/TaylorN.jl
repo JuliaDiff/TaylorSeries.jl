@@ -104,7 +104,7 @@ ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, a.coeffs), a.order)
-function convert{T<:Integer, S<:FloatingPoint}(
+function convert{T<:Integer, S<:AbstractFloat}(
     ::Type{HomogeneousPolynomial{Rational{T}}}, a::HomogeneousPolynomial{S})
     v = Array(Rational{T}, length(a.coeffs))
     for i in eachindex(v)
@@ -611,6 +611,12 @@ end
 ## sqrt ##
 function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( a.coeffs[1].coeffs[1] )
+    if p0 == zero(p0)
+        throw(ArgumentError(
+        """The 0-th order TaylorN coefficient must be non-zero
+        in order to expand `sqrt` around 0"""))
+    end
+
     T = typeof(p0)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
     @inbounds coeffs[1] = HomogeneousPolynomial( p0 )
@@ -656,6 +662,11 @@ end
 function log(a::TaylorN)
     order = a.order
     @inbounds a0 = a.coeffs[1].coeffs[1]
+    if a0 == zero(a0)
+        throw(ArgumentError(
+        """The 0-th order TaylorN coefficient must be non-zero
+        in order to expand `log` around 0"""))
+    end
     l0 = log( a0 )
     T = typeof(l0)
     coeffs = zeros(HomogeneousPolynomial{T}, order)

@@ -9,10 +9,6 @@ if VERSION < v"0.4.0-dev"
 end
 
 using Compat
-@compat sizehint!
-@compat trunc
-@compat eachindex
-@compat round
 
 import Base: ==, +, -, *, /, ^
 import Base: zero, one, zeros, ones,
@@ -29,7 +25,6 @@ export taylor1_variable, taylorN_variable, get_coeff,
     get_order, get_numvars,
     set_variables, get_variables,
     ∇, jacobian, hessian
-
 
 # one variable:
 include("Taylor1.jl")

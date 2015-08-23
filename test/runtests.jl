@@ -15,7 +15,7 @@ facts("Tests for Taylor1 expansions") do
     tol1 = eps(1.0)
 
     @fact Taylor1([0,1,0,0]) == taylor1_variable(3)  --> true
-    @fact get_coeff(taylor1_variable(Complex128,3),1) == complex(1.0,0.0)  --> true
+    @fact get_coeff(taylor1_variable(Complex128,3),1) == complex(1.0,0.0) --> true
     @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  --> true
     @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  --> true
     @fact convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t  --> true
@@ -98,17 +98,18 @@ facts("Tests for Taylor1 expansions") do
 
     @fact promote(ta(0.0), t) == (ta(0.0),ta(0.0))  --> true
 
-    @fact_throws ErrorException 1/t
-    @fact_throws ErrorException zt/zt
-    @fact_throws ErrorException t^1.5
+    @fact_throws ArgumentError 1/t
+    @fact_throws ArgumentError zt/zt
+    @fact_throws ArgumentError t^1.5
     @fact_throws DomainError t^(-2)
-    @fact_throws ErrorException sqrt(t)
-    @fact_throws ErrorException log(t)
-    @fact_throws ErrorException cos(t)/sin(t)
-    # @fact_throws AssertionError deriv( exp(ta(1.0pi)), 30 )
+    @fact_throws ArgumentError sqrt(t)
+    @fact_throws ArgumentError log(t)
+    @fact_throws ArgumentError cos(t)/sin(t)
+    @fact_throws AssertionError deriv( exp(ta(1.0pi)), 30 )
 
     @fact string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"  --> true
-    @fact TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"  --> true
+    @fact TaylorSeries.pretty_print(ta(3im)) ==
+        " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"  --> true
 end
 
 facts("Tests for HomogeneousPolynomial and TaylorN") do
@@ -235,6 +236,13 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"  --> true
     @fact string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"  --> true
     @fact string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"  --> true
+
+    @fact_throws AssertionError 1/x
+    @fact_throws AssertionError zero(x)/zero(x)
+    @fact_throws ArgumentError sqrt(x)
+    @fact_throws AssertionError x^(-2)
+    @fact_throws ArgumentError log(x)
+    @fact_throws AssertionError cos(x)/sin(y)
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do
@@ -261,14 +269,15 @@ facts("Testing an identity proved by Euler (8 variables)") do
     @fact evaluate( rhs, v) == evaluate( lhs, v)  --> true
 end
 
-facts("Test of high order polynomials inspired by Fateman (takes a few seconds))") do
+facts("High order polynomials test inspired by Fateman (takes a few seconds))") do
     x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)
 
     function fateman2(degree::Int)
         T = Int128
         oneH = HomogeneousPolynomial(one(T), 0)
         # s = 1 + x + y + z + w
-        s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
+        s = TaylorN(
+         [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree)
         s = s^degree
         # s is converted to order 2*ndeg
         s = TaylorN(s, 2*degree)
