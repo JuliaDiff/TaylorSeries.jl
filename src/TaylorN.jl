@@ -104,7 +104,7 @@ ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
 ## Conversion and promotion rules ##
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, a.coeffs), a.order)
-function convert{T<:Integer, S<:FloatingPoint}(
+function convert{T<:Integer, S<:AbstractFloat}(
     ::Type{HomogeneousPolynomial{Rational{T}}}, a::HomogeneousPolynomial{S})
     v = Array(Rational{T}, length(a.coeffs))
     for i in eachindex(v)

@@ -269,14 +269,15 @@ facts("Testing an identity proved by Euler (8 variables)") do
     @fact evaluate( rhs, v) == evaluate( lhs, v)  --> true
 end
 
-facts("Test of high order polynomials inspired by Fatema (takes a few seconds))") do
+facts("High order polynomials test inspired by Fateman (takes a few seconds))") do
     x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)
 
     function fateman2(degree::Int)
         T = Int128
         oneH = HomogeneousPolynomial(one(T), 0)
         # s = 1 + x + y + z + w
-        s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
+        s = TaylorN(
+         [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree)
         s = s^degree
         # s is converted to order 2*ndeg
         s = TaylorN(s, 2*degree)
