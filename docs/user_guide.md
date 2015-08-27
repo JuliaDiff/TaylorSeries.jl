@@ -507,12 +507,13 @@ julia> function fateman1(degree::Int)
 fateman1 (generic function with 1 method)
 
 julia> @time f1 = fateman1(0);
-elapsed time: 0.193653166 seconds (8318304 bytes allocated)
+  0.207574 seconds (211.06 k allocations: 9.475 MB, 1.22% gc time)
 
 julia> @time f1 = fateman1(20);
+  2.573367 seconds (3.43 k allocations: 20.112 MB, 0.15% gc time)
 ```
 
-The last instruction shows that we indeed need `Int128` arithmetic.
+And another implementation of the same:
 ```julia
 julia> function fateman2(degree::Int)
            T = Int128
@@ -526,21 +527,23 @@ julia> function fateman2(degree::Int)
 fateman2 (generic function with 1 method)
 
 julia> @time f2 = fateman2(0);
-elapsed time: 0.004246911 seconds (151832 bytes allocated)
+  0.007056 seconds (7.42 k allocations: 328.500 KB)
 
 julia> @time f2 = fateman2(20);
-elapsed time: 8.260762578 seconds (1412298112 bytes allocated, 18.28% gc time)
+  1.331425 seconds (3.42 k allocations: 20.111 MB, 0.16% gc time)
 
 julia> get_coeff(f2,[1,6,7,20])
 128358585324486316800
 
-julia> sum(TaylorSeries.sizeTable) # number of distinct monomials
+julia> sum(TaylorSeries.size_table) # number of distinct monomials
 135751
 ```
 
-The tests above show the necessity of using integers of type `Int128`, that
-`fateman2` is about twice as fast as `fateman1`, and that the series has 135751
+The tests above show the necessity of using integers of type `Int128`, and that
+`fateman2` is nearly twice as fast as `fateman1`, and that the series has 135751
 monomials on 4 variables.
 
-We mention that our implementation of `fateman2` (in julia v0.4) is roughly
-1.5 times slower than Mathematica.
+Mathematica (version 10.2 on the same machine) requires 3.139831 seconds. Then,
+with TaylorSeries v0.1.1, our implementation of `fateman1` is about 20% faster,
+and `fateman2` is more than a factor 2 faster. (The original test by Fateman
+corresponds to `fateman1` which precisely avoids certain optimizations.)
