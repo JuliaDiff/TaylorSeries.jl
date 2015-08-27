@@ -334,43 +334,20 @@ end
 
 ## Multiplication ##
 function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-
     T = promote_type( eltype(a), eltype(b) )
+
     order = a.order + b.order
-    if order > get_order()
-        return HomogeneousPolynomial(zero(T), get_order())
-    end
+    order > get_order() && return HomogeneousPolynomial(zero(T), get_order())
 
-    iszero(b) && return HomogeneousPolynomial(zero(T), order)
-    # the code below checks quickly whether a is zero
-
-    @inbounds num_coeffs_a = size_table[a.order+1]
-    @inbounds num_coeffs_b = size_table[b.order+1]
-    @inbounds num_coeffs  = size_table[order+1]
     if eltype(a) != eltype(b)
         a, b = promote(a, b)
     end
 
-    coeffs = zeros(T, num_coeffs)
-    @inbounds posTb = pos_table[order+1]
-
-    @inbounds for na = 1:num_coeffs_a
-        ca = a.coeffs[na]
-        ca == zero(T) && continue
-        inda = index_table[a.order+1][na]
-
-        @inbounds for nb = 1:num_coeffs_b
-            cb = b.coeffs[nb]
-            cb == zero(T) && continue
-            indb = index_table[b.order+1][nb]
-
-            pos = posTb[inda + indb]
-            coeffs[pos] += ca * cb
-        end
-    end
-
-    return HomogeneousPolynomial{T}(coeffs, order)
+    res = HomogeneousPolynomial(zero(T), order)
+    mul!(res, a, b)
+    return res
 end
+
 
 function *(a::TaylorN, b::TaylorN)
     a, b = fixshape(a, b)
@@ -378,9 +355,8 @@ function *(a::TaylorN, b::TaylorN)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
 
     for ord in eachindex(coeffs)
-        @inbounds for i = 0:ord-1
-            (iszero(a.coeffs[i+1]) || iszero(b.coeffs[ord-i])) && continue
-            coeffs[ord] += a.coeffs[i+1] * b.coeffs[ord-i]
+        for i = 0:ord-1
+            @inbounds mul!(coeffs[ord], a.coeffs[i+1], b.coeffs[ord-i])
         end
     end
 
@@ -416,6 +392,65 @@ end
 *{T<:Union(Real,Complex)}(b::T, a::TaylorN) = a * b
 
 
+@doc "Add a*b to c, with no allocation" ->
+function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+    (iszero(b) || iszero(a)) && return nothing
+
+    T = eltype(c)
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs_b = size_table[b.order+1]
+    @inbounds num_coeffs  = size_table[c.order+1]
+
+    coeffs = c.coeffs
+    @inbounds posTb = pos_table[c.order+1]
+
+    @inbounds for na = 1:num_coeffs_a
+        ca = a.coeffs[na]
+        ca == zero(T) && continue
+        inda = index_table[a.order+1][na]
+
+        @inbounds for nb = 1:num_coeffs_b
+            cb = b.coeffs[nb]
+            cb == zero(T) && continue
+            indb = index_table[b.order+1][nb]
+
+            pos = posTb[inda + indb]
+            coeffs[pos] += ca * cb
+        end
+    end
+
+    return nothing
+end
+function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
+    iszero(a) && return nothing
+
+    T = eltype(c)
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs  = size_table[c.order+1]
+
+    two = convert(T,2)
+    coeffs = c.coeffs
+    @inbounds posTb = pos_table[c.order+1]
+
+    @inbounds for na = 1:num_coeffs_a
+        ca = a.coeffs[na]
+        ca == zero(T) && continue
+        inda = index_table[a.order+1][na]
+        @inbounds pos = posTb[2*inda]
+        @inbounds coeffs[pos] += ca * ca
+        @inbounds for nb = na+1:num_coeffs_a
+            cb = a.coeffs[nb]
+            cb == zero(T) && continue
+            indb = index_table[a.order+1][nb]
+            pos = posTb[inda+indb]
+            coeffs[pos] += two * ca * cb
+        end
+    end
+
+    return nothing
+end
+
+
 ## Division ##
 /(a::HomogeneousPolynomial, x::Real) = a*inv(x)
 /(a::HomogeneousPolynomial, x::Complex) = a*inv(x)
@@ -436,8 +471,7 @@ function /(a::TaylorN, b::TaylorN)
     for ord in eachindex(coeffs)
         ord == a.order+1 && continue
         @inbounds for i = 0:ord-1
-            (iszero(coeffs[i+1]) || iszero(b.coeffs[ord-i+1])) && continue
-            coeffs[ord+1] += coeffs[i+1] * b.coeffs[ord-i+1]
+            mul!(coeffs[ord+1], coeffs[i+1], b.coeffs[ord-i+1])
         end
         @inbounds coeffs[ord+1] = (a.coeffs[ord+1] - coeffs[ord+1]) * b0
     end
@@ -557,56 +591,38 @@ end
 ## Square ##
 function square(a::HomogeneousPolynomial)
     T = eltype(a)
+
     order = 2*a.order
-    if order > get_order()
-        return HomogeneousPolynomial(zero(T), get_order())
-    end
-    @inbounds num_coeffs_a = size_table[a.order+1]
-    @inbounds num_coeffs  = size_table[order+1]
-    two = convert(T,2)
-    coeffs = zeros(T, num_coeffs)
-    @inbounds posTb = pos_table[order+1]
+    order > get_order() && return HomogeneousPolynomial(zero(T), get_order())
 
-    @inbounds for na = 1:num_coeffs_a
-        ca = a.coeffs[na]
-        ca == zero(T) && continue
-        inda = index_table[a.order+1][na]
-        @inbounds pos = posTb[2*inda]
-        @inbounds coeffs[pos] += ca * ca
-        @inbounds for nb = na+1:num_coeffs_a
-            cb = a.coeffs[nb]
-            cb == zero(T) && continue
-            indb = index_table[a.order+1][nb]
-            pos = posTb[inda+indb]
-            coeffs[pos] += two * ca * cb
-        end
-    end
-
-    return HomogeneousPolynomial{T}(coeffs, order)
+    res = HomogeneousPolynomial(zero(T), order)
+    mul!(res, a)
+    return res
 end
+
 
 function square(a::TaylorN)
     T = eltype(a)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds coeffs[1] = square(a.coeffs[1])
+    @inbounds mul!(coeffs[1], a.coeffs[1])
 
     two = convert(T,2)
     for ord in eachindex(coeffs)
         ord == a.order+1 && continue
         kodd = ord%2
         kord = div(ord-2+kodd, 2)
-        @inbounds for i = 0 : kord
-            (iszero(a.coeffs[i+1]) || iszero(a.coeffs[ord-i+1])) && continue
-            coeffs[ord+1] += a.coeffs[i+1] * a.coeffs[ord-i+1]
+        for i = 0 : kord
+            @inbounds mul!(coeffs[ord+1], a.coeffs[i+1], a.coeffs[ord-i+1])
         end
         @inbounds coeffs[ord+1] = two * coeffs[ord+1]
         kodd == 1 && continue
         kodd = div(ord,2)
-        @inbounds coeffs[ord+1] += square( a.coeffs[kodd+1] )
+        @inbounds mul!(coeffs[ord+1], a.coeffs[kodd+1] )
     end
 
     return TaylorN{T}(coeffs, a.order)
 end
+
 
 ## sqrt ##
 function sqrt(a::TaylorN)
