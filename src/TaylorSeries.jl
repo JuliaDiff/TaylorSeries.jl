@@ -25,10 +25,6 @@ export taylor1_variable, taylorN_variable, get_coeff,
     get_order, get_numvars,
     set_variables, get_variables,
     ∇, jacobian, hessian
-export AbstractSeries
-
-@doc "The main overall abstract type in TaylorSeries" ->
-abstract AbstractSeries{T<:Number,N}# <: Number
 
 # one variable:
 include("Taylor1.jl")

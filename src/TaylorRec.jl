@@ -6,6 +6,9 @@
 # UNAM
 #
 
+abstract AbstractSeries{T<:Number,N}# <: Number
+export AbstractSeries
+
 export TaylorRec, taylorRec_variable, @taylorRec
 
 
@@ -24,7 +27,7 @@ immutable TaylorRec{T<:Number, N} <: AbstractSeries{T,N}
     function TaylorRec(coeffs::Array)
         nn = @compat(Int(N))
         @assert nn > 0
-        @assert nn == get_numVars(coeffs)+1
+        @assert nn == get_numvars(coeffs)+1
         if !isa(eltype(coeffs), Type{T})
             if nn == 1
                 coeffs = convert(Array{T,1}, coeffs)
@@ -53,14 +56,14 @@ TaylorRec{T<:Number}(coeffs::Array{T,1}) = TaylorRec{T,1}(coeffs)
 TaylorRec{T<:Number}(c::T) = TaylorRec{T,1}([c])
 
 
-## eltype, get_numVars, get_order ##
+## eltype, get_numvars, get_order ##
 eltype{T<:Number,N}(::TaylorRec{T,N}) = T
 eltype{T<:Number,N}(::Array{TaylorRec{T,N},1}) = T
 
-get_numVars{T<:Number,N}(::TaylorRec{T,N}) = N
-get_numVars{T<:Number,N}(v::Array{TaylorRec{T,N},1}) = get_numVars(v[1])
-get_numVars{T<:Number}(::Array{T,1}) = 0
-get_numVars{T<:Number}(::T) = 0
+get_numvars{T<:Number,N}(::TaylorRec{T,N}) = N
+get_numvars{T<:Number,N}(v::Array{TaylorRec{T,N},1}) = get_numvars(v[1])
+get_numvars{T<:Number}(::Array{T,1}) = 0
+get_numvars{T<:Number}(::T) = 0
 
 function get_order{T<:Number,N}(a::TaylorRec{T,N}, var::Int)
     nn = @compat Int(N)
@@ -239,7 +242,7 @@ function fixshape{T<:Number,S<:Number,N,M}(aa::TaylorRec{T,N}, bb::TaylorRec{S,M
     b = deepcopy(bb)
     a, b = promote(a, b)
     R = eltype(a)
-    nn = get_numVars(a)
+    nn = get_numvars(a)
 
     la = length(a.coeffs)
     lb = length(b.coeffs)
@@ -280,7 +283,7 @@ function convert{T<:Number,S<:Number,N,M}(::Type{TaylorRec{T,N}}, a::TaylorRec{S
 
     for nvar = mm+1:nn
         ll = length(a.coeffs)
-        mm = get_numVars(a)
+        mm = get_numvars(a)
         coeffs = Array(TaylorRec{T,mm}, ll)
         for i in eachindex(a.coeffs)
             coeffs[i] = convert(TaylorRec{T,mm}, a.coeffs[i])
