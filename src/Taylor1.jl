@@ -122,6 +122,19 @@ function ==(a::Taylor1, b::Taylor1)
     return a.coeffs == b.coeffs
 end
 
+for f in (:isinf, :isnan)
+    @eval begin
+        function ($f)(a::Taylor1)
+            test = false
+            for i in eachindex(a.coeffs)
+                @inbounds test = ($f)(a.coeffs[i])
+                test && break
+            end
+            test
+        end
+    end
+end
+
 ## Addition and substraction ##
 for f in (:+, :-)
     @eval begin
@@ -142,7 +155,7 @@ for f in (:+, :-)
         end
         function ($f)(a::Taylor1, b::Union(Real,Complex))
             @inbounds aux = ($f)(a.coeffs[1], b)
-            v = Array(eltype(aux), length(a.coeffs))
+            v = Array(typeof(aux), length(a.coeffs))
             @simd for i in eachindex(v)
                 @inbounds v[i] = a.coeffs[i]
             end
@@ -151,7 +164,7 @@ for f in (:+, :-)
         end
         function ($f)(a::Union(Real,Complex), b::Taylor1)
             @inbounds aux = ($f)(a, b.coeffs[1])
-            v = Array(eltype(aux), length(b.coeffs))
+            v = Array(typeof(aux), length(b.coeffs))
             @simd for i in eachindex(v)
                 @inbounds v[i] = ($f)(b.coeffs[i])
             end
@@ -166,7 +179,7 @@ end
 *(a::Taylor1, b::Bool) = b*a
 function *(a::Union(Real,Complex), b::Taylor1)
     @inbounds aux = a * b.coeffs[1]
-    v = Array(eltype(aux), length(b.coeffs))
+    v = Array(typeof(aux), length(b.coeffs))
     @simd for i in eachindex(v)
         @inbounds v[i] = a * b.coeffs[i]
     end
@@ -221,10 +234,9 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
         orddivfact = a1.order
     end
     cdivfact = a1.coeffs[orddivfact+1] / b1.coeffs[orddivfact+1]
-    aux = abs2(cdivfact)
 
     # Is the polynomial factorizable?
-    if isinf(aux) || isnan(aux)
+    if isinf(cdivfact) || isnan(cdivfact)
         throw(ArgumentError(
         """Division does not define a Taylor1 polynomial
         or its first non-zero coefficient is Inf/NaN.
