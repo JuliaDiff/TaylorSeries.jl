@@ -569,12 +569,13 @@ julia&gt; function fateman1(degree::Int)
 fateman1 (generic function with 1 method)
 
 julia&gt; @time f1 = fateman1(0);
-elapsed time: 0.193653166 seconds (8318304 bytes allocated)
+  0.207574 seconds (211.06 k allocations: 9.475 MB, 1.22% gc time)
 
 julia&gt; @time f1 = fateman1(20);
+  2.573367 seconds (3.43 k allocations: 20.112 MB, 0.15% gc time)
 </code></pre>
 
-<p>The last instruction shows that we indeed need <code>Int128</code> arithmetic.</p>
+<p>And another implementation of the same:</p>
 <pre><code class="julia">julia&gt; function fateman2(degree::Int)
            T = Int128
            oneH = HomogeneousPolynomial(one(T), 0)
@@ -587,23 +588,25 @@ julia&gt; @time f1 = fateman1(20);
 fateman2 (generic function with 1 method)
 
 julia&gt; @time f2 = fateman2(0);
-elapsed time: 0.004246911 seconds (151832 bytes allocated)
+  0.007056 seconds (7.42 k allocations: 328.500 KB)
 
 julia&gt; @time f2 = fateman2(20);
-elapsed time: 8.260762578 seconds (1412298112 bytes allocated, 18.28% gc time)
+  1.331425 seconds (3.42 k allocations: 20.111 MB, 0.16% gc time)
 
 julia&gt; get_coeff(f2,[1,6,7,20])
 128358585324486316800
 
-julia&gt; sum(TaylorSeries.sizeTable) # number of distinct monomials
+julia&gt; sum(TaylorSeries.size_table) # number of distinct monomials
 135751
 </code></pre>
 
-<p>The tests above show the necessity of using integers of type <code>Int128</code>, that
-<code>fateman2</code> is about twice as fast as <code>fateman1</code>, and that the series has 135751
+<p>The tests above show the necessity of using integers of type <code>Int128</code>, and that
+<code>fateman2</code> is nearly twice as fast as <code>fateman1</code>, and that the series has 135751
 monomials on 4 variables.</p>
-<p>We mention that our implementation of <code>fateman2</code> (in julia v0.4) is roughly
-1.5 times slower than Mathematica.</p></div>
+<p>Mathematica (version 10.2 on the same machine) requires 3.139831 seconds. Then,
+with TaylorSeries v0.1.1, our implementation of <code>fateman1</code> is about 20% faster,
+and <code>fateman2</code> is more than a factor 2 faster. (The original test by Fateman
+corresponds to <code>fateman1</code> which precisely avoids certain optimizations.)</p></div>
         </div>
 
 	<footer class="col-md-12">
