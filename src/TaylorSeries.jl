@@ -11,12 +11,11 @@ end
 using Compat
 
 import Base: ==, +, -, *, /, ^
-import Base: zero, one, zeros, ones,
+import Base: zero, one, zeros, ones, isinf, isnan,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
     rem, mod, mod2pi, gradient,
     sqrt, exp, log, sin, cos, tan
-
 
 export Taylor1, TaylorN, HomogeneousPolynomial
 export taylor1_variable, taylorN_variable, get_coeff,
