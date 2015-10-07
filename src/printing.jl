@@ -99,8 +99,8 @@ function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
     end
     return string(plusmin, abs(zz))
 end
-function numbr2str{T<:Real}(zz::Complex{T}, ifirst::Bool=false)
-    zT = zero(T)
+function numbr2str{T<:Complex}(zz::T, ifirst::Bool=false)
+    zT = zero(zz.re)
     zz == zero(zz) && return string(zT)
     zre, zim = reim(zz)
     cadena = string("")

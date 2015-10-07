@@ -71,7 +71,7 @@ function convert{T<:Integer, S<:AbstractFloat}(::Type{Taylor1{Rational{T}}},
 end
 convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) =
     Taylor1(convert(Array{T,1},b))
-convert{T<:Number}(::Type{Taylor1{T}}, b::Number) = Taylor1([convert(T,b)], 0)
+convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::S) = Taylor1([convert(T,b)], 0)
 convert{T<:Number}(::Type{Taylor1{T}}, b::T) = Taylor1([b], 0)
 
 promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) =
@@ -207,8 +207,8 @@ function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
 end
 
 ## Division ##
-/(a::Taylor1, b::Real) = a * inv(b)
-/(a::Taylor1, b::Complex) = a * inv(b)
+/{T<:Real}(a::Taylor1, b::T) = a * inv(b)
+/{T<:Complex}(a::Taylor1, b::T) = a * inv(b)
 
 function /(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
@@ -259,7 +259,7 @@ end
 ## Division functions: rem and mod
 for op in (:mod, :rem)
     @eval begin
-        function ($op){T<:Real}(a::Taylor1{T}, x::Real)
+        function ($op){T<:Real, S<:Real}(a::Taylor1{T}, x::S)
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(a.coeffs[1], x)
             return Taylor1(coeffs, a.order)
@@ -317,12 +317,12 @@ function power_by_squaring(x::Taylor1, p::Integer)
 end
 
 ## Rational power ##
-^(a::Taylor1,x::Rational) = a^(x.num/x.den)
+^{T<:Integer}(a::Taylor1,x::Rational{T}) = a^(x.num/x.den)
 
 ^(a::Taylor1, b::Taylor1) = exp( b*log(a) )
 
 ## Real power ##
-function ^(a::Taylor1, x::Real)
+function ^{S<:Real}(a::Taylor1, x::S)
     x == zero(x) && return one(a)
     x == one(x)/2 && return sqrt(a)
     isinteger(x) && return a^round(Int,x)
@@ -354,10 +354,10 @@ function ^(a::Taylor1, x::Real)
 
     Taylor1(coeffs,a.order)
 end
-^(a::Taylor1, x::Complex) = exp( x*log(a) )
+^{T<:Complex}(a::Taylor1, x::T) = exp( x*log(a) )
 
 # Homogeneous coefficients for real power
-function powHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, x::Real,
+function powHomogCoef{T<:Number, S<:Real}(kcoef::Int, ac::Array{T,1}, x::S,
     coeffs::Array{T,1}, knull::Int)
 
     kcoef == knull && return (ac[knull+1])^x
@@ -568,8 +568,8 @@ function diffTaylor(a::Taylor1)
 end
 
 ## Integrating ##
-function integTaylor{T<:Number}(a::Taylor1{T}, x::Number)
-    R = promote_type(T, typeof(a.coeffs[1] / 1), typeof(x))
+function integTaylor{T<:Number, S<:Number}(a::Taylor1{T}, x::S)
+    R = promote_type(T, typeof(a.coeffs[1] / 1), S)
     coeffs = zeros(R, a.order+1)
     @inbounds for i = 1:a.order
         coeffs[i+1] = a.coeffs[i] / i
@@ -600,8 +600,8 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
 end
 
 ## Returns de n-th derivative of a series expansion
-function deriv{T}(a::Taylor1{T}, n::Int=1)
+function deriv{T<:Number}(a::Taylor1{T}, n::Int=1)
     @assert a.order >= n >= 0
-    res::T = factorial( widen(n) ) * a.coeffs[n+1]
-    return res
+    res = factorial( widen(n) ) * a.coeffs[n+1]
+    convert(T,res)
 end

@@ -19,19 +19,7 @@ type ParamsTaylorN
     variable_names :: Array{UTF8String,1}
 end
 
-global const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
-
-
-@doc """Display the current parameters for `TaylorN` and
-`HomogeneousPolynomial`""" ->
-function show_params_TaylorN()
-    info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = $(get_order())
-    Number of variables = $(get_numvars())
-    Variable names      = $(get_variable_names())
-    """)
-    nothing
-end
+const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
 
 
 ## Utilities to get the maximum order and number of variables
@@ -88,3 +76,14 @@ end
 
 set_variables{T<:AbstractString}(names::T; order=6, numvars=-1) =
     set_variables(Float64, names, order=order, numvars=numvars)
+
+@doc """Display the current parameters for `TaylorN` and
+`HomogeneousPolynomial`""" ->
+function show_params_TaylorN()
+    info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
+    Maximum order       = $(get_order())
+    Number of variables = $(get_numvars())
+    Variable names      = $(get_variable_names())
+    """)
+    nothing
+end

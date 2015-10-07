@@ -115,7 +115,7 @@ function convert{T<:Integer, S<:AbstractFloat}(
 end
 convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, b), orderH(b))
-convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Number) =
+convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::S) =
     HomogeneousPolynomial{T}([convert(T,b)], 0)
 convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{T,1}) =
     HomogeneousPolynomial{T}(b, orderH(b))
@@ -218,7 +218,7 @@ convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{S}) =
 convert{T<:Number, S<:Number}(::Type{TaylorN{T}},
     b::Array{HomogeneousPolynomial{S},1}) =
     TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, b), length(b)-1)
-convert{T<:Number}(::Type{TaylorN{T}}, b::Number) =
+convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::S) =
     TaylorN( [HomogeneousPolynomial(convert(T, b))], 0)
 convert{T<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) =
     TaylorN{T}( [b], b.order)
@@ -452,10 +452,8 @@ end
 
 
 ## Division ##
-/(a::HomogeneousPolynomial, x::Real) = a*inv(x)
-/(a::HomogeneousPolynomial, x::Complex) = a*inv(x)
-/(a::TaylorN, x::Real) = a*inv(x)
-/(a::TaylorN, x::Complex) = a*inv(x)
+@compat /{T<:Union{Real, Complex}}(a::HomogeneousPolynomial, x::T) = a*inv(x)
+@compat /{T<:Union{Real, Complex}}(a::TaylorN, x::T) = a*inv(x)
 function /(a::TaylorN, b::TaylorN)
     @inbounds b0 = b.coeffs[1].coeffs[1]
     @assert b0 != zero(b0)
@@ -586,7 +584,7 @@ function ^{S<:Real}(a::TaylorN, x::S)
 
     return TaylorN{T}(coeffs, a.order)
 end
-^(a::TaylorN, x::Complex) = exp( x*log(a) )
+^{T<:Complex}(a::TaylorN, x::T) = exp( x*log(a) )
 
 ## Square ##
 function square(a::HomogeneousPolynomial)
@@ -877,7 +875,7 @@ evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable
 @compat function horner{T<:Number,S<:Union{Real,Complex}}(a::HomogeneousPolynomial{T},
-    @compat b::Tuple{Int,S} )
+    b::@compat Tuple{Int,S} )
 
     nv, val = b
     numVars = get_numvars()
@@ -912,7 +910,7 @@ evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
 end
 
 @compat function horner{T<:Number,S<:Union{Real,Complex}}(a::TaylorN{T},
-    @compat b::Tuple{Int,S} )
+    b::@compat Tuple{Int,S} )
 
     nv, val = b
     @assert 1 <= nv <= get_numvars()
