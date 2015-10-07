@@ -126,7 +126,7 @@ promote_rule{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}},
     ::Type{HomogeneousPolynomial{S}}) = HomogeneousPolynomial{promote_type(T,S)}
 promote_rule{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}},
     ::Type{Array{S,1}}) = HomogeneousPolynomial{promote_type(T, S)}
-promote_rule{T<:Number,S<:Union(Real,Complex)}(::Type{HomogeneousPolynomial{T}},
+@compat promote_rule{T<:Number,S<:Union{Real,Complex}}(::Type{HomogeneousPolynomial{T}},
     ::Type{S}) = HomogeneousPolynomial{promote_type(T,S)}
 
 ## Maximum order of a HomogeneousPolynomial vector; used by TaylorN constructor
@@ -293,14 +293,14 @@ for T in (:HomogeneousPolynomial, :TaylorN), f in (:+, :-)
         function ($f)(a::($T), b::($T))
             a, b = fixshape(a, b)
             v = Array(eltype(a.coeffs), length(a.coeffs))
-            @simd for i in eachindex(v)
+            for i in eachindex(v)
                 @inbounds v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
             return ($T)(v, a.order)
         end
         function ($f)(a::($T))
             v = Array(eltype(a.coeffs), length(a.coeffs))
-            @simd for i in eachindex(v)
+            for i in eachindex(v)
                 @inbounds v[i] = ($f)(a.coeffs[i])
             end
             return ($T)(v, a.order)
@@ -309,7 +309,7 @@ for T in (:HomogeneousPolynomial, :TaylorN), f in (:+, :-)
 end
 for f in (:+, :-)
     @eval begin
-        function ($f)(a::TaylorN, b::Union(Real,Complex))
+        @compat function ($f)(a::TaylorN, b::Union{Real,Complex})
             @inbounds aux = ($f)(a.coeffs[1], b)
             S = eltype(aux)
             coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
@@ -319,7 +319,7 @@ for f in (:+, :-)
             @inbounds coeffs[1] = aux
             return TaylorN{S}(coeffs, a.order)
         end
-        function ($f)(b::Union(Real,Complex), a::TaylorN)
+        @compat function ($f)(b::Union{Real,Complex}, a::TaylorN)
             @inbounds aux = ($f)(b, a.coeffs[1])
             S = eltype(aux)
             coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
@@ -366,7 +366,7 @@ end
 
 *(a::Bool, b::HomogeneousPolynomial) = *(promote(a,b)...)
 *(a::HomogeneousPolynomial, b::Bool) = b * a
-function *{T<:Union(Real,Complex)}(a::HomogeneousPolynomial, b::T)
+@compat function *{T<:Union{Real,Complex}}(a::HomogeneousPolynomial, b::T)
     @inbounds aux = a.coeffs[1] * b
     S = typeof(aux)
     coeffs = Array(S,length(a.coeffs))
@@ -375,12 +375,12 @@ function *{T<:Union(Real,Complex)}(a::HomogeneousPolynomial, b::T)
     end
     return HomogeneousPolynomial{S}(coeffs, a.order)
 end
-*{T<:Union(Real,Complex)}(b::T, a::HomogeneousPolynomial) = a * b
+@compat *{T<:Union{Real,Complex}}(b::T, a::HomogeneousPolynomial) = a * b
 
 
 *(a::Bool, b::TaylorN) = *(promote(a,b)...)
 *(a::TaylorN, b::Bool) = b * a
-function *{T<:Union(Real,Complex)}(a::TaylorN, b::T)
+@compat function *{T<:Union{Real,Complex}}(a::TaylorN, b::T)
     @inbounds aux = a.coeffs[1] * b
     S = eltype(aux)
     coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
@@ -389,7 +389,7 @@ function *{T<:Union(Real,Complex)}(a::TaylorN, b::T)
     end
     return TaylorN{S}(coeffs, a.order)
 end
-*{T<:Union(Real,Complex)}(b::T, a::TaylorN) = a * b
+@compat *{T<:Union{Real,Complex}}(b::T, a::TaylorN) = a * b
 
 
 @doc "Add a*b to c, with no allocation" ->
@@ -842,7 +842,7 @@ Evaluates a Taylor polynomial on a given point, by applying Horner's
 rule in each variable. Returns the independent coefficient of the
 TaylorN result.
 =#
-function evaluate{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
+@compat function evaluate{T<:Number,S<:Union{Real,Complex}}(a::HomogeneousPolynomial{T},
     vals::Array{S,1} )
 
     numVars = get_numvars()
@@ -857,7 +857,7 @@ function evaluate{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     return suma.coeffs[1].coeffs[1]
 end
 
-function evaluate{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
+@compat function evaluate{T<:Number,S<:Union{Real,Complex}}(a::TaylorN{T},
     vals::Array{S,1} )
 
     numVars = get_numvars()
@@ -876,7 +876,7 @@ evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
 
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable
-function horner{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
+@compat function horner{T<:Number,S<:Union{Real,Complex}}(a::HomogeneousPolynomial{T},
     @compat b::Tuple{Int,S} )
 
     nv, val = b
@@ -911,7 +911,7 @@ function horner{T<:Number,S<:Union(Real,Complex)}(a::HomogeneousPolynomial{T},
     return suma
 end
 
-function horner{T<:Number,S<:Union(Real,Complex)}(a::TaylorN{T},
+@compat function horner{T<:Number,S<:Union{Real,Complex}}(a::TaylorN{T},
     @compat b::Tuple{Int,S} )
 
     nv, val = b

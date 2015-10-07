@@ -146,12 +146,12 @@ name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
 
 # summary
 summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
-function summary{T<:Number}(a::Union(HomogeneousPolynomial{T}, TaylorN{T}))
+@compat function summary{T<:Number}(a::Union{HomogeneousPolynomial{T}, TaylorN{T}})
     string(a.order, "-order ", typeof(a), " in ", get_numvars(), " variables:")
 end
 
 # show
-function show(io::IO, a::Union(Taylor1, HomogeneousPolynomial, TaylorN))
+@compat function show(io::IO, a::Union{Taylor1, HomogeneousPolynomial, TaylorN})
     # (isa(a, TaylorN) || isa(a, Taylor1)) && println(io, summary(a))
     print(io, pretty_print(a))
 end

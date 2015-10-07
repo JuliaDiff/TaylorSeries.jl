@@ -153,7 +153,7 @@ for f in (:+, :-)
             end
             return Taylor1(v, a.order)
         end
-        function ($f)(a::Taylor1, b::Union(Real,Complex))
+        @compat function ($f)(a::Taylor1, b::Union{Real,Complex})
             @inbounds aux = ($f)(a.coeffs[1], b)
             v = Array(typeof(aux), length(a.coeffs))
             @simd for i in eachindex(v)
@@ -162,7 +162,7 @@ for f in (:+, :-)
             @inbounds v[1] = aux
             Taylor1(v, a.order)
         end
-        function ($f)(a::Union(Real,Complex), b::Taylor1)
+        @compat function ($f)(a::Union{Real,Complex}, b::Taylor1)
             @inbounds aux = ($f)(a, b.coeffs[1])
             v = Array(typeof(aux), length(b.coeffs))
             @simd for i in eachindex(v)
@@ -177,7 +177,7 @@ end
 ## Multiplication ##
 *(a::Bool, b::Taylor1) = *(promote(a,b)...)
 *(a::Taylor1, b::Bool) = b*a
-function *(a::Union(Real,Complex), b::Taylor1)
+@compat function *(a::Union{Real,Complex}, b::Taylor1)
     @inbounds aux = a * b.coeffs[1]
     v = Array(typeof(aux), length(b.coeffs))
     @simd for i in eachindex(v)
@@ -185,7 +185,7 @@ function *(a::Union(Real,Complex), b::Taylor1)
     end
     Taylor1(v, b.order)
 end
-*(a::Taylor1, b::Union(Real,Complex)) = b * a
+@compat *(a::Taylor1, b::Union{Real,Complex}) = b * a
 function *(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
     coeffs = similar(a.coeffs)
