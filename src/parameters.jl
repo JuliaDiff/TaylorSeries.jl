@@ -19,19 +19,7 @@ type ParamsTaylorN
     variable_names :: Array{UTF8String,1}
 end
 
-global const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
-
-
-@doc """Display the current parameters for `TaylorN` and
-`HomogeneousPolynomial`""" ->
-function show_params_TaylorN()
-    info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = $(get_order())
-    Number of variables = $(get_numvars())
-    Variable names      = $(get_variable_names())
-    """)
-    nothing
-end
+const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
 
 
 ## Utilities to get the maximum order and number of variables
@@ -39,14 +27,14 @@ get_order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 
-set_variable_names{T<:String}(names::Vector{T}) = _params_TaylorN_.variable_names = names
+set_variable_names{T<:AbstractString}(names::Vector{T}) = _params_TaylorN_.variable_names = names
 
 get_variables() = [taylorN_variable(i) for i in 1:get_numvars()]
 
 @doc doc"""`set_variables` sets the names and number of the Taylor variables,
 as well as the order of the Taylor expansion.""" ->
 
-function set_variables{T<:String}(R::Type, names::Vector{T}; order=6)
+function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=6)
     order >= 1 || error("Order must be at least 1")
 
     num_vars = length(names)
@@ -75,7 +63,7 @@ end
 
 set_variables{T}(names::Vector{T}; order=6) = set_variables(Float64, names, order=order)
 
-function set_variables{T<:String}(R::Type, names::T; order=6, numvars=-1)
+function set_variables{T<:AbstractString}(R::Type, names::T; order=6, numvars=-1)
     variable_names = split(names)
 
     if length(variable_names) == 1 && numvars >= 1
@@ -86,5 +74,16 @@ function set_variables{T<:String}(R::Type, names::T; order=6, numvars=-1)
     set_variables(R, variable_names, order=order)
 end
 
-set_variables{T<:String}(names::T; order=6, numvars=-1) =
+set_variables{T<:AbstractString}(names::T; order=6, numvars=-1) =
     set_variables(Float64, names, order=order, numvars=numvars)
+
+@doc """Display the current parameters for `TaylorN` and
+`HomogeneousPolynomial`""" ->
+function show_params_TaylorN()
+    info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
+    Maximum order       = $(get_order())
+    Number of variables = $(get_numvars())
+    Variable names      = $(get_variable_names())
+    """)
+    nothing
+end

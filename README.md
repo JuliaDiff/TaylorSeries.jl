@@ -1,16 +1,16 @@
 # TaylorSeries.jl
 
-A [Julia](http://julialang.org) package for Taylor expansions in one or more 
+A [Julia](http://julialang.org) package for Taylor expansions in one or more
 independent variables.
 
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.3.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=release)
-[![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_nightly.svg)](http://pkg.julialang.org/?pkg=TaylorSeries&ver=nightly)
+[![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.4.svg)](http://pkg.julialang.org/?pkg=TaylorSeries)
 [![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
 #### Authors
-- [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas, 
+- [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas,
 Universidad Nacional Autónoma de México (UNAM)
-- [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad 
+- [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad
 de Ciencias, Universidad Nacional Autónoma de México (UNAM)
 
 Comments, suggestions and improvements are welcome and appreciated.
@@ -21,7 +21,7 @@ Comments, suggestions and improvements are welcome and appreciated.
 
 #### Documentation
 
-The documentation is available [here](http://www.juliadiff.org/TaylorSeries.jl/). 
+The documentation is available [here](http://www.juliadiff.org/TaylorSeries.jl/).
 Some examples can also found in the examples directory.
 
 #### License
