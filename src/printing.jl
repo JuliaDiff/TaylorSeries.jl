@@ -93,10 +93,14 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
 end
 function numbr2str{T<:Real}(zz::T, ifirst::Bool=false)
     zz == zero(T) && return string( zz )
-    plusmin = zz > zero(T) ? string("+ ") : string("- ")
-    if ifirst
-        plusmin = zz > zero(T) ? string("") : string("- ")
-    end
+    plusmin = ifelse( ifirst, string(""), string("+ ") )
+    return string(plusmin, zz)
+end
+function numbr2str{T<:Union{AbstractFloat,Integer,Irrational,Rational}}(zz::T,
+    ifirst::Bool=false)
+    zz == zero(T) && return string( zz )
+    plusmin = ifelse( zz < zero(T), string("- "),
+                ifelse( ifirst, string(""), string("+ ")) )
     return string(plusmin, abs(zz))
 end
 function numbr2str{T<:Complex}(zz::T, ifirst::Bool=false)

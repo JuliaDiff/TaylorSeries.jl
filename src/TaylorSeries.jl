@@ -2,6 +2,8 @@
 #
 # Handles Taylor series of arbitrary but finite order
 
+__precompile__(true)
+
 module TaylorSeries
 
 if VERSION < v"0.4.0-dev"
