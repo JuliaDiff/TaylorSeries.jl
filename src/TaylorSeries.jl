@@ -2,11 +2,9 @@
 #
 # Handles Taylor series of arbitrary but finite order
 
-module TaylorSeries
+__precompile__(true)
 
-if VERSION < v"0.4.0-dev"
-    using Docile
-end
+module TaylorSeries
 
 using Compat
 
