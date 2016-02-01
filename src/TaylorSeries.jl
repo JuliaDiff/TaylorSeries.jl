@@ -6,10 +6,6 @@ __precompile__(true)
 
 module TaylorSeries
 
-if VERSION < v"0.4.0-dev"
-    using Docile
-end
-
 using Compat
 
 import Base: ==, +, -, *, /, ^
