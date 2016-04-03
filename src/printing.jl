@@ -1,4 +1,4 @@
-# This file is part of TaylorSeries.jl
+# This file is part of the TaylorSeries.jl Julia package, MIT license
 
 # Printing of TaylorSeries objects
 

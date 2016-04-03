@@ -1,4 +1,4 @@
-# This file is part of TaylorSeries.jl
+# This file is part of the TaylorSeries.jl Julia package, MIT license
 
 # Hash tables for HomogeneousPolynomial and TaylorN
 
@@ -77,4 +77,3 @@ end
 
 const coeff_table, index_table, size_table, pos_table = generate_tables(get_numvars(), get_order())
 gc();
-

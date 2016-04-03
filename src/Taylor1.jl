@@ -1,6 +1,4 @@
-# utils_Taylor1.jl: 1-variable Taylor expansions
-#
-# Last modification: 2015.07.03
+# This file is part of the TaylorSeries.jl Julia package, MIT license
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -11,14 +9,14 @@
 
 ## Constructors ##
 @doc """
-    DataType for polynomial expansions in one independent variable
+DataType for polynomial expansions in one independent variable
 
-    Fieldnames:
+Fieldnames:
 
-    - `coeffs`: vector containing the expansion coefficients; the i-th
-    component is the i-1 coefficient of the expansion
+- `coeffs`: vector containing the expansion coefficients; the i-th
+component is the i-1 coefficient of the expansion
 
-    - `order` : maximum order of the expansion considered
+- `order` : maximum order of the expansion considered
 """ ->
 immutable Taylor1{T<:Number} <: Number
     coeffs :: Array{T,1}
@@ -122,6 +120,7 @@ function ==(a::Taylor1, b::Taylor1)
     return a.coeffs == b.coeffs
 end
 
+# Tests `isinf` and `isnan` for all polynomial coefficients
 for f in (:isinf, :isnan)
     @eval begin
         function ($f)(a::Taylor1)
@@ -240,7 +239,7 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
         throw(ArgumentError(
         """Division does not define a Taylor1 polynomial
         or its first non-zero coefficient is Inf/NaN.
-        Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact).\n"""))
+        Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact)."""))
     end
 
     return orddivfact, cdivfact
@@ -271,6 +270,26 @@ function mod2pi{T<:Real}(a::Taylor1{T})
     coeffs = copy(a.coeffs)
     @inbounds coeffs[1] = mod2pi( a.coeffs[1] )
     return Taylor1( coeffs, a.order)
+end
+
+## abs function ##
+@doc """
+abs(a::Taylor1)
+
+Returns either a or -a, depending on the 0-th order
+coefficient of a. If a.coeffs[1]==0 is true, it throws
+an ArgumentError.
+""" ->
+function abs{T<:Real}(a::Taylor1{T})
+    if a.coeffs[1] > zero(T)
+        return a
+    elseif a.coeffs[1] < zero(T)
+        return -a
+    else
+        throw(ArgumentError(
+        """The 0th order Taylor1 coefficient must be non-zero
+        (`abs(x)` is not differentiable at zero)."""))
+    end
 end
 
 ## Int power ##
@@ -336,12 +355,12 @@ function ^{S<:Real}(a::Taylor1, x::S)
     !isinteger(lnull) &&
         throw(ArgumentError(
         """The 0th order Taylor1 coefficient must be non-zero
-        to raise the Taylor1 polynomial to a non-integer exponent"""))
+        to raise the Taylor1 polynomial to a non-integer exponent."""))
 
     # Reaching this point, it is possible to implement the power of the Taylor1
     # polynomial. The last l0nz coefficients are set to zero.
     lnull = trunc(Int,lnull)
-    #l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.\n")
+    #l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.")
     @inbounds aux = (a.coeffs[l0nz+1])^x
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
@@ -407,12 +426,12 @@ function sqrt(a::Taylor1)
     elseif l0nz%2 == 1 # l0nz must be pair
         throw(ArgumentError(
         """First non-vanishing Taylor1 coefficient must correspond
-        to an **even power** in order to expand `sqrt` around 0"""))
+        to an **even power** in order to expand `sqrt` around 0."""))
     end
 
     # Reaching this point, it is possible to implement the sqrt of the Taylor1 polynomial.
     # The last l0nz coefficients are set to zero.
-    ##l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.\n")
+    ##l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.")
     lnull = div(l0nz, 2)
     @inbounds aux = sqrt(a.coeffs[l0nz+1])
     T = typeof(aux)

@@ -498,6 +498,26 @@ function mod2pi{T<:Real}(a::TaylorN{T})
     return TaylorN{T}( coeffs, a.order )
 end
 
+## abs function ##
+@doc """
+abs(a::TaylorN)
+
+Returns either a or -a, depending on the 0-th order
+coefficient of a. If a.coeffs[1]==0 is true, it throws
+an ArgumentError.
+""" ->
+function abs{T<:Real}(a::TaylorN{T})
+    if a.coeffs[1].coeffs[1] > zero(T)
+        return a
+    elseif a.coeffs[1].coeffs[1] < zero(T)
+        return -a
+    else
+        throw(ArgumentError(
+        """The 0th order TaylorN coefficient must be non-zero
+        (`abs(x)` is not differentiable at zero)."""))
+    end
+end
+
 ## Int power ##
 function ^(a::HomogeneousPolynomial, n::Integer)
     n == 0 && return one(a)
@@ -628,7 +648,7 @@ function sqrt(a::TaylorN)
     if p0 == zero(p0)
         throw(ArgumentError(
         """The 0-th order TaylorN coefficient must be non-zero
-        in order to expand `sqrt` around 0"""))
+        in order to expand `sqrt` around 0."""))
     end
 
     T = typeof(p0)
@@ -678,8 +698,8 @@ function log(a::TaylorN)
     @inbounds a0 = a.coeffs[1].coeffs[1]
     if a0 == zero(a0)
         throw(ArgumentError(
-        """The 0-th order TaylorN coefficient must be non-zero
-        in order to expand `log` around 0"""))
+        """The 0-th order `TaylorN` coefficient must be non-zero
+        in order to expand `log` around 0."""))
     end
     l0 = log( a0 )
     T = typeof(l0)
@@ -748,8 +768,8 @@ function tan(a::TaylorN)
 end
 
 ## Differentiation ##
-"""Partial differentiation of a HomogeneousPolynomial series with respect
-to the r-th variable"""
+"""Partial differentiation of a `HomogeneousPolynomial` series with respect
+to the r-th variable."""
 function diffTaylor(a::HomogeneousPolynomial, r::Int)
     @assert 1 <= r <= get_numvars()
     T = eltype(a)
@@ -773,8 +793,8 @@ function diffTaylor(a::HomogeneousPolynomial, r::Int)
     return HomogeneousPolynomial{T}(coeffs, a.order-1)
 end
 
-"""Partial differentiation of a TaylorN series with respect
-to the r-th variable"""
+"""Partial differentiation of a `TaylorN` series with respect
+to the r-th variable."""
 function diffTaylor(a::TaylorN, r::Int)
     T = eltype(a)
     coeffs = Array(HomogeneousPolynomial{T},a.order)

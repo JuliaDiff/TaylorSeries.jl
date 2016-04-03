@@ -1,5 +1,8 @@
 # This file is part of the TaylorSeries.jl Julia package, MIT license
 #
+# Luis Benet & David P. Sanders
+# UNAM
+#
 # Handles Taylor series of arbitrary but finite order
 
 module TaylorSeries
@@ -15,7 +18,7 @@ import Base: ==, +, -, *, /, ^
 import Base: zero, one, zeros, ones, isinf, isnan,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
-    rem, mod, mod2pi, gradient,
+    rem, mod, mod2pi, abs, gradient,
     sqrt, exp, log, sin, cos, tan
 
 export Taylor1, TaylorN, HomogeneousPolynomial
