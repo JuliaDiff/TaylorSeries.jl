@@ -1,4 +1,4 @@
-# This file is part of TaylorSeries.jl
+# This file is part of the TaylorSeries.jl Julia package, MIT license
 
 # Printing of TaylorSeries objects
 
@@ -96,7 +96,7 @@ function numbr2str(zz, ifirst::Bool=false)
     plusmin = ifelse( ifirst, string(""), string("+ ") )
     return string(plusmin, zz)
 end
-function numbr2str{T<:Union{AbstractFloat,Integer,Rational}}(zz::T, ifirst::Bool=false)
+@compat function numbr2str{T<:Union{AbstractFloat,Integer,Rational}}(zz::T, ifirst::Bool=false)
     zz == zero(T) && return string( zz )
     plusmin = ifelse( zz < zero(T), string("- "),
                 ifelse( ifirst, string(""), string("+ ")) )

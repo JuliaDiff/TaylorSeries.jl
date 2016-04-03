@@ -1,3 +1,5 @@
+# This file is part of TaylorSeries.jl, MIT licensed
+#
 # Tests for TaylorSeries implementation
 using TaylorSeries
 using FactCheck
@@ -74,6 +76,9 @@ facts("Tests for Taylor1 expansions") do
     @fact isapprox( mod(4.1 + t,4).coeffs[1], (0.1 + t).coeffs[1] )  --> true
     @fact isapprox( mod2pi(2pi+0.1+t).coeffs[1],(0.1 + t).coeffs[1])  --> true
 
+    @fact abs(ta(1))  --> ta(1)
+    @fact abs(ta(-1.0))  --> -ta(-1.0)
+
     @fact log(exp(tsquare)) == tsquare  --> true
     @fact exp(log(1-tsquare)) == 1-tsquare  --> true
     @fact log((1-t)^2) == 2*log(1-t)  --> true
@@ -98,6 +103,7 @@ facts("Tests for Taylor1 expansions") do
 
     @fact promote(ta(0.0), t) == (ta(0.0),ta(0.0))  --> true
 
+    @fact_throws ArgumentError abs(ta(big(0)))
     @fact_throws ArgumentError 1/t
     @fact_throws ArgumentError zt/zt
     @fact_throws ArgumentError t^1.5
@@ -186,6 +192,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact (yT/(1-xT)).coeffs[5] == xH^3 * yH  --> true
     @fact mod(1+xT,1) == +xT  --> true
     @fact (rem(1+xT,1)).coeffs[1] == 0  --> true
+    @fact abs(1-xT)  --> 1-xT
+    @fact abs(-1-xT)  --> 1+xT
     @fact diffTaylor(mod2pi(2pi+yT^3),2) == diffTaylor(yT^3,2)  --> true
     @fact diffTaylor(yT) == zeroT  --> true
     @fact -xT/3im == im*xT/3  --> true
@@ -237,6 +245,7 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"  --> true
     @fact string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"  --> true
 
+    @fact_throws ArgumentError abs(xT)
     @fact_throws AssertionError 1/x
     @fact_throws AssertionError zero(x)/zero(x)
     @fact_throws ArgumentError sqrt(x)
