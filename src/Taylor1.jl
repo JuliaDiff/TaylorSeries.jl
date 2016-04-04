@@ -9,14 +9,16 @@
 
 ## Constructors ##
 @doc """
+    Taylor1
+
 DataType for polynomial expansions in one independent variable
 
 Fieldnames:
 
-- `coeffs`: vector containing the expansion coefficients; the i-th
-component is the i-1 coefficient of the expansion
+- `coeffs`: Vector containing the expansion coefficients; the i-th
+component is the i-1 coefficient of the expansion.
 
-- `order` : maximum order of the expansion considered
+- `order` : Maximum order (degree) of the polynomial.
 """ ->
 immutable Taylor1{T<:Number} <: Number
     coeffs :: Array{T,1}
@@ -152,7 +154,7 @@ for f in (:+, :-)
             end
             return Taylor1(v, a.order)
         end
-        @compat function ($f)(a::Taylor1, b::Union{Real,Complex})
+        function ($f)(a::Taylor1, b::Union{Real,Complex})
             @inbounds aux = ($f)(a.coeffs[1], b)
             v = Array(typeof(aux), length(a.coeffs))
             @simd for i in eachindex(v)
@@ -161,7 +163,7 @@ for f in (:+, :-)
             @inbounds v[1] = aux
             Taylor1(v, a.order)
         end
-        @compat function ($f)(a::Union{Real,Complex}, b::Taylor1)
+        function ($f)(a::Union{Real,Complex}, b::Taylor1)
             @inbounds aux = ($f)(a, b.coeffs[1])
             v = Array(typeof(aux), length(b.coeffs))
             @simd for i in eachindex(v)
@@ -176,7 +178,7 @@ end
 ## Multiplication ##
 *(a::Bool, b::Taylor1) = *(promote(a,b)...)
 *(a::Taylor1, b::Bool) = b*a
-@compat function *(a::Union{Real,Complex}, b::Taylor1)
+function *(a::Union{Real,Complex}, b::Taylor1)
     @inbounds aux = a * b.coeffs[1]
     v = Array(typeof(aux), length(b.coeffs))
     @simd for i in eachindex(v)
@@ -184,7 +186,7 @@ end
     end
     Taylor1(v, b.order)
 end
-@compat *(a::Taylor1, b::Union{Real,Complex}) = b * a
+*(a::Taylor1, b::Union{Real,Complex}) = b * a
 function *(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
     coeffs = similar(a.coeffs)
@@ -273,13 +275,14 @@ function mod2pi{T<:Real}(a::Taylor1{T})
 end
 
 ## abs function ##
-@doc """
-abs(a::Taylor1)
+"""
+    abs(a::Taylor1)
 
-Returns either a or -a, depending on the 0-th order
-coefficient of a. If a.coeffs[1]==0 is true, it throws
-an ArgumentError.
-""" ->
+Absolute value of a `Taylor1` polynomial, using the 0-th order coefficient.
+
+Return `a` or `-a`, depending on the 0-th order coefficient of `a`.
+If it is zero, it throws an `ArgumentError`.
+"""
 function abs{T<:Real}(a::Taylor1{T})
     if a.coeffs[1] > zero(T)
         return a
@@ -288,7 +291,7 @@ function abs{T<:Real}(a::Taylor1{T})
     else
         throw(ArgumentError(
         """The 0th order Taylor1 coefficient must be non-zero
-        (`abs(x)` is not differentiable at zero)."""))
+        (abs(x) is not differentiable at x=0)."""))
     end
 end
 

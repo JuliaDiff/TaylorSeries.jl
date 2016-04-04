@@ -1,9 +1,9 @@
 # This file is part of TaylorSeries.jl, MIT licensed
 #
 # Tests for TaylorSeries implementation
+include("/Users/benet/Fisica/6-IntervalArithmetics/TaylorSeries.jl/src/TaylorSeries.jl")
 using TaylorSeries
 using FactCheck
-using Compat
 
 FactCheck.setstyle(:compact)
 # FactCheck.onlystats(true)
