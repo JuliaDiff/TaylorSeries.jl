@@ -2,20 +2,23 @@
 #
 # Parameters for HomogeneousPolynomial and TaylorN
 
-@doc """Type structure holding the current parameters for `TaylorN` and
+@doc """
+    `ParamsTaylorN`
+
+DataType holding the current parameters for `TaylorN` and
 `HomogeneousPolynomial`.
 
-    Fieldnames:
+**Fields:**
 
-    - order:     order (degree) of the polynomials
-    - num_vars : number of variables
+`order          :: Int`  Order (degree) of the polynomials
+`num_vars       :: Int`  Number of variables
+`variable_names :: Array{UTF8String,1}` Name of the variables
 
-    These parameters can be changed using `set_params_TaylorN(order,numVars)`
-    """ ->
-
+These parameters can be changed using `set_params_TaylorN(order,numVars)`.
+""" ->
 type ParamsTaylorN
-    order :: Int
-    num_vars  :: Int
+    order          :: Int
+    num_vars       :: Int
     variable_names :: Array{UTF8String,1}
 end
 
@@ -31,9 +34,20 @@ set_variable_names{T<:AbstractString}(names::Vector{T}) = _params_TaylorN_.varia
 
 get_variables() = [taylorN_variable(i) for i in 1:get_numvars()]
 
-@doc doc"""`set_variables` sets the names and number of the Taylor variables,
-as well as the order of the Taylor expansion.""" ->
+@doc """
+    `set_variables(R, names; [order=6])`
+    `set_variables(names; [order=6])`
+    `set_variables(R, names; [order=6, numvars=-1])`
+    `set_variables(names; [order=6, numvars=-1])`
 
+Return a `TaylorN{R}` vector with `numvars` polynomials, each representing an
+independent variable, using `names` as the `UTF8String` for the output.
+
+If `numvars` is not specified, it is inferred from the length of `names`.
+If `length(names)==1` and `numvars>1`, it uses this name with subscripts for
+the different variables. When changing the `order` or `numvars`, the
+hash_tables are reset.
+""" ->
 function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=6)
     order >= 1 || error("Order must be at least 1")
 
@@ -77,10 +91,14 @@ end
 set_variables{T<:AbstractString}(names::T; order=6, numvars=-1) =
     set_variables(Float64, names, order=order, numvars=numvars)
 
-@doc """Display the current parameters for `TaylorN` and
-`HomogeneousPolynomial`""" ->
+@doc """
+    `show_params_TaylorN()`
+
+Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
+""" ->
 function show_params_TaylorN()
-    info( """Parameters for `TaylorN` and `HomogeneousPolynomial`:
+    info( """
+    Parameters for `TaylorN` and `HomogeneousPolynomial`:
     Maximum order       = $(get_order())
     Number of variables = $(get_numvars())
     Variable names      = $(get_variable_names())
