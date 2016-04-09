@@ -1,6 +1,3 @@
-<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'>
-</script>
-
 # TaylorSeries.jl
 
 A [Julia](http://julialang.org) package for Taylor expansions in one or more independent variables.
@@ -14,7 +11,6 @@ Universidad Nacional Autónoma de México (UNAM)
 - [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad de Ciencias,
 Universidad Nacional Autónoma de México (UNAM)
 
-Comments, suggestions and additions are welcome and appreciated.
 
 ### Installation
 

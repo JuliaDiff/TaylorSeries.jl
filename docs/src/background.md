@@ -1,25 +1,8 @@
-<script type="text/x-mathjax-config">
-  MathJax.Hub.Config({
-    TeX: { equationNumbers: { autoNumber: "AMS" } }
-  });
-  MathJax.Hub.Config({
-    TeX: { extensions: ["AMSmath.js", "AMSsymbols.js", "autobold.js", "autoload-all.js"] }
-  });
-  MathJax.Hub.Config({
-    tex2jax: {
-      inlineMath: [['$','$'], ['\\(','\\)']],
-      processEscapes: true
-    }
-  });
-</script>
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML">
-</script>
-
 # Background
 
 ---
 
-### Introduction
+## Introduction
 
 [TaylorSeries.jl](https://github.com/lbenet/TaylorSeries.jl) is an implementation
 of high-order
@@ -45,12 +28,14 @@ things become more subtle. Following Alex Haro's approach
 [[2]](background.md#references), the Taylor
 expansion is an infinite sum of *homogeneous polynomials* in the $d$ independent
 variables $x_1, x_2, \dots, x_d$, which takes the form
+
 \\begin{equation}
 f_k (\\mathbf{x_0}) = \\sum_{m_1+\\cdots+m_d = k} f_{m_1,\\dots,m_d}
 (x_1-x_{0_1})^{m_1}
 \\cdots (x_d-x_{0_d})^{m_d} =
 \\sum_{|\\mathbf{m}|=k} f_\\mathbf{m} (\\mathbf{x}-\\mathbf{x_0})^\\mathbf{m}.
 \\end{equation}
+
 Here, $\\mathbf{m}\in \\mathbb{N}^d$ is a multi-index of the $k$-th order
 homogeneous polynomial and $\\mathbf{x}=(x_1,x_2,\\ldots,x_d)$ are the
 $d$ independent variables.
@@ -67,6 +52,7 @@ the construction of the `Taylor` and `TaylorN` types, described later.
 
 Arithmetic operations involving Taylor series can be expressed as
 operations on the coefficients:
+
 \\begin{eqnarray}
 (f(x) \\pm g(x))_k & = & f_k \\pm g_k \\, , \\\\
 \\label{eq:multT}
@@ -77,17 +63,19 @@ operations on the coefficients:
 
 Equation (\\ref{eq:multT}) corresponds to a convolution.
 
-### Elementary functions of polynomials
+## Elementary functions of polynomials
 
 Consider a function $y(t)$ that satisfies the ordinary differential equation
 $\\dot{y} = f(y)$, $y(t_0)=y_0$, where $t$ is the independent variable.
 Writing $y(t)$ and $f(t)$ as Taylor polynomials of $t$, substituting these in the
 differential equation and equating equal powers of
 the independent variable leads to the recursion relation
+
 \\begin{equation}
 \\label{eq:rec}
 y_{n+1} = \frac{f_n}{n+1}.
 \\end{equation}
+
 Equation (\\ref{eq:rec}), together with the corresponding initial condition, defines a recurrence relation
 for the Taylor coefficients of $y(t)$ around $t_0$. For more independent
 variables, using the chain rule for the *radial derivative*
@@ -118,7 +106,7 @@ differential equation. All these relations hold for Taylor expansions in one
 and more independent variables; in the latter case, the Taylor coefficients
 $f_k$ are homogeneous polynomials of degree $k$.
 
-### References
+## References
 
 [1] W. Tucker, *Validated Numerics: A Short Introduction to Rigorous Computations*, Princeton University Press (2011).
 

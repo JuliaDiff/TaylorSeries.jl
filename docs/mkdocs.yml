@@ -1,0 +1,28 @@
+site_name:        TaylorSeries.jl
+site_description: 'TaylorSeries.jl: A julia package to manipulate Taylor expansions'
+repo_url:         https://github.com/JuliaDiff/TaylorSeries.jl
+site_author:      Luis Benet
+
+# theme: readthedocs
+theme: bootstrap
+
+extra_css:
+  - assets/Documenter.css
+
+extra_javascript:
+  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
+  - assets/mathjaxhelper.js
+
+markdown_extensions:
+  - extra
+  - codehilite
+  - fenced_code
+
+docs_dir: 'build'
+
+copyright: Copyright &copy; 2014, 2015, 2016, Luis Benet and David P. Sanders
+
+pages:
+    - 'Home': 'index.md'
+    - 'Background': 'background.md'
+    - 'User guide': 'user_guide.md'
