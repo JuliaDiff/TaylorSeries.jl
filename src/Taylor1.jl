@@ -9,14 +9,16 @@
 
 ## Constructors ##
 @doc """
-DataType for polynomial expansions in one independent variable
+    Taylor1{T<:Number} <: Number
 
-Fieldnames:
+DataType for polynomial expansions in one independent variable.
 
-- `coeffs`: vector containing the expansion coefficients; the i-th
-component is the i-1 coefficient of the expansion
+**Fields:**
 
-- `order` : maximum order of the expansion considered
+`coeffs :: Array{T,1}` Expansion coefficients; the \$i-th\$
+component is the \$i-1\$ coefficient of the expansion.
+
+`order  :: Int64` Maximum order (degree) of the polynomial.
 """ ->
 immutable Taylor1{T<:Number} <: Number
     coeffs :: Array{T,1}
@@ -46,8 +48,20 @@ Taylor1{T<:Number}(x::T) = Taylor1{T}([x], 0)
 # Shortcut to define Taylor1 independent variables
 taylor1_variable(T::Type, order::Int=1) = Taylor1{T}( [zero(T), one(T)], order)
 taylor1_variable(order::Int=1) = taylor1_variable(Float64, order)
+@doc """
+    taylor1_variable(T, [order=1])
+    taylor1_variable([order=1])
+
+Short-cut to define the independent variable as a `Taylor1` polynomial of
+given `order`. If `T::Type` is ommitted, `Float64` is assumend.
+""" taylor1_variable
 
 ## get_coeff
+@doc """
+    get_coeff(a, n)
+
+Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
+""" ->
 get_coeff(a::Taylor1, n::Int) = (@assert 0 <= n <= a.order+1;
     return a.coeffs[n+1])
 
@@ -152,7 +166,7 @@ for f in (:+, :-)
             end
             return Taylor1(v, a.order)
         end
-        @compat function ($f)(a::Taylor1, b::Union{Real,Complex})
+        function ($f)(a::Taylor1, b::Union{Real,Complex})
             @inbounds aux = ($f)(a.coeffs[1], b)
             v = Array(typeof(aux), length(a.coeffs))
             @simd for i in eachindex(v)
@@ -161,7 +175,7 @@ for f in (:+, :-)
             @inbounds v[1] = aux
             Taylor1(v, a.order)
         end
-        @compat function ($f)(a::Union{Real,Complex}, b::Taylor1)
+        function ($f)(a::Union{Real,Complex}, b::Taylor1)
             @inbounds aux = ($f)(a, b.coeffs[1])
             v = Array(typeof(aux), length(b.coeffs))
             @simd for i in eachindex(v)
@@ -176,7 +190,7 @@ end
 ## Multiplication ##
 *(a::Bool, b::Taylor1) = *(promote(a,b)...)
 *(a::Taylor1, b::Bool) = b*a
-@compat function *(a::Union{Real,Complex}, b::Taylor1)
+function *(a::Union{Real,Complex}, b::Taylor1)
     @inbounds aux = a * b.coeffs[1]
     v = Array(typeof(aux), length(b.coeffs))
     @simd for i in eachindex(v)
@@ -184,7 +198,7 @@ end
     end
     Taylor1(v, b.order)
 end
-@compat *(a::Taylor1, b::Union{Real,Complex}) = b * a
+*(a::Taylor1, b::Union{Real,Complex}) = b * a
 function *(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
     coeffs = similar(a.coeffs)
@@ -273,13 +287,12 @@ function mod2pi{T<:Real}(a::Taylor1{T})
 end
 
 ## abs function ##
-@doc """
-abs(a::Taylor1)
+"""
+    abs(a)
 
-Returns either a or -a, depending on the 0-th order
-coefficient of a. If a.coeffs[1]==0 is true, it throws
-an ArgumentError.
-""" ->
+For `a::Taylor1`, return `a` or `-a` depending on the 0-th order coefficient
+of `a`. If it is zero, it throws an `ArgumentError`.
+"""
 function abs{T<:Real}(a::Taylor1{T})
     if a.coeffs[1] > zero(T)
         return a
@@ -288,7 +301,7 @@ function abs{T<:Real}(a::Taylor1{T})
     else
         throw(ArgumentError(
         """The 0th order Taylor1 coefficient must be non-zero
-        (`abs(x)` is not differentiable at zero)."""))
+        (abs(x) is not differentiable at x=0)."""))
     end
 end
 
@@ -577,6 +590,12 @@ function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
 end
 
 ## Differentiating ##
+"""
+    diffTaylor(a)
+
+Return the `Taylor1` polynomial of the differential of `a::Taylor1`; the last
+coefficient is set to zero.
+"""
 function diffTaylor(a::Taylor1)
     coeffs = zero(a.coeffs)
     @inbounds coeffs[1] = a.coeffs[2]
@@ -587,6 +606,13 @@ function diffTaylor(a::Taylor1)
 end
 
 ## Integrating ##
+"""
+    integTaylor(a, x)
+    integTaylor(a)
+
+Return the integral of `a::Taylor1`. The constant of integration
+(0th order coefficient) is set to `x`, which is zero if ommitted.
+"""
 function integTaylor{T<:Number, S<:Number}(a::Taylor1{T}, x::S)
     R = promote_type(T, typeof(a.coeffs[1] / 1), S)
     coeffs = zeros(R, a.order+1)
@@ -599,6 +625,12 @@ end
 integTaylor{T<:Number}(a::Taylor1{T}) = integTaylor(a, zero(T))
 
 ## Evaluates a Taylor1 polynomial on a given point using Horner's rule ##
+"""
+    evaluate(a, dx)
+    evaluate(a)
+
+Evaluate a `Taylor1` polynomial using Horner's rule (hand coded).
+"""
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
     @inbounds suma = convert(R, a.coeffs[end])
@@ -609,6 +641,12 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
 end
 evaluate{T<:Number}(a::Taylor1{T}) = a.coeffs[1]
 
+"""
+    evaluate(a, x)
+
+Return the substitution of `x::Taylor1` as independent variable in
+`a::Taylor1`.
+"""
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
     a, x = fixshape(a, x)
     @inbounds suma = a.coeffs[end]
@@ -619,8 +657,12 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
 end
 
 ## Returns de n-th derivative of a series expansion
+"""
+    deriv(a, [n=1])
+
+Return the value of the `n`-th derivative of `a`.
+"""
 function deriv{T<:Number}(a::Taylor1{T}, n::Int=1)
     @assert a.order >= n >= 0
-    res = factorial( widen(n) ) * a.coeffs[n+1]
-    convert(T,res)
+    factorial( widen(n) ) * a.coeffs[n+1] :: T
 end

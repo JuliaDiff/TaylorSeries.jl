@@ -3,7 +3,6 @@
 # Tests for TaylorSeries implementation
 using TaylorSeries
 using FactCheck
-using Compat
 
 FactCheck.setstyle(:compact)
 # FactCheck.onlystats(true)
