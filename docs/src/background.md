@@ -30,10 +30,9 @@ expansion is an infinite sum of *homogeneous polynomials* in the $d$ independent
 variables $x_1, x_2, \dots, x_d$, which takes the form
 
 \\begin{equation}
-f_k (\\mathbf{x_0}) = \\sum_{m_1+\\cdots+m_d = k} f_{m_1,\\dots,m_d}
-(x_1-x_{0_1})^{m_1}
-\\cdots (x_d-x_{0_d})^{m_d} =
-\\sum_{|\\mathbf{m}|=k} f_\\mathbf{m} (\\mathbf{x}-\\mathbf{x_0})^\\mathbf{m}.
+f_k (\\mathbf{x_0}) = \\sum_{m_1+\\cdots+m_d = k}\\, f_{m_1,\\dots,m_d} \\;\\,
+(x_1-x_{0_1})^{m_1} \\cdots (x_d-x_{0_d})^{m_d} =
+\\sum_{|\\mathbf{m}|=k} f_\\mathbf{m}\\, (\\mathbf{x}-\\mathbf{x_0})^\\mathbf{m}.
 \\end{equation}
 
 Here, $\\mathbf{m}\in \\mathbb{N}^d$ is a multi-index of the $k$-th order
@@ -56,7 +55,7 @@ operations on the coefficients:
 \\begin{eqnarray}
 (f(x) \\pm g(x))_k & = & f_k \\pm g_k \\, , \\\\
 \\label{eq:multT}
-(f(x) \\cdot g(x))_k & = & \\sum\_{i=0}^k f_i \\, g\_{k-i} \\, ,\\\\
+(f(x) \\cdot g(x))_k & = & \\sum_{i=0}^k f_i \\, g_{k-i} \\, ,\\\\
 \\Big(\\frac{f(x)}{g(x)}\\Big)_k & = & \\frac{1}{g_0} \\Big[ f_k -
 \\sum\_{i=0}^{k-1} \\big(\\frac{f(x)}{g(x)}\\big)_i \\, g\_{k-i} \\Big]\\, .\\\\
 \\end{eqnarray}
@@ -108,6 +107,9 @@ $f_k$ are homogeneous polynomials of degree $k$.
 
 ## References
 
-[1] W. Tucker, *Validated Numerics: A Short Introduction to Rigorous Computations*, Princeton University Press (2011).
+[1] W. Tucker, *Validated Numerics: A Short Introduction to Rigorous
+Computations*, Princeton University Press (2011).
 
-[2] A. Haro, *Automatic differentiation methods in computational dynamical systems: Invariant manifolds and normal forms of vector fields at fixed points*, [preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
+[2] A. Haro, *Automatic differentiation methods in computational dynamical
+systems: Invariant manifolds and normal forms of vector fields at fixed points*,
+[preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
