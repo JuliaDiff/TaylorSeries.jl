@@ -10,19 +10,26 @@ extra_css:
   - assets/Documenter.css
 
 extra_javascript:
-  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
+  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   - assets/mathjaxhelper.js
 
 markdown_extensions:
-  - extra
-  - codehilite
-  - fenced_code
+    - extra
+    - mdx_math
+    - fenced_code
+    - toc:
+        permalink: True
 
 docs_dir: 'build'
 
-copyright: Copyright &copy; 2014, 2015, 2016, Luis Benet and David P. Sanders
+copyright: "Copyright &copy; 2014-2016, Luis Benet and David P. Sanders.<br>
+<a https://github.com/JuliaDiff/TaylorSeries.jl>TaylorSeries.jl</a> is licensed under the
+<a href='https://github.com/JuliaDiff/TaylorSeries.jl/blob/master/LICENSE.md'>
+MIT Expat license</a>."
 
 pages:
     - 'Home': 'index.md'
     - 'Background': 'background.md'
-    - 'User guide': 'user_guide.md'
+    - 'User guide':
+        - 'User guide': 'user_guide.md'
+        - 'Examples': 'examples.md'
