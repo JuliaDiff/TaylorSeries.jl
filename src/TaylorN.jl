@@ -24,11 +24,10 @@ DataType for homogenous polynomials in many (>1) independent variables.
 
 **Fields:**
 
-`coeffs  :: Array{T,1}` Expansion coefficients of the homogeneous
-polynomial; the `i`-th component is related to a monomial, where the degrees
+- `coeffs  :: Array{T,1}` Expansion coefficients of the homogeneous
+polynomial; the \$i\$-th component is related to a monomial, where the degrees
 of the independent variables are specified by `coeff_table[order+1][i]`.
-
-`order   :: Int` order (degree) of the homogenous polynomial.
+- `order   :: Int` order (degree) of the homogenous polynomial.
 """ ->
 immutable HomogeneousPolynomial{T<:Number} <: Number
     coeffs  :: Array{T,1}
@@ -144,16 +143,16 @@ end
 
 
 @doc """
-    immutable TaylorN{T<:Number} <: Number
+    TaylorN{T<:Number} <: Number
 
 DataType for polynomial expansions in many (>1) independent variables.
 
 **Fields:**
 
-`coeffs  :: Array{HomogeneousPolynomial{T},1}` Vector containing the
-`HomogeneousPolynomial` entries.
-
-`order   :: Int`  maximum order of the polynomial expansion.
+- `coeffs  :: Array{HomogeneousPolynomial{T},1}` Vector containing the
+`HomogeneousPolynomial` entries. The \$i\$-th component corresponds to the
+homogeneous polynomial of degree \$i-1\$.
+- `order   :: Int`  maximum order of the polynomial expansion.
 """ ->
 immutable TaylorN{T<:Number} <: Number
     coeffs  :: Array{HomogeneousPolynomial{T},1}

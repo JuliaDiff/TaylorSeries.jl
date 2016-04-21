@@ -3,18 +3,18 @@
 # Parameters for HomogeneousPolynomial and TaylorN
 
 @doc """
-    `ParamsTaylorN`
+    ParamsTaylorN
 
 DataType holding the current parameters for `TaylorN` and
 `HomogeneousPolynomial`.
 
 **Fields:**
 
-`order          :: Int`  Order (degree) of the polynomials
-`num_vars       :: Int`  Number of variables
-`variable_names :: Array{UTF8String,1}` Name of the variables
+- `order          :: Int`  Order (degree) of the polynomials
+- `num_vars       :: Int`  Number of variables
+- `variable_names :: Array{UTF8String,1}` Name of the variables
 
-These parameters can be changed using `set_params_TaylorN(order,numVars)`.
+These parameters can be changed using `set_params_TaylorN(order, numVars)`.
 """ ->
 type ParamsTaylorN
     order          :: Int
@@ -35,10 +35,10 @@ set_variable_names{T<:AbstractString}(names::Vector{T}) = _params_TaylorN_.varia
 get_variables() = [taylorN_variable(i) for i in 1:get_numvars()]
 
 @doc """
-    `set_variables(R, names; [order=6])`
-    `set_variables(names; [order=6])`
-    `set_variables(R, names; [order=6, numvars=-1])`
-    `set_variables(names; [order=6, numvars=-1])`
+    set_variables(R, names; [order=6])
+    set_variables(names; [order=6])
+    set_variables(R, names; [order=6, numvars=-1])
+    set_variables(names; [order=6, numvars=-1])
 
 Return a `TaylorN{R}` vector with `numvars` polynomials, each representing an
 independent variable, using `names` as the `UTF8String` for the output.
@@ -92,7 +92,7 @@ set_variables{T<:AbstractString}(names::T; order=6, numvars=-1) =
     set_variables(Float64, names, order=order, numvars=numvars)
 
 @doc """
-    `show_params_TaylorN()`
+    show_params_TaylorN()
 
 Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
 """ ->

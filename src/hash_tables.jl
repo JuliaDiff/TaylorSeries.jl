@@ -83,31 +83,31 @@ gc();
 
 # Documentation of the hash tables
 @doc """
-    coeff_table::Array{Array{Array{Int64,1},1},1}
+    coeff_table :: Array{Array{Array{Int64,1},1},1}
 
-The `i+1`-th component contains a vector with vectors holding all the possible
+The \$i+1\$-th component contains a vector with vectors holding all the possible
 degrees of the independent variables of the monomials of a
-`HomogeneousPolynomial` of order `i`.
+`HomogeneousPolynomial` of order \$i\$.
 """ coeff_table
 
 @doc """
-    index_table ::Array{Array{Int64,1},1}
+    index_table :: Array{Array{Int64,1},1}
 
-The `i+1`-th component contains a vector of (hashed) indices that represent
-the distinct monomials of a `HomogeneousPolynomial` of order (degree) `i`;
+The \$i+1\$-th component contains a vector of (hashed) indices that represent
+the distinct monomials of a `HomogeneousPolynomial` of order (degree) \$i\$;
 see `coeff_table`.
 """ index_table
 
 @doc """
-    size_table::Array{Int64,1}
+    size_table :: Array{Int64,1}
 
-The `i+1`-th component contains the number of distinct monomials of the
-`HomogeneousPolynomial` of order `i`, equivalent to `length(coeff_table[i])`.
+The \$i+1\$-th component contains the number of distinct monomials of the
+`HomogeneousPolynomial` of order \$i\$, equivalent to `length(coeff_table[i])`.
 """ size_table
 
 @doc """
-    pos_table::Array{Dict{Int64,Int64},1}
+    pos_table :: Array{Dict{Int64,Int64},1}
 
-The `i+1`-th component maps the hash index to the (lexicographic) position
+The \$i+1\$-th component maps the hash index to the (lexicographic) position
 of the corresponding monomial in `coeffs_table`.
 """ pos_table

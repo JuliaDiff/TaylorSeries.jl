@@ -17,8 +17,10 @@
 
 `TaylorSeries.jl` can be thought of as a polynomial algebraic manipulator in one or more
 variables; these two cases are treated separately.  Three new types are defined,
-`Taylor1`, `HomogeneousPolynomial` and `TaylorN`, which correspond to
-expansions in one independent variable, homogeneous polynomials of various variables, and the polynomial
+[`Taylor1`]({ref}), [`HomogeneousPolynomial`]({ref}) and [`TaylorN`]({ref}),
+which correspond to
+expansions in one independent variable, homogeneous polynomials of various variables,
+and the polynomial
 series in many independent variables, respectively. These types are subtypes
 of `Number` and are defined parametrically.
 
@@ -31,7 +33,7 @@ julia> using TaylorSeries
 
 ## One variable
 
-Taylor expansions in one variable are represented by the `Taylor1` type, which
+Taylor expansions in one variable are represented by the [`Taylor1`]({ref}) type, which
 consists of a vector of coefficients (field `coeffs`) and the maximum
 order considered for the expansion (field `order`). The
 coefficients are arranged in ascending order with respect to the power of the
@@ -61,13 +63,13 @@ julia> t = affine(0.0) # Independent variable `t`
 Note that the information about the maximum order considered is displayed
 using a big-O notation.
 
-The definition of `affine(a)` uses the function `taylor1_variable`, which is a
+The definition of `affine(a)` uses the function [`taylor1_variable()`]({ref}), which is a
 shortcut to define the independent variable of a Taylor expansion,
 with a given type and given order. As we show below, this is one of the
 easiest ways to work with the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
-extended to work with the `Taylor1` type, including promotions that involve
+extended to work with the [`Taylor1`]({ref}) type, including promotions that involve
 `Number`s. The operations return a valid Taylor expansion with the same
 maximum order; compare the last example below, where this is not possible:
 
@@ -148,10 +150,13 @@ julia> convert(Taylor1{Rational{Int64}}, exp(t))
 ```
 
 Differentiating and integrating is straightforward for polynomial expansions in
-one variable. The last coefficient of a derivative is set to zero to keep the
+one variable, using `diffTaylor()` and `integTaylor()`. These
+functions return the corresponding [`Taylor1`]({ref}) expansions.
+The last coefficient of a derivative is set to zero to keep the
 same order as the original polynomial; for the integral, an
-integration constant may be set to a different value (the default is zero). The
-order of the resulting polynomial is not changed. The $n$-th ($n \ge 0$)
+integration constant may be set (the default is zero). The
+order of the resulting polynomial is not changed. The value of the
+$n$-th ($n \ge 0$)
 derivative is obtained using `deriv(a,n)`, where `a` is a Taylor series;
 the default is $n=1$.
 
@@ -177,9 +182,10 @@ true
 ```
 
 To evaluate a Taylor series at a point, Horner's rule is used via the function
-`evaluate(a::Taylor, dt::Number)`. Here, $dt$ is the increment from
-the point $t_0$ where the Taylor expansion is calculated, i.e., the series
-is evaluated at $t = t_0 + dt$. Omitting $dt$ corresponds to $dt = 0$.
+`evaluate(a::Taylor1, dt::Number)`. Here, `dt` is the increment from
+the point $t_0$ where the Taylor expansion of `a` is calculated, i.e., the series
+is evaluated at $t = t_0 + dt$. Omitting `dt` corresponds to $dt = 0$.
+See [`evaluate()`]({ref}).
 
 ```julia
 julia> evaluate(exp(affine(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
@@ -213,13 +219,12 @@ to implement the first option, which seems to show better performance. An elegan
 (lazy) implementation of the second representation was discussed on the
 [julia-users](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ) list.
 
-`TaylorN` is thus constructed as a vector of parameterized homogeneous polynomials
-defined by the type `HomogeneousPolynomial`, which in turn is a vector of
+[`TaylorN`]({ref}) is thus constructed as a vector of parameterized homogeneous polynomials
+defined by the type [`HomogeneousPolynomial`]({ref}), which in turn is a vector of
 coefficients of given order (degree). This implementation imposes that the user
 has to specify the (maximum) order and the number of independent
-variables, which is done using the `set_variables(names)` function.
-`names` is a string consisting of the desired *output* names of the variables,
-separated by spaces. A vector of the resulting Taylor variables is returned:
+variables, which is done using the [`set_variables()`]({ref}) function.
+A vector of the resulting Taylor variables is returned:
 
 ```julia
 julia> x, y = set_variables("x y")
@@ -248,8 +253,8 @@ julia> x.coeffs
 
 ```
 
-As shown, the resulting objects are of `TaylorN{Float64}` type.
-There is an optional `order` keyword argument for `set_variables`:
+As shown, the resulting objects are of [`TaylorN{Float64}`]({ref}) type.
+There is an optional `order` keyword argument for [`set_variables()`]({ref}):
 
 ```julia
 julia> set_variables("x y", order=10)
@@ -271,7 +276,7 @@ julia> set_variables("α", numvars=3)
 
 ```
 
-The function `show_params_TaylorN()` displays the current values of the
+The function [`show_params_TaylorN()`({ref})] displays the current values of the
 parameters, in an info block.
 
     julia> show_params_TaylorN()
@@ -287,14 +292,15 @@ translate the position of the coefficients of a `HomogeneousPolynomial`
 into the corresponding
 multi-variable monomials. Fixing these values from the start is imperative.
 
-The easiest way to construct a `TaylorN` object is by defining symbols for
+The easiest way to construct a [`TaylorN`]({ref}) object is by defining symbols for
 the independent variables, as above. Again, the Taylor expansions are implemented
 around 0 for all variables; if the expansion
 is needed around a different value, the trick is a simple translation of
 the corresponding
 independent variable $x \to x+a$.
 
-Other ways of constructing `TaylorN` polynomials involve using `HomogeneousPolynomial`
+Other ways of constructing [`TaylorN`]({ref}) polynomials involve
+using [`HomogeneousPolynomial`]({ref})
 objects directly, which is uncomfortable:
 
 ```julia
@@ -309,11 +315,12 @@ julia> TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
 ```
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
-have been extended to work with `TaylorN` objects, including the appropriate
+have been extended to work with [`TaylorN`]({ref}) objects, including the appropriate
 promotions to deal with numbers. (Some of the arithmetic operations have
 also been extended for
-`HomogeneousPolynomial`, whenever the result is a `HomogeneousPolynomial`;
-division, for instance, is not extended.) Also, the elementary functions have been
+[`HomogeneousPolynomial`]({ref}), whenever the result is a
+[`HomogeneousPolynomial`]({ref}); division, for instance, is not extended.)
+Also, the elementary functions have been
 implemented, again by computing their coefficients recursively:
 
 ```julia
@@ -324,7 +331,7 @@ julia> exy = exp(x+y)
 
 ```
 
-The function `get_coeff(a,v)`
+The function [`get_coeff(a,v)`]({ref})
 gives the coefficient of `x` that corresponds to the monomial
 specified by the vector of powers `v`:
 
@@ -337,8 +344,8 @@ julia> rationalize(get_coeff(exy, [3,5]))
 
 ```
 
-Partial differentiation is also implemented for `TaylorN` objects,
-through `diffTaylor`; integration is yet to be implemented.
+Partial differentiation is also implemented for [`TaylorN`]({ref}) objects,
+through [`diffTaylor`]({ref}); integration is yet to be implemented.
 
 ```julia
 julia> f(x,y) = x^3 + 2x^2 * y - 7x + 2
@@ -360,7 +367,8 @@ ERROR: AssertionError: 1 <= r <= get_numvars()
 
 ```
 
-`evaluate` can also be used for `TaylorN` objects, using it on vectors of
+[`evaluate`]({ref}) can also be used for [`TaylorN`]({ref}) objects, using
+it on vectors of
 numbers (`Real` or `Complex`); the length of the vector must coincide with the number
 of independent variables.
 
@@ -373,9 +381,9 @@ true
 Functions to compute the gradient, Jacobian and
 Hessian have also been implemented. Using the
 functions $f(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $g(x,y) = y-x^4$ defined above,
-we may use `gradient` or `∇` (`\nabla+TAB`); the results are of
-type `Array{TaylorN{T},1}`. To compute the Jacobian or Hessian of a vector field
-evaluated at a point, we use `jacobian` and `hessian`:
+we may use [`gradient()`]({ref}) or `∇` (`\nabla+TAB`); the results are of
+type `Array{TaylorN{T},1}`. To compute the Jacobian and Hessian of a vector field
+evaluated at a point, we use respectively [`jacobian()`]({ref}) and [`hessian()`]({ref}):
 
 ```julia
 julia> f1 = f(x,y)
