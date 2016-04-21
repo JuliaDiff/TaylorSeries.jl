@@ -5,7 +5,7 @@
 #
 # Handles Taylor series of arbitrary but finite order
 
-__precompile__(true)
+# __precompile__(true)
 
 module TaylorSeries
 

@@ -3,7 +3,7 @@ site_description: 'TaylorSeries.jl: A julia package to manipulate Taylor expansi
 repo_url:         https://github.com/JuliaDiff/TaylorSeries.jl
 site_author:      Luis Benet
 
-# theme: readthedocs
+# theme: cinder
 theme: bootstrap
 
 extra_css:
@@ -33,3 +33,4 @@ pages:
     - 'User guide':
         - 'User guide': 'user_guide.md'
         - 'Examples': 'examples.md'
+    - 'API': 'api.md'

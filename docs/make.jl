@@ -1,7 +1,7 @@
 using Documenter, TaylorSeries
 
 makedocs(
-    modules = TaylorSeries,
+    # modules = TaylorSeries,
     clean   = false,
     doctest = false,
 )

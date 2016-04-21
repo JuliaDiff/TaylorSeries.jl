@@ -15,10 +15,9 @@ DataType for polynomial expansions in one independent variable.
 
 **Fields:**
 
-`coeffs :: Array{T,1}` Expansion coefficients; the \$i-th\$
-component is the \$i-1\$ coefficient of the expansion.
-
-`order  :: Int64` Maximum order (degree) of the polynomial.
+- `coeffs :: Array{T,1}` Expansion coefficients; the \$i\$-th
+component is the coefficient of degree \$i-1\$ of the expansion.
+- `order  :: Int64` Maximum order (degree) of the polynomial.
 """ ->
 immutable Taylor1{T<:Number} <: Number
     coeffs :: Array{T,1}

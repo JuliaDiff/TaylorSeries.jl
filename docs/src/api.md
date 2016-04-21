@@ -1,9 +1,5 @@
 # Library
 
-## Index
-
-    {index}
-
 ## Types
 
     {docs}
@@ -12,13 +8,24 @@
     TaylorSeries.TaylorN
     TaylorSeries.ParamsTaylorN
 
-## Functions
+## Functions and methods
 
     {docs}
-    TaylorSeries.set_variables
-    TaylorSeries.show_params_TaylorN
+    TaylorSeries.taylor1_variable()
+    TaylorSeries.diffTaylor()
+    TaylorSeries.integTaylor()
+    TaylorSeries.deriv()
+    TaylorSeries.evaluate()
+
+    TaylorSeries.taylorN_variable()
+    TaylorSeries.set_variables()
+    TaylorSeries.show_params_TaylorN()
 
 ## Internal use
 
     {docs}
     TaylorSeries.generate_tables
+    TaylorSeries.coeff_table
+    TaylorSeries.index_table
+    TaylorSeries.size_table
+    TaylorSeries.pos_table
