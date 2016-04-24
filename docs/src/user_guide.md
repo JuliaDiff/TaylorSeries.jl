@@ -150,7 +150,7 @@ julia> convert(Taylor1{Rational{Int64}}, exp(t))
 ```
 
 Differentiating and integrating is straightforward for polynomial expansions in
-one variable, using `diffTaylor()` and `integTaylor()`. These
+one variable, using [`diffTaylor()`]({ref}) and [`integTaylor()`]({ref}). These
 functions return the corresponding [`Taylor1`]({ref}) expansions.
 The last coefficient of a derivative is set to zero to keep the
 same order as the original polynomial; for the integral, an
@@ -158,7 +158,7 @@ integration constant may be set (the default is zero). The
 order of the resulting polynomial is not changed. The value of the
 $n$-th ($n \ge 0$)
 derivative is obtained using `deriv(a,n)`, where `a` is a Taylor series;
-the default is $n=1$.
+the default is $n=1$; see [`deriv()`]({ref}).
 
 ```julia
 julia> diffTaylor(exp(t))
@@ -331,13 +331,13 @@ julia> exy = exp(x+y)
 
 ```
 
-The function [`get_coeff(a,v)`]({ref})
+The function [`get_coeff()`]({ref})
 gives the coefficient of `x` that corresponds to the monomial
 specified by the vector of powers `v`:
 
 ```julia
-julia> get_coeff(exy, [3,5]) == 1/720
-false
+julia> get_coeff(exy, [3,5])
+0.0013888888888888887
 
 julia> rationalize(get_coeff(exy, [3,5]))
 1//720
@@ -345,7 +345,7 @@ julia> rationalize(get_coeff(exy, [3,5]))
 ```
 
 Partial differentiation is also implemented for [`TaylorN`]({ref}) objects,
-through [`diffTaylor`]({ref}); integration is yet to be implemented.
+through [`diffTaylor()`]({ref}); integration is yet to be implemented.
 
 ```julia
 julia> f(x,y) = x^3 + 2x^2 * y - 7x + 2
@@ -362,12 +362,12 @@ julia> diffTaylor( g(x,y), 2 )
 
 julia> diffTaylor( g(x,y), 3 )   # error, since we are dealing with 2 variables
 ERROR: AssertionError: 1 <= r <= get_numvars()
- in diffTaylor at /Users/benet/.julia/v0.4/TaylorSeries/src/TaylorN.jl:774
- in diffTaylor at /Users/benet/.julia/v0.4/TaylorSeries/src/TaylorN.jl:804
+ in diffTaylor at /Users/benet/.julia/v0.4/TaylorSeries/src/TaylorN.jl:812
+ in diffTaylor at /Users/benet/.julia/v0.4/TaylorSeries/src/TaylorN.jl:846
 
 ```
 
-[`evaluate`]({ref}) can also be used for [`TaylorN`]({ref}) objects, using
+[`evaluate()`]({ref}) can also be used for [`TaylorN`]({ref}) objects, using
 it on vectors of
 numbers (`Real` or `Complex`); the length of the vector must coincide with the number
 of independent variables.
