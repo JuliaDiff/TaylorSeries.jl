@@ -20,6 +20,7 @@
     TaylorSeries.taylorN_variable()
     TaylorSeries.set_variables()
     TaylorSeries.show_params_TaylorN()
+    TaylorSeries.get_coeff()
 
 ## Internal use
 
