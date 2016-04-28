@@ -7,7 +7,7 @@
 
 # __precompile__(true)
 
-module TaylorSeries
+module TaylorSeries2
 
 using Compat
 
