@@ -212,6 +212,12 @@ function *(a::Taylor1, b::Taylor1)
 end
 
 # Homogeneous coefficient for the multiplication
+"""
+Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`k-th` expansion coefficient** of ``p(x) = f(x) g(x)`` is
+
+<center>
+``pₖ = ∑ᵏ fⱼ gₖ₋ⱼ``.
+"""
 function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
     coefhomog = zero(T)
@@ -262,6 +268,12 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
 end
 
 # Homogeneous coefficient for the division
+"""
+Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`k-th` expansion coefficient** of ``d(x) = f(x) / g(x)`` is
+
+<center>
+``dₖ = 1/g₀ (fₖ  -  ∑ᵏ⁻ⁱ dⱼ gₖ₋ⱼ)``.
+"""
 function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
     coeffs::Array{T,1}, ordfact::Int)
     #
@@ -311,7 +323,7 @@ end
 """
     ^(a, x)
 
-For `a::Taylor1` and , return `a^x` as an `Taylor1` object where .
+For `a::Taylor1` and `x::Number`, return `a^x` as an `Taylor1` object.
 """
 function ^{T<:Number}(a::Taylor1{T}, n::Integer)
     n == 0 && return one(a)
@@ -356,24 +368,13 @@ function power_by_squaring(x::Taylor1, p::Integer)
 end
 
 ## Rational power ##
-"""
-    ^(a, x::Rational{Integer})
-
-For `a::Taylor1` and , return `a^x` as an `Taylor1` object.
-"""
 ^{T<:Integer}(a::Taylor1,x::Rational{T}) = a^(x.num/x.den)
 
 ^(a::Taylor1, b::Taylor1) = exp( b*log(a) )
 
 ## Real power ##
 """
-    ^(a, x::Real)
-
-For `a::Taylor1` and , return `a^n` as an `Taylor1` object.
-
-If the 0th order coefficient is non-zero, an `ArgumentError` is thrown.
-
-``f(x) = \\sum_{i=0}^{N} i``
+If `x::Real` and the 0th order coefficient is non-zero, an `ArgumentError` is thrown.
 """
 function ^{S<:Real}(a::Taylor1, x::S)
     x == zero(x) && return one(a)
@@ -410,6 +411,12 @@ end
 ^{T<:Complex}(a::Taylor1, x::T) = exp( x*log(a) )
 
 # Homogeneous coefficients for real power
+"""
+Let be ``f(x)`` an analitical function, then, the **`k-th` expansion coefficient** of ``p(x) = f(x)ᵝ`` is
+
+<center>
+``pₖ = 1/(kf₀) ∑ᵏ⁻ⁱ(β(k-j) -j)fₖ₋ⱼ pⱼ)``.
+"""
 function powHomogCoef{T<:Number, S<:Real}(kcoef::Int, ac::Array{T,1}, x::S,
     coeffs::Array{T,1}, knull::Int)
 
