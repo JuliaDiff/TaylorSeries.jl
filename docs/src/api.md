@@ -1,4 +1,9 @@
+    {meta}
+    CurrentModule = TaylorSeries
+
 # Library
+
+---
 
 ## Types
 
