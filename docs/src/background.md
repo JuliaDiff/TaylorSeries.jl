@@ -113,3 +113,4 @@ Computations*, Princeton University Press (2011).
 [2] A. Haro, *Automatic differentiation methods in computational dynamical
 systems: Invariant manifolds and normal forms of vector fields at fixed points*,
 [preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
+
