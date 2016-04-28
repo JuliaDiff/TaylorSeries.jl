@@ -272,3 +272,4 @@ evaluated at a point, we use respectively [`jacobian()`]({ref}) and [`hessian()`
     hessian(fg, [1.0,1.0])
 
 Some specific applications are given in the next [section](Examples).
+

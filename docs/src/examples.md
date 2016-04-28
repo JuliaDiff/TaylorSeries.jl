@@ -24,7 +24,7 @@ of the equation
 has *a priori* terms of fourth order, and the number of independent variables to
 8.
 
-    {repl userguide}
+    {repl euler}
     using TaylorSeries
     # Define the variables α₁, ..., α₄, β₁, ..., β₄
     make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))
@@ -36,7 +36,7 @@ has *a priori* terms of fourth order, and the number of independent variables to
 
 Now we compute each term appearing in (\\ref{eq:Euler}), and compare them
 
-    {repl userguide}
+    {repl euler}
     # left-hand side
     lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
     lhs2 = b1^2 + b2^2 + b3^2 + b4^2 ;
@@ -50,7 +50,7 @@ Now we compute each term appearing in (\\ref{eq:Euler}), and compare them
 
 Finally, we compare the two sides of the identity,
 
-    {repl userguide}
+    {repl euler}
     lhs == rhs
 
 The identity is satisfied. $\\square$.
@@ -68,7 +68,7 @@ which involves fewer operations (and makes a fairer comparison to what
 Mathematica does). Below we have used Julia v0.4.
 
     {repl fateman}
-    using TaylorSeries # hide
+    using TaylorSeries
     set_variables("x", numvars=4, order=40)
     function fateman1(degree::Int)
         T = Int128
@@ -109,3 +109,4 @@ Mathematica (version 10.2) requires 3.139831 seconds. Then,
 with TaylorSeries v0.1.2, our implementation of `fateman1` is about 20% faster,
 and `fateman2` is more than a factor 2 faster. (The original test by Fateman
 corresponds to `fateman1`, which avoids specific optimizations in `^2`.)
+
