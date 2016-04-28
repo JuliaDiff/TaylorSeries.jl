@@ -170,6 +170,7 @@ There is an optional `order` keyword argument for [`set_variables()`]({ref}):
 
     {repl userguide}
     set_variables("x y", order=10)
+    x # x variable
 
 Numbered variables are also available by specifying a single
 variable name and the optional keyword argument `numvars`:
@@ -177,7 +178,7 @@ variable name and the optional keyword argument `numvars`:
     {repl userguide}
     set_variables("α", numvars=3)
 
-The function [`show_params_TaylorN()`({ref})] displays the current values of the
+The function [`show_params_TaylorN()`]({ref}) displays the current values of the
 parameters, in an info block.
 
     julia> show_params_TaylorN()
@@ -259,7 +260,8 @@ Hessian have also been implemented. Using the
 functions $f(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $g(x,y) = y-x^4$ defined above,
 we may use [`gradient()`]({ref}) or `∇` (`\nabla+TAB`); the results are of
 type `Array{TaylorN{T},1}`. To compute the Jacobian and Hessian of a vector field
-evaluated at a point, we use respectively [`jacobian()`]({ref}) and [`hessian()`]({ref}):
+evaluated at a point, we use respectively [`jacobian()`]({ref}) and
+[`hessian()`]({ref}):
 
     {repl userguide}
     f1 = f(x,y)
