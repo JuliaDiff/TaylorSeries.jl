@@ -308,6 +308,11 @@ function abs{T<:Real}(a::Taylor1{T})
 end
 
 ## Int power ##
+"""
+    ^(a, x)
+
+For `a::Taylor1` and , return `a^x` as an `Taylor1` object where .
+"""
 function ^{T<:Number}(a::Taylor1{T}, n::Integer)
     n == 0 && return one(a)
     n == 1 && return a
@@ -351,11 +356,25 @@ function power_by_squaring(x::Taylor1, p::Integer)
 end
 
 ## Rational power ##
+"""
+    ^(a, x::Rational{Integer})
+
+For `a::Taylor1` and , return `a^x` as an `Taylor1` object.
+"""
 ^{T<:Integer}(a::Taylor1,x::Rational{T}) = a^(x.num/x.den)
 
 ^(a::Taylor1, b::Taylor1) = exp( b*log(a) )
 
 ## Real power ##
+"""
+    ^(a, x::Real)
+
+For `a::Taylor1` and , return `a^n` as an `Taylor1` object.
+
+If the 0th order coefficient is non-zero, an `ArgumentError` is thrown.
+
+``f(x) = \\sum_{i=0}^{N} i``
+"""
 function ^{S<:Real}(a::Taylor1, x::S)
     x == zero(x) && return one(a)
     x == one(x)/2 && return sqrt(a)
@@ -433,6 +452,13 @@ function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
 end
 
 ## Square root ##
+"""
+    sqrt(a)
+
+For `a::Taylor1`, returns the square root of `a` expansion of order `a.order` as an `Taylor1` object.
+
+If the first non-vanishing coefficient of `a` is an **odd power**, and `ArgumentError` will be thrown.  
+"""
 function sqrt(a::Taylor1)
     # First non-zero coefficient
     l0nz = firstnonzero(a)
@@ -480,6 +506,11 @@ function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}
 end
 
 ## Exp ##
+"""
+    exp(a)
+
+For `a::Taylor1`, computes `e^a` of order `a.order` as an `Taylor1` object.
+"""
 function exp(a::Taylor1)
     @inbounds aux = exp( a.coeffs[1] )
     T = typeof(aux)
@@ -504,6 +535,11 @@ function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
 end
 
 ## Log ##
+"""
+    log(a)
+
+For `a::Taylor1`, computes the natural logarithm's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 function log(a::Taylor1)
     ( firstnonzero(a)>0 ) && throw(
         ArgumentError("Impossible to expand `log` around 0."))
@@ -530,7 +566,17 @@ function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
 end
 
 ## Sin and cos ##
+"""
+    sin(a)
+
+For `a::Taylor1`, computes the sine's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 sin(a::Taylor1) = sincos(a)[1]
+"""
+    cos(a)
+
+For `a::Taylor1`, computes the cosine's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 cos(a::Taylor1) = sincos(a)[2]
 function sincos(a::Taylor1)
     @inbounds aux = sin( a.coeffs[1] )
@@ -566,6 +612,11 @@ function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
 end
 
 ## Tan ##
+"""
+    tan(a)
+
+For `a::Taylor1`, computes the tangent's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 function tan(a::Taylor1)
     aux = tan( a.coeffs[1] )
     T = typeof(aux)
@@ -593,7 +644,7 @@ end
 
 ## Differentiating ##
 """
-    diffTaylor(a)
+    diffTaylor(a::Taylor1)
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`; the last
 coefficient is set to zero.
