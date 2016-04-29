@@ -213,10 +213,10 @@ end
 
 # Homogeneous coefficient for the multiplication
 """
-Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`k-th` expansion coefficient** of ``p(x) = f(x) g(x)`` is
+Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`r-th` expansion coefficient** of ``p(x) = f(x) g(x)`` is
 
 <center>
-``pₖ = ∑ᵏ fⱼ gₖ₋ⱼ``.
+``pᵣ = ∑ᵏ fⱼ gᵣ₋ⱼ``.
 """
 function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
@@ -269,10 +269,10 @@ end
 
 # Homogeneous coefficient for the division
 """
-Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`k-th` expansion coefficient** of ``d(x) = f(x) / g(x)`` is
+Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`r-th` expansion coefficient** of ``d(x) = f(x) / g(x)`` is
 
 <center>
-``dₖ = 1/g₀ (fₖ  -  ∑ᵏ⁻ⁱ dⱼ gₖ₋ⱼ)``.
+``dᵣ = 1/g₀ (fᵣ  -  ∑ᵏ⁻ⁱ dⱼ gᵣ₋ⱼ)``.
 """
 function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
     coeffs::Array{T,1}, ordfact::Int)
@@ -412,10 +412,10 @@ end
 
 # Homogeneous coefficients for real power
 """
-Let be ``f(x)`` an analitical function, then, the **`k-th` expansion coefficient** of ``p(x) = f(x)ᵝ`` is
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``p(x) = f(x)ᵝ`` is
 
 <center>
-``pₖ = 1/(kf₀) ∑ᵏ⁻ⁱ(β(k-j) -j)fₖ₋ⱼ pⱼ)``.
+``pᵣ = 1/(kf₀) ∑ᵏ⁻¹(β(k-j) -j)fᵣ₋ⱼ pⱼ)``.
 """
 function powHomogCoef{T<:Number, S<:Real}(kcoef::Int, ac::Array{T,1}, x::S,
     coeffs::Array{T,1}, knull::Int)
@@ -443,6 +443,22 @@ function square(a::Taylor1)
 end
 
 # Homogeneous coefficients for square
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``s(x) = f(x)²`` is
+
+<center>
+``sᵣ = 2 ∑ᶹfᵣ₋ⱼ fⱼ``
+</center>
+
+when `r`is **odd**, with `υ = (r-1)/2`
+
+<center>
+``sᵣ = 2 ∑ᵠ(fᵣ₋ⱼ fⱼ + (f_₍ᵣ/₂₎)²``
+</center>
+
+when `r`is **even**, with `φ = (r-2)/2`.
+
+"""
 function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     kcoef == 0 && return ac[1]^2
     coefhomog = zero(T)
@@ -493,6 +509,22 @@ function sqrt(a::Taylor1)
 end
 
 # Homogeneous coefficients for the square-root
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``s(x) = √f(x)`` is
+
+<center>
+``sᵣ = 1/(2 s₀) ( fᵣ - 2 ∑ᶹsᵣ₋ⱼ sⱼ )``
+</center>
+
+when `r`is **odd**, with `υ = (r-1)/2`
+
+<center>
+``sᵣ = 1/(2 s₀) ( fᵣ - 2 ∑ᵠ(sᵣ₋ⱼ sⱼ - (s_₍ᵣ/₂₎)² )``
+</center>
+
+when `r`is **even**, with `φ = (r-2)/2`.
+
+"""
 function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}, knull::Int)
     kcoef == knull && return sqrt(ac[2*knull+1])
     coefhomog = zero(T)
@@ -531,6 +563,12 @@ function exp(a::Taylor1)
 end
 
 # Homogeneous coefficients for exp
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``e(x) = exp(f(x))`` is
+
+<center>
+``pᵣ = 1/k ∑ᵏ⁻¹(k-j)fᵣ₋ⱼ eⱼ``.
+"""
 function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return exp(ac[1])
     coefhomog = zero(T)
@@ -562,6 +600,12 @@ function log(a::Taylor1)
 end
 
 # Homogeneous coefficients for log
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``l(x) = log(f(x))`` is
+
+<center>
+``lᵣ = 1/f₀ ( fᵣ - 1/k ∑ᵏ⁻¹ j fᵣ₋ⱼ lⱼ )``.
+"""
 function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return log( ac[1] )
     coefhomog = zero(T)
@@ -600,6 +644,19 @@ function sincos(a::Taylor1)
 end
 
 # Homogeneous coefficients for sincos
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficients ** of ``s(x) = sin(f(x))`` and ``c(x) = cos(f(x))`` are
+
+<center>
+``sᵣ = 1/k ∑ᵏ⁻¹(r-j)fᵣ₋ⱼ cⱼ ``.
+</center>
+
+and
+
+<center>
+``cᵣ = -1/k ∑ᵏ⁻¹(r-j)fᵣ₋ⱼ sⱼ ``.
+</center>
+"""
 function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
     scoeffs::Array{T,1}, ccoeffs::Array{T,1})
 
@@ -639,6 +696,12 @@ function tan(a::Taylor1)
     Taylor1( coeffs, a.order )
 end
 # Homogeneous coefficients for tan
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``t(x) = tan(f(x))`` with ``p(x) = t(x)²`` is
+
+<center>
+``tᵣ = fᵣ + 1/k ∑ᵏ⁻¹(r-j)fᵣ₋ⱼ pⱼ )``.
+"""
 function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
     kcoef == 0 && return tan( ac[1] )
     coefhomog = zero(T)
