@@ -209,6 +209,12 @@ function *(a::Taylor1, b::Taylor1)
 end
 
 # Homogeneous coefficient for the multiplication
+"""
+Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`r-th` expansion coefficient** of ``p(x) = f(x) g(x)`` is
+
+<center>
+``pᵣ = ∑ᵏ fⱼ gᵣ₋ⱼ``.
+"""
 function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
     coefhomog = zero(T)
@@ -259,6 +265,12 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
 end
 
 # Homogeneous coefficient for the division
+"""
+Let be ``f(x)``  and ``g(x)`` analitical functions, then, the **`r-th` expansion coefficient** of ``d(x) = f(x) / g(x)`` is
+
+<center>
+``dᵣ = 1/g₀ (fᵣ  -  ∑ᵏ⁻ⁱ dⱼ gᵣ₋ⱼ)``.
+"""
 function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
     coeffs::Array{T,1}, ordfact::Int)
     #
@@ -305,6 +317,11 @@ function abs{T<:Real}(a::Taylor1{T})
 end
 
 ## Int power ##
+"""
+    ^(a, x)
+
+For `a::Taylor1` and `x::Number`, return `a^x` as an `Taylor1` object.
+"""
 function ^{T<:Number}(a::Taylor1{T}, n::Integer)
     n == 0 && return one(a)
     n == 1 && return a
@@ -353,6 +370,9 @@ end
 ^(a::Taylor1, b::Taylor1) = exp( b*log(a) )
 
 ## Real power ##
+"""
+If `x::Real` and the 0th order coefficient is non-zero, an `ArgumentError` is thrown.
+"""
 function ^{S<:Real}(a::Taylor1, x::S)
     x == zero(x) && return one(a)
     x == one(x)/2 && return sqrt(a)
@@ -388,6 +408,12 @@ end
 ^{T<:Complex}(a::Taylor1, x::T) = exp( x*log(a) )
 
 # Homogeneous coefficients for real power
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``p(x) = f(x)ᵝ`` is
+
+<center>
+``pᵣ = 1/(kf₀) ∑ᵏ⁻¹(β(k-j) -j)fᵣ₋ⱼ pⱼ)``.
+"""
 function powHomogCoef{T<:Number, S<:Real}(kcoef::Int, ac::Array{T,1}, x::S,
     coeffs::Array{T,1}, knull::Int)
 
@@ -414,6 +440,22 @@ function square(a::Taylor1)
 end
 
 # Homogeneous coefficients for square
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``s(x) = f(x)²`` is
+
+<center>
+``sᵣ = 2 ∑ᶹfᵣ₋ⱼ fⱼ``
+</center>
+
+when `r`is **odd**, with `υ = (r-1)/2`
+
+<center>
+``sᵣ = 2 ∑ᵠ(fᵣ₋ⱼ fⱼ + (f_₍ᵣ/₂₎)²``
+</center>
+
+when `r`is **even**, with `φ = (r-2)/2`.
+
+"""
 function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     kcoef == 0 && return ac[1]^2
     coefhomog = zero(T)
@@ -430,6 +472,13 @@ function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
 end
 
 ## Square root ##
+"""
+    sqrt(a)
+
+For `a::Taylor1`, returns the square root of `a` expansion of order `a.order` as an `Taylor1` object.
+
+If the first non-vanishing coefficient of `a` is an **odd power**, and `ArgumentError` will be thrown.  
+"""
 function sqrt(a::Taylor1)
     # First non-zero coefficient
     l0nz = firstnonzero(a)
@@ -457,6 +506,22 @@ function sqrt(a::Taylor1)
 end
 
 # Homogeneous coefficients for the square-root
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``s(x) = √f(x)`` is
+
+<center>
+``sᵣ = 1/(2 s₀) ( fᵣ - 2 ∑ᶹsᵣ₋ⱼ sⱼ )``
+</center>
+
+when `r`is **odd**, with `υ = (r-1)/2`
+
+<center>
+``sᵣ = 1/(2 s₀) ( fᵣ - 2 ∑ᵠ(sᵣ₋ⱼ sⱼ - (s_₍ᵣ/₂₎)² )``
+</center>
+
+when `r`is **even**, with `φ = (r-2)/2`.
+
+"""
 function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}, knull::Int)
     kcoef == knull && return sqrt(ac[2*knull+1])
     coefhomog = zero(T)
@@ -477,6 +542,11 @@ function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1}
 end
 
 ## Exp ##
+"""
+    exp(a)
+
+For `a::Taylor1`, computes `e^a` of order `a.order` as an `Taylor1` object.
+"""
 function exp(a::Taylor1)
     @inbounds aux = exp( a.coeffs[1] )
     T = typeof(aux)
@@ -490,6 +560,12 @@ function exp(a::Taylor1)
 end
 
 # Homogeneous coefficients for exp
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``e(x) = exp(f(x))`` is
+
+<center>
+``pᵣ = 1/k ∑ᵏ⁻¹(k-j)fᵣ₋ⱼ eⱼ``.
+"""
 function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return exp(ac[1])
     coefhomog = zero(T)
@@ -501,6 +577,11 @@ function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
 end
 
 ## Log ##
+"""
+    log(a)
+
+For `a::Taylor1`, computes the natural logarithm's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 function log(a::Taylor1)
     ( firstnonzero(a)>0 ) && throw(
         ArgumentError("Impossible to expand `log` around 0."))
@@ -516,6 +597,12 @@ function log(a::Taylor1)
 end
 
 # Homogeneous coefficients for log
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``l(x) = log(f(x))`` is
+
+<center>
+``lᵣ = 1/f₀ ( fᵣ - 1/k ∑ᵏ⁻¹ j fᵣ₋ⱼ lⱼ )``.
+"""
 function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return log( ac[1] )
     coefhomog = zero(T)
@@ -527,7 +614,17 @@ function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
 end
 
 ## Sin and cos ##
+"""
+    sin(a)
+
+For `a::Taylor1`, computes the sine's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 sin(a::Taylor1) = sincos(a)[1]
+"""
+    cos(a)
+
+For `a::Taylor1`, computes the cosine's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 cos(a::Taylor1) = sincos(a)[2]
 function sincos(a::Taylor1)
     @inbounds aux = sin( a.coeffs[1] )
@@ -544,6 +641,19 @@ function sincos(a::Taylor1)
 end
 
 # Homogeneous coefficients for sincos
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficients ** of ``s(x) = sin(f(x))`` and ``c(x) = cos(f(x))`` are
+
+<center>
+``sᵣ = 1/k ∑ᵏ⁻¹(r-j)fᵣ₋ⱼ cⱼ ``.
+</center>
+
+and
+
+<center>
+``cᵣ = -1/k ∑ᵏ⁻¹(r-j)fᵣ₋ⱼ sⱼ ``.
+</center>
+"""
 function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
     scoeffs::Array{T,1}, ccoeffs::Array{T,1})
 
@@ -563,6 +673,11 @@ function sincosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
 end
 
 ## Tan ##
+"""
+    tan(a)
+
+For `a::Taylor1`, computes the tangent's expansion of `a` of order `a.order` as an `Taylor1` object.
+"""
 function tan(a::Taylor1)
     aux = tan( a.coeffs[1] )
     T = typeof(aux)
@@ -578,6 +693,12 @@ function tan(a::Taylor1)
     Taylor1( coeffs, a.order )
 end
 # Homogeneous coefficients for tan
+"""
+Let be ``f(x)`` an analitical function, then, the **`r-th` expansion coefficient** of ``t(x) = tan(f(x))`` with ``p(x) = t(x)²`` is
+
+<center>
+``tᵣ = fᵣ + 1/k ∑ᵏ⁻¹(r-j)fᵣ₋ⱼ pⱼ )``.
+"""
 function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
     kcoef == 0 && return tan( ac[1] )
     coefhomog = zero(T)
@@ -590,7 +711,7 @@ end
 
 ## Differentiating ##
 """
-    diffTaylor(a)
+    diffTaylor(a::Taylor1)
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`; the last
 coefficient is set to zero.
