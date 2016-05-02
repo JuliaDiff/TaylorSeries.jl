@@ -67,18 +67,9 @@ maximum order; compare the last example below, where this is not possible:
 
 If no valid Taylor expansion can be computed, an error is thrown.
 
-    julia> 1/t
-    ERROR: ArgumentError: Division does not define a Taylor1 polynomial
-    or its first non-zero coefficient is Inf/NaN.
-    Order k=0 => coeff[1]=Inf.
-     in divfactorization at /Users/benet/.julia/v0.4/TaylorSeries/src/Taylor1.jl:252
-     in / at /Users/benet/.julia/v0.4/TaylorSeries/src/Taylor1.jl:228
-     in / at ./promotion.jl:170
-
-    julia> t^3.2
-    ERROR: ArgumentError: The 0th order Taylor1 coefficient must be non-zero
-    to raise the Taylor1 polynomial to a non-integer exponent.
-     in ^ at /Users/benet/.julia/v0.4/TaylorSeries/src/Taylor1.jl:367
+    {repl userguide}
+    1/t
+    t^3.2
 
 Several elementary functions have been implemented; these compute their
 coefficients recursively. So far, these functions are `exp`, `log`,
@@ -96,16 +87,11 @@ ordinary differential equations, which is among the applications we have in mind
     real(exp(Taylor1([0.0,1im],17))) - cos(Taylor1([0.0,1.0],17)) == 0.0
     convert(Taylor1{Rational{Int64}}, exp(t))
 
-Errors are thrown whenever it is necessary.
+Again, errors are thrown whenever it is necessary.
 
-    julia> sqrt(t)
-    ERROR: ArgumentError: First non-vanishing Taylor1 coefficient must correspond
-    to an **even power** in order to expand `sqrt` around 0.
-    in sqrt at /Users/benet/.julia/v0.4/TaylorSeries/src/Taylor1.jl:439
-
-    julia> log(t)
-    ERROR: ArgumentError: Impossible to expand `log` around 0.
-     in log at /Users/benet/.julia/v0.4/TaylorSeries/src/Taylor1.jl:505
+    {repl userguide}
+    sqrt(t)
+    log(t)
 
 
 Differentiating and integrating is straightforward for polynomial expansions in
@@ -242,10 +228,8 @@ through [`diffTaylor()`]({ref}); integration is yet to be implemented.
 If we ask for the partial derivative with respect to a non-defined variable,
 an error is thrown.
 
-    julia> diffTaylor( g(x,y), 3 )   # error, since we are dealing with 2 variables
-    ERROR: AssertionError: 1 <= r <= get_numvars()
-     in diffTaylor at /Users/benet/.julia/v0.4/TaylorSeries/src/TaylorN.jl:774
-     in diffTaylor at /Users/benet/.julia/v0.4/TaylorSeries/src/TaylorN.jl:804
+    {repl userguide}
+    diffTaylor( g(x,y), 3 )   # error, since we are dealing with 2 variables
 
 [`evaluate()`]({ref}) can also be used for [`TaylorN`]({ref}) objects, using
 it on vectors of
@@ -266,8 +250,8 @@ evaluated at a point, we use respectively [`jacobian()`]({ref}) and
     {repl userguide}
     f1 = f(x,y)
     g1 = g(x,y)
-    gradient( g1 )
     ∇(f1)
+    gradient( g1 )
     fg = f1-g1-2*f1*g1
     hessian(ans)
     jacobian([f1,g1], [2,1])
