@@ -81,8 +81,7 @@ Mathematica does). Below we have used Julia v0.4.
         s * ( s+TaylorN(oneH, 2*degree) )
     end
     fateman1(0);
-    @elapsed f1 = fateman1(20)
-    nothing # hide
+    @time f1 = fateman1(20);
 
 Another implementation of the same:
 
@@ -97,8 +96,8 @@ Another implementation of the same:
         return s^2 + s
     end
     fateman2(0);
-    @elapsed f2 = fateman2(20)
-    get_coeff(f2,[1,6,7,20])
+    @time f2 = fateman2(20);
+    get_coeff(f2,[1,6,7,20]) # coefficient of x y^6 z^7 w^{20}
     sum(TaylorSeries.size_table)
 
 The tests above show the necessity of using `Int128`, that
