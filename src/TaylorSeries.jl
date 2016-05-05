@@ -38,4 +38,7 @@ include("TaylorN.jl")
 
 include("printing.jl")
 
+#docstrings
+include("helpDB.jl")
+
 end # module
