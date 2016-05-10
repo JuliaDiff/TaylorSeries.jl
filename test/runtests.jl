@@ -305,4 +305,37 @@ facts("High order polynomials test inspired by Fateman (takes a few seconds))") 
     @fact get_coeff(f2,[1,6,7,20]) == c --> true
 end
 
+facts("Matrix multiplication for Taylor1") do
+    order = 30
+    n1 = 100
+    k1 = 90
+
+    tol1 = eps(1.0)
+
+    fake_order = max(n1,k1,order+1)
+    B1 = randn(n1,fake_order)
+    Y1 = randn(k1,fake_order)
+
+    A  = randn(k1,n1)
+
+    # B and Y contain elements of different orders
+    B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
+    Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
+    Bcopy = deepcopy!(B)
+    A_mul_B!(Y,A,B)
+    # Y should be extended after the multilpication
+    @fact reduce(&, [y1.order for y1 in Y] .== Y[1].order) --> true
+    # B should be unchanged
+    @fact B==Bcopy --> true
+
+    # is the result compatible with the matrix multiplication?  We
+    # only check the zeroth order of the Taylor series.
+    y1=sum(Y).coeffs[1]
+    Y=A*B1[:,1]
+    y2=sum(Y)
+    # Sometimes this fails due to a small numerical error
+    @fact abs(y1-y2) < tol1 --> true
+end
+
+
 exitstatus()

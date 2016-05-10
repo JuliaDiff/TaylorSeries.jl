@@ -28,12 +28,15 @@ immutable Taylor1{T<:Number} <: Number
     function Taylor1(coeffs::Array{T,1}, order::Int)
         lencoef = length(coeffs)
         order = max(order, lencoef-1)
-        order == lencoef-1 && return new(coeffs, order)
-        resize!(coeffs, order+1)
-        for i = lencoef+1:order+1
-            coeffs[i] = zero(T)
+        if order == lencoef-1
+            return new(coeffs, order)
+        else
+            resize!(coeffs, order+1)
+            for i = lencoef+1:order+1
+                coeffs[i] = zero(T)
+            end
+            return new(coeffs, order)
         end
-        new(coeffs, order)
     end
 end
 
@@ -105,17 +108,17 @@ function firstnonzero{T<:Number}(a::Taylor1{T})
     nonzero
 end
 
-function fixshape{T<:Number, S<:Number}(a::Taylor1{T}, b::Taylor1{S})
-    eltype(a) == eltype(b) && a.order == b.order && return a, b
-    if eltype(a) != eltype(b)
-        a, b = promote(a, b)
-    end
+function fixshape{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
     if a.order == b.order
         return a, b
     elseif a.order < b.order
         return Taylor1(a, b.order), b
     end
     return a, Taylor1(b, a.order)
+end
+
+function fixshape{T<:Number, S<:Number}(a::Taylor1{T}, b::Taylor1{S})
+    fixshape(promote(a,b)...)
 end
 
 ## real, imag, conj and ctranspose ##
@@ -665,4 +668,54 @@ Return the value of the `n`-th derivative of `a`.
 function deriv{T<:Number}(a::Taylor1{T}, n::Int=1)
     @assert a.order >= n >= 0
     factorial( widen(n) ) * a.coeffs[n+1] :: T
+end
+
+
+"""
+    A_mul_B!(y, a, b)
+
+Multiply a*b and save the result in y.  Extends y to fit the results if necessary.
+"""
+function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}},a::Matrix{T},b::Vector{Taylor1{T}})
+
+    # determine the maximal order of b
+    order = maximum([b1.order for b1 in b])
+
+    n,k = size(a)
+
+    # extend y to fit all the coefficients and zero the
+    if !isdefined(y)
+        for i = 1:n
+            y[i] = Taylor1(zero(T),order)
+        end
+    end
+
+    for i = 1:n
+        if y[i].order < order
+            y[i] = Taylor1(zero(T),order)
+        else
+            fill!(y[i].coeffs,zero(T))
+        end
+    end
+
+
+    # do all of b1 have the same order?
+    if reduce(&,[b1.order == order for b1 in b])
+        # if yes this variant is faster
+        B = hcat([b1.coeffs for b1 in b ]...)'
+        Y=a*B
+        for i = 1:n
+            copy!(y[i].coeffs,Y[i,:])
+        end
+    else
+        # slower variant
+        for i = 1:n
+            for l = 1:k
+                for j = 1:length(b[l].coeffs)
+                    y[i].coeffs[j]+=a[i,l]*b[l].coeffs[j]
+                end
+            end
+        end
+    end
+    return y
 end
