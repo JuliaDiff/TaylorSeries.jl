@@ -676,7 +676,7 @@ end
 
 Multiply a*b and save the result in y.  Extends y to fit the results if necessary.
 """
-function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}},a::Matrix{T},b::Vector{Taylor1{T}})
+function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}},a::Union{Matrix,SparseMatrixCSC},b::Vector{Taylor1{T}})
 
     # determine the maximal order of b
     order = maximum([b1.order for b1 in b])
