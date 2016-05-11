@@ -310,19 +310,20 @@ facts("Matrix multiplication for Taylor1") do
     n1 = 100
     k1 = 90
 
-    tol1 = eps(1.0)
-
-    fake_order = max(n1,k1,order+1)
-    B1 = randn(n1,fake_order)
-    Y1 = randn(k1,fake_order)
+    order = max(n1,k1)
+    B1 = randn(n1,order)
+    Y1 = randn(k1,order)
 
     A  = randn(k1,n1)
 
     # B and Y contain elements of different orders
     B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
     Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
-    Bcopy = deepcopy!(B)
+    Bcopy = deepcopy(B)
     A_mul_B!(Y,A,B)
+
+    # do we get the same result when using the `A*B` form?
+    @fact A*B==Y -->true
     # Y should be extended after the multilpication
     @fact reduce(&, [y1.order for y1 in Y] .== Y[1].order) --> true
     # B should be unchanged
@@ -334,7 +335,7 @@ facts("Matrix multiplication for Taylor1") do
     Y=A*B1[:,1]
     y2=sum(Y)
     # Sometimes this fails due to a small numerical error
-    @fact abs(y1-y2) < tol1 --> true
+    @fact abs(y1-y2) < n1*(eps(y1)+eps(y2)) --> true
 end
 
 
