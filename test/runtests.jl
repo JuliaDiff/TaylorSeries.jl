@@ -335,9 +335,17 @@ facts("Matrix multiplication for Taylor1") do
         y1=sum(Y).coeffs[1]
         Y=A*B1[:,1]
         y2=sum(Y)
-        # Sometimes this fails due to a small numerical error
+
+        # There is a small numerical error when comparing the generic
+        # multiplication and the specialized version
         @fact abs(y1-y2) < n1*(eps(y1)+eps(y2)) --> true
+
+        @fact_throws DimensionMismatch A_mul_B!(Y,A[:,1:end-1],B)
+        @fact_throws DimensionMismatch A_mul_B!(Y,A[1:end-1,:],B)
+        @fact_throws DimensionMismatch A_mul_B!(Y,A,B[1:end-1])
+        @fact_throws DimensionMismatch A_mul_B!(Y[1:end-1],A,B)
     end
+
 end
 
 

@@ -671,25 +671,40 @@ function deriv{T<:Number}(a::Taylor1{T}, n::Int=1)
 end
 
 
-"""
-    A_mul_B!(y, a, b)
+# fix the ambiguities for A_mul_B!
+A_mul_B!(y::AbstractVector{Taylor1},a::Base.LinAlg.AbstractTriangular,b::AbstractVector{Taylor1})=
+    invoke(A_mul_B!,(AbstractVector{Taylor1}, AbstractMatrix, AbstractVector{Taylor1}),y,a,b)
+A_mul_B!(y::AbstractVector{Taylor1},a::Base.LinAlg.Tridiagonal,b::AbstractVector{Taylor1})=
+    invoke(A_mul_B!,(AbstractVector{Taylor1}, AbstractMatrix, AbstractVector{Taylor1}),y,a,b)
 
-Multiply a*b and save the result in y.  Extends y to fit the results if necessary.
 """
-function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}},a::Union{Matrix,SparseMatrixCSC},b::Vector{Taylor1{T}})
+    A_mul_B!(Y, A, B)
+
+Multiply A*B and save the result in Y.
+"""
+function A_mul_B!(y::AbstractVector{Taylor1},a::AbstractMatrix,b::AbstractVector{Taylor1})
+
+    n,k = size(a)
+
+    if k != size(b)
+         throw(DimensionMismatch("right hand side B needs first dimension of size $k, has size $(size(b))"))
+    end
+
+    if n != size(y)
+        throw(DimensionMismatch("length of output Y, $(size(y)), and the second dimension of the right hand side A, $n, must be equal"))
+    end
 
     # determine the maximal order of b
     order = maximum([b1.order for b1 in b])
 
-    n,k = size(a)
-
-    # extend y to fit all the coefficients and zero the
+    # extend the elements of y to fit all the coefficients
     if !isdefined(y)
         for i = 1:n
             y[i] = Taylor1(zero(T),order)
         end
     end
 
+    # initialize y with zeroes
     for i = 1:n
         if y[i].order < order
             y[i] = Taylor1(zero(T),order)
@@ -708,7 +723,7 @@ function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}},a::Union{Matrix,SparseMatrixC
             copy!(y[i].coeffs,Y[i,:])
         end
     else
-        # slower variant
+        # a slower variant
         for i = 1:n
             for l = 1:k
                 for j = 1:length(b[l].coeffs)
