@@ -91,7 +91,7 @@ deriv
 doc"""
     exp(a)
 
-Computes `e^a` of order `a.order` as a `Taylor1` object for `a::Taylor1`.
+Compute $e^a$'s expansion of order `a.order` as a `Taylor1` object for `a::Taylor1`.
 """
 exp
 
@@ -99,7 +99,7 @@ exp
 doc"""
     sin(a)
 
-Computes the sine's expansion of `a` of order `a.order` as a `Taylor1` object for `a::Taylor1`.
+Compute $\sin{a}$'s expansion of order `a.order` as a `Taylor1` object for `a::Taylor1`.
 """
 sin
 
@@ -107,7 +107,7 @@ sin
 doc"""
     cos(a)
 
-Computes the cosine's expansion of `a` of order `a.order` as a `Taylor1` object for `a::Taylor1`.
+Computes $\cos{a}$'s expansion of order `a.order` as a `Taylor1` object for `a::Taylor1`.
 """
 cos
 
@@ -115,7 +115,7 @@ cos
 doc"""
     log(a)
 
-Computes the natural logarithm's expansion of `a` of order `a.order` as a `Taylor1` object for `a:Taylor1`.
+Computes the $\log{a}$'s expansion of order `a.order` as a `Taylor1` object for `a:Taylor1`.
 """
 log
 
@@ -123,7 +123,7 @@ log
 doc"""
     tan(a)
 
-Computes the tangent's expansion of `a` of order `a.order` as a `Taylor1` object for `a::Taylor1`.
+Computes the $\tan{a}$'s expansion of order `a.order` as a `Taylor1` object for `a::Taylor1`.
 """
 tan
 
@@ -143,7 +143,7 @@ abs
 doc"""
     ^(a, x)
 
-Computes `a^x` as a `Taylor1` object with `a::Taylor1` and `x::Number`.
+Computes $a^x$ as a `Taylor1` object with `a::Taylor1` and `x::Number`.
 
 <br>
 If `x::Real` and the 0th order coefficient is non-zero, an `ArgumentError` is thrown.
@@ -154,7 +154,7 @@ If `x::Real` and the 0th order coefficient is non-zero, an `ArgumentError` is th
 doc"""
     sqrt(a)
 
-For `a::Taylor1`, returns the square root of `a` expansion of order `a.order` as an `Taylor1` object.
+Computes $\sqrt{a}$'s expansion of order `a.order` as an `Taylor1` object.
 
 If the first non-vanishing coefficient of `a` is an **odd power**, and `ArgumentError` will be thrown.  
 """
