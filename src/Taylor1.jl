@@ -672,65 +672,90 @@ end
 
 
 # fix the ambiguities for A_mul_B!
-A_mul_B!(y::AbstractVector{Taylor1},a::Base.LinAlg.AbstractTriangular,b::AbstractVector{Taylor1})=
-    invoke(A_mul_B!,(AbstractVector{Taylor1}, AbstractMatrix, AbstractVector{Taylor1}),y,a,b)
-A_mul_B!(y::AbstractVector{Taylor1},a::Base.LinAlg.Tridiagonal,b::AbstractVector{Taylor1})=
-    invoke(A_mul_B!,(AbstractVector{Taylor1}, AbstractMatrix, AbstractVector{Taylor1}),y,a,b)
+# A_mul_B!(y::AbstractVector{Taylor1},a::Base.LinAlg.AbstractTriangular,b::AbstractVector{Taylor1})=
+#     invoke(A_mul_B!,(AbstractVector{Taylor1}, AbstractMatrix, AbstractVector{Taylor1}),y,a,b)
+# A_mul_B!(y::AbstractVector{Taylor1},a::Base.LinAlg.Tridiagonal,b::AbstractVector{Taylor1})=
+#     invoke(A_mul_B!,(AbstractVector{Taylor1}, AbstractMatrix, AbstractVector{Taylor1}),y,a,b)
 
 """
     A_mul_B!(Y, A, B)
 
 Multiply A*B and save the result in Y.
 """
-function A_mul_B!(y::AbstractVector{Taylor1},a::AbstractMatrix,b::AbstractVector{Taylor1})
+# function A_mul_B!(y::AbstractVector{Taylor1},a::AbstractMatrix,b::AbstractVector{Taylor1})
+#
+#     n,k = size(a)
+#
+#     if k != size(b)
+#          throw(DimensionMismatch("right hand side B needs first dimension of size $k, has size $(size(b))"))
+#     end
+#
+#     if n != size(y)
+#         throw(DimensionMismatch("length of output Y, $(size(y)), and the second dimension of the right hand side A, $n, must be equal"))
+#     end
+#
+#     # determine the maximal order of b
+#     order = maximum([b1.order for b1 in b])
+#
+#     # extend the elements of y to fit all the coefficients
+#     if !isdefined(y)
+#         for i = 1:n
+#             y[i] = Taylor1(zero(T),order)
+#         end
+#     end
+#
+#     # initialize y with zeroes
+#     for i = 1:n
+#         if y[i].order < order
+#             y[i] = Taylor1(zero(T),order)
+#         else
+#             fill!(y[i].coeffs,zero(T))
+#         end
+#     end
+#
+#
+#     # do all of b1 have the same order?
+#     if reduce(&,[b1.order == order for b1 in b])
+#         # if yes this variant is faster
+#         B = hcat([b1.coeffs for b1 in b ]...)'
+#         Y=a*B
+#         for i = 1:n
+#             copy!(y[i].coeffs,Y[i,:])
+#         end
+#     else
+#         # a slower variant
+#         for i = 1:n
+#             for l = 1:k
+#                 for j = 1:length(b[l].coeffs)
+#                     y[i].coeffs[j]+=a[i,l]*b[l].coeffs[j]
+#                 end
+#             end
+#         end
+#     end
+#     return y
+# end
+function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}}, a::Union{Matrix{T},SparseMatrixCSC{T}},
+    b::Vector{Taylor1{T}})
 
-    n,k = size(a)
-
-    if k != size(b)
-         throw(DimensionMismatch("right hand side B needs first dimension of size $k, has size $(size(b))"))
-    end
-
-    if n != size(y)
-        throw(DimensionMismatch("length of output Y, $(size(y)), and the second dimension of the right hand side A, $n, must be equal"))
-    end
+    n, k = size(a)
+    @assert (length(y)== n && length(b)== k)
 
     # determine the maximal order of b
     order = maximum([b1.order for b1 in b])
 
-    # extend the elements of y to fit all the coefficients
-    if !isdefined(y)
-        for i = 1:n
-            y[i] = Taylor1(zero(T),order)
+    # Use matrices of coefficients (of proper size) and A_mul_Bt!
+    B = zeros(T, k, order+1)
+    for i = 1:k
+        @inbounds ord = b[i].order
+        @inbounds for j = 1:ord+1
+            B[i,j] = b[i].coeffs[j]
         end
     end
-
-    # initialize y with zeroes
-    for i = 1:n
-        if y[i].order < order
-            y[i] = Taylor1(zero(T),order)
-        else
-            fill!(y[i].coeffs,zero(T))
-        end
+    Y = Array(T, n, order+1)
+    A_mul_B!(Y, a, B)
+    @inbounds for i = 1:n
+        y[i] = Taylor1( collect(Y[i,:]), order)
     end
 
-
-    # do all of b1 have the same order?
-    if reduce(&,[b1.order == order for b1 in b])
-        # if yes this variant is faster
-        B = hcat([b1.coeffs for b1 in b ]...)'
-        Y=a*B
-        for i = 1:n
-            copy!(y[i].coeffs,Y[i,:])
-        end
-    else
-        # a slower variant
-        for i = 1:n
-            for l = 1:k
-                for j = 1:length(b[l].coeffs)
-                    y[i].coeffs[j]+=a[i,l]*b[l].coeffs[j]
-                end
-            end
-        end
-    end
     return y
 end
