@@ -305,4 +305,48 @@ facts("High order polynomials test inspired by Fateman (takes a few seconds))") 
     @fact get_coeff(f2,[1,6,7,20]) == c --> true
 end
 
+facts("Matrix multiplication for Taylor1") do
+    order = 30
+    n1 = 100
+    k1 = 90
+
+    order = max(n1,k1)
+    B1 = randn(n1,order)
+    Y1 = randn(k1,order)
+
+    A1  = randn(k1,n1)
+
+    for A in (A1,sparse(A1))
+        # B and Y contain elements of different orders
+        B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
+        Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
+        Bcopy = deepcopy(B)
+        A_mul_B!(Y,A,B)
+
+        # do we get the same result when using the `A*B` form?
+        @fact A*B==Y -->true
+        # Y should be extended after the multilpication
+        @fact reduce(&, [y1.order for y1 in Y] .== Y[1].order) --> true
+        # B should be unchanged
+        @fact B==Bcopy --> true
+
+        # is the result compatible with the matrix multiplication?  We
+        # only check the zeroth order of the Taylor series.
+        y1=sum(Y).coeffs[1]
+        Y=A*B1[:,1]
+        y2=sum(Y)
+
+        # There is a small numerical error when comparing the generic
+        # multiplication and the specialized version
+        @fact abs(y1-y2) < n1*(eps(y1)+eps(y2)) --> true
+
+        @fact_throws DimensionMismatch A_mul_B!(Y,A[:,1:end-1],B)
+        @fact_throws DimensionMismatch A_mul_B!(Y,A[1:end-1,:],B)
+        @fact_throws DimensionMismatch A_mul_B!(Y,A,B[1:end-1])
+        @fact_throws DimensionMismatch A_mul_B!(Y[1:end-1],A,B)
+    end
+
+end
+
+
 exitstatus()
