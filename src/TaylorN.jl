@@ -803,12 +803,12 @@ end
 
 ## Differentiation ##
 """
-    diffTaylor(a, r)
+    derivative(a, r)
 
 Partial differentiation of `a::HomogeneousPolynomial` series with respect
 to the `r`-th variable.
 """
-function diffTaylor(a::HomogeneousPolynomial, r::Int)
+function derivative(a::HomogeneousPolynomial, r::Int)
     @assert 1 <= r <= get_numvars()
     T = eltype(a)
     a.order == 0 && return HomogeneousPolynomial(zero(T))
@@ -832,18 +832,18 @@ function diffTaylor(a::HomogeneousPolynomial, r::Int)
 end
 
 """
-    diffTaylor(a, [r=1])
+    derivative(a, [r=1])
 
 Partial differentiation of `a::TaylorN` series with respect
 to the `r`-th variable.
 """
-function diffTaylor(a::TaylorN, r=1::Int)
+function derivative(a::TaylorN, r=1::Int)
     T = eltype(a)
     coeffs = Array(HomogeneousPolynomial{T},a.order)
 
     @inbounds for ord in eachindex(coeffs)
         ord == a.order+1 && continue
-        coeffs[ord] = diffTaylor( a.coeffs[ord+1], r)
+        coeffs[ord] = derivative( a.coeffs[ord+1], r)
     end
     return TaylorN{T}( coeffs, a.order )
 end
@@ -861,7 +861,7 @@ function gradient(f::TaylorN)
     numVars = get_numvars()
     grad = Array(TaylorN{T}, numVars)
     @inbounds for nv = 1:numVars
-        grad[nv] = diffTaylor(f, nv)
+        grad[nv] = derivative(f, nv)
     end
     return grad
 end

@@ -738,18 +738,28 @@ end
 
 ## Differentiating ##
 doc"""
-    diffTaylor(a)
+    derivative(a)
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
 The last coefficient is set to zero.
 """
-function diffTaylor(a::Taylor1)
+function derivative(a::Taylor1)
     coeffs = zero(a.coeffs)
     @inbounds coeffs[1] = a.coeffs[2]
     @inbounds for i = 1:a.order
         coeffs[i] = i*a.coeffs[i+1]
     end
     return Taylor1(coeffs, a.order)
+end
+
+doc"""
+    derivative(n, a)
+
+Return the value of the `n`-th derivative of the polynomial `a`.
+"""
+function derivative{T<:Number}(n::Int, a::Taylor1{T})
+    @assert a.order >= n >= 0
+    factorial( widen(n) ) * a.coeffs[n+1] :: T
 end
 
 ## Integrating ##
@@ -801,15 +811,4 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
         suma = suma*x + a.coeffs[k]
     end
     suma
-end
-
-## deriv
-doc"""
-    deriv(a, [n=1])
-
-Return the value of the `n`-th derivative of `a`.
-"""
-function deriv{T<:Number}(a::Taylor1{T}, n::Int=1)
-    @assert a.order >= n >= 0
-    factorial( widen(n) ) * a.coeffs[n+1] :: T
 end

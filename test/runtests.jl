@@ -94,11 +94,11 @@ facts("Tests for Taylor1 expansions") do
     @fact evaluate(exp(Taylor1([0,1],1))) == 1.0  --> true
     @fact evaluate(exp(t),t^2) == exp(t^2)  --> true
 
-    @fact deriv( exp(ta(1.0)), 5 ) == exp(1.0)  --> true
-    @fact deriv( exp(ta(1.0pi)), 3 ) == exp(1.0pi)  --> true
-    @fact isapprox( deriv(exp(ta(1.0pi)), 10) , exp(1.0pi) )  --> true
-    @fact integTaylor(diffTaylor(exp(t)),1) == exp(t)  --> true
-    @fact integTaylor(cos(t)) == sin(t)  --> true
+    @fact derivative(5, exp(ta(1.0))) == exp(1.0)  --> true
+    @fact derivative(3, exp(ta(1.0pi))) == exp(1.0pi)  --> true
+    @fact isapprox(derivative(10, exp(ta(1.0pi))) , exp(1.0pi) )  --> true
+    @fact integrate(derivative(exp(t)),1) == exp(t)  --> true
+    @fact integrate(cos(t)) == sin(t)  --> true
 
     @fact promote(ta(0.0), t) == (ta(0.0),ta(0.0))  --> true
 
@@ -110,7 +110,7 @@ facts("Tests for Taylor1 expansions") do
     @fact_throws ArgumentError sqrt(t)
     @fact_throws ArgumentError log(t)
     @fact_throws ArgumentError cos(t)/sin(t)
-    @fact_throws AssertionError deriv( exp(ta(1.0pi)), 30 )
+    @fact_throws AssertionError derivative(30, exp(ta(1.0pi)))
 
     @fact string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"  --> true
     @fact TaylorSeries.pretty_print(ta(3im)) ==
@@ -193,12 +193,12 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact (rem(1+xT,1)).coeffs[1] == 0  --> true
     @fact abs(1-xT)  --> 1-xT
     @fact abs(-1-xT)  --> 1+xT
-    @fact diffTaylor(mod2pi(2pi+yT^3),2) == diffTaylor(yT^3,2)  --> true
-    @fact diffTaylor(yT) == zeroT  --> true
+    @fact derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3,2)  --> true
+    @fact derivative(yT) == zeroT  --> true
     @fact -xT/3im == im*xT/3  --> true
     @fact (xH/3im)' == im*xH/3  --> true
 
-    @fact diffTaylor(2xT*yT^2,1) == 2yT^2  --> true
+    @fact derivative(2xT*yT^2,1) == 2yT^2  --> true
     @fact xT*xT^3 == xT^4  --> true
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
     @fact (1+taylorN_variable(1,4))^taylorN_variable(2,4) == txy  --> true
