@@ -5,7 +5,7 @@
 #
 # Handles Taylor series of arbitrary but finite order
 
-# __precompile__(true)
+__precompile__(true)
 
 module TaylorSeries
 
@@ -37,8 +37,5 @@ include("hash_tables.jl")
 include("TaylorN.jl")
 
 include("printing.jl")
-
-#docstrings
-#include("helpDB.jl")
 
 end # module
