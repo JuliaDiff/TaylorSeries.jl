@@ -8,17 +8,17 @@
 
 
 ## Constructors ##
-@doc """
+doc"""
     Taylor1{T<:Number} <: Number
 
 DataType for polynomial expansions in one independent variable.
 
 **Fields:**
 
-- `coeffs :: Array{T,1}` Expansion coefficients; the \$i\$-th
-component is the coefficient of degree \$i-1\$ of the expansion.
+- `coeffs :: Array{T,1}` Expansion coefficients; the $i$-th
+component is the coefficient of degree $i-1$ of the expansion.
 - `order  :: Int64` Maximum order (degree) of the polynomial.
-"""->
+"""
 immutable Taylor1{T<:Number} <: Number
     coeffs :: Array{T,1}
     order :: Int
@@ -45,22 +45,22 @@ Taylor1{T<:Number}(x::T, order::Int) = Taylor1{T}([x], order)
 Taylor1{T<:Number}(x::T) = Taylor1{T}([x], 0)
 
 # Shortcut to define Taylor1 independent variables
-@doc """
+"""
     taylor1_variable(T, [order=1])
     taylor1_variable([order=1])
 
 Shortcut to define the independent variable as a `Taylor1` polynomial of
 given `order`. If `T::Type` is ommitted, `Float64` is assumend.
-"""->
+"""
 taylor1_variable(T::Type, order::Int=1) = Taylor1{T}( [zero(T), one(T)], order)
 taylor1_variable(order::Int=1) = taylor1_variable(Float64, order)
 
 ## get_coeff ##
-@doc """
+"""
     get_coeff(a, n)
 
 Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
-""" ->
+"""
 get_coeff(a::Taylor1, n::Int) = (@assert 0 <= n <= a.order+1;
     return a.coeffs[n+1])
 
@@ -213,7 +213,12 @@ doc"""
     mulHomogCoef(kcoef, ac, bc)
 
 Compute the `k`-th expansion coefficient of $c = a\cdot b$ given by
-$c_k = \sum_{j=0}^k a_j b_{k-j}$, with $a$ and $b$ `Taylor1` polynomials.
+
+\begin{equation*}
+c_k = \sum_{j=0}^k a_j b_{k-j},
+\end{equation*}
+
+with $a$ and $b$ `Taylor1` polynomials.
 
 Inputs are the `kcoef`-th coefficient, and the vectors of the expansion coefficients
 `ac` and `bc`, corresponding respectively to `a` and `b`.
@@ -308,7 +313,7 @@ function mod2pi{T<:Real}(a::Taylor1{T})
 end
 
 ## abs function ##
-doc"""
+"""
     abs(a::Taylor1)
 
 Return `a` or `-a` depending on the 0-th order coefficient
@@ -522,9 +527,9 @@ doc"""
     sqrtHomogCoef(kcoef, ac, coeffs, knull)
 
 Compute the `k-th` expansion coefficient of $c = \sqrt(a)$, given by
-$c_k = \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j )$
+$c_k = \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j)$
 if `k` is odd, or
-$c_k = \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j - (c_{k/2})^2 )$
+$c_k = \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2 $
 if `k` is even, with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -554,7 +559,8 @@ end
 doc"""
     exp(a)
 
-Return the Taylor expansion of $e^a$, of order `a.order`, for `a::Taylor1` polynomial.
+Return the Taylor expansion of $e^a$, of order `a.order`, for
+`a::Taylor1` polynomial.
 """
 function exp(a::Taylor1)
     @inbounds aux = exp( a.coeffs[1] )
@@ -634,7 +640,8 @@ end
 doc"""
     sin(a)
 
-Return the Taylor expansion of $\sin(a)$, of order `a.order`, for `a::Taylor1` polynomial.
+Return the Taylor expansion of $\sin(a)$, of order `a.order`, for
+`a::Taylor1` polynomial.
 """
 sin(a::Taylor1) = sincos(a)[1]
 
@@ -642,7 +649,8 @@ sin(a::Taylor1) = sincos(a)[1]
 doc"""
     cos(a)
 
-Return the Taylor expansion of $\cos(a)$, of order `a.order`, for `a::Taylor1` polynomial.
+Return the Taylor expansion of $\cos(a)$, of order `a.order`,
+for `a::Taylor1` polynomial.
 """
 cos(a::Taylor1) = sincos(a)[2]
 
@@ -665,9 +673,9 @@ end
 doc"""
     sincosHomogCoef(kcoef, ac, scoeffs, ccoeffs)
 
-Compute the `k-th` expansion coefficient of $s = \sin(a)$ *and* $c=\cos(a)$
+Compute the `k-th` expansion coefficient of $s = \sin(a)$ and $c=\cos(a)$
 simultaneously, given by
-$s_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j$
+$s_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j$,
 $c_k = -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j$
 with $a$ a `Taylor1` polynomial.
 
@@ -697,7 +705,8 @@ end
 doc"""
     tan(a)
 
-Return the Taylor expansion of $\tan(a)$, of order `a.order`, for `a::Taylor1` polynomial.
+Return the Taylor expansion of $\tan(a)$, of order `a.order`, for
+`a::Taylor1` polynomial.
 """
 function tan(a::Taylor1)
     aux = tan( a.coeffs[1] )
@@ -737,7 +746,7 @@ function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
 end
 
 ## Differentiating ##
-doc"""
+"""
     derivative(a)
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
@@ -752,7 +761,7 @@ function derivative(a::Taylor1)
     return Taylor1(coeffs, a.order)
 end
 
-doc"""
+"""
     derivative(n, a)
 
 Return the value of the `n`-th derivative of the polynomial `a`.
@@ -763,7 +772,7 @@ function derivative{T<:Number}(n::Int, a::Taylor1{T})
 end
 
 ## Integrating ##
-doc"""
+"""
     integrate(a, x)
     integrate(a)
 
@@ -782,11 +791,12 @@ end
 integrate{T<:Number}(a::Taylor1{T}) = integrate(a, zero(T))
 
 ## Evaluating ##
-doc"""
+"""
     evaluate(a, dx)
     evaluate(a)
 
-Evaluate a `Taylor1` polynomial using Horner's rule (hand coded).
+Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
+ommitted, its value is considered as zero.
 """
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
@@ -799,7 +809,7 @@ end
 evaluate{T<:Number}(a::Taylor1{T}) = a.coeffs[1]
 
 
-doc"""
+"""
     evaluate(a, x)
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
