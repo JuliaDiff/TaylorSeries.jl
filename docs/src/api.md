@@ -1,37 +1,42 @@
-    {meta}
-    CurrentModule = TaylorSeries
-
 # Library
 
 ---
 
+```@meta
+CurrentModule = TaylorSeries
+```
+
 ## Types
 
-    {docs}
-    TaylorSeries.Taylor1
-    TaylorSeries.HomogeneousPolynomial
-    TaylorSeries.TaylorN
-    TaylorSeries.ParamsTaylorN
+```@docs
+Taylor1
+HomogeneousPolynomial
+TaylorN
+ParamsTaylorN
+```
 
 ## Functions and methods
 
-    {docs}
-    TaylorSeries.taylor1_variable()
-    TaylorSeries.diffTaylor()
-    TaylorSeries.integTaylor()
-    TaylorSeries.deriv()
-    TaylorSeries.evaluate()
+```@docs
+taylor1_variable
+taylorN_variable
+set_variables
+show_params_TaylorN
+get_coeff
+```
 
-    TaylorSeries.taylorN_variable()
-    TaylorSeries.set_variables()
-    TaylorSeries.show_params_TaylorN()
-    TaylorSeries.get_coeff()
+```@docs
+evaluate
+derivative
+integrate
+gradient
+jacobian
+hessian
+```
 
-## Internal use
+## Internals
 
-    {docs}
-    TaylorSeries.generate_tables
-    TaylorSeries.coeff_table
-    TaylorSeries.index_table
-    TaylorSeries.size_table
-    TaylorSeries.pos_table
+```@docs
+generate_tables
+mulHomogCoef
+```
