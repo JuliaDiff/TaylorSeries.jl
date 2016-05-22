@@ -691,6 +691,9 @@ function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     coefhomog
 end
 
+
+### TRIGONOMETRIC FUNCTIONS ###
+
 ## Sin ## 
 doc"""
     sin(a)
@@ -700,6 +703,7 @@ Return the Taylor expansion of $\sin(a)$, of order `a.order`, for
 
 For details on making the Taylor expansion, see [`TaylorSeries.sincosHomogCoef`](@ref).
 """
+
 sin(a::Taylor1) = sincos(a)[1]
 
 ## Cos ## 
@@ -812,6 +816,74 @@ function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
         coefhomog += (kcoef-i)*ac[kcoef-i+1]*coeffst2[i+1]
     end
     @inbounds coefhomog = ac[kcoef+1] + coefhomog/kcoef
+    coefhomog
+end
+
+### INVERSE TRIGONOMETRIC FUNCTIONS ### 
+
+## Arcsin ##
+function asin(a::Taylor1)
+    @inbounds aux = asin( a.coeffs[1] )
+    r = sqrt(1 - a^2).coeffs
+    T = promote_type(typeof(aux),typeof(r[1]))
+    ac = convert(Array{T,1}, a.coeffs)
+    coeffs = zeros(ac)
+    @inbounds coeffs[1] = aux
+    @inbounds for k in 1:a.order
+        coeffs[k+1] = asinHomogCoef(k , ac, r, coeffs)
+    end
+    Taylor1( coeffs, a.order )
+end
+
+# Homogeneous coefficients for arcsin
+function asinHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+    kcoef == 0 && return asin( ac[1] )
+    coefhomog = zero(T)
+    @inbounds for i in 1:kcoef-1
+        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1]
+    end
+    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
+    # r_f[1] = √(1 - f_0^2)
+    coefhomog
+end
+
+## Arccos ## 
+function acos(a::Taylor1)
+    @inbounds aux = acos( a.coeffs[1] )
+    r = sqrt(1 - a^2).coeffs
+    T = promote_type(typeof(aux),typeof(r[1]))
+    ac = convert(Array{T,1}, a.coeffs)
+    coeffs = zeros(ac)
+    @inbounds coeffs[1] = aux
+    @inbounds for k in 1:a.order
+        coeffs[k+1] = -asinHomogCoef(k , ac, r, coeffs)
+    end
+    Taylor1( coeffs, a.order )
+end
+
+## Arctan
+function atan(a::Taylor1)
+    @inbounds aux = atan( a.coeffs[1] )
+    r = (1 + a^2).coeffs
+    T = promote_type(typeof(aux),typeof(r[1]))
+    ac = convert(Array{T,1}, a.coeffs)
+    coeffs = zeros(ac)
+    @inbounds coeffs[1] = aux
+    @inbounds for k in 1:a.order
+        coeffs[k+1] = atanHomogCoef(k , ac, r, coeffs)
+    end
+    Taylor1( coeffs, a.order )
+end
+
+# Homogeneous coefficients for arctan
+function atanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+    kcoef == 0 && return atan( ac[1] )
+    coefhomog = zero(T)
+    @inbounds for i in 1:kcoef-1
+        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1]
+    end
+    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
+    # r_f[1] = (1 - f_0^2)
     coefhomog
 end
 
