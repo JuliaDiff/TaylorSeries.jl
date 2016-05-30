@@ -201,6 +201,14 @@ function *(a::Union{Real,Complex}, b::Taylor1)
     Taylor1(v, b.order)
 end
 *(a::Taylor1, b::Union{Real,Complex}) = b * a
+doc"""
+    *(a,b)
+
+Return the Taylor expansion of $a \cdot b$, of order `maximum(a.order,b.order)`, for
+`a::Taylor1`, `b::Taylor1` polynomials.
+
+For details on making the Taylor expansion, see [`TaylorSeries.mulHomogCoef`](@ref).
+"""
 function *(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
     coeffs = similar(a.coeffs)
@@ -238,6 +246,14 @@ end
 ## Division ##
 /{T<:Real}(a::Taylor1, b::T) = a * inv(b)
 /{T<:Complex}(a::Taylor1, b::T) = a * inv(b)
+doc"""
+    /(a,b)
+
+Return the Taylor expansion of $a/b$, of order `maximum(a.order,b.order)`, for
+`a::Taylor1`, `b::Taylor1` polynomials.
+
+For details on making the Taylor expansion, see [`TaylorSeries.mulHomogCoef`](@ref).
+"""
 
 function /(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
@@ -279,8 +295,12 @@ end
 doc"""
     divHomogCoef(kcoef, ac, bc, coeffs, ordfact)
 
-Compute the `k-th` expansion coefficient of $c = a / b$, given by
-$c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j})$,
+Compute the `k-th` expansion coefficient of $c = a / b$ given by
+
+\begin{equation*}
+c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}),
+\end{equation*}
+
 with $a$ and $b$ `Taylor1` polynomials.
 
 Inputs are the `kcoef`-th coefficient, the vectors of the expansion coefficients
@@ -317,11 +337,12 @@ end
 
 ## abs function ##
 """
-    abs(a::Taylor1)
+    abs(a)
 
 Return `a` or `-a` depending on the 0-th order coefficient
-of `a::Taylor1` polynomial.
-If it is zero, an `ArgumentError` is thrown.
+with `a::Taylor1`.
+
+If `a.coeffs[1]` is zero, an `ArgumentError` is thrown.
 """
 function abs{T<:Real}(a::Taylor1{T})
     if a.coeffs[1] > zero(T)
@@ -340,7 +361,8 @@ doc"""
     ^(a, x)
 
 Return the Taylor expansion of $a^x$ for `a::Taylor1` polynomial and `x::Number`.
-If `x::Real` and the 0-th order coefficient is non-zero, an
+
+If `x::Real` and the 0-th order coefficient is zero, an
 `ArgumentError` is thrown.
 """
 function ^{T<:Number}(a::Taylor1{T}, n::Integer)
@@ -430,7 +452,10 @@ doc"""
     powHomogCoef(kcoef, ac, x, coeffs, knull)
 
 Compute the `k-th` expansion coefficient of $c = a^x$, given by
-$c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} ((k-j)x -j) - j)a_{k-j} c_j$,
+
+\begin{equation*}
+c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} ((k-j)x -j) - j)a_{k-j} c_j,
+\end{equation*}
 with $a$ a `Taylor1` polynomial, and `x` a number.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -468,9 +493,12 @@ doc"""
     squareHomogCoef(kcoef, ac)
 
 Compute the `k-th` expansion coefficient of $c = a^2$, given by
-$c_k = 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j$ if `k` is odd, or
-$c_k = 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2$
-if `k`is even, with $a$ a `Taylor1` polynomial.
+
+\begin{eqnarray*}
+c_k &=& 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j \text{ if `k` is odd, or }  \\\ \\
+c_k &=& 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2 \text{ if `k`is even, }
+\end{eqnarray*}
+with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient and the vector of the expansion coefficients
 `ac` of `a`.
@@ -498,6 +526,8 @@ Return  the Taylor expansion of $\sqrt(a)$, of order `a.order`,
 for `a::Taylor1` polynomial.
 If the first non-vanishing coefficient of `a` is an odd power, and
 `ArgumentError` is thrown.
+
+For details on making the Taylor expansion, see [`TaylorSeries.sqrtHomogCoef`](@ref).
 """
 function sqrt(a::Taylor1)
     # First non-zero coefficient
@@ -530,10 +560,12 @@ doc"""
     sqrtHomogCoef(kcoef, ac, coeffs, knull)
 
 Compute the `k-th` expansion coefficient of $c = \sqrt(a)$, given by
-$c_k = \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j)$
-if `k` is odd, or
-$c_k = \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2 $
-if `k` is even, with $a$ a `Taylor1` polynomial.
+
+\begin{eqnarray*}
+c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j) \text{ if `k` is odd, or } \\\ \\
+c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2 \text{ if `k` is even,}
+\end{eqnarray*}
+with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
 `ac` of `a`, the already calculated expansion coefficients `coeffs` of `c`,
@@ -564,6 +596,8 @@ doc"""
 
 Return the Taylor expansion of $e^a$, of order `a.order`, for
 `a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.expHomogCoef`](@ref).
 """
 function exp(a::Taylor1)
     @inbounds aux = exp( a.coeffs[1] )
@@ -581,8 +615,11 @@ end
 doc"""
     expHomogCoef(kcoef, ac, coeffs)
 
-Compute the `k-th` expansion coefficient of $c = \exp(a)$, given by
-$c_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j$,
+Compute the `k-th` expansion coefficient of $c = \exp(a)$ given by
+
+\begin{equation*}
+c_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j,
+\end{equation*}
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -603,6 +640,8 @@ doc"""
     log(a)
 
 Return the Taylor expansion of $\log(a)$, of order `a.order`, for `a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.logHomogCoef`](@ref).
 """
 function log(a::Taylor1)
     ( firstnonzero(a)>0 ) && throw(
@@ -623,7 +662,10 @@ doc"""
     logHomogCoef(kcoef, ac, coeffs)
 
 Compute the `k-th` expansion coefficient of $c = \log(a)$, given by
-$c_k = \frac{1}{a_0} (a_k - \frac{1}{k} \sum_{j=0}^{k-1} j a_{k-j} c_j )$,
+
+\begin{equation*}
+c_k = \frac{1}{a_0} (a_k - \frac{1}{k} \sum_{j=0}^{k-1} j a_{k-j} c_j ),
+\end{equation*}
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -645,6 +687,8 @@ doc"""
 
 Return the Taylor expansion of $\sin(a)$, of order `a.order`, for
 `a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.sincosHomogCoef`](@ref).
 """
 sin(a::Taylor1) = sincos(a)[1]
 
@@ -653,7 +697,9 @@ doc"""
     cos(a)
 
 Return the Taylor expansion of $\cos(a)$, of order `a.order`,
-for `a::Taylor1` polynomial.
+for `a::Taylor1` polynomial
+
+For details on making the Taylor expansion, see [`TaylorSeries.sincosHomogCoef`](@ref)..
 """
 cos(a::Taylor1) = sincos(a)[2]
 
@@ -677,9 +723,13 @@ doc"""
     sincosHomogCoef(kcoef, ac, scoeffs, ccoeffs)
 
 Compute the `k-th` expansion coefficient of $s = \sin(a)$ and $c=\cos(a)$
-simultaneously, given by
-$s_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j$,
-$c_k = -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j$
+simultaneously given by
+
+\begin{eqnarray*}
+s_k &=& \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j \\\ \\
+
+c_k &=& -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j
+\end{eqnarray*}
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -710,6 +760,8 @@ doc"""
 
 Return the Taylor expansion of $\tan(a)$, of order `a.order`, for
 `a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.tanHomogCoef`](@ref).
 """
 function tan(a::Taylor1)
     aux = tan( a.coeffs[1] )
@@ -730,8 +782,11 @@ end
 doc"""
     tanHomogCoef(kcoef,ac,coeffst2)
 
-Compute the `k-th` expansion coefficient of $c = \tan(a)$, given by
-$c_k = a_k + \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j $,
+Compute the `k-th` expansion coefficient of $c = \tan(a)$ given by
+
+\begin{equation*}
+c_k = a_k + \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j,
+\end{equation*}
 with $a$ a `Taylor1` polynomial and $p = c^2$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
