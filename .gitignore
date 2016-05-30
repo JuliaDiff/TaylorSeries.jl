@@ -2,3 +2,5 @@
 *.cov
 *.mem
 site/
+docs/build/
+docs/site/
