@@ -27,12 +27,15 @@ immutable Taylor1{T<:Number} <: Number
     function Taylor1(coeffs::Array{T,1}, order::Int)
         lencoef = length(coeffs)
         order = max(order, lencoef-1)
-        order == lencoef-1 && return new(coeffs, order)
-        resize!(coeffs, order+1)
-        for i = lencoef+1:order+1
-            coeffs[i] = zero(T)
+        if order == lencoef-1
+            return new(coeffs, order)
+        else
+            resize!(coeffs, order+1)
+            for i = lencoef+1:order+1
+                coeffs[i] = zero(T)
+            end
+            return new(coeffs, order)
         end
-        new(coeffs, order)
     end
 end
 
@@ -104,17 +107,17 @@ function firstnonzero{T<:Number}(a::Taylor1{T})
     nonzero
 end
 
-function fixshape{T<:Number, S<:Number}(a::Taylor1{T}, b::Taylor1{S})
-    eltype(a) == eltype(b) && a.order == b.order && return a, b
-    if eltype(a) != eltype(b)
-        a, b = promote(a, b)
-    end
+function fixshape{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
     if a.order == b.order
         return a, b
     elseif a.order < b.order
         return Taylor1(a, b.order), b
     end
     return a, Taylor1(b, a.order)
+end
+
+function fixshape{T<:Number, S<:Number}(a::Taylor1{T}, b::Taylor1{S})
+    fixshape(promote(a,b)...)
 end
 
 ## real, imag, conj and ctranspose ##
@@ -821,4 +824,46 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
         suma = suma*x + a.coeffs[k]
     end
     suma
+end
+
+## Returns de n-th derivative of a series expansion
+"""
+    derivative(a, [n=1])
+
+Return the value of the `n`-th derivative of `a`.
+"""
+function derivavtive{T<:Number}(a::Taylor1{T}, n::Int=1)
+    @assert a.order >= n >= 0
+    factorial( widen(n) ) * a.coeffs[n+1] :: T
+end
+
+"""
+    A_mul_B!(Y, A, B)
+
+Multiply A*B and save the result in Y.
+"""
+function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}}, a::Union{Matrix{T},SparseMatrixCSC{T}},
+    b::Vector{Taylor1{T}})
+
+    n, k = size(a)
+    @assert (length(y)== n && length(b)== k)
+
+    # determine the maximal order of b
+    order = maximum([b1.order for b1 in b])
+
+    # Use matrices of coefficients (of proper size) and A_mul_Bt!
+    B = zeros(T, k, order+1)
+    for i = 1:k
+        @inbounds ord = b[i].order
+        @inbounds for j = 1:ord+1
+            B[i,j] = b[i].coeffs[j]
+        end
+    end
+    Y = Array(T, n, order+1)
+    A_mul_B!(Y, a, B)
+    @inbounds for i = 1:n
+        y[i] = Taylor1( collect(Y[i,:]), order)
+    end
+
+    return y
 end
