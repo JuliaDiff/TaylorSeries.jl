@@ -202,9 +202,11 @@ function *(a::Union{Real,Complex}, b::Taylor1)
 end
 *(a::Taylor1, b::Union{Real,Complex}) = b * a
 doc"""
-    *(a,b)
+```
+*(a,b)
+```
 
-Return the Taylor expansion of $a \cdot b$, of order `maximum(a.order,b.order)`, for
+Return the Taylor expansion of $a \cdot b$, of order `max(a.order,b.order)`, for
 `a::Taylor1`, `b::Taylor1` polynomials.
 
 For details on making the Taylor expansion, see [`TaylorSeries.mulHomogCoef`](@ref).
@@ -247,12 +249,14 @@ end
 /{T<:Real}(a::Taylor1, b::T) = a * inv(b)
 /{T<:Complex}(a::Taylor1, b::T) = a * inv(b)
 doc"""
-    /(a,b)
+```
+/(a,b)
+```
 
-Return the Taylor expansion of $a/b$, of order `maximum(a.order,b.order)`, for
+Return the Taylor expansion of $a/b$, of order `max(a.order,b.order)`, for
 `a::Taylor1`, `b::Taylor1` polynomials.
 
-For details on making the Taylor expansion, see [`TaylorSeries.mulHomogCoef`](@ref).
+For details on making the Taylor expansion, see [`TaylorSeries.divHomogCoef`](@ref).
 """
 
 function /(a::Taylor1, b::Taylor1)
@@ -339,9 +343,8 @@ end
 """
     abs(a)
 
-Return `a` or `-a` depending on the 0-th order coefficient
-with `a::Taylor1`.
-
+Return `a` or `-a` depending on the 0-th order coefficient of the
+`Taylor1` polynomial `a`.
 If `a.coeffs[1]` is zero, an `ArgumentError` is thrown.
 """
 function abs{T<:Real}(a::Taylor1{T})
@@ -361,8 +364,7 @@ doc"""
     ^(a, x)
 
 Return the Taylor expansion of $a^x$ for `a::Taylor1` polynomial and `x::Number`.
-
-If `x::Real` and the 0-th order coefficient is zero, an
+If `x` is non integer and the 0-th order coefficient is zero, an
 `ArgumentError` is thrown.
 """
 function ^{T<:Number}(a::Taylor1{T}, n::Integer)
@@ -456,6 +458,7 @@ Compute the `k-th` expansion coefficient of $c = a^x$, given by
 \begin{equation*}
 c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} ((k-j)x -j) - j)a_{k-j} c_j,
 \end{equation*}
+
 with $a$ a `Taylor1` polynomial, and `x` a number.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -498,6 +501,7 @@ Compute the `k-th` expansion coefficient of $c = a^2$, given by
 c_k &=& 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j \text{ if `k` is odd, or }  \\\ \\
 c_k &=& 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2 \text{ if `k`is even, }
 \end{eqnarray*}
+
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient and the vector of the expansion coefficients
@@ -565,6 +569,7 @@ Compute the `k-th` expansion coefficient of $c = \sqrt(a)$, given by
 c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j) \text{ if `k` is odd, or } \\\ \\
 c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2 \text{ if `k` is even,}
 \end{eqnarray*}
+
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -620,10 +625,11 @@ Compute the `k-th` expansion coefficient of $c = \exp(a)$ given by
 \begin{equation*}
 c_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j,
 \end{equation*}
+
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
-`ac` of `a`, and the already calculated expansion coefficients `coeffs` of `c`.
+`ac` of $a$, and the already calculated expansion coefficients `coeffs` of `c`.
 """
 function expHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return exp(ac[1])
@@ -666,6 +672,7 @@ Compute the `k-th` expansion coefficient of $c = \log(a)$, given by
 \begin{equation*}
 c_k = \frac{1}{a_0} (a_k - \frac{1}{k} \sum_{j=0}^{k-1} j a_{k-j} c_j ),
 \end{equation*}
+
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -730,6 +737,7 @@ s_k &=& \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j \\\ \\
 
 c_k &=& -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j
 \end{eqnarray*}
+
 with $a$ a `Taylor1` polynomial.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
@@ -780,13 +788,14 @@ end
 
 # Homogeneous coefficients for tan
 doc"""
-    tanHomogCoef(kcoef,ac,coeffst2)
+    tanHomogCoef(kcoef, ac, coeffst2)
 
 Compute the `k-th` expansion coefficient of $c = \tan(a)$ given by
 
 \begin{equation*}
 c_k = a_k + \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j,
 \end{equation*}
+
 with $a$ a `Taylor1` polynomial and $p = c^2$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients

@@ -852,8 +852,10 @@ end
 
 ## Gradient, jacobian and hessian
 """
+```
     gradient(f)
     ∇(f)
+```
 
 Compute the gradient of the polynomial `f::TaylorN`.
 """
@@ -869,8 +871,10 @@ end
 const ∇ = gradient
 
 """
+```
     jacobian(vf)
     jacobian(vf, [vals])
+```
 
 Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials,
 evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at zero.
@@ -904,8 +908,10 @@ end
 
 
 """
+```
     hessian(f)
     hessian(f, [vals])
+```
 
 Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
 evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at

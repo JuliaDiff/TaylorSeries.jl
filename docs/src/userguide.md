@@ -229,17 +229,17 @@ through the function [`derivative`](@ref), specifying the number
 of the variable as the second argument; integration is yet to be implemented.
 
 ```@repl userguide
-f(x,y) = x^3 + 2x^2 * y - 7x + 2
-g(x,y) = y - x^4
-derivative( f(x,y), 1 )   # partial derivative with respect to 1st variable
-derivative( g(x,y), 2 )
+f = x^3 + 2x^2 * y - 7x + 2
+g = y - x^4
+derivative( f, 1 )   # partial derivative with respect to 1st variable
+derivative( g, 2 )
 ```
 
 If we ask for the partial derivative with respect to a non-defined variable,
 an error is thrown.
 
 ```@repl userguide
-derivative( g(x,y), 3 )   # error, since we are dealing with 2 variables
+derivative( g, 3 )   # error, since we are dealing with 2 variables
 ```
 
 [`evaluate`](@ref) can also be used for [`TaylorN`](@ref) objects, using
@@ -253,20 +253,19 @@ evaluate(exy, [.1,.02]) == e^0.12
 
 Functions to compute the gradient, Jacobian and
 Hessian have also been implemented. Using the
-functions $f(x,y) = x^3 + 2x^2 y - 7 x + 2$ and $g(x,y) = y-x^4$ defined above,
+polynomials $f = x^3 + 2x^2 y - 7 x + 2$ and $g = y-x^4$ defined above,
 we may use [`gradient`](@ref) (or `∇`); the results are of
 type `Array{TaylorN{T},1}`. To compute the Jacobian and Hessian of a vector field
 evaluated at a point, we use respectively [`jacobian`](@ref) and
 [`hessian`](@ref):
 
-    {repl userguide}
-    f1 = f(x,y)
-    g1 = g(x,y)
-    ∇(f1)
-    gradient( g1 )
-    fg = f1-g1-2*f1*g1
-    hessian(ans)
-    jacobian([f1,g1], [2,1])
-    hessian(fg, [1.0,1.0])
+```@repl userguide
+∇(f)
+gradient( g )
+fg = f-g-2*f*g
+hessian(ans)
+jacobian([f,g], [2,1])
+hessian(fg, [1.0,1.0])
+```
 
 Some specific applications are given in the next [section](Examples).
