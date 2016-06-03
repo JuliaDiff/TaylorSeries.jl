@@ -203,7 +203,7 @@ end
 *(a::Taylor1, b::Union{Real,Complex}) = b * a
 doc"""
 ```
-*(a,b)
+*(a, b)
 ```
 
 Return the Taylor expansion of $a \cdot b$, of order `max(a.order,b.order)`, for
@@ -250,7 +250,7 @@ end
 /{T<:Complex}(a::Taylor1, b::T) = a * inv(b)
 doc"""
 ```
-/(a,b)
+/(a, b)
 ```
 
 Return the Taylor expansion of $a/b$, of order `max(a.order,b.order)`, for
@@ -258,7 +258,6 @@ Return the Taylor expansion of $a/b$, of order `max(a.order,b.order)`, for
 
 For details on making the Taylor expansion, see [`TaylorSeries.divHomogCoef`](@ref).
 """
-
 function /(a::Taylor1, b::Taylor1)
     a, b = fixshape(a, b)
     # order and coefficient of first factorized term
@@ -361,7 +360,9 @@ end
 
 ## Int power ##
 doc"""
-    ^(a, x)
+```
+^(a, x)
+```
 
 Return the Taylor expansion of $a^x$ for `a::Taylor1` polynomial and `x::Number`.
 If `x` is non integer and the 0-th order coefficient is zero, an
@@ -498,8 +499,8 @@ doc"""
 Compute the `k-th` expansion coefficient of $c = a^2$, given by
 
 \begin{eqnarray*}
-c_k &=& 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j \text{ if `k` is odd, or }  \\\ \\
-c_k &=& 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2 \text{ if `k`is even, }
+c_k &=& 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j, \text{ if $k$ is odd, or }  \\\\
+c_k &=& 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2, \text{ if $k$ is even, }
 \end{eqnarray*}
 
 with $a$ a `Taylor1` polynomial.
@@ -566,8 +567,10 @@ doc"""
 Compute the `k-th` expansion coefficient of $c = \sqrt(a)$, given by
 
 \begin{eqnarray*}
-c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j) \text{ if `k` is odd, or } \\\ \\
-c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2 \text{ if `k` is even,}
+c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j),
+\text{ if $k$ is odd, or } \\\\
+c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2,
+\text{ if $k$ is even,}
 \end{eqnarray*}
 
 with $a$ a `Taylor1` polynomial.

@@ -417,7 +417,9 @@ end
 
 
 """
-    mul!(c, a, b)
+```
+mul!(c, a, b)
+```
 
 Return `c = a*b` with no allocation; all parameters are `HomogeneousPolynomial`.
 """
@@ -451,7 +453,7 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::Homogeneous
 end
 
 """
-    mul!(c, a, a)
+    mul!(c, a)
 
 Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
 """
