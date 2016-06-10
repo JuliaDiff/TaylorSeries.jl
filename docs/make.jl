@@ -2,7 +2,6 @@ using Documenter, TaylorSeries
 
 makedocs(
     modules = Module[TaylorSeries],
-    clean   = false,
     doctest = false,
 )
 
