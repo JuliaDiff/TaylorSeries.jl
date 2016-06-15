@@ -12,6 +12,12 @@ Universidad Nacional Autónoma de México (UNAM)
 Universidad Nacional Autónoma de México (UNAM)
 
 
+### License
+
+TaylorSeries is licensed under the MIT "Expat" license; see
+[LICENSE](https://github.com/lbenet/TaylorSeries.jl/blob/master/LICENSE.md) for
+the full license text.
+
 ### Installation
 
 TaylorSeries.jl is a [registered package](http://pkg.julialang.org), and is
@@ -20,12 +26,6 @@ simply installed by running
 ```julia
 julia> Pkg.add("TaylorSeries")
 ```
-
-### License
-
-TaylorSeries is licensed under the MIT "Expat" license; see
-[LICENSE](https://github.com/lbenet/TaylorSeries.jl/blob/master/LICENSE.md) for
-the full license text.
 
 ### Related packages
 
