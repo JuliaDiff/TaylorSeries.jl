@@ -1,6 +1,3 @@
-<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'>
-</script>
-
 # TaylorSeries.jl
 
 A [Julia](http://julialang.org) package for Taylor expansions in one or more independent variables.
@@ -14,7 +11,12 @@ Universidad Nacional Autónoma de México (UNAM)
 - [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad de Ciencias,
 Universidad Nacional Autónoma de México (UNAM)
 
-Comments, suggestions and additions are welcome and appreciated.
+
+### License
+
+TaylorSeries is licensed under the MIT "Expat" license; see
+[LICENSE](https://github.com/lbenet/TaylorSeries.jl/blob/master/LICENSE.md) for
+the full license text.
 
 ### Installation
 
@@ -24,12 +26,6 @@ simply installed by running
 ```julia
 julia> Pkg.add("TaylorSeries")
 ```
-
-### License
-
-TaylorSeries is licensed under the MIT "Expat" license; see
-[LICENSE](https://github.com/lbenet/TaylorSeries.jl/blob/master/LICENSE.md) for
-the full license text.
 
 ### Related packages
 

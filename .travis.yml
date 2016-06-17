@@ -16,7 +16,8 @@ script:
  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("TaylorSeries"); Pkg.test("TaylorSeries"; coverage=true)'
 
 after_success:
+  - julia -e 'Pkg.clone("https://github.com/JuliaDocs/Documenter.jl")'
+  - julia -e 'cd(Pkg.dir("TaylorSeries")); include(joinpath("docs", "make.jl"))'
   - julia -e 'cd(Pkg.dir("TaylorSeries")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
 sudo: false
-

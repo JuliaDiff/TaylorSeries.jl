@@ -17,19 +17,18 @@ end
 
 
 ## HomogeneousPolynomial (homogeneous polynomial) constructors ##
-@doc """
+doc"""
     HomogeneousPolynomial{T<:Number} <: Number
 
 DataType for homogenous polynomials in many (>1) independent variables.
 
 **Fields:**
 
-`coeffs  :: Array{T,1}` Expansion coefficients of the homogeneous
-polynomial; the `i`-th component is related to a monomial, where the degrees
+- `coeffs  :: Array{T,1}` Expansion coefficients of the homogeneous
+polynomial; the $i$-th component is related to a monomial, where the degrees
 of the independent variables are specified by `coeff_table[order+1][i]`.
-
-`order   :: Int` order (degree) of the homogenous polynomial.
-""" ->
+- `order   :: Int` order (degree) of the homogenous polynomial.
+"""
 immutable HomogeneousPolynomial{T<:Number} <: Number
     coeffs  :: Array{T,1}
     order   :: Int
@@ -143,18 +142,18 @@ end
 
 
 
-@doc """
-    immutable TaylorN{T<:Number} <: Number
+doc"""
+    TaylorN{T<:Number} <: Number
 
 DataType for polynomial expansions in many (>1) independent variables.
 
 **Fields:**
 
-`coeffs  :: Array{HomogeneousPolynomial{T},1}` Vector containing the
-`HomogeneousPolynomial` entries.
-
-`order   :: Int`  maximum order of the polynomial expansion.
-""" ->
+- `coeffs  :: Array{HomogeneousPolynomial{T},1}` Vector containing the
+`HomogeneousPolynomial` entries. The $i$-th component corresponds to the
+homogeneous polynomial of degree $i-1$.
+- `order   :: Int`  maximum order of the polynomial expansion.
+"""
 immutable TaylorN{T<:Number} <: Number
     coeffs  :: Array{HomogeneousPolynomial{T},1}
     order   :: Int
@@ -184,6 +183,13 @@ TaylorN{T<:Number}(x::T,order::Int) =
 TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogeneousPolynomial(x)], 0)
 
 ## Shortcut to define TaylorN independent variables
+"""
+    taylorN_variable(T, nv, [order=get_order()])
+    taylorN_variable(nv, [order=get_order()])
+
+Short-cut to define the `nv`-th independent `TaylorN{T}` variable as a
+polynomial of given `order`. If `T::Type` is ommitted, `Float64` is assumend.
+"""
 function taylorN_variable(T::Type, nv::Int, order::Int=get_order())
     @assert 0 < nv <= get_numvars()
     v = zeros(T, get_numvars())
@@ -192,34 +198,28 @@ function taylorN_variable(T::Type, nv::Int, order::Int=get_order())
 end
 taylorN_variable(nv::Int, order::Int=get_order()) =
     taylorN_variable(Float64, nv, order)
-@doc """
-    taylorN_variable(T, nv, [order=get_order()])
-    taylorN_variable(nv, [order=get_order()])
-
-Short-cut to define the `nv`-th independent `TaylorN{T}` variable as a
-polynomial of given `order`. If `T::Type` is ommitted, `Float64` is assumend.
-""" taylorN_variable
 
 
 ## get_coeff
-@doc """
+"""
     get_coeff(a, v)
 
 Return the coefficient of `a::HomogeneousPolynomial`, specified by
 `v::Array{Int,1}` which has the indices of the specific monomial.
-""" ->
+"""
 function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
     @assert length(v) == get_numvars()
     kdic = in_base(get_order(),v)
     @inbounds n = pos_table[a.order+1][kdic]
     a.coeffs[n]
 end
-@doc """
+
+"""
     get_coeff(a, v)
 
 Return the coefficient of `a::TaylorN`, specified by
 `v::Array{Int,1}` which has the indices of the specific monomial.
-""" ->
+"""
 function get_coeff(a::TaylorN, v::Array{Int,1})
     order = sum(v)
     get_coeff(a.coeffs[order+1], v)
@@ -416,11 +416,13 @@ end
 *{T<:Union{Real,Complex}}(b::T, a::TaylorN) = a * b
 
 
-@doc """
-    mul!(c, a, b)
+"""
+```
+mul!(c, a, b)
+```
 
-Return c = a*b with no allocation; all parameters are `HomogeneousPolynomial`.
-""" ->
+Return `c = a*b` with no allocation; all parameters are `HomogeneousPolynomial`.
+"""
 function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     (iszero(b) || iszero(a)) && return nothing
 
@@ -450,11 +452,11 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::Homogeneous
     return nothing
 end
 
-@doc """
-    mul!(c, a, a)
+"""
+    mul!(c, a)
 
-Return c = a*a with no allocation; all parameters are `HomogeneousPolynomial`.
-""" ->
+Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
+"""
 function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
     iszero(a) && return nothing
 
@@ -533,14 +535,14 @@ function mod2pi{T<:Real}(a::TaylorN{T})
 end
 
 ## abs function ##
-@doc """
+"""
     abs(a::TaylorN)
 
 Absolute value of a `TaylorN` polynomial, using the 0-th order coefficient.
 
 Return `a` or `-a`, depending on the 0-th order coefficient of `a`.
 If it is zero, it throws an `ArgumentError`.
-""" ->
+"""
 function abs{T<:Real}(a::TaylorN{T})
     if a.coeffs[1].coeffs[1] > zero(T)
         return a
@@ -804,12 +806,12 @@ end
 
 ## Differentiation ##
 """
-    diffTaylor(a, r)
+    derivative(a, r)
 
 Partial differentiation of `a::HomogeneousPolynomial` series with respect
 to the `r`-th variable.
 """
-function diffTaylor(a::HomogeneousPolynomial, r::Int)
+function derivative(a::HomogeneousPolynomial, r::Int)
     @assert 1 <= r <= get_numvars()
     T = eltype(a)
     a.order == 0 && return HomogeneousPolynomial(zero(T))
@@ -833,48 +835,52 @@ function diffTaylor(a::HomogeneousPolynomial, r::Int)
 end
 
 """
-    diffTaylor(a, [r=1])
+    derivative(a, [r=1])
 
 Partial differentiation of `a::TaylorN` series with respect
 to the `r`-th variable.
 """
-function diffTaylor(a::TaylorN, r=1::Int)
+function derivative(a::TaylorN, r=1::Int)
     T = eltype(a)
     coeffs = Array(HomogeneousPolynomial{T},a.order)
 
     @inbounds for ord in eachindex(coeffs)
         ord == a.order+1 && continue
-        coeffs[ord] = diffTaylor( a.coeffs[ord+1], r)
+        coeffs[ord] = derivative( a.coeffs[ord+1], r)
     end
     return TaylorN{T}( coeffs, a.order )
 end
 
 
 ## Gradient, jacobian and hessian
-@doc """
+"""
+```
     gradient(f)
     ∇(f)
+```
 
 Compute the gradient of the polynomial `f::TaylorN`.
-""" ->
+"""
 function gradient(f::TaylorN)
     T = eltype(f)
     numVars = get_numvars()
     grad = Array(TaylorN{T}, numVars)
     @inbounds for nv = 1:numVars
-        grad[nv] = diffTaylor(f, nv)
+        grad[nv] = derivative(f, nv)
     end
     return grad
 end
 const ∇ = gradient
 
-@doc """
+"""
+```
     jacobian(vf)
     jacobian(vf, [vals])
+```
 
 Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials,
 evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at zero.
-""" ->
+"""
 function jacobian{T<:Number}(vf::Array{TaylorN{T},1})
     numVars = get_numvars()
     @assert length(vf) == numVars
@@ -903,29 +909,28 @@ function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1},vals::Array{S,1})
 end
 
 
-@doc """
+"""
+```
     hessian(f)
     hessian(f, [vals])
+```
 
 Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
 evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at
 zero.
-""" ->
+"""
 hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
 hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numvars()) )
 
 ## TODO: Integration...
 
-#=
-Evaluates a Taylor polynomial on a given point, by applying Horner's
-rule in each variable. Returns the independent coefficient of the
-TaylorN result.
-=#
+## Evaluation
 """
     evaluate(a, vals)
 
-Evaluate a `HomogeneousPolynomial` polynomial using Horner's rule (hand coded).
+Evaluate a `HomogeneousPolynomial` polynomial using Horner's rule (hand coded)
+at `vals`.
 """
 function evaluate{T<:Number,S<:Union{Real,Complex}}(a::HomogeneousPolynomial{T},
     vals::Array{S,1} )
@@ -945,7 +950,7 @@ end
 """
     evaluate(a, [vals])
 
-Evaluate a `TaylorN` polynomial using Horner's rule (hand coded).
+Evaluate a `TaylorN` polynomial using Horner's rule (hand coded) at `vals`.
 If `vals` is ommitted, it is evaluated at zero.
 """
 function evaluate{T<:Number,S<:Union{Real,Complex}}(a::TaylorN{T},
@@ -1017,12 +1022,12 @@ function horner{T<:Number,S<:Union{Real,Complex}}(a::TaylorN{T},
     suma
 end
 
-@doc """
+"""
     order_posTb(order, nv, ord)
 
 Return a vector with the positions, in a `HomogeneousPolynomial` of
 order `order`, where the variable `nv` has order `ord`.
-""" ->
+"""
 function order_posTb(order::Int, nv::Int, ord::Int)
     @assert order <= get_order()
     @inbounds indTb = coeff_table[order+1]
