@@ -256,7 +256,7 @@ fateman1 (generic function with 1 method)
 julia&gt; fateman1(0);
 
 julia&gt; @time f1 = fateman1(20);
-  4.629709 seconds (3.56 k allocations: 20.147 MB, 0.12% gc time)
+  3.313778 seconds (3.56 k allocations: 20.147 MB, 0.08% gc time)
 </code></pre>
 
 <p>Another implementation of the same:</p>
@@ -274,7 +274,8 @@ fateman2 (generic function with 1 method)
 julia&gt; fateman2(0);
 
 julia&gt; @time f2 = fateman2(20);
-  2.283164 seconds (3.40 k allocations: 20.137 MB, 0.27% gc time)
+
+  1.539729 seconds (3.40 k allocations: 20.137 MB, 0.42% gc time)
 
 julia&gt; get_coeff(f2,[1,6,7,20]) # coefficient of x y^6 z^7 w^{20}
 128358585324486316800
