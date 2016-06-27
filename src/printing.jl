@@ -21,13 +21,13 @@ end
 
 function pretty_print{T<:Number}(a::Taylor1{T})
     z = zero(T)
-    space = utf8(" ")
+    @compat space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, space, bigO)
-    strout::UTF8String = space
+    @compat strout::String = space
     ifirst = true
     for i in eachindex(a.coeffs)
-        monom::UTF8String = i==1 ? string("") : i==2 ? string(" t") :
+        @compat monom::String = i==1 ? string("") : i==2 ? string(" t") :
             string(" t", superscriptify(i-1))
         @inbounds c = a.coeffs[i]
         c == z && continue
@@ -40,22 +40,22 @@ function pretty_print{T<:Number}(a::Taylor1{T})
 end
 function pretty_print{T<:Number}(a::HomogeneousPolynomial{T})
     z = zero(T)
-    space = utf8(" ")
+    @compat space = string(" ")
     a == zero(a) && return string(space, z)
-    strout::UTF8String = homogPol2str(a)
+    @compat strout::String = homogPol2str(a)
     strout
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
     z = zero(T)
-    space = utf8(" ")
-    bigO::UTF8String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
+    @compat space = string(" ")
+    @compat bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, bigO)
-    strout::UTF8String = utf8("")
+    @compat strout::String = string("")
     ifirst = true
     for ord in eachindex(a.coeffs)
         pol = a.coeffs[ord]
         pol == zero(a.coeffs[ord]) && continue
-        cadena::UTF8String = homogPol2str( pol )
+        @compat cadena::String = homogPol2str( pol )
         strsgn = (ifirst || ord == 1 || cadena[2] == '-') ? string("") : string(" +")
         strout = string( strout, strsgn, cadena)
         ifirst = false
@@ -68,12 +68,12 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
     numVars = get_numvars()
     order = a.order
     z = zero(T)
-    space = utf8(" ")
-    strout::UTF8String = space
+    @compat space = string(" ")
+    @compat strout::String = space
     ifirst = true
     iIndices = zeros(Int, numVars)
     for pos = 1:size_table[order+1]
-        monom::UTF8String = string("")
+        @compat monom::String = string("")
         @inbounds iIndices[:] = coeff_table[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]

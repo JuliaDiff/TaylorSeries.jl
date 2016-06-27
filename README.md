@@ -7,6 +7,7 @@ independent variables.
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.5.svg)](http://pkg.julialang.org/?pkg=TaylorSeries)
 [![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/latest)
 
 #### Authors

@@ -16,6 +16,7 @@ or more independent variables.
 module TaylorSeries
 
 using Compat
+import Compat.String
 
 import Base: ==, +, -, *, /, ^
 
