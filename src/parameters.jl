@@ -12,17 +12,17 @@ DataType holding the current parameters for `TaylorN` and
 
 - `order          :: Int`  Order (degree) of the polynomials
 - `num_vars       :: Int`  Number of variables
-- `variable_names :: Array{UTF8String,1}` Name of the variables
+- `variable_names :: Array{String,1}` Name of the variables
 
 These parameters can be changed using `set_params_TaylorN(order, numVars)`.
 """ ->
 type ParamsTaylorN
     order          :: Int
     num_vars       :: Int
-    variable_names :: Array{UTF8String,1}
+    variable_names :: Array{String,1}
 end
 
-const _params_TaylorN_ = ParamsTaylorN(6, 2, UTF8String["x₁", "x₂"])
+@compat const _params_TaylorN_ = ParamsTaylorN(6, 2, String["x₁", "x₂"])
 
 
 ## Utilities to get the maximum order and number of variables
@@ -41,7 +41,7 @@ get_variables() = [taylorN_variable(i) for i in 1:get_numvars()]
     set_variables(names; [order=6, numvars=-1])
 
 Return a `TaylorN{R}` vector with `numvars` polynomials, each representing an
-independent variable, using `names` as the `UTF8String` for the output.
+independent variable, using `names` as the `String` for the output.
 
 If `numvars` is not specified, it is inferred from the length of `names`.
 If `length(names)==1` and `numvars>1`, it uses this name with subscripts for
