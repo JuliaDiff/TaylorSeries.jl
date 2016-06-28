@@ -611,14 +611,17 @@ For details on making the Taylor expansion, see [`TaylorSeries.expHomogCoef`](@r
 """
 function exp(a::Taylor1)
 
-    T = typeof(float(a.coeffs[1]))
-    v = convert(Array{T,1}, a.coeffs)
+    zeroth_order = a.coeffs[1]
+
+    T = typeof(float(zeroth_order))
+    v = convert(Vector{T}, a.coeffs)
+
     coeffs = similar(v)
 
-    if (a.coeffs[1] == zero(a.coeffs[1]))
-        @inbounds coeffs[1] = one(a.coeffs[1])
+    if zeroth_order == zero(zeroth_order)
+        @inbounds coeffs[1] = one(T)
     else
-        @inbounds coeffs[1] = exp(a.coeffs[1])
+        @inbounds coeffs[1] = exp(zeroth_order)
     end
 
     @inbounds for k = 1:a.order
