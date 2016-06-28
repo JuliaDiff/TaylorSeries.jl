@@ -11,14 +11,14 @@ FactCheck.setstyle(:compact)
 
 facts("Tests for Taylor1 expansions") do
     ta(a) = Taylor1([a,one(a)],15)
-    t = taylor1_variable(Int,15)
+    t = Taylor1(Int,15)
     tim = im*t
     zt = zero(t)
     ot = 1.0*one(t)
     tol1 = eps(1.0)
 
-    @fact Taylor1([0,1,0,0]) == taylor1_variable(3)  --> true
-    @fact get_coeff(taylor1_variable(Complex128,3),1) == complex(1.0,0.0) --> true
+    @fact Taylor1([0,1,0,0]) == Taylor1(3)  --> true
+    @fact get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0) --> true
     @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  --> true
     @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  --> true
     @fact convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t  --> true
@@ -29,7 +29,7 @@ facts("Tests for Taylor1 expansions") do
     @fact eltype(promote(1.0+im, zt)[1]) == Complex{Float64}  --> true
     @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  --> true
 
-    @fact length(Taylor1(0)) == 0  --> true
+    @fact length(Taylor1(10)) == 10  --> true
     @fact length(TaylorSeries.fixshape(zt,Taylor1([1.0]))[2]) == 15  --> true
     @fact eltype(TaylorSeries.fixshape(zt,Taylor1([1.0]))[1]) == Float64  --> true
     @fact TaylorSeries.firstnonzero(t) == 1  --> true
@@ -87,7 +87,7 @@ facts("Tests for Taylor1 expansions") do
     @fact imag(exp(tim)) == sin(t)  --> true
     @fact exp(conj(tim)) == cos(t)-im*sin(t) == exp(tim')  --> true
     @fact (exp(t))^(2im) == cos(2t)+im*sin(2t)  --> true
-    @fact (exp(t))^Taylor1(-5.2im) == cos(5.2t)-im*sin(5.2t)  --> true
+    @fact (exp(t))^Taylor1([-5.2im]) == cos(5.2t)-im*sin(5.2t)  --> true
     @fact get_coeff(convert(Taylor1{Rational{Int}},cos(t)),8) ==
         1//factorial(8)  --> true
     @fact abs((tan(t)).coeffs[8]- 17/315) < tol1  --> true
