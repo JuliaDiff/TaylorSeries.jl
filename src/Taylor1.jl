@@ -612,7 +612,13 @@ function exp(a::Taylor1)
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = similar(v)
-    @inbounds coeffs[1] = aux
+
+    if (coeffs[1] == zero(T))
+        @inbounds coeffs[1] = one(T)
+    else
+        @inbounds coeffs[1] = aux
+    end
+
     @inbounds for k = 1:a.order
         coeffs[k+1] = expHomogCoef(k, v, coeffs)
     end
