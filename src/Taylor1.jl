@@ -613,11 +613,17 @@ function exp{T}(a::Taylor1{T}, output_type=float(T))
 
     zeroth_order = a.coeffs[1]
 
+    #T = typeof(float(zeroth_order))
+    #T = typeof(zeroth_order)
     v = convert(Vector{output_type}, a.coeffs)
 
     coeffs = similar(v)
 
-    @inbounds coeffs[1] = one(output_type)
+    if zeroth_order == zero(zeroth_order)
+        @inbounds coeffs[1] = one(output_type)
+    else
+        @inbounds coeffs[1] = exp(zeroth_order)
+    end
 
     @inbounds for k = 1:a.order
         coeffs[k+1] = expHomogCoef(k, v, coeffs)
