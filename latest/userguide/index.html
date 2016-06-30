@@ -168,7 +168,7 @@
 julia&gt; Taylor1([0.0, 1im]) # Also works with complex numbers
  ( 1.0 im ) t + 𝒪(t²)
 
-julia&gt; affine(a) = a + taylor1_variable(typeof(a),5)  ## a + t of order 5
+julia&gt; affine(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial of order 5
 affine (generic function with 1 method)
 
 julia&gt; t = affine(0.0) # Independent variable `t`
@@ -176,7 +176,7 @@ julia&gt; t = affine(0.0) # Independent variable `t`
 </code></pre>
 
 <p>Note that the information about the maximum order considered is displayed using a big-O notation.</p>
-<p>The definition of <code>affine(a)</code> uses the function <a href="../api/#TaylorSeries.taylor1_variable"><code>taylor1_variable</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, with a given type and given order. As we show below, this is one of the easiest ways to work with the package.</p>
+<p>The definition of <code>affine(a)</code> uses the method <a href="../@ref"><code>Taylor1{T&lt;:Number}(::Type{T},::Int)</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type (default is <code>Float64</code>) and given order. As we show below, this is one of the easiest ways to work with the package.</p>
 <p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with the <a href="../api/#TaylorSeries.Taylor1"><code>Taylor1</code></a> type, including promotions that involve <code>Number</code>s. The operations return a valid Taylor expansion with the same maximum order; compare the last example below, where this is not possible:</p>
 <pre><code class="julia">julia&gt; t*(3t+2.5)
  2.5 t + 3.0 t² + 𝒪(t⁶)
@@ -267,7 +267,7 @@ true
 julia&gt; evaluate(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
 -0.0016151617923783057
 
-julia&gt; evaluate( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order 17),
+julia&gt; evaluate( exp( Taylor1(17) ), 1) - e # exp(t) around t0=0, order 17
 0.0
 
 julia&gt; tBig = Taylor1([zero(BigFloat),one(BigFloat)],50) # With BigFloats
@@ -334,7 +334,7 @@ Variable names      = UTF8String[&quot;α₁&quot;,&quot;α₂&quot;,&quot;α₃
 
 <p>Internally, changing these parameters defines dictionaries that translate the position of the coefficients of a <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> into the corresponding multi-variable monomials. Fixing these values from the start is imperative.</p>
 <p>The easiest way to construct a <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN</code></a> object is by defining symbols for the independent variables, as above. Again, the Taylor expansions are implemented around 0 for all variables; if the expansion is needed around a different value, the trick is a simple translation of the corresponding independent variable $x \to x+a$.</p>
-<p>Other ways of constructing <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN</code></a> polynomials involve using <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> objects directly, which is uncomfortable:</p>
+<p>Other ways of constructing <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN</code></a> polynomials involve using <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> objects directly, which is uncomfortable; see below. A better alternative is to use the methods <a href="../@ref"><code>TaylorN{T&lt;:Number}(::Type{T}, nv::Int)</code></a> which define the <code>nv</code> independent <code>TaylorN</code> variable of type <code>T</code>; the order can be also specified using the keyword argument <code>order</code>.</p>
 <pre><code class="julia">julia&gt; set_variables(&quot;x&quot;, numvars=2);
 
 julia&gt; HomogeneousPolynomial([1,-1])
@@ -342,6 +342,12 @@ julia&gt; HomogeneousPolynomial([1,-1])
 
 julia&gt; TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
  1 x₁ + 1 x₁² + 2 x₁ x₂ + 3 x₂² + 𝒪(‖x‖⁵)
+
+julia&gt; TaylorN(1,order=4) # variable 1 of order 4
+ 1.0 x₁ + 𝒪(‖x‖⁵)
+
+julia&gt; TaylorN(Int, 2)    # variable 2, type Int, order=get_order()=7
+ 1 x₂ + 𝒪(‖x‖⁷)
 </code></pre>
 
 <p>As before, the usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN</code></a> objects, including the appropriate promotions to deal with numbers. (Some of the arithmetic operations have also been extended for <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a>, whenever the result is a <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a>; division, for instance, is not extended.) Also, the elementary functions have been implemented, again by computing their coefficients recursively:</p>
