@@ -47,17 +47,15 @@ Taylor1{T<:Number}(coeffs::Array{T,1}) = Taylor1{T}(coeffs, length(coeffs)-1)
 Taylor1{T<:Number}(x::T, order::Int) = Taylor1{T}([x], order)
 # Taylor1{T<:Number}(x::T) = Taylor1{T}([x], 0)
 
-Taylor1
-
 # Shortcut to define Taylor1 independent variables
 """
-    taylor1_variable(T, [order=1])
-    taylor1_variable([order=1])
+    Taylor1(T, [order=1])
+    Taylor1([order=1])
 
-Shortcut to define the independent variable as a `Taylor1` polynomial of
-given `order`. If `T::Type` is ommitted, `Float64` is assumend.
+Shortcut to define the independent variable of a `Taylor1{T}` polynomial of
+given `order`. If the type `T` is ommitted, `Float64` is assumend.
 """
-Taylor1(T::Type, order::Int=1) = Taylor1{T}( [zero(T), one(T)], order)
+Taylor1{T<:Number}(::Type{T}, order::Int=1) = Taylor1{T}( [zero(T), one(T)], order)
 Taylor1(order::Int=1) = Taylor1(Float64, order)
 
 ## get_coeff ##

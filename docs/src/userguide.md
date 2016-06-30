@@ -39,16 +39,18 @@ of the length of the vector of coefficients and the given integer is taken.
 ```@repl userguide
 Taylor1([1, 2, 3]) # Polynomial of order 2 with coefficients 1, 2, 3
 Taylor1([0.0, 1im]) # Also works with complex numbers
-affine(a) = a + taylor1_variable(typeof(a),5)  ## a + t of order 5
+affine(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial of order 5
 t = affine(0.0) # Independent variable `t`
 ```
 
 Note that the information about the maximum order considered is displayed
 using a big-O notation.
 
-The definition of `affine(a)` uses the function [`taylor1_variable`](@ref), which is a
+The definition of `affine(a)` uses the method
+[`Taylor1{T<:Number}(::Type{T},::Int)`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,
-with a given type and given order. As we show below, this is one of the
+of given type (default is `Float64`) and given order. As we show
+below, this is one of the
 easiest ways to work with the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
@@ -125,7 +127,7 @@ See [`evaluate`](@ref).
 ```@repl userguide
 evaluate(exp(affine(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
 evaluate(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
-evaluate( exp( taylor1_variable(17) ), 1) - e # exp(t) around t0=0 (order 17),
+evaluate( exp( Taylor1(17) ), 1) - e # exp(t) around t0=0, order 17
 tBig = Taylor1([zero(BigFloat),one(BigFloat)],50) # With BigFloats
 eBig = evaluate( exp(tBig), one(BigFloat) )
 e - eBig

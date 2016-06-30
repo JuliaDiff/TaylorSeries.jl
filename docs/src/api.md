@@ -6,6 +6,7 @@
 CurrentModule = TaylorSeries
 ```
 
+
 ### Types
 
 ```@docs
@@ -15,10 +16,10 @@ TaylorN
 ParamsTaylorN
 ```
 
-### Functions
+### Functions and methods
 
 ```@docs
-taylor1_variable
+Taylor1{T<:Number}(::Type{T},::Int)
 taylorN_variable
 set_variables
 show_params_TaylorN
