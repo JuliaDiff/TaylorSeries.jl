@@ -11,14 +11,14 @@ FactCheck.setstyle(:compact)
 
 facts("Tests for Taylor1 expansions") do
     ta(a) = Taylor1([a,one(a)],15)
-    t = taylor1_variable(Int,15)
+    t = Taylor1(Int,15)
     tim = im*t
     zt = zero(t)
     ot = 1.0*one(t)
     tol1 = eps(1.0)
 
-    @fact Taylor1([0,1,0,0]) == taylor1_variable(3)  --> true
-    @fact get_coeff(taylor1_variable(Complex128,3),1) == complex(1.0,0.0) --> true
+    @fact Taylor1([0,1,0,0]) == Taylor1(3)  --> true
+    @fact get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0) --> true
     @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  --> true
     @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  --> true
     @fact convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t  --> true
@@ -29,7 +29,7 @@ facts("Tests for Taylor1 expansions") do
     @fact eltype(promote(1.0+im, zt)[1]) == Complex{Float64}  --> true
     @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  --> true
 
-    @fact length(Taylor1(0)) == 0  --> true
+    @fact length(Taylor1(10)) == 10  --> true
     @fact length(TaylorSeries.fixshape(zt,Taylor1([1.0]))[2]) == 15  --> true
     @fact eltype(TaylorSeries.fixshape(zt,Taylor1([1.0]))[1]) == Float64  --> true
     @fact TaylorSeries.firstnonzero(t) == 1  --> true
@@ -87,7 +87,7 @@ facts("Tests for Taylor1 expansions") do
     @fact imag(exp(tim)) == sin(t)  --> true
     @fact exp(conj(tim)) == cos(t)-im*sin(t) == exp(tim')  --> true
     @fact (exp(t))^(2im) == cos(2t)+im*sin(2t)  --> true
-    @fact (exp(t))^Taylor1(-5.2im) == cos(5.2t)-im*sin(5.2t)  --> true
+    @fact (exp(t))^Taylor1([-5.2im]) == cos(5.2t)-im*sin(5.2t)  --> true
     @fact get_coeff(convert(Taylor1{Rational{Int}},cos(t)),8) ==
         1//factorial(8)  --> true
     @fact abs((tan(t)).coeffs[8]- 17/315) < tol1  --> true
@@ -119,6 +119,48 @@ facts("Tests for Taylor1 expansions") do
         " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"  --> true
 end
 
+facts("Matrix multiplication for Taylor1") do
+    order = 30
+    n1 = 100
+    k1 = 90
+
+    order = max(n1,k1)
+    B1 = randn(n1,order)
+    Y1 = randn(k1,order)
+
+    A1  = randn(k1,n1)
+
+    for A in (A1,sparse(A1))
+        # B and Y contain elements of different orders
+        B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
+        Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
+        Bcopy = deepcopy(B)
+        A_mul_B!(Y,A,B)
+
+        # do we get the same result when using the `A*B` form?
+        @fact A*B==Y -->true
+        # Y should be extended after the multilpication
+        @fact reduce(&, [y1.order for y1 in Y] .== Y[1].order) --> true
+        # B should be unchanged
+        @fact B==Bcopy --> true
+
+        # is the result compatible with the matrix multiplication?  We
+        # only check the zeroth order of the Taylor series.
+        y1=sum(Y).coeffs[1]
+        Y=A*B1[:,1]
+        y2=sum(Y)
+
+        # There is a small numerical error when comparing the generic
+        # multiplication and the specialized version
+        @fact abs(y1-y2) < n1*(eps(y1)+eps(y2)) --> true
+
+        @fact_throws DimensionMismatch A_mul_B!(Y,A[:,1:end-1],B)
+        @fact_throws DimensionMismatch A_mul_B!(Y,A[1:end-1,:],B)
+        @fact_throws DimensionMismatch A_mul_B!(Y,A,B[1:end-1])
+        @fact_throws DimensionMismatch A_mul_B!(Y[1:end-1],A,B)
+    end
+end
+
 facts("Tests for HomogeneousPolynomial and TaylorN") do
 
     @fact eltype(set_variables(Int, "x", numvars=2, order=6))  --> TaylorN{Int}
@@ -144,7 +186,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
     xT = TaylorN(xH,17)
-    yT = taylorN_variable(Int64, 2, 17)
+    # yT = taylorN_variable(Int64, 2, 17)
+    yT = TaylorN(Int64, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
     uT = one(convert(TaylorN{Float64},yT))
     @fact ones(xH,1) == [HomogeneousPolynomial(1), xH+yH]  --> true
@@ -162,7 +205,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact promote(xH, yT)[1] == xT  --> true
     @fact promote(xT, [xH,yH])[2] == xT+yT  --> true
     @fact typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}  --> true
-    @fact TaylorSeries.fixorder(taylorN_variable(1,1),17) == xT  --> true
+    # @fact TaylorSeries.fixorder(taylorN_variable(1,1),17) == xT  --> true
+    @fact TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT  --> true
     @fact TaylorSeries.iszero(zeroT.coeffs[2])  -->  true
 
     @fact HomogeneousPolynomial(xH,1) == HomogeneousPolynomial(xH)  --> true
@@ -203,7 +247,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact derivative(2xT*yT^2,1) == 2yT^2  --> true
     @fact xT*xT^3 == xT^4  --> true
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
-    @fact (1+taylorN_variable(1,4))^taylorN_variable(2,4) == txy  --> true
+    # @fact (1+taylorN_variable(1,4))^taylorN_variable(2,4) == txy  --> true
+    @fact (1+TaylorN(1,order=4))^TaylorN(2,order=4) == txy  --> true
     @fact_throws DomainError yT^(-2)
     @fact_throws DomainError yT^(-2.0)
     @fact (1+xT)^(3//2) == ((1+xT)^0.5)^3  --> true
@@ -224,15 +269,16 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     txy = tan(xT+yT)
     @fact get_coeff(txy,[8,7]) == 929569/99225  --> true
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
-    @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == ptxy  --> true
+    # @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == ptxy  --> true
+    @fact tan(TaylorN(1,order=4)+TaylorN(2,order=4)) == ptxy  --> true
     @fact evaluate(xH*yH,[1.0,2.0]) == 2.0  --> true
 
     g1(xT,yT) = xT^3 + 3yT^2 - 2xT^2 * yT - 7xT + 2
     g2(xT,yT) = yT + xT^2 - xT^4
     f1 = g1(xT,yT)
     f2 = g2(xT,yT)
-    @fact gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7), 6*yT-2*xT^2 ]  --> true
-    @fact ∇(f2) == [2*xT - 4*xT^3, TaylorN(1)]  --> true
+    @fact gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]  --> true
+    @fact ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]  --> true
     @fact jacobian([f1,f2], [2,1]) ==
         jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )  --> true
     @fact [xT yT]*hessian(f1*f2)*[xT, yT] ==
@@ -305,49 +351,6 @@ facts("High order polynomials test inspired by Fateman (takes a few seconds))") 
     c = get_coeff(f2,[1,6,7,20])
     @fact c == 128358585324486316800 --> true
     @fact get_coeff(f2,[1,6,7,20]) == c --> true
-end
-
-facts("Matrix multiplication for Taylor1") do
-    order = 30
-    n1 = 100
-    k1 = 90
-
-    order = max(n1,k1)
-    B1 = randn(n1,order)
-    Y1 = randn(k1,order)
-
-    A1  = randn(k1,n1)
-
-    for A in (A1,sparse(A1))
-        # B and Y contain elements of different orders
-        B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
-        Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
-        Bcopy = deepcopy(B)
-        A_mul_B!(Y,A,B)
-
-        # do we get the same result when using the `A*B` form?
-        @fact A*B==Y -->true
-        # Y should be extended after the multilpication
-        @fact reduce(&, [y1.order for y1 in Y] .== Y[1].order) --> true
-        # B should be unchanged
-        @fact B==Bcopy --> true
-
-        # is the result compatible with the matrix multiplication?  We
-        # only check the zeroth order of the Taylor series.
-        y1=sum(Y).coeffs[1]
-        Y=A*B1[:,1]
-        y2=sum(Y)
-
-        # There is a small numerical error when comparing the generic
-        # multiplication and the specialized version
-        @fact abs(y1-y2) < n1*(eps(y1)+eps(y2)) --> true
-
-        @fact_throws DimensionMismatch A_mul_B!(Y,A[:,1:end-1],B)
-        @fact_throws DimensionMismatch A_mul_B!(Y,A[1:end-1,:],B)
-        @fact_throws DimensionMismatch A_mul_B!(Y,A,B[1:end-1])
-        @fact_throws DimensionMismatch A_mul_B!(Y[1:end-1],A,B)
-    end
-
 end
 
 

@@ -28,8 +28,7 @@ import Base: zero, one, zeros, ones, isinf, isnan,
 
 export Taylor1, TaylorN, HomogeneousPolynomial
 
-export taylor1_variable, taylorN_variable, get_coeff,
-    derivative, integrate, evaluate,
+export get_coeff, derivative, integrate, evaluate,
     show_params_TaylorN,
     get_order, get_numvars,
     set_variables, get_variables,
