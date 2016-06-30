@@ -32,7 +32,7 @@ get_variable_names() = _params_TaylorN_.variable_names
 
 set_variable_names{T<:AbstractString}(names::Vector{T}) = _params_TaylorN_.variable_names = names
 
-get_variables() = [taylorN_variable(i) for i in 1:get_numvars()]
+get_variables() = [TaylorN(i) for i in 1:get_numvars()]
 
 @doc """
     set_variables(R, names; [order=6])
@@ -72,7 +72,7 @@ function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=6)
     end
 
     # return a list of the new variables
-    TaylorN{R}[taylorN_variable(R,i) for i in 1:get_numvars()]
+    TaylorN{R}[TaylorN(R,i) for i in 1:get_numvars()]
 end
 
 set_variables{T}(names::Vector{T}; order=6) = set_variables(Float64, names, order=order)

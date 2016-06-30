@@ -178,26 +178,27 @@ TaylorN{T<:Number}(x::Array{HomogeneousPolynomial{T},1}) = TaylorN{T}(x,0)
 TaylorN{T<:Number}(x::HomogeneousPolynomial{T},order::Int) =
     TaylorN{T}([x], order)
 TaylorN{T<:Number}(x::HomogeneousPolynomial{T}) = TaylorN{T}([x], x.order)
-TaylorN{T<:Number}(x::T,order::Int) =
+TaylorN{T<:Number}(x::T, order::Int) =
     TaylorN{T}([HomogeneousPolynomial(x)],order)
-TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogeneousPolynomial(x)], 0)
+# TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogeneousPolynomial(x)], 0)
 
 ## Shortcut to define TaylorN independent variables
 """
-    taylorN_variable(T, nv, [order=get_order()])
-    taylorN_variable(nv, [order=get_order()])
+    TaylorN(T, nv; [order=get_order()])
+    TaylorN(nv; [order=get_order()])
 
-Short-cut to define the `nv`-th independent `TaylorN{T}` variable as a
-polynomial of given `order`. If `T::Type` is ommitted, `Float64` is assumend.
+Shortcut to define the `nv`-th independent `TaylorN{T}` variable as a
+polynomial. The order is defined through the keyword parameter `order`,
+whose default corresponds to `get_order()`. If `T::Type` is ommitted,
+`Float64` is assumend.
 """
-function taylorN_variable(T::Type, nv::Int, order::Int=get_order())
+function TaylorN{T<:Number}(::Type{T}, nv::Int; order::Int=get_order())
     @assert 0 < nv <= get_numvars()
     v = zeros(T, get_numvars())
     @inbounds v[nv] = one(T)
     return TaylorN( HomogeneousPolynomial(v,1), order )
 end
-taylorN_variable(nv::Int, order::Int=get_order()) =
-    taylorN_variable(Float64, nv, order)
+TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv; order=order)
 
 
 ## get_coeff
@@ -617,7 +618,7 @@ end
 
 ## Real power ##
 function ^{S<:Real}(a::TaylorN, x::S)
-    x == zero(x) && return TaylorN( one(eltype(a)) )
+    x == zero(x) && return TaylorN( one(eltype(a)), 0 )
     x == one(x)/2 && return sqrt(a)
     isinteger(x) && return a^round(Int,x)
     @inbounds a0 = a.coeffs[1].coeffs[1]
