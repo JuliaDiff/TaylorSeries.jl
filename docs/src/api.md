@@ -20,7 +20,7 @@ ParamsTaylorN
 
 ```@docs
 Taylor1{T<:Number}(::Type{T},::Int)
-taylorN_variable
+TaylorN{T<:Number}(::Type{T}, nv::Int)
 set_variables
 show_params_TaylorN
 get_coeff

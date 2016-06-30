@@ -194,12 +194,17 @@ independent variable $x \to x+a$.
 
 Other ways of constructing [`TaylorN`](@ref) polynomials involve
 using [`HomogeneousPolynomial`](@ref)
-objects directly, which is uncomfortable:
+objects directly, which is uncomfortable; see below. A better alternative is
+to use the methods [`TaylorN{T<:Number}(::Type{T}, nv::Int)`](@ref)
+which define the `nv` independent `TaylorN` variable of type `T`;
+the order can be also specified using the keyword argument `order`.
 
 ```@repl userguide
 set_variables("x", numvars=2);
 HomogeneousPolynomial([1,-1])
 TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
+TaylorN(1,order=4) # variable 1 of order 4
+TaylorN(Int, 2)    # variable 2, type Int, order=get_order()=7
 ```
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
