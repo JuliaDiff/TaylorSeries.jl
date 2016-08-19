@@ -82,13 +82,6 @@ facts("Tests for Taylor1 expansions") do
 
     @fact log(exp(tsquare)) == tsquare  --> true
     @fact exp(log(1-tsquare)) == 1-tsquare  --> true
-    # inverse trigonometrics are not yet passing
-    @fact asin(sin(tsquare)) == tsquare --> true
-    @fact sin(asin(tsquare)) == tsquare --> true
-    @fact acos(cos(tsquare)) == tsquare --> true
-    @fact cos(acos(tsquare)) == tsquare --> true
-    @fact tan(atan(tsquare)) == tsquare --> true
-    @fact atan(tan(tsquare)) == tsquare --> true
     @fact log((1-t)^2) == 2*log(1-t)  --> true
     @fact real(exp(tim)) == cos(t)  --> true
     @fact imag(exp(tim)) == sin(t)  --> true
@@ -102,6 +95,12 @@ facts("Tests for Taylor1 expansions") do
     @fact evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e  --> true
     @fact evaluate(exp(Taylor1([0,1],1))) == 1.0  --> true
     @fact evaluate(exp(t),t^2) == exp(t^2)  --> true
+    
+    @fact sin(asin(tsquare)) == tsquare --> true
+    @fact tan(atan(tsquare)) == tsquare --> true
+    @fact atan(tan(tsquare)) == tsquare --> true
+    @fact asin(t) + acos(t) == pi/2 --> true 
+    @fact derivative(acos(t)) == - 1/sqrt(1-t^2) --> true
 
     @fact derivative(5, exp(ta(1.0))) == exp(1.0)  --> true
     @fact derivative(3, exp(ta(1.0pi))) == exp(1.0pi)  --> true
