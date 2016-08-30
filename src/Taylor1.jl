@@ -848,7 +848,7 @@ end
 doc"""
     asinHomogCoef(kcoef, ac, r_f,coeffs)
 
-Compute the `k-th` expansion coefficient of $c = \arcsin{a}$ given by
+Compute the `k-th` expansion coefficient of $s = \arcsin(a)$ given by
 
 \begin{equation*}
 s_k = \frac{1}{ \sqrt{1 - a_0^2} } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} s_j \big),
@@ -858,7 +858,7 @@ with $a$ a `Taylor1` polynomial and $r = \sqrt{1 - a^2}$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
 `ac` of `a`, the already calculated expansion coefficients `r_f`
-of $\sqrt{1 - a^2}$, and the previews coefficients `coeffs` of `asinHomogCoef`.
+of $r$ (see above), and the previews coefficients `coeffs` of `asinHomogCoef`.
 """
 function asinHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return asin( ac[1] )
@@ -897,7 +897,7 @@ end
 doc"""
     acosHomogCoef(kcoef, ac, r_f, coeffs)
 
-Compute the `k-th` expansion coefficient of $c = \arccos{a}$ given by
+Compute the `k-th` expansion coefficient of $c = \arccos(a)$ given by
 
 \begin{equation*}
 c_k = - \frac{1}{ \sqrt{1 - a_0^2} } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big),
@@ -907,7 +907,7 @@ with $a$ a `Taylor1` polynomial and $r = \sqrt{1 - a^2}$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
 `ac` of `a`, the already calculated expansion coefficients `r_f`
-of $\sqrt{1 - a^2}$, and the previews coefficients `coeffs` of `acosHomogCoef`.
+of $r$ (see above), and the previews coefficients `coeffs` of `acosHomogCoef`.
 """
 function acosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return asin( ac[1] )
@@ -946,7 +946,7 @@ end
 doc"""
     atanHomogCoef(kcoef, ac, r_f, coeffs)
 
-Compute the `k-th` expansion coefficient of $c = \arctan{a}$ given by
+Compute the `k-th` expansion coefficient of $c = \arctan(a)$ given by
 
 \begin{equation*}
 t_k = \frac{1}{1 + a_0^2 }(a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} t_j) ,
@@ -956,7 +956,7 @@ with $a$ a `Taylor1` polynomial and $r = 1 + a^2$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
 `ac` of `a`, the already calculated expansion coefficients `r_f`
-of $1 + a^2$, and the previews coefficients `coeffs` of `atanHomogCoef`.
+of $r$ (see above), and the previews coefficients `coeffs` of `atanHomogCoef`.
 """
 function atanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return atan( ac[1] )
