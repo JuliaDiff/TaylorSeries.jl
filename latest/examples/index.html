@@ -160,7 +160,10 @@
 \label{eq:Euler}   & & (a_1 b_2 - a_2 b_1 - a_3 b_4 -a_4 b_3)^2 + \\
   & & (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 + \nonumber \\
   & & (a_1 b_4 - a_2 b_3 - a_3 b_2 -a_4 b_1)^2, \nonumber \end{eqnarray}</script> as proved by Euler. The code can we found in one of the tests of the package.</p>
-<p>First, we reset the maximum degree of the polynomial to 4, since the RHS of the equation has <em>a priori</em> terms of fourth order, and the number of independent variables to 8.</p>
+<p>First, we reset the maximum degree of the polynomial to 4, since the RHS of the equation has <em>a priori</em> terms of fourth order, and the number of independent variables to</p>
+<ol>
+<li></li>
+</ol>
 <pre><code class="julia">julia&gt; using TaylorSeries
 
 julia&gt; # Define the variables α₁, ..., α₄, β₁, ..., β₄
@@ -255,8 +258,8 @@ fateman1 (generic function with 1 method)
 
 julia&gt; fateman1(0);
 
+  2.852166 seconds (3.54 k allocations: 20.145 MB, 0.15% gc time)
 julia&gt; @time f1 = fateman1(20);
-  5.037958 seconds (3.56 k allocations: 20.147 MB, 0.12% gc time)
 </code></pre>
 
 <p>Another implementation of the same:</p>
@@ -273,8 +276,8 @@ fateman2 (generic function with 1 method)
 
 julia&gt; fateman2(0);
 
+  1.459696 seconds (3.40 k allocations: 20.137 MB, 0.32% gc time)
 julia&gt; @time f2 = fateman2(20);
-  1.527958 seconds (3.40 k allocations: 20.137 MB, 0.38% gc time)
 
 julia&gt; get_coeff(f2,[1,6,7,20]) # coefficient of x y^6 z^7 w^{20}
 128358585324486316800

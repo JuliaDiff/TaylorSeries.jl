@@ -176,7 +176,7 @@ julia&gt; t = affine(0.0) # Independent variable `t`
 </code></pre>
 
 <p>Note that the information about the maximum order considered is displayed using a big-O notation.</p>
-<p>The definition of <code>affine(a)</code> uses the method <a href="../@ref"><code>Taylor1{T&lt;:Number}(::Type{T},::Int)</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type (default is <code>Float64</code>) and given order. As we show below, this is one of the easiest ways to work with the package.</p>
+<p>The definition of <code>affine(a)</code> uses the method <a href="../api/#TaylorSeries.Taylor1"><code>Taylor1{T&lt;:Number}(::Type{T},::Int)</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type (default is <code>Float64</code>) and given order. As we show below, this is one of the easiest ways to work with the package.</p>
 <p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with the <a href="../api/#TaylorSeries.Taylor1"><code>Taylor1</code></a> type, including promotions that involve <code>Number</code>s. The operations return a valid Taylor expansion with the same maximum order; compare the last example below, where this is not possible:</p>
 <pre><code class="julia">julia&gt; t*(3t+2.5)
  2.5 t + 3.0 t² + 𝒪(t⁶)
@@ -334,7 +334,7 @@ Variable names      = UTF8String[&quot;α₁&quot;,&quot;α₂&quot;,&quot;α₃
 
 <p>Internally, changing these parameters defines dictionaries that translate the position of the coefficients of a <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> into the corresponding multi-variable monomials. Fixing these values from the start is imperative.</p>
 <p>The easiest way to construct a <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN</code></a> object is by defining symbols for the independent variables, as above. Again, the Taylor expansions are implemented around 0 for all variables; if the expansion is needed around a different value, the trick is a simple translation of the corresponding independent variable $x \to x+a$.</p>
-<p>Other ways of constructing <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN</code></a> polynomials involve using <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> objects directly, which is uncomfortable; see below. A better alternative is to use the methods <a href="../@ref"><code>TaylorN{T&lt;:Number}(::Type{T}, nv::Int)</code></a> which define the <code>nv</code> independent <code>TaylorN</code> variable of type <code>T</code>; the order can be also specified using the keyword argument <code>order</code>.</p>
+<p>Other ways of constructing <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN</code></a> polynomials involve using <a href="../api/#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> objects directly, which is uncomfortable; see below. A better alternative is to use the methods <a href="../api/#TaylorSeries.TaylorN"><code>TaylorN{T&lt;:Number}(::Type{T}, nv::Int)</code></a> which define the <code>nv</code> independent <code>TaylorN</code> variable of type <code>T</code>; the order can be also specified using the keyword argument <code>order</code>.</p>
 <pre><code class="julia">julia&gt; set_variables(&quot;x&quot;, numvars=2);
 
 julia&gt; HomogeneousPolynomial([1,-1])
