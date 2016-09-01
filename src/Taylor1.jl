@@ -691,6 +691,9 @@ function logHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1})
     coefhomog
 end
 
+
+### TRIGONOMETRIC FUNCTIONS ###
+
 ## Sin ## 
 doc"""
     sin(a)
@@ -700,6 +703,7 @@ Return the Taylor expansion of $\sin(a)$, of order `a.order`, for
 
 For details on making the Taylor expansion, see [`TaylorSeries.sincosHomogCoef`](@ref).
 """
+
 sin(a::Taylor1) = sincos(a)[1]
 
 ## Cos ## 
@@ -812,6 +816,155 @@ function tanHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
         coefhomog += (kcoef-i)*ac[kcoef-i+1]*coeffst2[i+1]
     end
     @inbounds coefhomog = ac[kcoef+1] + coefhomog/kcoef
+    coefhomog
+end
+
+### INVERSE TRIGONOMETRIC FUNCTIONS ### 
+
+
+## Arcsin ##
+doc"""
+    asin(a)
+
+Return the Taylor expansion of $\arcsin(a)$, of order `a.order`, for
+`a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.asinHomogCoef`](@ref).
+"""
+function asin(a::Taylor1)
+    @inbounds aux = asin( a.coeffs[1] )
+    T = typeof(aux)
+    ac = convert(Array{T,1}, a.coeffs)
+    rc = sqrt(one(T) - a^2).coeffs
+    coeffs = zeros(ac)
+    @inbounds coeffs[1] = aux
+    @inbounds for k in 1:a.order
+        coeffs[k+1] = asinHomogCoef(k, ac, rc, coeffs)
+    end
+    Taylor1( coeffs, a.order )
+end
+
+# Homogeneous coefficients for arcsin
+doc"""
+    asinHomogCoef(kcoef, ac, r_f,coeffs)
+
+Compute the `k-th` expansion coefficient of $s = \arcsin(a)$ given by
+
+\begin{equation*}
+s_k = \frac{1}{ \sqrt{1 - a_0^2} } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} s_j \big),
+\end{equation*}
+
+with $a$ a `Taylor1` polynomial and $r = \sqrt{1 - a^2}$.
+
+Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
+`ac` of `a`, the already calculated expansion coefficients `r_f`
+of $r$ (see above), and the previews coefficients `coeffs` of `asinHomogCoef`.
+"""
+function asinHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+    kcoef == 0 && return asin( ac[1] )
+    coefhomog = zero(T)
+    @inbounds for i in 1:kcoef-1
+        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1]
+    end
+    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
+    coefhomog
+end
+
+## Arccos ## 
+doc"""
+    acos(a)
+
+Return the Taylor expansion of $\arccos(a)$, of order `a.order`, for
+`a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.acosHomogCoef`](@ref).
+"""
+function acos(a::Taylor1)
+    @inbounds aux = asin( a.coeffs[1] )
+    T = typeof(aux)
+    ac = convert(Array{T,1}, a.coeffs)
+    rc = sqrt(one(T) - a^2).coeffs
+    coeffs = zeros(ac)
+    @inbounds coeffs[1] = aux 
+    @inbounds for k in 1:a.order
+        coeffs[k+1] = asinHomogCoef(k , ac, rc, coeffs)
+    end
+    @inbounds coeffs[1] = -acos( a.coeffs[1] ) 
+    Taylor1( -coeffs, a.order )
+end
+
+# Homogeneous coefficients for arccos
+doc"""
+    acosHomogCoef(kcoef, ac, r_f, coeffs)
+
+Compute the `k-th` expansion coefficient of $c = \arccos(a)$ given by
+
+\begin{equation*}
+c_k = - \frac{1}{ \sqrt{1 - a_0^2} } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big),
+\end{equation*}
+
+with $a$ a `Taylor1` polynomial and $r = \sqrt{1 - a^2}$.
+
+Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
+`ac` of `a`, the already calculated expansion coefficients `r_f`
+of $r$ (see above), and the previews coefficients `coeffs` of `acosHomogCoef`.
+"""
+function acosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+    kcoef == 0 && return asin( ac[1] )
+    coefhomog = zero(T)
+    @inbounds for i in 1:kcoef-1
+        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1] 
+    end
+    @inbounds coefhomog = -(ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
+    coefhomog
+end
+
+
+## Arctan
+doc"""
+    atan(a)
+
+Return the Taylor expansion of $\arctan(a)$, of order `a.order`, for
+`a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.atanHomogCoef`](@ref).
+"""
+function atan(a::Taylor1)
+    @inbounds aux = atan( a.coeffs[1] )
+    T = typeof(aux)
+    rc = (one(T) + a^2).coeffs
+    ac = convert(Array{T,1}, a.coeffs)
+    coeffs = zeros(ac)
+    @inbounds coeffs[1] = aux
+    @inbounds for k in 1:a.order
+        coeffs[k+1] = atanHomogCoef(k , ac, rc, coeffs)
+    end
+    Taylor1( coeffs, a.order )
+end
+
+# Homogeneous coefficients for arctan
+doc"""
+    atanHomogCoef(kcoef, ac, r_f, coeffs)
+
+Compute the `k-th` expansion coefficient of $c = \arctan(a)$ given by
+
+\begin{equation*}
+t_k = \frac{1}{1 + a_0^2 }(a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} t_j) ,
+\end{equation*}
+
+with $a$ a `Taylor1` polynomial and $r = 1 + a^2$.
+
+Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
+`ac` of `a`, the already calculated expansion coefficients `r_f`
+of $r$ (see above), and the previews coefficients `coeffs` of `atanHomogCoef`.
+"""
+function atanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+    kcoef == 0 && return atan( ac[1] )
+    coefhomog = zero(T)
+    @inbounds for i in 1:kcoef-1
+        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1]
+    end
+    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
     coefhomog
 end
 

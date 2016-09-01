@@ -39,6 +39,9 @@ log
 sin
 cos
 tan
+asin
+acos
+atan
 abs
 ```
 
@@ -60,5 +63,8 @@ expHomogCoef
 logHomogCoef
 sincosHomogCoef
 tanHomogCoef
+asinHomogCoef
+acosHomogCoef
+atanHomogsCoef
 A_mul_B!
 ```
