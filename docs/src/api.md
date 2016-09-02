@@ -65,6 +65,6 @@ sincosHomogCoef
 tanHomogCoef
 asinHomogCoef
 acosHomogCoef
-atanHomogsCoef
+atanHomogCoef
 A_mul_B!
 ```
