@@ -83,29 +83,34 @@ function convert{T<:Integer, S<:AbstractFloat}(::Type{Taylor1{Rational{T}}},
     end
     Taylor1(v)
 end
+convert{T<:Number}(::Type{Taylor1{T}}, b::Array{T,1}) = Taylor1(b, length(b)-1)
 convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) =
     Taylor1(convert(Array{T,1},b))
 convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::S) = Taylor1([convert(T,b)], 0)
 convert{T<:Number}(::Type{Taylor1{T}}, b::T) = Taylor1([b], 0)
 
+promote_rule{T<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{T}}) = Taylor1{T}
 promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) =
     Taylor1{promote_type(T, S)}
+promote_rule{T<:Number}(::Type{Taylor1{T}}, ::Type{Array{T,1}}) = Taylor1{T}
 promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Array{S,1}}) =
     Taylor1{promote_type(T, S)}
+promote_rule{T<:Number}(::Type{Taylor1{T}}, ::Type{T}) = Taylor1{T}
 promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{S}) =
     Taylor1{promote_type(T, S)}
 
 ## Auxiliary function ##
-function firstnonzero{T<:Number}(a::Taylor1{T})
-    nonzero::Int = a.order+1
-    for i in eachindex(a.coeffs)
-        if a.coeffs[i] != zero(T)
+function firstnonzero{T<:Number}(ac::Vector{T})
+    nonzero::Int = length(ac)
+    for i in eachindex(ac)
+        if ac[i] != zero(T)
             nonzero = i-1
             break
         end
     end
     nonzero
 end
+firstnonzero{T<:Number}(a::Taylor1{T}) = firstnonzero(a.coeffs)
 
 function fixshape{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
     if a.order == b.order
@@ -703,7 +708,6 @@ Return the Taylor expansion of $\sin(a)$, of order `a.order`, for
 
 For details on making the Taylor expansion, see [`TaylorSeries.sincosHomogCoef`](@ref).
 """
-
 sin(a::Taylor1) = sincos(a)[1]
 
 ## Cos ## 
@@ -713,7 +717,7 @@ doc"""
 Return the Taylor expansion of $\cos(a)$, of order `a.order`,
 for `a::Taylor1` polynomial
 
-For details on making the Taylor expansion, see [`TaylorSeries.sincosHomogCoef`](@ref)..
+For details on making the Taylor expansion, see [`TaylorSeries.sincosHomogCoef`](@ref).
 """
 cos(a::Taylor1) = sincos(a)[2]
 
@@ -821,7 +825,6 @@ end
 
 ### INVERSE TRIGONOMETRIC FUNCTIONS ### 
 
-
 ## Arcsin ##
 doc"""
     asin(a)
@@ -835,6 +838,8 @@ function asin(a::Taylor1)
     @inbounds aux = asin( a.coeffs[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
+    ac[1]^2 == one(T) && throw(ArgumentError("""
+        Recursion formula diverges due to vanishing `sqrt`."""))
     rc = sqrt(one(T) - a^2).coeffs
     coeffs = zeros(ac)
     @inbounds coeffs[1] = aux
@@ -846,27 +851,29 @@ end
 
 # Homogeneous coefficients for arcsin
 doc"""
-    asinHomogCoef(kcoef, ac, r_f,coeffs)
+    asinHomogCoef(kcoef, ac, rc, coeffs)
 
 Compute the `k-th` expansion coefficient of $s = \arcsin(a)$ given by
 
 \begin{equation*}
-s_k = \frac{1}{ \sqrt{1 - a_0^2} } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} s_j \big),
+s_k = \frac{1}{ \sqrt{r_0} } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} s_j \big),
 \end{equation*}
 
 with $a$ a `Taylor1` polynomial and $r = \sqrt{1 - a^2}$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
-`ac` of `a`, the already calculated expansion coefficients `r_f`
-of $r$ (see above), and the previews coefficients `coeffs` of `asinHomogCoef`.
+`ac` of `a`, the already calculated expansion coefficients `rc`
+of $r$ (see above), and the already calculated expansion coefficients
+`coeffs` of `asin(a)`.
 """
-function asinHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+function asinHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, rc::Array{T,1},
+    coeffs::Array{T,1})
     kcoef == 0 && return asin( ac[1] )
     coefhomog = zero(T)
     @inbounds for i in 1:kcoef-1
-        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1]
+        coefhomog += (kcoef-i) * rc[i+1] * coeffs[kcoef-i+1]
     end
-    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
+    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / rc[1]
     coefhomog
 end
 
@@ -883,39 +890,42 @@ function acos(a::Taylor1)
     @inbounds aux = asin( a.coeffs[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
+    ac[1]^2 == one(T) && throw(ArgumentError("""
+        Recursion formula diverges due to vanishing `sqrt`."""))
     rc = sqrt(one(T) - a^2).coeffs
     coeffs = zeros(ac)
-    @inbounds coeffs[1] = aux 
+    @inbounds coeffs[1] = aux
     @inbounds for k in 1:a.order
         coeffs[k+1] = asinHomogCoef(k , ac, rc, coeffs)
     end
-    @inbounds coeffs[1] = -acos( a.coeffs[1] ) 
+    @inbounds coeffs[1] = -acos( a.coeffs[1] )
     Taylor1( -coeffs, a.order )
 end
 
 # Homogeneous coefficients for arccos
 doc"""
-    acosHomogCoef(kcoef, ac, r_f, coeffs)
+    acosHomogCoef(kcoef, ac, rc, coeffs)
 
 Compute the `k-th` expansion coefficient of $c = \arccos(a)$ given by
 
 \begin{equation*}
-c_k = - \frac{1}{ \sqrt{1 - a_0^2} } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big),
+c_k = - \frac{1}{ r_0 } \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big),
 \end{equation*}
 
 with $a$ a `Taylor1` polynomial and $r = \sqrt{1 - a^2}$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
-`ac` of `a`, the already calculated expansion coefficients `r_f`
-of $r$ (see above), and the previews coefficients `coeffs` of `acosHomogCoef`.
+`ac` of `a`, the already calculated expansion coefficients `rc`
+of $r$ (see above), and the already calculated expansion coefficients
+`coeffs` of `acos(a)`.
 """
-function acosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+function acosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, rc::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return asin( ac[1] )
     coefhomog = zero(T)
     @inbounds for i in 1:kcoef-1
-        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1] 
+        coefhomog += (kcoef-i) * rc[i+1] * coeffs[kcoef-i+1]
     end
-    @inbounds coefhomog = -(ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
+    @inbounds coefhomog = -(ac[kcoef+1] - coefhomog/kcoef) / rc[1]
     coefhomog
 end
 
@@ -933,6 +943,8 @@ function atan(a::Taylor1)
     @inbounds aux = atan( a.coeffs[1] )
     T = typeof(aux)
     rc = (one(T) + a^2).coeffs
+    rc[1] == zero(T) && throw(ArgumentError("""
+        Recursion formula has a pole."""))
     ac = convert(Array{T,1}, a.coeffs)
     coeffs = zeros(ac)
     @inbounds coeffs[1] = aux
@@ -944,27 +956,28 @@ end
 
 # Homogeneous coefficients for arctan
 doc"""
-    atanHomogCoef(kcoef, ac, r_f, coeffs)
+    atanHomogCoef(kcoef, ac, rc, coeffs)
 
 Compute the `k-th` expansion coefficient of $c = \arctan(a)$ given by
 
 \begin{equation*}
-t_k = \frac{1}{1 + a_0^2 }(a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} t_j) ,
+t_k = \frac{1}{r_0}(a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} t_j) ,
 \end{equation*}
 
 with $a$ a `Taylor1` polynomial and $r = 1 + a^2$.
 
 Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
-`ac` of `a`, the already calculated expansion coefficients `r_f`
-of $r$ (see above), and the previews coefficients `coeffs` of `atanHomogCoef`.
+`ac` of `a`, the already calculated expansion coefficients `rc`
+of $r$ (see above), and the already calculated expansion coefficients
+`coeffs` of `asin(a)`.
 """
-function atanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, r_f::Array{T,1}, coeffs::Array{T,1})
+function atanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, rc::Array{T,1}, coeffs::Array{T,1})
     kcoef == 0 && return atan( ac[1] )
     coefhomog = zero(T)
     @inbounds for i in 1:kcoef-1
-        coefhomog += (kcoef-i) * r_f[i+1] * coeffs[kcoef-i+1]
+        coefhomog += (kcoef-i) * rc[i+1] * coeffs[kcoef-i+1]
     end
-    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / r_f[1]
+    @inbounds coefhomog = (ac[kcoef+1] - coefhomog/kcoef) / rc[1]
     coefhomog
 end
 
@@ -996,8 +1009,7 @@ end
 
 ## Integrating ##
 """
-    integrate(a, x)
-    integrate(a)
+    integrate(a, [x])
 
 Return the integral of `a::Taylor1`. The constant of integration
 (0-th order coefficient) is set to `x`, which is zero if ommitted.
@@ -1015,12 +1027,18 @@ integrate{T<:Number}(a::Taylor1{T}) = integrate(a, zero(T))
 
 ## Evaluating ##
 """
-    evaluate(a, dx)
-    evaluate(a)
+    evaluate(a, [dx])
 
 Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
 ommitted, its value is considered as zero.
 """
+function evaluate{T<:Number}(a::Taylor1{T}, dx::T)
+    @inbounds suma = a.coeffs[end]
+    @inbounds for k = a.order:-1:1
+        suma = suma*dx + a.coeffs[k]
+    end
+    suma
+end
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
     @inbounds suma = convert(R, a.coeffs[end])
@@ -1030,6 +1048,39 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     suma
 end
 evaluate{T<:Number}(a::Taylor1{T}) = a.coeffs[1]
+
+doc"""
+    evaluate(x, δt)
+
+Evaluates each element of `x::Array{Taylor1{T},1}`, representing
+the dependent variables of an ODE, at *time* δt.
+"""
+function evaluate{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S)
+    R = promote_type(T,S)
+    return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
+end
+function evaluate{T<:Number}(x::Array{Taylor1{T},1}, δt::T)
+    xnew = Array{T}( length(x) )
+    evaluate!(x, δt, xnew)
+    return xnew
+end
+evaluate{T<:Number}(a::Array{Taylor1{T},1}) = evaluate(a, zero(T))
+
+doc"""
+    evaluate!(x, δt, x0)
+
+Evaluates each element of `x::Array{Taylor1{T},1}`,
+representing the Taylor expansion for the dependent variables
+of an ODE at *time* δt. It updates the vector `x0` with the
+computed values.
+"""
+function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::Array{T,1})
+    @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x)
+        x0[i] = evaluate( x[i], δt )
+    end
+    nothing
+end
 
 
 """
@@ -1061,7 +1112,7 @@ function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}}, a::Union{Matrix{T},SparseMat
     # determine the maximal order of b
     order = maximum([b1.order for b1 in b])
 
-    # Use matrices of coefficients (of proper size) and A_mul_Bt!
+    # Use matrices of coefficients (of proper size) and A_mul_B!
     B = zeros(T, k, order+1)
     for i = 1:k
         @inbounds ord = b[i].order

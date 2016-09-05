@@ -25,6 +25,7 @@ set_variables
 show_params_TaylorN
 get_coeff
 evaluate
+evaluate!
 derivative
 integrate
 gradient
@@ -65,6 +66,6 @@ sincosHomogCoef
 tanHomogCoef
 asinHomogCoef
 acosHomogCoef
-atanHomogsCoef
+atanHomogCoef
 A_mul_B!
 ```

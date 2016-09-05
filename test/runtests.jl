@@ -95,13 +95,17 @@ facts("Tests for Taylor1 expansions") do
     @fact evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e  --> true
     @fact evaluate(exp(Taylor1([0,1],1))) == 1.0  --> true
     @fact evaluate(exp(t),t^2) == exp(t^2)  --> true
-    
+
     @fact sin(asin(tsquare)) == tsquare --> true
     @fact tan(atan(tsquare)) == tsquare --> true
     @fact atan(tan(tsquare)) == tsquare --> true
-    @fact asin(t) + acos(t) == pi/2 --> true 
+    @fact asin(t) + acos(t) == pi/2 --> true
     @fact derivative(acos(t)) == - 1/sqrt(1-t^2) --> true
 
+    v = [sin(t), exp(-t)]
+    @fact evaluate(v) == [0.0, 1.0]  --> true
+    @fact evaluate(v, complex(0.0,0.2)) ==
+        [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]  --> true
     @fact derivative(5, exp(ta(1.0))) == exp(1.0)  --> true
     @fact derivative(3, exp(ta(1.0pi))) == exp(1.0pi)  --> true
     @fact isapprox(derivative(10, exp(ta(1.0pi))) , exp(1.0pi) )  --> true
