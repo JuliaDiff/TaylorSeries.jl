@@ -1049,6 +1049,39 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
 end
 evaluate{T<:Number}(a::Taylor1{T}) = a.coeffs[1]
 
+doc"""
+    evaluate(x, δt)
+
+Evaluates each element of `x::Array{Taylor1{T},1}`, representing
+the dependent variables of an ODE, at *time* δt.
+"""
+function evaluate{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S)
+    R = promote_type(T,S)
+    return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
+end
+function evaluate{T<:Number}(x::Array{Taylor1{T},1}, δt::T)
+    xnew = Array{T}( length(x) )
+    evaluate!(x, δt, xnew)
+    return xnew
+end
+evaluate{T<:Number}(a::Array{Taylor1{T},1}) = evaluate(a, zero(T))
+
+doc"""
+    evaluate!(x, δt, x0)
+
+Evaluates each element of `x::Array{Taylor1{T},1}`,
+representing the Taylor expansion for the dependent variables
+of an ODE at *time* δt. It updates the vector `x0` with the
+computed values.
+"""
+function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::Array{T,1})
+    @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x)
+        x0[i] = evaluate( x[i], δt )
+    end
+    nothing
+end
+
 
 """
     evaluate(a, x)

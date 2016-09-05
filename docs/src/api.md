@@ -25,6 +25,7 @@ set_variables
 show_params_TaylorN
 get_coeff
 evaluate
+evaluate!
 derivative
 integrate
 gradient

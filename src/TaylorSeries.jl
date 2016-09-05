@@ -24,11 +24,13 @@ import Base: zero, one, zeros, ones, isinf, isnan,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
     rem, mod, mod2pi, abs, gradient,
-sqrt, exp, log, sin, cos, tan, asin, acos, atan, A_mul_B!
+    sqrt, exp, log, sin, cos, tan,
+    asin, acos, atan, A_mul_B!
 
 export Taylor1, TaylorN, HomogeneousPolynomial
 
-export get_coeff, derivative, integrate, evaluate,
+export get_coeff, derivative, integrate,
+    evaluate, evaluate!,
     show_params_TaylorN,
     get_order, get_numvars,
     set_variables, get_variables,
