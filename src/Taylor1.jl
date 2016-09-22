@@ -981,7 +981,7 @@ function atanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, rc::Array{T,1}, co
     coefhomog
 end
 
-### HYPERBOLIC TRIGONOMETRIC FUNCTIONS ###
+### HYPERBOLIC FUNCTIONS ###
 
 ## Sinh ## 
 doc"""
