@@ -981,6 +981,133 @@ function atanHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, rc::Array{T,1}, co
     coefhomog
 end
 
+### HYPERBOLIC FUNCTIONS ###
+
+## Sinh ## 
+doc"""
+    sinh(a)
+
+Return the Taylor expansion of $\sinh(a)$, of order `a.order`, for
+`a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.sinhcoshHomogCoef`](@ref).
+"""
+sinh(a::Taylor1) = sinhcosh(a)[1]
+
+## Cosh ## 
+doc"""
+    cosh(a)
+
+Return the Taylor expansion of $\cosh(a)$, of order `a.order`,
+for `a::Taylor1` polynomial
+
+For details on making the Taylor expansion, see [`TaylorSeries.sinhcoshHomogCoef`](@ref).
+"""
+cosh(a::Taylor1) = sinhcosh(a)[2]
+
+## Sinh and Cosh ## 
+function sinhcosh(a::Taylor1)
+    @inbounds aux = sinh( a.coeffs[1] )
+    T = typeof(aux)
+    v = convert(Array{T,1}, a.coeffs)
+    sinhcoeffs = similar(v)
+    coshcoeffs = similar(v)
+    @inbounds sinhcoeffs[1] = aux
+    @inbounds coshcoeffs[1] = cosh( a.coeffs[1] )
+    @inbounds for k = 1:a.order
+        sinhcoeffs[k+1], coshcoeffs[k+1] = sinhcoshHomogCoef(k, v, sinhcoeffs, coshcoeffs)
+    end
+    return Taylor1(sinhcoeffs, a.order), Taylor1(coshcoeffs, a.order)
+end
+
+# Homogeneous coefficients for sinhcosh
+doc"""
+    sinhcoshHomogCoef(kcoef, ac, scoeffs, ccoeffs)
+
+Compute the `k-th` expansion coefficient of $sh = \sinh(a)$ and $ch=\cosh(a)$
+simultaneously given by
+
+\begin{eqnarray*}
+sh_k &=& \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} ch_j \\\ \\
+
+ch_k &=& \frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} sh_j
+\end{eqnarray*}
+
+with $a$ a `Taylor1` polynomial.
+
+Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
+`ac` of `a`, and the already calculated expansion coefficients `shcoeffs`
+and `chcoeffs` of `sinh(a)` and `cosh(a)`, respectvely.
+"""
+function sinhcoshHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1},
+    shcoeffs::Array{T,1}, chcoeffs::Array{T,1})
+
+    kcoef == 0 && return sinh( ac[1] ), cosh( ac[1] )
+    sinhcoefhom = zero(T)
+    coshcoefhom = zero(T)
+
+    @inbounds for i = 1:kcoef
+        x = i * ac[i+1]
+        sinhcoefhom += x * chcoeffs[kcoef-i+1]
+        coshcoefhom += x * shcoeffs[kcoef-i+1]
+    end
+
+    sinhcoefhom = sinhcoefhom/kcoef
+    coshcoefhom = coshcoefhom/kcoef
+    return sinhcoefhom, coshcoefhom
+end
+
+
+## tanh ##
+doc"""
+    tanh(a)
+
+Return the Taylor expansion of $\tanh(a)$, of order `a.order`, for
+`a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.tanhHomogCoef`](@ref).
+"""
+function tanh(a::Taylor1)
+    aux = tanh( a.coeffs[1] )
+    T = typeof(aux)
+    v = convert(Array{T,1}, a.coeffs)
+    coeffs = similar(v)
+    coeffst2 = similar(v)
+    @inbounds coeffs[1] = aux
+    @inbounds coeffst2[1] = aux^2
+    @inbounds for k = 1:a.order
+        coeffs[k+1] = tanhHomogCoef(k, v, coeffst2)
+        coeffst2[k+1] = squareHomogCoef(k, coeffs)
+    end
+    Taylor1( coeffs, a.order )
+end
+
+# Homogeneous coefficients for tanh
+doc"""
+    tanhHomogCoef(kcoef, ac, coeffst2)
+
+Compute the `k-th` expansion coefficient of $c = \tanh(a)$ given by
+
+\begin{equation*}
+th_k = a_k - \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j,
+\end{equation*}
+
+with $a$ a `Taylor1` polynomial and $p = th^2$.
+
+Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
+`ac` of `a`, and the already calculated expansion coefficients `coeffst2`
+of `th^2`.
+"""
+function tanhHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1})
+    kcoef == 0 && return tanh( ac[1] )
+    coefhomog = zero(T)
+    @inbounds for i = 0:kcoef-1
+        coefhomog += (kcoef-i)*ac[kcoef-i+1]*coeffst2[i+1]
+    end
+    @inbounds coefhomog = ac[kcoef+1] - coefhomog/kcoef
+    coefhomog
+end
+
 ## Differentiating ##
 """
     derivative(a)

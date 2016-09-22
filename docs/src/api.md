@@ -43,6 +43,9 @@ tan
 asin
 acos
 atan
+sinh
+cosh
+tanh
 abs
 ```
 
@@ -67,5 +70,7 @@ tanHomogCoef
 asinHomogCoef
 acosHomogCoef
 atanHomogCoef
+sinhcoshHomogCoef
+tanhHomogCoef
 A_mul_B!
 ```

@@ -102,6 +102,14 @@ facts("Tests for Taylor1 expansions") do
     @fact asin(t) + acos(t) == pi/2 --> true
     @fact derivative(acos(t)) == - 1/sqrt(1-t^2) --> true
 
+    @fact - sinh(t) + cosh(t) == exp(-t) --> true
+    @fact  sinh(t) + cosh(t) == exp(t) --> true
+    @fact evaluate(- sinh(t)^2 + cosh(t)^2 , rand()) == 1 --> true #works in an eps() difference, but ideally it should return a 1 + 𝒪(t¹⁶) Taylor.
+    @fact tanh(t + 0im) == -1im * tan(t*1im) --> true
+    @fact  evaluate(tanh(t/2),1.5) == evaluate(sinh(t) / (cosh(t) + 1),1.5) --> true 
+    @fact cosh(t) == real(cos(im*t)) --> true
+    @fact sinh(t) == imag(sin(im*t)) --> true
+    
     v = [sin(t), exp(-t)]
     @fact evaluate(v) == [0.0, 1.0]  --> true
     @fact evaluate(v, complex(0.0,0.2)) ==
