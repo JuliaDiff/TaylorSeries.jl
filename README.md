@@ -42,6 +42,7 @@ programs in Physics and in Mathematics at UNAM, during the second half of 2013.
 We thank the participants of the course for putting up with the half-baked
 material and contributing energy and ideas.
 
-We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and
-PE-107114, and DGAPA-PAPIIT grant IG-101113. LB acknowledges support through
-a *Cátedra Moshinsky* (2013).
+We acknowledge financial support from DGAPA-UNAM PAPIME grants
+PE-105911 and PE-107114, and DGAPA-PAPIIT grants IG-101113
+and IG-100616.
+LB acknowledges support through a *Cátedra Moshinsky* (2013).
