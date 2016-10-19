@@ -73,6 +73,15 @@ facts("Tests for Taylor1 expansions") do
     @fact ((1-t)^(1//4)).coeffs[15] == -4188908511//549755813888  --> true
     @fact abs(((1+t)^3.2).coeffs[14] + 5.4021062656e-5) < tol1  --> true
 
+    trational = ta(0//1)
+    @fact eltype(trational) --> Rational{Int}
+    @fact trational + 1//3 == Taylor1([1//3,1],15) --> true
+    @fact complex(3,1)*trational^2 ==
+        Taylor1([0//1,0//1,complex(3,1)//1],15) --> true
+    @fact trational^2/3 == Taylor1([0//1,0//1,1//3],15) --> true
+    @fact trational^3/complex(7,1) ==
+        Taylor1([0,0,0,complex(7//50,-1//50)],15) --> true
+
     @fact isapprox( rem(4.1 + t,4).coeffs[1], (0.1 + t).coeffs[1] )  --> true
     @fact isapprox( mod(4.1 + t,4).coeffs[1], (0.1 + t).coeffs[1] )  --> true
     @fact isapprox( mod2pi(2pi+0.1+t).coeffs[1],(0.1 + t).coeffs[1])  --> true
@@ -106,10 +115,10 @@ facts("Tests for Taylor1 expansions") do
     @fact  sinh(t) + cosh(t) == exp(t) --> true
     @fact evaluate(- sinh(t)^2 + cosh(t)^2 , rand()) == 1 --> true #works in an eps() difference, but ideally it should return a 1 + 𝒪(t¹⁶) Taylor.
     @fact tanh(t + 0im) == -1im * tan(t*1im) --> true
-    @fact  evaluate(tanh(t/2),1.5) == evaluate(sinh(t) / (cosh(t) + 1),1.5) --> true 
+    @fact  evaluate(tanh(t/2),1.5) == evaluate(sinh(t) / (cosh(t) + 1),1.5) --> true
     @fact cosh(t) == real(cos(im*t)) --> true
     @fact sinh(t) == imag(sin(im*t)) --> true
-    
+
     v = [sin(t), exp(-t)]
     @fact evaluate(v) == [0.0, 1.0]  --> true
     @fact evaluate(v, complex(0.0,0.2)) ==
