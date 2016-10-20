@@ -252,10 +252,10 @@ end
 
 ## Division ##
 function /{T<:Integer, S<:Union{Real,Complex}}(a::Taylor1{Rational{T}},b::S)
-    @inbounds aux = a.coeffs[1] * b
-    v = Array(typeof(aux), length(a.coeffs))
+    R = typeof( a.coeffs[1] // b)
+    v = Array(R, length(a.coeffs))
     @simd for i in eachindex(v)
-        @inbounds v[i] = a.coeffs[i]/b
+        @inbounds v[i] = a.coeffs[i] // b
     end
     Taylor1(v, a.order)
 end
