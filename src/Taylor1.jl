@@ -45,7 +45,6 @@ Taylor1{T<:Number}(x::Taylor1{T}) = x
 Taylor1{T<:Number}(coeffs::Array{T,1}, order::Int) = Taylor1{T}(coeffs, order)
 Taylor1{T<:Number}(coeffs::Array{T,1}) = Taylor1{T}(coeffs, length(coeffs)-1)
 Taylor1{T<:Number}(x::T, order::Int) = Taylor1{T}([x], order)
-# Taylor1{T<:Number}(x::T) = Taylor1{T}([x], 0)
 
 # Shortcut to define Taylor1 independent variables
 """
@@ -904,10 +903,10 @@ function acos(a::Taylor1)
     coeffs = zeros(ac)
     @inbounds coeffs[1] = aux
     @inbounds for k in 1:a.order
-        coeffs[k+1] = asinHomogCoef(k , ac, rc, coeffs)
+        coeffs[k+1] = acosHomogCoef(k, ac, rc, coeffs)
     end
-    @inbounds coeffs[1] = -acos( a.coeffs[1] )
-    Taylor1( -coeffs, a.order )
+    @inbounds coeffs[1] = acos( a.coeffs[1] )
+    Taylor1( coeffs, a.order )
 end
 
 # Homogeneous coefficients for arccos
@@ -928,13 +927,8 @@ of $r$ (see above), and the already calculated expansion coefficients
 `coeffs` of `acos(a)`.
 """
 function acosHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, rc::Array{T,1}, coeffs::Array{T,1})
-    kcoef == 0 && return asin( ac[1] )
-    coefhomog = zero(T)
-    @inbounds for i in 1:kcoef-1
-        coefhomog += (kcoef-i) * rc[i+1] * coeffs[kcoef-i+1]
-    end
-    @inbounds coefhomog = -(ac[kcoef+1] - coefhomog/kcoef) / rc[1]
-    coefhomog
+    kcoef == 0 && return acos( ac[1] )
+    asinHomogCoef(kcoef, -ac, rc, coeffs)
 end
 
 

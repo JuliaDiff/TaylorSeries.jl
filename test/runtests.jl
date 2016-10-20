@@ -21,9 +21,12 @@ facts("Tests for Taylor1 expansions") do
     @fact get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0) --> true
     @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  --> true
     @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  --> true
+    @fact convert(Taylor1{Int},[0,2]) == 2*t  --> true
     @fact convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t  --> true
     @fact convert(Taylor1{BigFloat},[0.0, 1.0]) == ta(big(0.0))  --> true
+    @fact promote(t,Taylor1(1.0,0)) == (ta(0.0),ot)  --> true
     @fact promote(0,Taylor1(1.0,0)) == (zt,ot)  --> true
+    @fact eltype(promote(ta(0),zeros(Int,2))[2]) == Int  --> true
     @fact eltype(promote(ta(0.0),zeros(Int,2))[2]) == Float64  --> true
     @fact eltype(promote(0,Taylor1(ot))[1]) == Float64  --> true
     @fact eltype(promote(1.0+im, zt)[1]) == Complex{Float64}  --> true
@@ -34,6 +37,8 @@ facts("Tests for Taylor1 expansions") do
     @fact eltype(TaylorSeries.fixshape(zt,Taylor1([1.0]))[1]) == Float64  --> true
     @fact TaylorSeries.firstnonzero(t) == 1  --> true
     @fact TaylorSeries.firstnonzero(zt) == zt.order+1  --> true
+    @fact isinf(Taylor1([typemax(1.0)])) --> true
+    @fact isnan(Taylor1([typemax(1.0), NaN])) --> true
 
     @fact t == Taylor1(ta(0),15)  --> true
     @fact ot == 1  --> true
@@ -114,6 +119,7 @@ facts("Tests for Taylor1 expansions") do
     @fact - sinh(t) + cosh(t) == exp(-t) --> true
     @fact  sinh(t) + cosh(t) == exp(t) --> true
     @fact evaluate(- sinh(t)^2 + cosh(t)^2 , rand()) == 1 --> true #works in an eps() difference, but ideally it should return a 1 + 𝒪(t¹⁶) Taylor.
+    @fact evaluate(- sinh(t)^2 + cosh(t)^2 , 0) == 1 --> true #works in an eps() difference, but ideally it should return a 1 + 𝒪(t¹⁶) Taylor.
     @fact tanh(t + 0im) == -1im * tan(t*1im) --> true
     @fact  evaluate(tanh(t/2),1.5) == evaluate(sinh(t) / (cosh(t) + 1),1.5) --> true
     @fact cosh(t) == real(cos(im*t)) --> true
