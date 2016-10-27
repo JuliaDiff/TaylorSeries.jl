@@ -51,7 +51,8 @@ function pretty_print{T<:Number}(a::Taylor1{TaylorN{T}})
         @inbounds c = a.coeffs[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
-        ccad::String = i==1 ? cadena : string(cadena[1:2], "(", cadena[3:end], ")")
+        ccad::String = i==1 ? cadena :
+            ifirst ? string("(", cadena, ")") : string(cadena[1:2], "(", cadena[3:end], ")")
         strout = string(strout, ccad, monom, space)
         ifirst = false
     end
@@ -67,10 +68,10 @@ function pretty_print{T<:Number}(a::HomogeneousPolynomial{T})
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
     z = zero(T)
-    space = string(" ")
+    space = string("")
     bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, bigO)
-    strout::String = string("")
+    strout::String = space#string("")
     ifirst = true
     for ord in eachindex(a.coeffs)
         pol = a.coeffs[ord]
