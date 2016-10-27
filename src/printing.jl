@@ -112,6 +112,36 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
     end
     return strout[1:end-1]
 end
+function homogPol2str{T<:Number}(a::HomogeneousPolynomial{Taylor1{T}})
+    numVars = get_numvars()
+    order = a.order
+    z = zero(T)
+    space = string(" ")
+    strout::String = space
+    ifirst = true
+    iIndices = zeros(Int, numVars)
+    for pos = 1:size_table[order+1]
+        monom::String = string("")
+        @inbounds iIndices[:] = coeff_table[order+1][pos]
+        for ivar = 1:numVars
+            powivar = iIndices[ivar]
+            if powivar == 1
+                monom = string(monom, name_taylorNvar(ivar))
+            elseif powivar > 1
+                monom = string(monom, name_taylorNvar(ivar), superscriptify(powivar))
+            end
+        end
+        @inbounds c = a.coeffs[pos]
+        c == z && continue
+        cadena = numbr2str(c, ifirst)
+        ccad::String = pos==1 ? string("(", cadena, ")") :
+            string(cadena[1:2], "(", cadena[3:end], ")")
+        strout = string(strout, ccad, monom, space)
+        ifirst = false
+    end
+    return strout[1:end-1]
+end
+
 function numbr2str(zz, ifirst::Bool=false)
     zz == zero(zz) && return string( zz )
     plusmin = ifelse( ifirst, string(""), string("+ ") )
@@ -164,7 +194,6 @@ function numbr2str{T<:Complex}(zz::T, ifirst::Bool=false)
     return cadena
 end
 
-#name_taylorNvar(n::Int) = string("⋅x", subscriptify(n))
 name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
 
 
