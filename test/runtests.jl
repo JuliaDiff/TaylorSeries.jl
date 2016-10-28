@@ -201,6 +201,7 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact eltype(set_variables("x", numvars=2, order=6))  --> TaylorN{Float64}
     @fact eltype(set_variables(BigInt, "x y", order=6))  --> TaylorN{BigInt}
     @fact eltype(set_variables("x y", order=6))  --> TaylorN{Float64}
+    @fact typeof(show_params_TaylorN()) == Void --> true
 
     @fact TaylorSeries.coeff_table[2][1] == [1,0]  --> true
     @fact TaylorSeries.index_table[2][1] == 7  --> true
