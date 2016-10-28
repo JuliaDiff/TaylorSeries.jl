@@ -252,6 +252,52 @@ convert{T<:Number}(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) =
 convert{T<:Number}(::Type{TaylorN{T}}, b::T) =
     TaylorN( [HomogeneousPolynomial(b)], 0)
 
+function convert{T<:Number}(::Type{TaylorN{Taylor1{T}}},
+        s::Taylor1{TaylorN{T}})
+
+    orderN = get_order()
+    r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
+
+    v = zeros(T, s.order+1)
+    for ordT in 1:s.order+1
+        v[ordT] = one(T)
+        for ordHP in eachindex(s.coeffs[ordT].coeffs)
+            for ic in eachindex(s.coeffs[ordT].coeffs[ordHP].coeffs)
+                coef = s.coeffs[ordT].coeffs[ordHP].coeffs[ic]
+                r[ordHP].coeffs[ic] += Taylor1(coef*v)
+            end
+        end
+        v[ordT] = zero(T)
+    end
+    TaylorN(r)
+end
+function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}},
+        s::TaylorN{Taylor1{T}})
+
+    ordert = 0
+    for ordHP in eachindex(s.coeffs)
+        ordert = max(ordert, s.coeffs[ordHP].coeffs[1].order)
+    end
+    vT = Array{TaylorN{T}}(ordert+1)
+    for ordT in eachindex(vT)
+        vT[ordT] = TaylorN(zero(T), s.order)
+    end
+
+    for ordN in eachindex(s.coeffs)
+        vHP = HomogeneousPolynomial(zeros(T,length(s.coeffs[ordN])))
+        for ihp in eachindex(s.coeffs[ordN].coeffs)
+            for ind in eachindex(s.coeffs[ordN].coeffs[ihp].coeffs)
+                c = s.coeffs[ordN].coeffs[ihp].coeffs[ind]
+                vHP.coeffs[ihp] = c
+                vT[ind] += TaylorN(vHP)
+                vHP.coeffs[ihp] = zero(T)
+            end
+        end
+    end
+    Taylor1(vT)
+end
+
+
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) =
     TaylorN{promote_type(T, S)}
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}},

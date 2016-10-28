@@ -345,8 +345,14 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact string(xHt) == " ( 1.0 + 𝒪(t³)) x₁" --> true
     @fact string(yHt) == " ( 1.0 t + 𝒪(t³)) x₂" --> true
     @fact string(HomogeneousPolynomial([t])) == " ( 1.0 t + 𝒪(t³))" --> true
-    @fact string(TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])) ==
+    tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
+    t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
+    ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
+    @fact string(tN1) ==
         " ( 1.0 t + 𝒪(t³)) + ( 1.0 + 𝒪(t³)) x₁ + ( 1.0 t² + 𝒪(t³)) x₂² + 𝒪(‖x‖³)" --> true
+    @fact string(t1N) ==
+        "  1.0 x₁ + 𝒪(‖x‖³) + ( 1.0 + 𝒪(‖x‖³)) t + ( 1.0 x₂² + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
+    @fact tN1 == ctN1 --> true
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do
