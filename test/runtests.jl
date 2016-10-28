@@ -118,8 +118,8 @@ facts("Tests for Taylor1 expansions") do
 
     @fact - sinh(t) + cosh(t) == exp(-t) --> true
     @fact  sinh(t) + cosh(t) == exp(t) --> true
-    @fact evaluate(- sinh(t)^2 + cosh(t)^2 , rand()) == 1 --> true #works in an eps() difference, but ideally it should return a 1 + 𝒪(t¹⁶) Taylor.
-    @fact evaluate(- sinh(t)^2 + cosh(t)^2 , 0) == 1 --> true #works in an eps() difference, but ideally it should return a 1 + 𝒪(t¹⁶) Taylor.
+    @fact evaluate(- sinh(t)^2 + cosh(t)^2 , rand()) == 1 --> true
+    @fact evaluate(- sinh(t)^2 + cosh(t)^2 , 0) == 1 --> true
     @fact tanh(t + 0im) == -1im * tan(t*1im) --> true
     @fact  evaluate(tanh(t/2),1.5) == evaluate(sinh(t) / (cosh(t) + 1),1.5) --> true
     @fact cosh(t) == real(cos(im*t)) --> true
@@ -148,6 +148,7 @@ facts("Tests for Taylor1 expansions") do
     @fact_throws AssertionError derivative(30, exp(ta(1.0pi)))
 
     @fact string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"  --> true
+    @fact string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"  --> true
     @fact TaylorSeries.pretty_print(ta(3im)) ==
         " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"  --> true
 end
@@ -219,7 +220,6 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
     xT = TaylorN(xH,17)
-    # yT = taylorN_variable(Int64, 2, 17)
     yT = TaylorN(Int64, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
     uT = one(convert(TaylorN{Float64},yT))
@@ -238,7 +238,6 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact promote(xH, yT)[1] == xT  --> true
     @fact promote(xT, [xH,yH])[2] == xT+yT  --> true
     @fact typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}  --> true
-    # @fact TaylorSeries.fixorder(taylorN_variable(1,1),17) == xT  --> true
     @fact TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT  --> true
     @fact TaylorSeries.iszero(zeroT.coeffs[2])  -->  true
 
@@ -280,7 +279,6 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact derivative(2xT*yT^2,1) == 2yT^2  --> true
     @fact xT*xT^3 == xT^4  --> true
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
-    # @fact (1+taylorN_variable(1,4))^taylorN_variable(2,4) == txy  --> true
     @fact (1+TaylorN(1,order=4))^TaylorN(2,order=4) == txy  --> true
     @fact_throws DomainError yT^(-2)
     @fact_throws DomainError yT^(-2.0)
@@ -302,7 +300,6 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     txy = tan(xT+yT)
     @fact get_coeff(txy,[8,7]) == 929569/99225  --> true
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
-    # @fact tan(taylorN_variable(1,4)+taylorN_variable(2,4)) == ptxy  --> true
     @fact tan(TaylorN(1,order=4)+TaylorN(2,order=4)) == ptxy  --> true
     @fact evaluate(xH*yH,[1.0,2.0]) == 2.0  --> true
 
@@ -332,6 +329,24 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact_throws AssertionError x^(-2)
     @fact_throws ArgumentError log(x)
     @fact_throws AssertionError cos(x)/sin(y)
+
+    tN = Taylor1([zero(TaylorN(Int,1)), one(TaylorN(Int,1))],2)
+    @fact string(zero(tN)) == " 0 + 𝒪(t³)" --> true
+    @fact string(tN) == " ( 1 + 𝒪(‖x‖¹⁸)) t + 𝒪(t³)" --> true
+    @fact string(Taylor1([xH+yH])) == "  1 x₁ + 1 x₂ + 𝒪(t¹)"  --> true
+    @fact string(Taylor1([zero(xH), xH*yH])) ==
+        "  0 + ( 1 x₁ x₂) t + 𝒪(t²)"  --> true
+    @fact string(tN*Taylor1([0,TaylorN([xH+yH])])) ==
+        " ( 1 x₁ + 1 x₂ + 𝒪(‖x‖¹⁸)) t² + 𝒪(t³)" --> true
+
+    t = Taylor1(2)
+    xHt = HomogeneousPolynomial([one(t), zero(t)])
+    yHt = HomogeneousPolynomial([zero(t), t])
+    @fact string(xHt) == " ( 1.0 + 𝒪(t³)) x₁" --> true
+    @fact string(yHt) == " ( 1.0 t + 𝒪(t³)) x₂" --> true
+    @fact string(HomogeneousPolynomial([t])) == " ( 1.0 t + 𝒪(t³))" --> true
+    @fact string(TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])) ==
+        " ( 1.0 t + 𝒪(t³)) + ( 1.0 + 𝒪(t³)) x₁ + ( 1.0 t² + 𝒪(t³)) x₂² + 𝒪(‖x‖³)" --> true
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do
@@ -385,6 +400,5 @@ facts("High order polynomials test inspired by Fateman (takes a few seconds))") 
     @fact c == 128358585324486316800 --> true
     @fact get_coeff(f2,[1,6,7,20]) == c --> true
 end
-
 
 exitstatus()

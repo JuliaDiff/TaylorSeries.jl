@@ -38,6 +38,27 @@ function pretty_print{T<:Number}(a::Taylor1{T})
     strout = strout * bigO
     strout
 end
+function pretty_print{T<:Number}(a::Taylor1{HomogeneousPolynomial{T}})
+    z = zero(T)
+    space = string(" ")
+    bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    a == zero(a) && return string(space, z, space, bigO)
+    strout::String = space
+    ifirst = true
+    for i in eachindex(a.coeffs)
+        monom::String = i==1 ? string("") : i==2 ? string(" t") :
+            string(" t", superscriptify(i-1))
+        @inbounds c = a.coeffs[i]
+        c == z && continue
+        cadena = numbr2str(c, ifirst)
+        ccad::String = i==1 ? cadena : ifirst ? string("(", cadena, ")") :
+            string(cadena[1:2], "(", cadena[3:end], ")")
+        strout = string(strout, ccad, monom, space)
+        ifirst = false
+    end
+    strout = strout * bigO
+    strout
+end
 function pretty_print{T<:Number}(a::Taylor1{TaylorN{T}})
     z = zero(T)
     space = string(" ")
@@ -51,8 +72,8 @@ function pretty_print{T<:Number}(a::Taylor1{TaylorN{T}})
         @inbounds c = a.coeffs[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
-        ccad::String = i==1 ? cadena :
-            ifirst ? string("(", cadena, ")") : string(cadena[1:2], "(", cadena[3:end], ")")
+        ccad::String = i==1 ? cadena : ifirst ? string("(", cadena, ")") :
+            string(cadena[1:2], "(", cadena[3:end], ")")
         strout = string(strout, ccad, monom, space)
         ifirst = false
     end
@@ -77,7 +98,8 @@ function pretty_print{T<:Number}(a::TaylorN{T})
         pol = a.coeffs[ord]
         pol == zero(a.coeffs[ord]) && continue
         cadena::String = homogPol2str( pol )
-        strsgn = (ifirst || ord == 1 || cadena[2] == '-') ? string("") : string(" +")
+        strsgn = (ifirst || ord == 1 || cadena[2] == '-') ?
+            string("") : string(" +")
         strout = string( strout, strsgn, cadena)
         ifirst = false
     end
@@ -128,13 +150,14 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{Taylor1{T}})
             if powivar == 1
                 monom = string(monom, name_taylorNvar(ivar))
             elseif powivar > 1
-                monom = string(monom, name_taylorNvar(ivar), superscriptify(powivar))
+                monom = string(monom, name_taylorNvar(ivar),
+                    superscriptify(powivar))
             end
         end
         @inbounds c = a.coeffs[pos]
         c == z && continue
         cadena = numbr2str(c, ifirst)
-        ccad::String = pos==1 ? string("(", cadena, ")") :
+        ccad::String = (pos==1 || ifirst) ? string("(", cadena, ")") :
             string(cadena[1:2], "(", cadena[3:end], ")")
         strout = string(strout, ccad, monom, space)
         ifirst = false
@@ -205,6 +228,5 @@ end
 
 # show
 function show(io::IO, a::Union{Taylor1, HomogeneousPolynomial, TaylorN})
-    # (isa(a, TaylorN) || isa(a, Taylor1)) && println(io, summary(a))
     print(io, pretty_print(a))
 end
