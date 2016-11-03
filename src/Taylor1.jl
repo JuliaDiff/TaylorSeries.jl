@@ -1110,6 +1110,140 @@ function tanhHomogCoef{T<:Number}(kcoef::Int,ac::Array{T,1},coeffst2::Array{T,1}
     coefhomog
 end
 
+
+### STAT & MISC FUNCTIONS ###
+
+## gaussian ##
+doc"""
+    gaussian(a)
+
+Return the Taylor expansion of $e^{-a^2}$, of order `a.order`, for
+`a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.gaussHomogCoef`](@ref).
+"""
+function gaussian(a::Taylor1)
+    @inbounds aux = exp(-a.coeffs[1]^2)
+    T  = typeof(aux)
+    a_prime = derivative(a)
+    ac_prime = convert(Vector{T},a_prime.coeffs)
+    ac = convert(Vector{T},a.coeffs) 
+    coeffs = zeros(ac)
+    kcoefprod = zeros(ac)
+    @inbounds coeffs[1] = convert(T,aux) 
+    @inbounds kcoefprod[1] = convert(T,mulHomogCoef(0,ac_prime,ac))
+    @inbounds for k in 1:a.order-1
+        kcoefprod[k+1] = mulHomogCoef(k,ac_prime,ac)
+        coeffs[k+1] = gaussHomogCoef(k,kcoefprod,coeffs)
+    end
+    Taylor1( coeffs, a.order)
+end
+
+## standarized gaussian ## 
+doc"""
+    gaussian(μ,σ,order)
+
+Return the Taylor expansion of $\frac{1}{\sigma \sqrt{2 \pi} }  e^{-\frac{1}{2}(\frac{x-\mu}{\sigma})^2} $, of order `order`, for
+`a::Taylor1` polynomial, where μ is the median and σ the standard deviation.
+
+For details on making the Taylor expansion, see [`TaylorSeries.gaussHomogCoef`](@ref).
+"""
+function gaussian(μ=0.,σ=1./sqrt(2),order=15)
+    a = Taylor1(order)
+    a = (a-μ)/(sqrt(2.)*σ)
+    @inbounds aux = exp(-a.coeffs[1]^2)
+    T  = typeof(aux)
+    a_prime = derivative(a)
+    ac_prime = convert(Vector{T},a_prime.coeffs)
+    ac = convert(Vector{T},a.coeffs)
+    coeffs = zeros(ac)
+    kcoefprod = zeros(ac)
+    @inbounds coeffs[1] = convert(T,aux)
+    @inbounds kcoefprod[1] = convert(T,mulHomogCoef(0,ac_prime,ac))
+    @inbounds for k in 1:a.order-1
+        kcoefprod[k+1] = mulHomogCoef(k,ac_prime,ac)
+        coeffs[k+1] = gaussHomogCoef(k,kcoefprod,coeffs)
+    end
+    1./(σ*sqrt(2*pi)) * Taylor1( coeffs, a.order)
+end
+
+# Homogeneous coefficients for gaussian
+doc"""
+gaussHomogCoef(kcoef, kcoefprod, coeffs)
+
+Compute the `k-th` expansion coefficient of $g(a) = e^{-a^2}$ given by
+
+\begin{equation*}
+g_k = -\frac{2}{k} \sum_{j=0}^{k-1} p_{k-j} g_j,
+\end{equation*}
+
+with $a$ a `Taylor1` polynomial and $p(x) = a(x) a'(x) $.
+
+Inputs are the `kcoef`-th coefficient, the already calculated expansion coefficients `kcoefprod` of $p(x)$ and the already calculated expansion coefficients `coeffs` of $g(a)$. 
+"""
+function gaussHomogCoef{T<:Number}(kcoef::Int,kcoefprod::Vector{T},coeffs::Vector{T})
+    #kcoef == 0 && return exp(-coeffs[1]^2)
+    coefhomog = zero(T)
+    @inbounds for j = 0:kcoef-1
+        coefhomog += kcoefprod[j+1] * coeffs[kcoef-j]
+    end
+    -2*coefhomog / (kcoef)
+end
+
+
+## erf ##
+doc"""
+    erf(a)
+
+Return the Taylor expansion of $\frac{2}{\sqrt{\pi}}\int_0^a{e^{-t^2}dt}$, of order `a.order`, for
+`a::Taylor1` polynomial.
+
+For details on making the Taylor expansion, see [`TaylorSeries.gaussHomogCoef`](@ref).
+"""
+function erf(a::Taylor1)
+    @inbounds aux = sqrt(pi)/2 * erf(a.coeffs[1])
+    T = typeof(aux)
+    a_prime = derivative(a)
+    ac_prime = convert(Vector{T},a_prime.coeffs)
+    ac = convert(Vector{T},a.coeffs) 
+    coeffs = zeros(ac)
+    kcoefprod = zeros(ac)
+    gausscoeffs = zeros(ac)
+    @inbounds coeffs[1] = convert(T,aux) 
+    @inbounds kcoefprod[1] = convert(T,mulHomogCoef(0,ac_prime,ac))
+    @inbounds gausscoeffs[1] = convert(T,exp(-a.coeffs[1]^2))
+    @inbounds for k in 1:a.order
+        kcoefprod[k+1] = mulHomogCoef(k,ac_prime,ac)
+        gausscoeffs[k+1] = gaussHomogCoef(k,kcoefprod,gausscoeffs)
+        coeffs[k+1] = erfHomogCoef(k,gausscoeffs,ac_prime)
+    end
+    2/sqrt(pi) * Taylor1( coeffs, a.order)
+end
+
+# Homogeneous coefficients for erf
+doc"""
+    erfHomogCoef(kcoef, gausscoeffs, coeffs)
+
+Compute the `k-th` expansion coefficient of $e(a) = erf(a)$ given by
+
+\begin{equation*}
+e_k = \frac{1}{k} \sum_{j=0}^{k-1} g_{k-j} a'_j,
+\end{equation*}
+
+with $a$ a `Taylor1` polynomial,  $g(a) = e^{-a^2}$ and $a'(x) = \frac{\partial{}}{\partial{x}}a$.
+
+Inputs are the `kcoef`-th coefficient, the already calculated expansion coefficients `gausscoeffs` of $g(a)$ and the already calculated expansion coefficients `coeffs` of $e(a)$.
+"""
+function erfHomogCoef{T<:Number}(kcoef::Int,gausscoeffs::Vector{T},primecoeffs::Vector{T})
+    #kcoef == 0 && return exp(-coeffs[1]^2)
+    coefhomog = zero(T)
+    @inbounds for j = 0:kcoef-1
+        coefhomog += primecoeffs[j+1] * gausscoeffs[kcoef-j]
+    end
+    coefhomog / (kcoef)
+end
+
+
 ## Differentiating ##
 """
     derivative(a)

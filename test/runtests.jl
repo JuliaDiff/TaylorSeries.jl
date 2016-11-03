@@ -124,6 +124,12 @@ facts("Tests for Taylor1 expansions") do
     @fact  evaluate(tanh(t/2),1.5) == evaluate(sinh(t) / (cosh(t) + 1),1.5) --> true
     @fact cosh(t) == real(cos(im*t)) --> true
     @fact sinh(t) == imag(sin(im*t)) --> true
+    
+    μ , σ = (3.2, 1) 
+    @fact gaussian(μ,σ,t.order) == 1/(sqrt(2pi)*σ)*gaussian((t-μ)/(sqrt(2.)*σ)) --> true
+    @fact gaussian(t) == exp(-t^2) --> true
+    @fact erf(t) == 2/sqrt(pi) * integrate(exp(-t^2)) --> true
+    @fact erf(t) == 2/sqrt(pi) * integrate( gaussian(t) ) --> true 
 
     v = [sin(t), exp(-t)]
     @fact evaluate(v) == [0.0, 1.0]  --> true
