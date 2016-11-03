@@ -354,6 +354,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact string(t1N) ==
         "  1.0 x₁ + 𝒪(‖x‖³) + ( 1.0 + 𝒪(‖x‖³)) t + ( 1.0 x₂² + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
     @fact tN1 == ctN1 --> true
+    @fact convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) ==
+        [t1N, t1N] --> true
+    @fact convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) ==
+        [ctN1 ctN1] --> true
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do

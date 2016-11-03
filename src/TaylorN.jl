@@ -252,9 +252,7 @@ convert{T<:Number}(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) =
 convert{T<:Number}(::Type{TaylorN{T}}, b::T) =
     TaylorN( [HomogeneousPolynomial(b)], 0)
 
-function convert{T<:Number}(::Type{TaylorN{Taylor1{T}}},
-        s::Taylor1{TaylorN{T}})
-
+function convert{T<:Number}(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}})
     orderN = get_order()
     r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
 
@@ -271,9 +269,7 @@ function convert{T<:Number}(::Type{TaylorN{Taylor1{T}}},
     end
     TaylorN(r)
 end
-function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}},
-        s::TaylorN{Taylor1{T}})
-
+function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}})
     ordert = 0
     for ordHP in eachindex(s.coeffs)
         ordert = max(ordert, s.coeffs[ordHP].coeffs[1].order)
@@ -297,6 +293,22 @@ function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}},
     Taylor1(vT)
 end
 
+function convert{T<:Number,N}(::Type{Array{TaylorN{Taylor1{T}},N}},
+        s::Array{Taylor1{TaylorN{T}},N})
+    v = Array{TaylorN{Taylor1{T}}}(size(s))
+    for ind in eachindex(s)
+        v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
+    end
+    v
+end
+function convert{T<:Number,N}(::Type{Array{Taylor1{TaylorN{T}},N}},
+        s::Array{TaylorN{Taylor1{T}},N})
+    v = Array{Taylor1{TaylorN{T}}}(size(s))
+    for ind in eachindex(s)
+        v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
+    end
+    v
+end
 
 promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) =
     TaylorN{promote_type(T, S)}
@@ -511,7 +523,6 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
     @inbounds num_coeffs_a = size_table[a.order+1]
     @inbounds num_coeffs  = size_table[c.order+1]
 
-    two = convert(T,2)
     coeffs = c.coeffs
     @inbounds posTb = pos_table[c.order+1]
 
@@ -526,7 +537,7 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
             cb == zero(T) && continue
             indb = index_table[a.order+1][nb]
             pos = posTb[inda+indb]
-            coeffs[pos] += two * ca * cb
+            coeffs[pos] += 2 * ca * cb
         end
     end
 
@@ -708,7 +719,6 @@ function square(a::TaylorN)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
     @inbounds mul!(coeffs[1], a.coeffs[1])
 
-    two = convert(T,2)
     for ord in eachindex(coeffs)
         ord == a.order+1 && continue
         kodd = ord%2
@@ -716,7 +726,7 @@ function square(a::TaylorN)
         for i = 0 : kord
             @inbounds mul!(coeffs[ord+1], a.coeffs[i+1], a.coeffs[ord-i+1])
         end
-        @inbounds coeffs[ord+1] = two * coeffs[ord+1]
+        @inbounds coeffs[ord+1] = 2 * coeffs[ord+1]
         kodd == 1 && continue
         kodd = div(ord,2)
         @inbounds mul!(coeffs[ord+1], a.coeffs[kodd+1] )
@@ -738,7 +748,6 @@ function sqrt(a::TaylorN)
     T = typeof(p0)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
     @inbounds coeffs[1] = HomogeneousPolynomial( p0 )
-    two = convert(T,2)
 
     for ord in eachindex(coeffs)
         ord == a.order+1 && continue
@@ -747,11 +756,11 @@ function sqrt(a::TaylorN)
         @inbounds for i = 1:kord
             coeffs[ord+1] += coeffs[i+1] * coeffs[ord-i+1]
         end
-        @inbounds coeffs[ord+1] = a.coeffs[ord+1] - two * coeffs[ord+1]
+        @inbounds coeffs[ord+1] = a.coeffs[ord+1] - 2 * coeffs[ord+1]
         if iseven(ord)
             @inbounds coeffs[ord+1]=coeffs[ord+1]-square( coeffs[div(ord,2)+1])
         end
-        @inbounds coeffs[ord+1] = coeffs[ord+1] / (two * p0)
+        @inbounds coeffs[ord+1] = coeffs[ord+1] / (2 * p0)
     end
 
     return TaylorN{T}(coeffs, a.order)
@@ -955,6 +964,10 @@ function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1},vals::Array{S,1})
     return transpose(jac)
 end
 
+function jacobian{T<:Number}(vf::Array{Taylor1{TaylorN{T}},1})
+    vv = convert(Array{TaylorN{Taylor1{T}},1}, vf)
+    jacobian(vv)
+end
 
 """
 ```
