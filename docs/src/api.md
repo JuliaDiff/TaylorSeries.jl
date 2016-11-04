@@ -46,6 +46,8 @@ atan
 sinh
 cosh
 tanh
+gaussian
+erf
 abs
 ```
 
@@ -72,5 +74,7 @@ acosHomogCoef
 atanHomogCoef
 sinhcoshHomogCoef
 tanhHomogCoef
+gaussHomogCoef
+erfHomogCoef
 A_mul_B!
 ```
