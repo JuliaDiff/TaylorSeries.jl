@@ -77,6 +77,9 @@ facts("Tests for Taylor1 expansions") do
     @fact ((1-tsquare)^(1//2))^2 == 1-tsquare  --> true
     @fact ((1-t)^(1//4)).coeffs[15] == -4188908511//549755813888  --> true
     @fact abs(((1+t)^3.2).coeffs[14] + 5.4021062656e-5) < tol1  --> true
+    @fact Taylor1(BigFloat,5)/6 == 1im*Taylor1(5)/complex(0,BigInt(6))  --> true
+    @fact Taylor1(BigFloat,5)/(6*Taylor1(3)) == 1/BigInt(6)  --> true
+    @fact Taylor1(BigFloat,5)/(6im*Taylor1(3)) == -1im/BigInt(6)  --> true
 
     trational = ta(0//1)
     @fact eltype(trational) --> Rational{Int}
@@ -276,6 +279,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact derivative(yT) == zeroT  --> true
     @fact -xT/3im == im*xT/3  --> true
     @fact (xH/3im)' == im*xH/3  --> true
+    @fact xT/BigInt(3) == TaylorN(BigFloat,1)/3  --> true
+    @fact xT/complex(0,BigInt(3)) == -im*xT/BigInt(3)  --> true
+    @fact (xH/complex(0,BigInt(3)))' ==
+        im*HomogeneousPolynomial([BigInt(1),0])/3  --> true
 
     @fact derivative(2xT*yT^2,1) == 2yT^2  --> true
     @fact xT*xT^3 == xT^4  --> true
