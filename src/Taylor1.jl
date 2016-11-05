@@ -258,8 +258,16 @@ function /{T<:Integer, S<:Union{Real,Complex}}(a::Taylor1{Rational{T}},b::S)
     end
     Taylor1(v, a.order)
 end
-/{T<:Real}(a::Taylor1, b::T) = a * inv(b)
-/{T<:Complex}(a::Taylor1, b::T) = a * inv(b)
+/{T<:Real}(a::Taylor1{T}, b::T) = a * inv(b)
+function /{T<:Real}(a::Taylor1, b::T)
+    R = promote_type(eltype(a), T)
+    convert(Taylor1{R}, a) / convert(R, b)
+end
+/{T<:Complex}(a::Taylor1{T}, b::T) = a * inv(b)
+function /{T<:Complex}(a::Taylor1, b::T)
+    R = promote_type(eltype(a), T)
+    convert(Taylor1{R}, a) / convert(R, b)
+end
 doc"""
 ```
 /(a, b)
