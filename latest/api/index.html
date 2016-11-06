@@ -173,7 +173,7 @@
 <ul>
 <li><code>order  :: Int64</code> Maximum order (degree) of the polynomial.</li>
 </ul>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L11' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L11' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.HomogeneousPolynomial' href='#TaylorSeries.HomogeneousPolynomial'>#</a>
 <strong><code>TaylorSeries.HomogeneousPolynomial</code></strong> &mdash; <em>Type</em>.</p>
 <pre><code>HomogeneousPolynomial{T&lt;:Number} &lt;: Number
@@ -188,7 +188,7 @@
 <ul>
 <li><code>order   :: Int</code> order (degree) of the homogenous polynomial.</li>
 </ul>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L20' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L20' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.TaylorN' href='#TaylorSeries.TaylorN'>#</a>
 <strong><code>TaylorSeries.TaylorN</code></strong> &mdash; <em>Type</em>.</p>
 <pre><code>TaylorN{T&lt;:Number} &lt;: Number
@@ -203,7 +203,7 @@
 <ul>
 <li><code>order   :: Int</code>  maximum order of the polynomial expansion.</li>
 </ul>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L145' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L145' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.ParamsTaylorN' href='#TaylorSeries.ParamsTaylorN'>#</a>
 <strong><code>TaylorSeries.ParamsTaylorN</code></strong> &mdash; <em>Type</em>.</p>
 <pre><code>ParamsTaylorN
@@ -217,7 +217,7 @@
 <li><code>variable_names :: Array{String,1}</code> Name of the variables</li>
 </ul>
 <p>These parameters can be changed using <code>set_params_TaylorN(order, numVars)</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/parameters.jl#L5-L18' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/parameters.jl#L5-L18' class='documenter-source'>source</a><br></p>
 <p><a id='Functions-and-methods-1'></a></p>
 <h3 id="functions-and-methods">Functions and methods<a class="headerlink" href="#functions-and-methods" title="Permanent link">&para;</a></h3>
 <p><a id='TaylorSeries.Taylor1-Tuple{Type{T<:Number},Int64}' href='#TaylorSeries.Taylor1-Tuple{Type{T<:Number},Int64}'>#</a>
@@ -227,7 +227,7 @@ Taylor1([order=1])
 </code></pre>
 
 <p>Shortcut to define the independent variable of a <code>Taylor1{T}</code> polynomial of given <code>order</code>. If the type <code>T</code> is ommitted, <code>Float64</code> is assumend.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L50-L56' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L50-L56' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.TaylorN-Tuple{Type{T<:Number},Int64}' href='#TaylorSeries.TaylorN-Tuple{Type{T<:Number},Int64}'>#</a>
 <strong><code>TaylorSeries.TaylorN</code></strong> &mdash; <em>Method</em>.</p>
 <pre><code>TaylorN(T, nv; [order=get_order()])
@@ -235,7 +235,7 @@ TaylorN(nv; [order=get_order()])
 </code></pre>
 
 <p>Shortcut to define the <code>nv</code>-th independent <code>TaylorN{T}</code> variable as a polynomial. The order is defined through the keyword parameter <code>order</code>, whose default corresponds to <code>get_order()</code>. If <code>T::Type</code> is ommitted, <code>Float64</code> is assumend.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L186-L194' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L186-L194' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.set_variables' href='#TaylorSeries.set_variables'>#</a>
 <strong><code>TaylorSeries.set_variables</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>set_variables(R, names; [order=6])
@@ -246,94 +246,94 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return a <code>TaylorN{R}</code> vector with <code>numvars</code> polynomials, each representing an independent variable, using <code>names</code> as the <code>String</code> for the output.</p>
 <p>If <code>numvars</code> is not specified, it is inferred from the length of <code>names</code>. If <code>length(names)==1</code> and <code>numvars&gt;1</code>, it uses this name with subscripts for the different variables. When changing the <code>order</code> or <code>numvars</code>, the hash_tables are reset.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/parameters.jl#L37-L50' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/parameters.jl#L37-L50' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.show_params_TaylorN' href='#TaylorSeries.show_params_TaylorN'>#</a>
 <strong><code>TaylorSeries.show_params_TaylorN</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>show_params_TaylorN()
 </code></pre>
 
 <p>Display the current parameters for <code>TaylorN</code> and <code>HomogeneousPolynomial</code> types.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/parameters.jl#L94-L98' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/parameters.jl#L94-L98' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.get_coeff' href='#TaylorSeries.get_coeff'>#</a>
 <strong><code>TaylorSeries.get_coeff</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>get_coeff(a, n)
 </code></pre>
 
 <p>Return the coefficient of order <code>n::Int</code> of a <code>a::Taylor1</code> polynomial.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L61-L65' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L61-L65' class='documenter-source'>source</a><br></p>
 <pre><code>get_coeff(a, v)
 </code></pre>
 
 <p>Return the coefficient of <code>a::HomogeneousPolynomial</code>, specified by <code>v::Array{Int,1}</code> which has the indices of the specific monomial.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L205-L210' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L205-L210' class='documenter-source'>source</a><br></p>
 <pre><code>get_coeff(a, v)
 </code></pre>
 
 <p>Return the coefficient of <code>a::TaylorN</code>, specified by <code>v::Array{Int,1}</code> which has the indices of the specific monomial.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L218-L223' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L218-L223' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.evaluate' href='#TaylorSeries.evaluate'>#</a>
 <strong><code>TaylorSeries.evaluate</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>evaluate(a, [dx])
 </code></pre>
 
 <p>Evaluate a <code>Taylor1</code> polynomial using Horner's rule (hand coded). If <code>dx</code> is ommitted, its value is considered as zero.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1158-L1163' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1166-L1171' class='documenter-source'>source</a><br></p>
 <pre><code>evaluate(x, δt)
 </code></pre>
 
 <p>Evaluates each element of <code>x::Array{Taylor1{T},1}</code>, representing the dependent variables of an ODE, at <em>time</em> δt.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1181' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1189' class='documenter-source'>source</a><br></p>
 <pre><code>evaluate(a, x)
 </code></pre>
 
 <p>Substitute <code>x::Taylor1</code> as independent variable in a <code>a::Taylor1</code> polynomial.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1215-L1219' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1223-L1227' class='documenter-source'>source</a><br></p>
 <pre><code>evaluate(a, vals)
 </code></pre>
 
 <p>Evaluate a <code>HomogeneousPolynomial</code> polynomial using Horner's rule (hand coded) at <code>vals</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L989-L994' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L995-L1000' class='documenter-source'>source</a><br></p>
 <pre><code>evaluate(a, [vals])
 </code></pre>
 
 <p>Evaluate a <code>TaylorN</code> polynomial using Horner's rule (hand coded) at <code>vals</code>. If <code>vals</code> is ommitted, it is evaluated at zero.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L1010-L1015' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L1016-L1021' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.evaluate!' href='#TaylorSeries.evaluate!'>#</a>
 <strong><code>TaylorSeries.evaluate!</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>evaluate!(x, δt, x0)
 </code></pre>
 
 <p>Evaluates each element of <code>x::Array{Taylor1{T},1}</code>, representing the Taylor expansion for the dependent variables of an ODE at <em>time</em> δt. It updates the vector <code>x0</code> with the computed values.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1198' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1206' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.derivative' href='#TaylorSeries.derivative'>#</a>
 <strong><code>TaylorSeries.derivative</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>derivative(a)
 </code></pre>
 
 <p>Return the <code>Taylor1</code> polynomial of the differential of <code>a::Taylor1</code>. The last coefficient is set to zero.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1114-L1119' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1122-L1127' class='documenter-source'>source</a><br></p>
 <pre><code>derivative(n, a)
 </code></pre>
 
 <p>Return the value of the <code>n</code>-th derivative of the polynomial <code>a</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1129-L1133' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1137-L1141' class='documenter-source'>source</a><br></p>
 <pre><code>derivative(a, r)
 </code></pre>
 
 <p>Partial differentiation of <code>a::HomogeneousPolynomial</code> series with respect to the <code>r</code>-th variable.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L864-L869' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L870-L875' class='documenter-source'>source</a><br></p>
 <pre><code>derivative(a, [r=1])
 </code></pre>
 
 <p>Partial differentiation of <code>a::TaylorN</code> series with respect to the <code>r</code>-th variable.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L893-L898' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L899-L904' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.integrate' href='#TaylorSeries.integrate'>#</a>
 <strong><code>TaylorSeries.integrate</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>integrate(a, [x])
 </code></pre>
 
 <p>Return the integral of <code>a::Taylor1</code>. The constant of integration (0-th order coefficient) is set to <code>x</code>, which is zero if ommitted.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1140-L1145' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1148-L1153' class='documenter-source'>source</a><br></p>
 <p><a id='Base.LinAlg.gradient' href='#Base.LinAlg.gradient'>#</a>
 <strong><code>Base.LinAlg.gradient</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>    gradient(f)
@@ -341,7 +341,7 @@ set_variables(names; [order=6, numvars=-1])
 </code></pre>
 
 <p>Compute the gradient of the polynomial <code>f::TaylorN</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L912-L919' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L918-L925' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.jacobian' href='#TaylorSeries.jacobian'>#</a>
 <strong><code>TaylorSeries.jacobian</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>    jacobian(vf)
@@ -349,7 +349,7 @@ set_variables(names; [order=6, numvars=-1])
 </code></pre>
 
 <p>Compute the jacobian matrix of <code>vf</code>, a vector of <code>TaylorN</code> polynomials, evaluated at the vector <code>vals</code>. If <code>vals</code> is ommited, it is evaluated at zero.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L931-L939' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L937-L945' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.hessian' href='#TaylorSeries.hessian'>#</a>
 <strong><code>TaylorSeries.hessian</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>    hessian(f)
@@ -357,7 +357,7 @@ set_variables(names; [order=6, numvars=-1])
 </code></pre>
 
 <p>Return the hessian matrix (jacobian of the gradient) of <code>f::TaylorN</code>, evaluated at the vector <code>vals</code>. If <code>vals</code> is ommited, it is evaluated at zero.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L972-L981' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L978-L987' class='documenter-source'>source</a><br></p>
 <p><a id='Base.:*' href='#Base.:*'>#</a>
 <strong><code>Base.:*</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>*(a, b)
@@ -365,7 +365,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $a \cdot b$, of order <code>max(a.order,b.order)</code>, for <code>a::Taylor1</code>, <code>b::Taylor1</code> polynomials.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.mulHomogCoef"><code>TaylorSeries.mulHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L208' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L208' class='documenter-source'>source</a><br></p>
 <p><a id='Base.:/' href='#Base.:/'>#</a>
 <strong><code>Base.:/</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>/(a, b)
@@ -373,14 +373,14 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $a/b$, of order <code>max(a.order,b.order)</code>, for <code>a::Taylor1</code>, <code>b::Taylor1</code> polynomials.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.divHomogCoef"><code>TaylorSeries.divHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L263' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L271' class='documenter-source'>source</a><br></p>
 <p><a id='Base.:^' href='#Base.:^'>#</a>
 <strong><code>Base.:^</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>^(a, x)
 </code></pre>
 
 <p>Return the Taylor expansion of $a^x$ for <code>a::Taylor1</code> polynomial and <code>x::Number</code>. If <code>x</code> is non integer and the 0-th order coefficient is zero, an <code>ArgumentError</code> is thrown.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L374' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L382' class='documenter-source'>source</a><br></p>
 <p><a id='Base.sqrt' href='#Base.sqrt'>#</a>
 <strong><code>Base.sqrt</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>sqrt(a)
@@ -388,7 +388,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return  the Taylor expansion of $\sqrt(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial. If the first non-vanishing coefficient of <code>a</code> is an odd power, and <code>ArgumentError</code> is thrown.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.sqrtHomogCoef"><code>TaylorSeries.sqrtHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L539' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L547' class='documenter-source'>source</a><br></p>
 <p><a id='Base.exp' href='#Base.exp'>#</a>
 <strong><code>Base.exp</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>exp(a)
@@ -396,7 +396,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $e^a$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.expHomogCoef"><code>TaylorSeries.expHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L614' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L622' class='documenter-source'>source</a><br></p>
 <p><a id='Base.log' href='#Base.log'>#</a>
 <strong><code>Base.log</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>log(a)
@@ -404,7 +404,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\log(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.logHomogCoef"><code>TaylorSeries.logHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L660' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L668' class='documenter-source'>source</a><br></p>
 <p><a id='Base.sin' href='#Base.sin'>#</a>
 <strong><code>Base.sin</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>sin(a)
@@ -412,7 +412,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\sin(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.sincosHomogCoef"><code>TaylorSeries.sincosHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L710' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L718' class='documenter-source'>source</a><br></p>
 <p><a id='Base.cos' href='#Base.cos'>#</a>
 <strong><code>Base.cos</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>cos(a)
@@ -420,7 +420,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\cos(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.sincosHomogCoef"><code>TaylorSeries.sincosHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L721' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L729' class='documenter-source'>source</a><br></p>
 <p><a id='Base.tan' href='#Base.tan'>#</a>
 <strong><code>Base.tan</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>tan(a)
@@ -428,7 +428,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\tan(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.tanHomogCoef"><code>TaylorSeries.tanHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L784' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L792' class='documenter-source'>source</a><br></p>
 <p><a id='Base.asin' href='#Base.asin'>#</a>
 <strong><code>Base.asin</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>asin(a)
@@ -436,7 +436,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\arcsin(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.asinHomogCoef"><code>TaylorSeries.asinHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L836' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L844' class='documenter-source'>source</a><br></p>
 <p><a id='Base.acos' href='#Base.acos'>#</a>
 <strong><code>Base.acos</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>acos(a)
@@ -444,7 +444,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\arccos(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.acosHomogCoef"><code>TaylorSeries.acosHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L888' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L896' class='documenter-source'>source</a><br></p>
 <p><a id='Base.atan' href='#Base.atan'>#</a>
 <strong><code>Base.atan</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>atan(a)
@@ -452,7 +452,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\arctan(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.atanHomogCoef"><code>TaylorSeries.atanHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L936' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L944' class='documenter-source'>source</a><br></p>
 <p><a id='Base.sinh' href='#Base.sinh'>#</a>
 <strong><code>Base.sinh</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>sinh(a)
@@ -460,7 +460,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\sinh(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.sinhcoshHomogCoef"><code>TaylorSeries.sinhcoshHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L989' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L997' class='documenter-source'>source</a><br></p>
 <p><a id='Base.cosh' href='#Base.cosh'>#</a>
 <strong><code>Base.cosh</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>cosh(a)
@@ -468,7 +468,7 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\cosh(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.sinhcoshHomogCoef"><code>TaylorSeries.sinhcoshHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1000' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1008' class='documenter-source'>source</a><br></p>
 <p><a id='Base.tanh' href='#Base.tanh'>#</a>
 <strong><code>Base.tanh</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>tanh(a)
@@ -476,20 +476,20 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return the Taylor expansion of $\tanh(a)$, of order <code>a.order</code>, for <code>a::Taylor1</code> polynomial.</p>
 <p>For details on making the Taylor expansion, see <a href="./#TaylorSeries.tanhHomogCoef"><code>TaylorSeries.tanhHomogCoef</code></a>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1064' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1072' class='documenter-source'>source</a><br></p>
 <p><a id='Base.abs' href='#Base.abs'>#</a>
 <strong><code>Base.abs</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>abs(a)
 </code></pre>
 
 <p>Return <code>a</code> or <code>-a</code> depending on the 0-th order coefficient of the <code>Taylor1</code> polynomial <code>a</code>. If <code>a.coeffs[1]</code> is zero, an <code>ArgumentError</code> is thrown.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L354-L360' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L362-L368' class='documenter-source'>source</a><br></p>
 <pre><code>abs(a::TaylorN)
 </code></pre>
 
 <p>Absolute value of a <code>TaylorN</code> polynomial, using the 0-th order coefficient.</p>
 <p>Return <code>a</code> or <code>-a</code>, depending on the 0-th order coefficient of <code>a</code>. If it is zero, it throws an <code>ArgumentError</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L596-L603' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L602-L609' class='documenter-source'>source</a><br></p>
 <p><a id='Internals-1'></a></p>
 <h3 id="internals">Internals<a class="headerlink" href="#internals" title="Permanent link">&para;</a></h3>
 <p><a id='TaylorSeries.generate_tables' href='#TaylorSeries.generate_tables'>#</a>
@@ -515,21 +515,21 @@ set_variables(names; [order=6, numvars=-1])
 </code></pre>
 
 <p>The $i+1$-th component maps the hash index to the (lexicographic) position of the corresponding monomial in <code>coeffs_table</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/hash_tables.jl#L5' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/hash_tables.jl#L5' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.generate_index_vectors' href='#TaylorSeries.generate_index_vectors'>#</a>
 <strong><code>TaylorSeries.generate_index_vectors</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>generate_index_vectors(num_vars, degree)
 </code></pre>
 
 <p>Return a vector of index vectors with <code>num_vars</code> (number of variables) and degree.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/hash_tables.jl#L44-L49' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/hash_tables.jl#L44-L49' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.in_base' href='#TaylorSeries.in_base'>#</a>
 <strong><code>TaylorSeries.in_base</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>in_base(order, v)
 </code></pre>
 
 <p>Convert vector <code>v</code> of non-negative integers to base <code>order+1</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/hash_tables.jl#L84-L88' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/hash_tables.jl#L84-L88' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.make_inverse_dict' href='#TaylorSeries.make_inverse_dict'>#</a>
 <strong><code>TaylorSeries.make_inverse_dict</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>make_inverse_dict(v)
@@ -537,26 +537,26 @@ set_variables(names; [order=6, numvars=-1])
 
 <p>Return a Dict with the enumeration of <code>v</code>: the elements of <code>v</code> point to the corresponding index.</p>
 <p>It is used to construct <code>pos_table</code> from <code>index_table</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/hash_tables.jl#L72-L79' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/hash_tables.jl#L72-L79' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.order_posTb' href='#TaylorSeries.order_posTb'>#</a>
 <strong><code>TaylorSeries.order_posTb</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>order_posTb(order, nv, ord)
 </code></pre>
 
 <p>Return a vector with the positions, in a <code>HomogeneousPolynomial</code> of order <code>order</code>, where the variable <code>nv</code> has order <code>ord</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L1085-L1090' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L1091-L1096' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.mul!' href='#TaylorSeries.mul!'>#</a>
 <strong><code>TaylorSeries.mul!</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>mul!(c, a, b)
 </code></pre>
 
 <p>Return <code>c = a*b</code> with no allocation; all parameters are <code>HomogeneousPolynomial</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L478-L484' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L478-L484' class='documenter-source'>source</a><br></p>
 <pre><code>mul!(c, a)
 </code></pre>
 
 <p>Return <code>c = a*a</code> with no allocation; all parameters are <code>HomogeneousPolynomial</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/TaylorN.jl#L514-L518' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/TaylorN.jl#L514-L518' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.mulHomogCoef' href='#TaylorSeries.mulHomogCoef'>#</a>
 <strong><code>TaylorSeries.mulHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>mulHomogCoef(kcoef, ac, bc)
@@ -568,7 +568,7 @@ set_variables(names; [order=6, numvars=-1])
 </p>
 <p>with $a$ and $b$ <code>Taylor1</code> polynomials.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, and the vectors of the expansion coefficients <code>ac</code> and <code>bc</code>, corresponding respectively to <code>a</code> and <code>b</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L229' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L229' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.divHomogCoef' href='#TaylorSeries.divHomogCoef'>#</a>
 <strong><code>TaylorSeries.divHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>divHomogCoef(kcoef, ac, bc, coeffs, ordfact)
@@ -580,7 +580,7 @@ set_variables(names; [order=6, numvars=-1])
 </p>
 <p>with $a$ and $b$ <code>Taylor1</code> polynomials.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vectors of the expansion coefficients <code>ac</code> and <code>bc</code>, corresponding respectively to <code>a</code> and <code>b</code>, the already calculated expansion coefficients <code>coeffs</code> of <code>c</code>, and <code>ordfact</code> which is the order of the factorized term of the denominator, whenever <code>b_0</code> is zero.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L310' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L318' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.powHomogCoef' href='#TaylorSeries.powHomogCoef'>#</a>
 <strong><code>TaylorSeries.powHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>powHomogCoef(kcoef, ac, x, coeffs, knull)
@@ -592,7 +592,7 @@ set_variables(names; [order=6, numvars=-1])
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial, and <code>x</code> a number.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, the exponent <code>x</code>, the already calculated expansion coefficients <code>coeffs</code> of <code>c</code>, and <code>knull</code> which is the order of the first non-zero coefficient of <code>a</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L466' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L474' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.squareHomogCoef' href='#TaylorSeries.squareHomogCoef'>#</a>
 <strong><code>TaylorSeries.squareHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>squareHomogCoef(kcoef, ac)
@@ -605,7 +605,7 @@ c_k &=& 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2, \text{ if $k$ is even,
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient and the vector of the expansion coefficients <code>ac</code> of <code>a</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L508' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L516' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.sqrtHomogCoef' href='#TaylorSeries.sqrtHomogCoef'>#</a>
 <strong><code>TaylorSeries.sqrtHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>sqrtHomogCoef(kcoef, ac, coeffs, knull)
@@ -618,7 +618,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, the already calculated expansion coefficients <code>coeffs</code> of <code>c</code>, and <code>knull</code>, which is half of the order of the first non-zero coefficient of <code>a</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L576' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L584' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.expHomogCoef' href='#TaylorSeries.expHomogCoef'>#</a>
 <strong><code>TaylorSeries.expHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>expHomogCoef(kcoef, ac, coeffs)
@@ -630,7 +630,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of $a$, and the already calculated expansion coefficients <code>coeffs</code> of <code>c</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L635' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L643' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.logHomogCoef' href='#TaylorSeries.logHomogCoef'>#</a>
 <strong><code>TaylorSeries.logHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>logHomogCoef(kcoef, ac, coeffs)
@@ -642,7 +642,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, and the already calculated expansion coefficients <code>coeffs</code> of <code>c</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L682' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L690' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.sincosHomogCoef' href='#TaylorSeries.sincosHomogCoef'>#</a>
 <strong><code>TaylorSeries.sincosHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>sincosHomogCoef(kcoef, ac, scoeffs, ccoeffs)
@@ -655,7 +655,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, and the already calculated expansion coefficients <code>scoeffs</code> and <code>ccoeffs</code> of <code>sin(a)</code> and <code>cos(a)</code>, respectvely.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L747' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L755' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.tanHomogCoef' href='#TaylorSeries.tanHomogCoef'>#</a>
 <strong><code>TaylorSeries.tanHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>tanHomogCoef(kcoef, ac, coeffst2)
@@ -667,7 +667,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial and $p = c^2$.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, and the already calculated expansion coefficients <code>coeffst2</code> of <code>c^2</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L808' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L816' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.asinHomogCoef' href='#TaylorSeries.asinHomogCoef'>#</a>
 <strong><code>TaylorSeries.asinHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>asinHomogCoef(kcoef, ac, rc, coeffs)
@@ -679,7 +679,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial and $r = \sqrt{1 - a^2}$.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, the already calculated expansion coefficients <code>rc</code> of $r$ (see above), and the already calculated expansion coefficients <code>coeffs</code> of <code>asin(a)</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L860' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L868' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.acosHomogCoef' href='#TaylorSeries.acosHomogCoef'>#</a>
 <strong><code>TaylorSeries.acosHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>acosHomogCoef(kcoef, ac, rc, coeffs)
@@ -691,7 +691,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial and $r = \sqrt{1 - a^2}$.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, the already calculated expansion coefficients <code>rc</code> of $r$ (see above), and the already calculated expansion coefficients <code>coeffs</code> of <code>acos(a)</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L913' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L921' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.atanHomogCoef' href='#TaylorSeries.atanHomogCoef'>#</a>
 <strong><code>TaylorSeries.atanHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>atanHomogCoef(kcoef, ac, rc, coeffs)
@@ -703,7 +703,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial and $r = 1 + a^2$.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, the already calculated expansion coefficients <code>rc</code> of $r$ (see above), and the already calculated expansion coefficients <code>coeffs</code> of <code>asin(a)</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L960' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L968' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.sinhcoshHomogCoef' href='#TaylorSeries.sinhcoshHomogCoef'>#</a>
 <strong><code>TaylorSeries.sinhcoshHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>sinhcoshHomogCoef(kcoef, ac, scoeffs, ccoeffs)
@@ -716,7 +716,7 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, and the already calculated expansion coefficients <code>shcoeffs</code> and <code>chcoeffs</code> of <code>sinh(a)</code> and <code>cosh(a)</code>, respectvely.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1026' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1034' class='documenter-source'>source</a><br></p>
 <p><a id='TaylorSeries.tanhHomogCoef' href='#TaylorSeries.tanhHomogCoef'>#</a>
 <strong><code>TaylorSeries.tanhHomogCoef</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>tanhHomogCoef(kcoef, ac, coeffst2)
@@ -728,14 +728,14 @@ c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2
 </p>
 <p>with $a$ a <code>Taylor1</code> polynomial and $p = th^2$.</p>
 <p>Inputs are the <code>kcoef</code>-th coefficient, the vector of the expansion coefficients <code>ac</code> of <code>a</code>, and the already calculated expansion coefficients <code>coeffst2</code> of <code>th^2</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1088' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1096' class='documenter-source'>source</a><br></p>
 <p><a id='Base.LinAlg.A_mul_B!' href='#Base.LinAlg.A_mul_B!'>#</a>
 <strong><code>Base.LinAlg.A_mul_B!</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>A_mul_B!(Y, A, B)
 </code></pre>
 
 <p>Multiply A*B and save the result in Y.</p>
-<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/034398c1002027a96d9f6b3005247de840401044/src/Taylor1.jl#L1230-L1234' class='documenter-source'>source</a><br></p></div>
+<p><a target='_blank' href='https://github.com/JuliaDiff/TaylorSeries.jl/tree/8669f2b4ae6e6b046ce4556a3732f45b2e3cb8a4/src/Taylor1.jl#L1238-L1242' class='documenter-source'>source</a><br></p></div>
         
     </div>
 
