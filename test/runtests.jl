@@ -140,6 +140,10 @@ facts("Tests for Taylor1 expansions") do
 
     @fact promote(ta(0.0), t) == (ta(0.0),ta(0.0))  --> true
 
+    @fact norm((reverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1  --> true
+    n = 1:15; cfs = (-n).^(n-1)./gamma(n+1)
+    @fact norm(reverse(t*exp(t)).coeffs[2:end]./cfs-1) < 4tol1  --> true
+
     @fact_throws ArgumentError abs(ta(big(0)))
     @fact_throws ArgumentError 1/t
     @fact_throws ArgumentError zt/zt
@@ -149,6 +153,7 @@ facts("Tests for Taylor1 expansions") do
     @fact_throws ArgumentError log(t)
     @fact_throws ArgumentError cos(t)/sin(t)
     @fact_throws AssertionError derivative(30, exp(ta(1.0pi)))
+    @fact_throws ArgumentError reverse(exp(t))
 
     @fact string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"  --> true
     @fact string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"  --> true

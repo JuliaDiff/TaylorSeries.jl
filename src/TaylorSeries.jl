@@ -26,7 +26,7 @@ import Base: zero, one, zeros, ones, isinf, isnan,
     rem, mod, mod2pi, abs, gradient,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
-    A_mul_B!
+    reverse, A_mul_B!
 
 export Taylor1, TaylorN, HomogeneousPolynomial
 
