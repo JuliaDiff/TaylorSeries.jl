@@ -546,8 +546,14 @@ end
 
 
 ## Division ##
-/{T<:Union{Real, Complex}}(a::HomogeneousPolynomial, x::T) = a*inv(x)
-/{T<:Union{Real, Complex}}(a::TaylorN, x::T) = a*inv(x)
+function /{T<:Union{Real, Complex}}(a::HomogeneousPolynomial, x::T)
+    R = promote_type(eltype(a), T)
+    convert(HomogeneousPolynomial{R},a)*inv(convert(R,x))
+end
+function /{T<:Union{Real, Complex}}(a::TaylorN, x::T)
+    R = promote_type(eltype(a), T)
+    convert(TaylorN{R},a)*inv(convert(R,x))
+end
 function /(a::TaylorN, b::TaylorN)
     @inbounds b0 = b.coeffs[1].coeffs[1]
     @assert b0 != zero(b0)
