@@ -77,6 +77,9 @@ facts("Tests for Taylor1 expansions") do
     @fact ((1-tsquare)^(1//2))^2 == 1-tsquare  --> true
     @fact ((1-t)^(1//4)).coeffs[15] == -4188908511//549755813888  --> true
     @fact abs(((1+t)^3.2).coeffs[14] + 5.4021062656e-5) < tol1  --> true
+    @fact Taylor1(BigFloat,5)/6 == 1im*Taylor1(5)/complex(0,BigInt(6))  --> true
+    @fact Taylor1(BigFloat,5)/(6*Taylor1(3)) == 1/BigInt(6)  --> true
+    @fact Taylor1(BigFloat,5)/(6im*Taylor1(3)) == -1im/BigInt(6)  --> true
 
     trational = ta(0//1)
     @fact eltype(trational) --> Rational{Int}
@@ -143,6 +146,10 @@ facts("Tests for Taylor1 expansions") do
 
     @fact promote(ta(0.0), t) == (ta(0.0),ta(0.0))  --> true
 
+    @fact norm((reverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1  --> true
+    n = 1:15; cfs = (-n).^(n-1)./gamma(n+1)
+    @fact norm(reverse(t*exp(t)).coeffs[2:end]./cfs-1) < 4tol1  --> true
+
     @fact_throws ArgumentError abs(ta(big(0)))
     @fact_throws ArgumentError 1/t
     @fact_throws ArgumentError zt/zt
@@ -152,6 +159,7 @@ facts("Tests for Taylor1 expansions") do
     @fact_throws ArgumentError log(t)
     @fact_throws ArgumentError cos(t)/sin(t)
     @fact_throws AssertionError derivative(30, exp(ta(1.0pi)))
+    @fact_throws ArgumentError reverse(exp(t))
 
     @fact string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"  --> true
     @fact string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"  --> true
@@ -282,6 +290,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact derivative(yT) == zeroT  --> true
     @fact -xT/3im == im*xT/3  --> true
     @fact (xH/3im)' == im*xH/3  --> true
+    @fact xT/BigInt(3) == TaylorN(BigFloat,1)/3  --> true
+    @fact xT/complex(0,BigInt(3)) == -im*xT/BigInt(3)  --> true
+    @fact (xH/complex(0,BigInt(3)))' ==
+        im*HomogeneousPolynomial([BigInt(1),0])/3  --> true
 
     @fact derivative(2xT*yT^2,1) == 2yT^2  --> true
     @fact xT*xT^3 == xT^4  --> true
@@ -360,6 +372,10 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact string(t1N) ==
         "  1.0 x₁ + 𝒪(‖x‖³) + ( 1.0 + 𝒪(‖x‖³)) t + ( 1.0 x₂² + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
     @fact tN1 == ctN1 --> true
+    @fact convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) ==
+        [t1N, t1N] --> true
+    @fact convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) ==
+        [ctN1 ctN1] --> true
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do

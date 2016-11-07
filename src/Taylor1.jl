@@ -258,8 +258,16 @@ function /{T<:Integer, S<:Union{Real,Complex}}(a::Taylor1{Rational{T}},b::S)
     end
     Taylor1(v, a.order)
 end
-/{T<:Real}(a::Taylor1, b::T) = a * inv(b)
-/{T<:Complex}(a::Taylor1, b::T) = a * inv(b)
+/{T<:Real}(a::Taylor1{T}, b::T) = a * inv(b)
+function /{T<:Real}(a::Taylor1, b::T)
+    R = promote_type(eltype(a), T)
+    convert(Taylor1{R}, a) / convert(R, b)
+end
+/{T<:Complex}(a::Taylor1{T}, b::T) = a * inv(b)
+function /{T<:Complex}(a::Taylor1, b::T)
+    R = promote_type(eltype(a), T)
+    convert(Taylor1{R}, a) / convert(R, b)
+end
 doc"""
 ```
 /(a, b)
@@ -1358,6 +1366,39 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
         suma = suma*x + a.coeffs[k]
     end
     suma
+end
+
+
+doc"""
+    reverse(f)
+
+Return the Taylor expansion of $f^{-1}(t)$, of order `N = f.order`,
+for `f::Taylor1` polynomial if the first coefficient of `f` is zero.
+Otherwise, an `ArgumentError` is thrown.
+
+The algorithm implements Lagrange inversion at $t=0$ if $f(0)=0$:
+\begin{equation*}
+f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.\frac{{\rm d}^{n-1}}{{\rm d} z^{n-1}}\left(\frac{z}{f(z)}\right)^n\right|_{z=0}.
+\end{equation*}
+"""
+function reverse{T<:Number}(f::Taylor1{T})
+    if f.coeffs[1] != 0
+        throw(ArgumentError(
+        """Evaluation of Taylor1 series at 0 is non-zero. For high accuracy, revert
+        a Taylor1 series with first coefficient 0 and re-expand about f(0)."""))
+    end
+    z = Taylor1(T,f.order)
+    zdivf = z/f
+    zdivfpown = zdivf
+    S = eltype(zdivf)
+    coeffs = zeros(S,f.order+1)
+
+    coeffs[1] = 0
+    @inbounds for n = 1:f.order
+        coeffs[n+1] = zdivfpown.coeffs[n]/n
+        zdivfpown *= zdivf
+    end
+    Taylor1(coeffs, f.order)
 end
 
 
