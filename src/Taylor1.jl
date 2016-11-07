@@ -1185,7 +1185,7 @@ Compute the `k-th` expansion coefficient of $g(a) = e^{-a^2}$ given by
 g_k = -\frac{2}{k} \sum_{j=0}^{k-1} p_{k-j} g_j,
 \end{equation*}
 
-with $a$ a `Taylor1` polynomial and $p(x) = a(x) a'(x) $.
+with $a$ a `Taylor1` polynomial and $ p(x) = a(x) a'(x) $.
 
 Inputs are the `kcoef`-th coefficient, the already calculated expansion coefficients `kcoefprod` of $p(x)$ and the already calculated expansion coefficients `coeffs` of $g(a)$. 
 """
@@ -1197,7 +1197,6 @@ function gaussHomogCoef{T<:Number}(kcoef::Int,kcoefprod::Vector{T},coeffs::Vecto
     end
     -2*coefhomog / (kcoef)
 end
-
 
 ## erf ##
 doc"""
@@ -1250,7 +1249,6 @@ function erfHomogCoef{T<:Number}(kcoef::Int,gausscoeffs::Vector{T},primecoeffs::
     end
     coefhomog / (kcoef)
 end
-
 
 ## Differentiating ##
 """
