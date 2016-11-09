@@ -32,7 +32,7 @@ immutable Taylor1{T<:Number} <: Number
         else
             resize!(coeffs, order+1)
             for i = lencoef+1:order+1
-                coeffs[i] = zero(T)
+                coeffs[i] = zero(coeffs[1])
             end
             return new(coeffs, order)
         end
@@ -131,8 +131,8 @@ end
 ctranspose{T<:Number}(a::Taylor1{T}) = conj(a)
 
 ## zero and one ##
-zero{T<:Number}(a::Taylor1{T}) = Taylor1(zero(T), a.order)
-one{T<:Number}(a::Taylor1{T}) = Taylor1(one(T), a.order)
+zero{T<:Number}(a::Taylor1{T}) = Taylor1(zero(a.coeffs[1]), a.order)
+one{T<:Number}(a::Taylor1{T}) = Taylor1(one(a.coeffs[1]), a.order)
 
 ## Equality ##
 function ==(a::Taylor1, b::Taylor1)

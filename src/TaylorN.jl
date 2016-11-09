@@ -42,7 +42,7 @@ immutable HomogeneousPolynomial{T<:Number} <: Number
         num_coeffs == lencoef && return new(coeffs, order)
         resize!(coeffs, num_coeffs)
         @simd for i = lencoef+1:num_coeffs
-            @inbounds coeffs[i] = zero(T)
+            @inbounds coeffs[i] = zero(coeffs[1])
         end
         new(coeffs, order)
     end
@@ -66,17 +66,21 @@ get_order(a::HomogeneousPolynomial) = a.order
 
 ## zero and one ##
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial(zero(T), 0)
+    a.order == 0 && return HomogeneousPolynomial(zero(a.coeffs[1]), 0)
     @inbounds num_coeffs = size_table[a.order+1]
-    return HomogeneousPolynomial{T}( zeros(T,num_coeffs), a.order)
+    v = Array(T, num_coeffs)
+    for ind in eachindex(a.coeffs)
+        @inbounds v[ind] = zero(a.coeffs[ind])
+    end
+    return HomogeneousPolynomial(v, a.order)
 end
 
-function zeros{T<:Number}(::HomogeneousPolynomial{T}, order::Int)
-    order == 0 && return [HomogeneousPolynomial(zero(T),0)]
+function zeros{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
+    order == 0 && return [HomogeneousPolynomial(zero(a.coeffs[1]),0)]
     v = Array(HomogeneousPolynomial{T}, order+1)
     @simd for ord in eachindex(v)
         @inbounds num_coeffs = size_table[ord]
-        @inbounds v[ord] = HomogeneousPolynomial(zeros(T,num_coeffs),ord-1)
+        @inbounds v[ord] = HomogeneousPolynomial(zero(a.coeffs[1]),ord-1)
     end
     return v
 end
@@ -85,17 +89,25 @@ zeros{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
     zeros( HomogeneousPolynomial(zero(T), 0), order)
 
 function one{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial(one(T), 0)
+    a.order == 0 && return HomogeneousPolynomial(one(a.coeffs[1]), 0)
     @inbounds num_coeffs = size_table[a.order+1]
-    return HomogeneousPolynomial{T}( ones(T,num_coeffs), a.order)
+    v = Array(T, num_coeffs)
+    for ind in eachindex(a.coeffs)
+        @inbounds v[ind] = one(a.coeffs[ind])
+    end
+    return HomogeneousPolynomial{T}(v, a.order)
 end
 
-function ones{T<:Number}(::HomogeneousPolynomial{T}, order::Int)
-    order == 0 && return [HomogeneousPolynomial(one(T),0)]
+function ones{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
+    order == 0 && return [HomogeneousPolynomial(one(a.coeffs[1]),0)]
     v = Array(HomogeneousPolynomial{T}, order+1)
     @simd for ord in eachindex(v)
         @inbounds num_coeffs = size_table[ord]
-        @inbounds v[ord] = HomogeneousPolynomial(ones(T,num_coeffs),ord-1)
+        vT = Array(T, num_coeffs)
+        for ind in 1:num_coeffs
+            @inbounds vT[ind] = one(a.coeffs[1])
+        end
+        @inbounds v[ord] = HomogeneousPolynomial(vT,ord-1)
     end
     return v
 end
