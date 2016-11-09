@@ -20,7 +20,7 @@ end
 
 
 function pretty_print{T<:Number}(a::Taylor1{T})
-    z = zero(T)
+    z = zero(a.coeffs[1])
     space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, space, bigO)
@@ -39,7 +39,7 @@ function pretty_print{T<:Number}(a::Taylor1{T})
     strout
 end
 function pretty_print{T<:Number}(a::Taylor1{HomogeneousPolynomial{T}})
-    z = zero(T)
+    z = zero(a.coeffs[1])
     space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, space, bigO)
@@ -60,7 +60,7 @@ function pretty_print{T<:Number}(a::Taylor1{HomogeneousPolynomial{T}})
     strout
 end
 function pretty_print{T<:Number}(a::Taylor1{TaylorN{T}})
-    z = zero(T)
+    z = zero(a.coeffs[1])
     space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, space, bigO)
@@ -81,14 +81,14 @@ function pretty_print{T<:Number}(a::Taylor1{TaylorN{T}})
     strout
 end
 function pretty_print{T<:Number}(a::HomogeneousPolynomial{T})
-    z = zero(T)
+    z = zero(a.coeffs[1])
     space = string(" ")
     a == zero(a) && return string(space, z)
     strout::String = homogPol2str(a)
     strout
 end
 function pretty_print{T<:Number}(a::TaylorN{T})
-    z = zero(T)
+    z = zero(a.coeffs[1])
     space = string("")
     bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, bigO)
@@ -137,7 +137,7 @@ end
 function homogPol2str{T<:Number}(a::HomogeneousPolynomial{Taylor1{T}})
     numVars = get_numvars()
     order = a.order
-    z = zero(T)
+    z = zero(a.coeffs[1])
     space = string(" ")
     strout::String = space
     ifirst = true

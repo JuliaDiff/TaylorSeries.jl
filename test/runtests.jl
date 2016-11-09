@@ -344,11 +344,11 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact_throws AssertionError cos(x)/sin(y)
 
     tN = Taylor1([zero(TaylorN(Int,1)), one(TaylorN(Int,1))],2)
-    @fact string(zero(tN)) == " 0 + 𝒪(t³)" --> true
+    @fact string(zero(tN)) == "  0 + 𝒪(‖x‖¹⁸) + 𝒪(t³)" --> true
     @fact string(tN) == " ( 1 + 𝒪(‖x‖¹⁸)) t + 𝒪(t³)" --> true
     @fact string(Taylor1([xH+yH])) == "  1 x₁ + 1 x₂ + 𝒪(t¹)"  --> true
     @fact string(Taylor1([zero(xH), xH*yH])) ==
-        "  0 + ( 1 x₁ x₂) t + 𝒪(t²)"  --> true
+        " ( 1 x₁ x₂) t + 𝒪(t²)"  --> true
     @fact string(tN*Taylor1([0,TaylorN([xH+yH])])) ==
         " ( 1 x₁ + 1 x₂ + 𝒪(‖x‖¹⁸)) t² + 𝒪(t³)" --> true
 
