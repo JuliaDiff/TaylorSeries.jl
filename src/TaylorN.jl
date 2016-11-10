@@ -424,6 +424,32 @@ for f in (:+, :-)
             @inbounds coeffs[1] = aux
             return TaylorN{S}(coeffs, a.order)
         end
+        function ($f){T<:Union{Real,Complex}}(a::TaylorN{Taylor1{T}},
+                b::Taylor1{T})
+            @inbounds aux = ($f)(a.coeffs[1], b)
+            S = typeof(aux)
+            # @inbounds aux = ($f)(a.coeffs[1].coeffs[1], b)
+            # S = Taylor1{T}
+            coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
+            @simd for i in eachindex(coeffs)
+                @inbounds coeffs[i] = a.coeffs[i]
+            end
+            @inbounds coeffs[1] = aux
+            return TaylorN{S}(coeffs, a.order)
+        end
+        function ($f){T<:Union{Real,Complex}}(b::Taylor1{T},
+                a::TaylorN{Taylor1{T}})
+            @inbounds aux = ($f)(b, a.coeffs[1])
+            S = typeof(aux)
+            # @inbounds aux = ($f)(b, a.coeffs[1].coeffs[1])
+            # S = Taylor1{T}
+            coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
+            @simd for i in eachindex(coeffs)
+                @inbounds coeffs[i] = ($f)(a.coeffs[i])
+            end
+            @inbounds coeffs[1] = aux
+            return TaylorN{S}(coeffs, a.order)
+        end
     end
 end
 
@@ -471,6 +497,18 @@ function *{T<:Union{Real,Complex}}(a::HomogeneousPolynomial, b::T)
     return HomogeneousPolynomial{S}(coeffs, a.order)
 end
 *{T<:Union{Real,Complex}}(b::T, a::HomogeneousPolynomial) = a * b
+function *{T<:Union{Real,Complex}}(a::HomogeneousPolynomial{Taylor1{T}},
+        b::Taylor1{T})
+    @inbounds aux = a.coeffs[1] * b
+    S = typeof(aux)
+    coeffs = Array(S,length(a.coeffs))
+    @simd for i in eachindex(coeffs)
+        @inbounds coeffs[i] = a.coeffs[i] * b
+    end
+    return HomogeneousPolynomial{S}(coeffs, a.order)
+end
+*{T<:Union{Real,Complex}}(b::Taylor1{T},
+    a::HomogeneousPolynomial{Taylor1{T}}) = a * b
 
 
 *(a::Bool, b::TaylorN) = *(promote(a,b)...)
@@ -485,6 +523,16 @@ function *{T<:Union{Real,Complex}}(a::TaylorN, b::T)
     return TaylorN{S}(coeffs, a.order)
 end
 *{T<:Union{Real,Complex}}(b::T, a::TaylorN) = a * b
+function *{T<:Union{Real,Complex}}(a::TaylorN{Taylor1{T}}, b::Taylor1{T})
+    @inbounds aux = a.coeffs[1] * b
+    S = eltype(aux)
+    coeffs = Array(HomogeneousPolynomial{S},length(a.coeffs))
+    @simd for i in eachindex(coeffs)
+        @inbounds coeffs[i] = a.coeffs[i] * b
+    end
+    return TaylorN{S}(coeffs, a.order)
+end
+*{T<:Union{Real,Complex}}(b::Taylor1{T}, a::TaylorN{Taylor1{T}}) = a * b
 
 
 """
@@ -587,6 +635,17 @@ function /(a::TaylorN, b::TaylorN)
     end
 
     return TaylorN{T}(coeffs, a.order)
+end
+function /{T<:Union{Real, Complex}}(a::HomogeneousPolynomial{Taylor1{T}},
+        x::Taylor1{T})
+    # R = promote_type(eltype(a), T)
+    # convert(HomogeneousPolynomial{R},a)*inv(convert(R,x))
+    a*inv(x)
+end
+function /{T<:Union{Real, Complex}}(a::TaylorN{Taylor1{T}}, x::Taylor1{T})
+    # R = promote_type(eltype(a), T)
+    # convert(TaylorN{R},a)*inv(convert(R,x))
+    a*inv(x)
 end
 
 ## TODO: Implement factorization (divfactorization) for TaylorN polynomials
@@ -1047,6 +1106,15 @@ function evaluate{T<:Number,S<:Union{Real,Complex}}(a::TaylorN{T},
 end
 
 evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
+
+function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
+        x0::Array{TaylorN{T},1})
+    @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x)
+        x0[i] = evaluate( x[i], δt )
+    end
+    nothing
+end
 
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable
