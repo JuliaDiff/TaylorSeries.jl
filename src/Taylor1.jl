@@ -1248,7 +1248,7 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.\frac{{\rm d}^{n-1}}{{\rm d} z^{
 \end{equation*}
 """
 function reverse{T<:Number}(f::Taylor1{T})
-    if f.coeffs[1] != 0
+    if f.coeffs[1] != zero(T)
         throw(ArgumentError(
         """Evaluation of Taylor1 series at 0 is non-zero. For high accuracy, revert
         a Taylor1 series with first coefficient 0 and re-expand about f(0)."""))
@@ -1259,7 +1259,7 @@ function reverse{T<:Number}(f::Taylor1{T})
     S = eltype(zdivf)
     coeffs = zeros(S,f.order+1)
 
-    coeffs[1] = 0
+    coeffs[1] = zero(S)
     @inbounds for n = 1:f.order
         coeffs[n+1] = zdivfpown.coeffs[n]/n
         zdivfpown *= zdivf
