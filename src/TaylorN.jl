@@ -1107,6 +1107,14 @@ end
 
 evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
 
+function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
+        x0::Array{T,1})
+    @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x)
+        x0[i] = evaluate( x[i], δx )
+    end
+    nothing
+end
 function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
         x0::Array{TaylorN{T},1})
     @assert length(x) == length(x0)
