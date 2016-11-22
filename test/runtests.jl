@@ -361,11 +361,17 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
+    @fact eltype(xHt) == Taylor1{Float64} --> true
+    @fact eltype(tN1) == Taylor1{Float64} --> true
     @fact string(tN1) ==
         " ( 1.0 t + 𝒪(t³)) + ( 1.0 + 𝒪(t³)) x₁ + ( 1.0 t² + 𝒪(t³)) x₂² + 𝒪(‖x‖³)" --> true
     @fact string(t1N) ==
         "  1.0 x₁ + 𝒪(‖x‖³) + ( 1.0 + 𝒪(‖x‖³)) t + ( 1.0 x₂² + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
     @fact tN1 == ctN1 --> true
+    @fact tN1+tN1 == 2*tN1 --> true
+    @fact tN1-tN1 == zero(tN1) --> true
+    @fact string(t1N*t1N) ==
+        "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
     @fact convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) ==
         [t1N, t1N] --> true
     @fact convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) ==
