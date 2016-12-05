@@ -204,7 +204,6 @@ facts("Matrix multiplication for Taylor1") do
 end
 
 facts("Tests for HomogeneousPolynomial and TaylorN") do
-
     @fact eltype(set_variables(Int, "x", numvars=2, order=6))  --> TaylorN{Int}
     @fact eltype(set_variables("x", numvars=2, order=6))  --> TaylorN{Float64}
     @fact eltype(set_variables(BigInt, "x y", order=6))  --> TaylorN{BigInt}
@@ -315,6 +314,9 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @fact tan(TaylorN(1,order=4)+TaylorN(2,order=4)) == ptxy  --> true
     @fact evaluate(xH*yH,[1.0,2.0]) == 2.0  --> true
+    v = zeros(Int, 2)
+    @fact evaluate!([xT, yT], ones(Int, 2), v) --> nothing
+    @fact v == ones(2) --> true
 
     g1(xT,yT) = xT^3 + 3yT^2 - 2xT^2 * yT - 7xT + 2
     g2(xT,yT) = yT + xT^2 - xT^4
@@ -342,8 +344,14 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact_throws AssertionError x^(-2)
     @fact_throws ArgumentError log(x)
     @fact_throws AssertionError cos(x)/sin(y)
+end
 
+facts("Tests with mixures of Taylor1 and TaylorN") do
+    set_variables("x", numvars=2, order=17)
+    xH = HomogeneousPolynomial([1,0])
+    yH = HomogeneousPolynomial([0,1],1)
     tN = Taylor1([zero(TaylorN(Int,1)), one(TaylorN(Int,1))],2)
+
     @fact string(zero(tN)) == "  0 + 𝒪(‖x‖¹⁸) + 𝒪(t³)" --> true
     @fact string(tN) == " ( 1 + 𝒪(‖x‖¹⁸)) t + 𝒪(t³)" --> true
     @fact string(Taylor1([xH+yH])) == "  1 x₁ + 1 x₂ + 𝒪(t¹)"  --> true
@@ -358,17 +366,26 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact string(xHt) == " ( 1.0 + 𝒪(t³)) x₁" --> true
     @fact string(yHt) == " ( 1.0 t + 𝒪(t³)) x₂" --> true
     @fact string(HomogeneousPolynomial([t])) == " ( 1.0 t + 𝒪(t³))" --> true
+    @fact 3*xHt == HomogeneousPolynomial([3*one(t), zero(t)]) --> true
+    @fact complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)]) --> true
+
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
     @fact eltype(xHt) == Taylor1{Float64} --> true
     @fact eltype(tN1) == Taylor1{Float64} --> true
+    @fact eltype(Taylor1([xH])) --> HomogeneousPolynomial{Int64}
+    @fact eltype(tN) --> TaylorN{Int64}
+    @fact get_order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) --> 1
     @fact string(tN1) ==
         " ( 1.0 t + 𝒪(t³)) + ( 1.0 + 𝒪(t³)) x₁ + ( 1.0 t² + 𝒪(t³)) x₂² + 𝒪(‖x‖³)" --> true
     @fact string(t1N) ==
         "  1.0 x₁ + 𝒪(‖x‖³) + ( 1.0 + 𝒪(‖x‖³)) t + ( 1.0 x₂² + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
     @fact tN1 == ctN1 --> true
     @fact tN1+tN1 == 2*tN1 --> true
+    @fact tN1+1im*tN1 == complex(1,1)*tN1 --> true
+    @fact tN1+t == t+tN1 --> true
+    @fact tN1-t == -t+tN1 --> true
     @fact tN1-tN1 == zero(tN1) --> true
     @fact string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
@@ -376,6 +393,13 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
         [t1N, t1N] --> true
     @fact convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) ==
         [ctN1 ctN1] --> true
+
+    @fact string(evaluate(t1N, 0.0)) == " 1.0 x₁ + 𝒪(‖x‖³)" --> true
+    @fact string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 𝒪(‖x‖³)" --> true
+    v = zeros(TaylorN{Float64},2)
+    @fact evaluate!([t1N, t1N^2], 0.0, v) --> nothing
+    @fact v[1] == TaylorN([xHt]) --> true
+    @fact v[2] == TaylorN([xHt^2]) --> true
 end
 
 facts("Testing an identity proved by Euler (8 variables)") do
@@ -402,7 +426,7 @@ facts("Testing an identity proved by Euler (8 variables)") do
     @fact evaluate( rhs, v) == evaluate( lhs, v)  --> true
 end
 
-facts("High order polynomials test inspired by Fateman (takes a few seconds))") do
+facts("High order polynomials test inspired by Fateman (takes a few seconds)") do
     x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)
 
     function fateman2(degree::Int)
