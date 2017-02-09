@@ -66,7 +66,7 @@ end
 
 
 function make_forward_dict(v::Vector)
-    @compat Dict([i=>x for (i,x) in enumerate(v)])
+    Dict(Dict(i=>x for (i,x) in enumerate(v)))
 end
 
 """
@@ -78,7 +78,7 @@ the corresponding index.
 It is used to construct `pos_table` from `index_table`.
 """
 function make_inverse_dict(v::Vector)
-    @compat Dict([x=>i for (i,x) in enumerate(v)])
+    Dict(Dict(x=>i for (i,x) in enumerate(v)))
 end
 
 """

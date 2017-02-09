@@ -22,7 +22,7 @@ type ParamsTaylorN
     variable_names :: Array{String,1}
 end
 
-@compat const _params_TaylorN_ = ParamsTaylorN(6, 2, String["x₁", "x₂"])
+const _params_TaylorN_ = ParamsTaylorN(6, 2, String["x₁", "x₂"])
 
 
 ## Utilities to get the maximum order and number of variables
