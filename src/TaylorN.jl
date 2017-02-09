@@ -68,7 +68,7 @@ get_order(a::HomogeneousPolynomial) = a.order
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
     a.order == 0 && return HomogeneousPolynomial(zero(a.coeffs[1]), 0)
     @inbounds num_coeffs = size_table[a.order+1]
-    v = Array{T,1}(num_coeffs)
+    v = Array{T}(num_coeffs)
     for ind in eachindex(a.coeffs)
         @inbounds v[ind] = zero(a.coeffs[ind])
     end
@@ -77,7 +77,7 @@ end
 
 function zeros{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
     order == 0 && return [HomogeneousPolynomial(zero(a.coeffs[1]),0)]
-    v = Array{HomogeneousPolynomial{T},1}(order+1)
+    v = Array{HomogeneousPolynomial{T}}(order+1)
     @simd for ord in eachindex(v)
         @inbounds num_coeffs = size_table[ord]
         @inbounds v[ord] = HomogeneousPolynomial(zero(a.coeffs[1]),ord-1)
@@ -91,7 +91,7 @@ zeros{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
 function one{T<:Number}(a::HomogeneousPolynomial{T})
     a.order == 0 && return HomogeneousPolynomial(one(a.coeffs[1]), 0)
     @inbounds num_coeffs = size_table[a.order+1]
-    v = Array{T,1}(num_coeffs)
+    v = Array{T}(num_coeffs)
     for ind in eachindex(a.coeffs)
         @inbounds v[ind] = one(a.coeffs[ind])
     end
@@ -100,10 +100,10 @@ end
 
 function ones{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
     order == 0 && return [HomogeneousPolynomial(one(a.coeffs[1]),0)]
-    v = Array{HomogeneousPolynomial{T},1}(order+1)
+    v = Array{HomogeneousPolynomial{T}}(order+1)
     @simd for ord in eachindex(v)
         @inbounds num_coeffs = size_table[ord]
-        vT = Array{T,1}(num_coeffs)
+        vT = Array{T}(num_coeffs)
         for ind in 1:num_coeffs
             @inbounds vT[ind] = one(a.coeffs[1])
         end
@@ -120,7 +120,7 @@ convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) =
     HomogeneousPolynomial{T}(convert(Array{T,1}, a.coeffs), a.order)
 function convert{T<:Integer, S<:AbstractFloat}(
     ::Type{HomogeneousPolynomial{Rational{T}}}, a::HomogeneousPolynomial{S})
-    v = Array{Rational{T},1}(length(a.coeffs))
+    v = Array{Rational{T}}(length(a.coeffs))
     for i in eachindex(v)
         # v[i] = convert(Rational{T}, a.coeffs[i])
         v[i] = rationalize(a.coeffs[i], tol=eps(one(S)))
@@ -286,7 +286,7 @@ function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}})
     for ordHP in eachindex(s.coeffs)
         ordert = max(ordert, s.coeffs[ordHP].coeffs[1].order)
     end
-    vT = Array{TaylorN{T},1}(ordert+1)
+    vT = Array{TaylorN{T}}(ordert+1)
     for ordT in eachindex(vT)
         vT[ordT] = TaylorN(zero(T), s.order)
     end
@@ -307,7 +307,7 @@ end
 
 function convert{T<:Number,N}(::Type{Array{TaylorN{Taylor1{T}},N}},
         s::Array{Taylor1{TaylorN{T}},N})
-    v = Array{TaylorN{Taylor1{T}},N}(size(s))
+    v = Array{TaylorN{Taylor1{T}}}(size(s))
     for ind in eachindex(s)
         v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
     end
@@ -315,7 +315,7 @@ function convert{T<:Number,N}(::Type{Array{TaylorN{Taylor1{T}},N}},
 end
 function convert{T<:Number,N}(::Type{Array{Taylor1{TaylorN{T}},N}},
         s::Array{TaylorN{Taylor1{T}},N})
-    v = Array{Taylor1{TaylorN{T}},N}(size(s))
+    v = Array{Taylor1{TaylorN{T}}}(size(s))
     for ind in eachindex(s)
         v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
     end
@@ -387,14 +387,14 @@ for T in (:HomogeneousPolynomial, :TaylorN), f in (:+, :-)
     @eval begin
         function ($f)(a::($T), b::($T))
             a, b = fixshape(a, b)
-            v = Array{eltype(a.coeffs),1}(length(a.coeffs))
+            v = Array{eltype(a.coeffs)}(length(a.coeffs))
             for i in eachindex(v)
                 @inbounds v[i] = ($f)(a.coeffs[i], b.coeffs[i])
             end
             return ($T)(v, a.order)
         end
         function ($f)(a::($T))
-            v = Array{eltype(a.coeffs),1}(length(a.coeffs))
+            v = Array{eltype(a.coeffs)}(length(a.coeffs))
             for i in eachindex(v)
                 @inbounds v[i] = ($f)(a.coeffs[i])
             end
@@ -407,7 +407,7 @@ for f in (:+, :-)
         function ($f)(a::TaylorN, b::Union{Real,Complex})
             @inbounds aux = ($f)(a.coeffs[1], b)
             S = eltype(aux)
-            coeffs = Array{HomogeneousPolynomial{S},1}(length(a.coeffs))
+            coeffs = Array{HomogeneousPolynomial{S}}(length(a.coeffs))
             @simd for i in eachindex(coeffs)
                 @inbounds coeffs[i] = a.coeffs[i]
             end
@@ -417,7 +417,7 @@ for f in (:+, :-)
         function ($f)(b::Union{Real,Complex}, a::TaylorN)
             @inbounds aux = ($f)(b, a.coeffs[1])
             S = eltype(aux)
-            coeffs = Array{HomogeneousPolynomial{S},1}(length(a.coeffs))
+            coeffs = Array{HomogeneousPolynomial{S}}(length(a.coeffs))
             @simd for i in eachindex(coeffs)
                 @inbounds coeffs[i] = ($f)(a.coeffs[i])
             end
@@ -430,7 +430,7 @@ for f in (:+, :-)
             S = typeof(aux)
             # @inbounds aux = ($f)(a.coeffs[1].coeffs[1], b)
             # S = Taylor1{T}
-            coeffs = Array{HomogeneousPolynomial{S},1}(length(a.coeffs))
+            coeffs = Array{HomogeneousPolynomial{S}}(length(a.coeffs))
             @simd for i in eachindex(coeffs)
                 @inbounds coeffs[i] = a.coeffs[i]
             end
@@ -443,7 +443,7 @@ for f in (:+, :-)
             S = typeof(aux)
             # @inbounds aux = ($f)(b, a.coeffs[1].coeffs[1])
             # S = Taylor1{T}
-            coeffs = Array{HomogeneousPolynomial{S},1}(length(a.coeffs))
+            coeffs = Array{HomogeneousPolynomial{S}}(length(a.coeffs))
             @simd for i in eachindex(coeffs)
                 @inbounds coeffs[i] = ($f)(a.coeffs[i])
             end
@@ -490,7 +490,7 @@ end
 function *{T<:Union{Real,Complex}}(a::HomogeneousPolynomial, b::T)
     @inbounds aux = a.coeffs[1] * b
     S = typeof(aux)
-    coeffs = Array{S,1}(length(a.coeffs))
+    coeffs = Array{S}(length(a.coeffs))
     @simd for i in eachindex(coeffs)
         @inbounds coeffs[i] = a.coeffs[i] * b
     end
@@ -501,7 +501,7 @@ function *{T<:Union{Real,Complex}}(a::HomogeneousPolynomial{Taylor1{T}},
         b::Taylor1{T})
     @inbounds aux = a.coeffs[1] * b
     S = typeof(aux)
-    coeffs = Array{S,1}(length(a.coeffs))
+    coeffs = Array{S}(length(a.coeffs))
     @simd for i in eachindex(coeffs)
         @inbounds coeffs[i] = a.coeffs[i] * b
     end
@@ -516,7 +516,7 @@ end
 function *{T<:Union{Real,Complex}}(a::TaylorN, b::T)
     @inbounds aux = a.coeffs[1] * b
     S = eltype(aux)
-    coeffs = Array{HomogeneousPolynomial{S},1}(length(a.coeffs))
+    coeffs = Array{HomogeneousPolynomial{S}}(length(a.coeffs))
     @simd for i in eachindex(coeffs)
         @inbounds coeffs[i] = a.coeffs[i] * b
     end
@@ -526,7 +526,7 @@ end
 function *{T<:Union{Real,Complex}}(a::TaylorN{Taylor1{T}}, b::Taylor1{T})
     @inbounds aux = a.coeffs[1] * b
     S = eltype(aux)
-    coeffs = Array{HomogeneousPolynomial{S},1}(length(a.coeffs))
+    coeffs = Array{HomogeneousPolynomial{S}}(length(a.coeffs))
     @simd for i in eachindex(coeffs)
         @inbounds coeffs[i] = a.coeffs[i] * b
     end
@@ -975,7 +975,7 @@ to the `r`-th variable.
 """
 function derivative(a::TaylorN, r=1::Int)
     T = eltype(a)
-    coeffs = Array{HomogeneousPolynomial{T},1}(a.order)
+    coeffs = Array{HomogeneousPolynomial{T}}(a.order)
 
     @inbounds for ord in eachindex(coeffs)
         ord == a.order+1 && continue
@@ -997,7 +997,7 @@ Compute the gradient of the polynomial `f::TaylorN`.
 function gradient(f::TaylorN)
     T = eltype(f)
     numVars = get_numvars()
-    grad = Array{TaylorN{T},1}(numVars)
+    grad = Array{TaylorN{T}}(numVars)
     @inbounds for nv = 1:numVars
         grad[nv] = derivative(f, nv)
     end
@@ -1017,7 +1017,7 @@ evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at zero.
 function jacobian{T<:Number}(vf::Array{TaylorN{T},1})
     numVars = get_numvars()
     @assert length(vf) == numVars
-    jac = Array{T,2}(numVars,numVars)
+    jac = Array{T}(numVars,numVars)
 
     @inbounds for comp = 1:numVars
         jac[:,comp] = vf[comp].coeffs[2].coeffs[1:end]
@@ -1029,7 +1029,7 @@ function jacobian{T<:Number,S<:Number}(vf::Array{TaylorN{T},1},vals::Array{S,1})
     R = promote_type(T,S)
     numVars = get_numvars()
     @assert length(vf) == numVars == length(vals)
-    jac = Array{R,2}(numVars,numVars)
+    jac = Array{R}(numVars,numVars)
 
     for comp = 1:numVars
         @inbounds grad = gradient( vf[comp] )

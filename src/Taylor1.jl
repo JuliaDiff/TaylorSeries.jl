@@ -75,7 +75,7 @@ convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1) =
     Taylor1(convert(Array{T,1}, a.coeffs), a.order)
 function convert{T<:Integer, S<:AbstractFloat}(::Type{Taylor1{Rational{T}}},
     a::Taylor1{S})
-    v = Array{Rational{T},1}(length(a.coeffs))
+    v = Array{Rational{T}}(length(a.coeffs))
     for i in eachindex(v)
         # v[i] = convert(Rational{T}, a.coeffs[i])
         v[i] = rationalize(a.coeffs[i], tol=eps(one(S)))
@@ -174,7 +174,7 @@ for f in (:+, :-)
         end
         function ($f)(a::Taylor1, b::Union{Real,Complex})
             @inbounds aux = ($f)(a.coeffs[1], b)
-            v = Array{typeof(aux),1}(length(a.coeffs))
+            v = Array{typeof(aux)}(length(a.coeffs))
             @simd for i in eachindex(v)
                 @inbounds v[i] = a.coeffs[i]
             end
@@ -183,7 +183,7 @@ for f in (:+, :-)
         end
         function ($f)(a::Union{Real,Complex}, b::Taylor1)
             @inbounds aux = ($f)(a, b.coeffs[1])
-            v = Array{typeof(aux),1}(length(b.coeffs))
+            v = Array{typeof(aux)}(length(b.coeffs))
             @simd for i in eachindex(v)
                 @inbounds v[i] = ($f)(b.coeffs[i])
             end
@@ -198,7 +198,7 @@ end
 *(a::Taylor1, b::Bool) = b*a
 function *(a::Union{Real,Complex}, b::Taylor1)
     @inbounds aux = a * b.coeffs[1]
-    v = Array{typeof(aux),1}(length(b.coeffs))
+    v = Array{typeof(aux)}(length(b.coeffs))
     @simd for i in eachindex(v)
         @inbounds v[i] = a * b.coeffs[i]
     end
@@ -253,7 +253,7 @@ end
 # Ambiguous method(?) 263, 254; 268, 254
 function /{T<:Integer, S<:Real}(a::Taylor1{Rational{T}}, b::S)
     R = typeof( a.coeffs[1] // b)
-    v = Array{R,1}(length(a.coeffs))
+    v = Array{R}(length(a.coeffs))
     @simd for i in eachindex(v)
         @inbounds v[i] = a.coeffs[i] // b
     end
@@ -261,7 +261,7 @@ function /{T<:Integer, S<:Real}(a::Taylor1{Rational{T}}, b::S)
 end
 function /{T<:Integer, S<:Complex}(a::Taylor1{Rational{T}}, b::S)
     R = typeof( a.coeffs[1] // b)
-    v = Array{R,1}(length(a.coeffs))
+    v = Array{R}(length(a.coeffs))
     @simd for i in eachindex(v)
         @inbounds v[i] = a.coeffs[i] // b
     end
@@ -514,7 +514,7 @@ end
 
 ## Square ##
 function square(a::Taylor1)
-    coeffs = Array{eltype(a),1}(a.order+1)
+    coeffs = Array{eltype(a)}(a.order+1)
     coeffs[1] = a.coeffs[1]^2
     @inbounds for k = 1:a.order
         coeffs[k+1] = squareHomogCoef(k, a.coeffs)
@@ -1225,7 +1225,7 @@ function evaluate{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S)
     return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
 end
 function evaluate{T<:Number}(x::Array{Taylor1{T},1}, δt::T)
-    xnew = Array{T,1}( length(x) )
+    xnew = Array{T}( length(x) )
     evaluate!(x, δt, xnew)
     return xnew
 end
@@ -1328,7 +1328,7 @@ function A_mul_B!{T<:Number}(y::Vector{Taylor1{T}},
             B[i,j] = b[i].coeffs[j]
         end
     end
-    Y = Array{T,2}(n, order+1)
+    Y = Array{T}(n, order+1)
     A_mul_B!(Y, a, B)
     @inbounds for i = 1:n
         y[i] = Taylor1( collect(Y[i,:]), order)
