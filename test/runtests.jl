@@ -88,9 +88,11 @@ facts("Tests for Taylor1 expansions") do
     @fact trational^3/complex(7,1) ==
         Taylor1([0,0,0,complex(7//50,-1//50)],15) --> true
 
-    @fact isapprox( rem(4.1 + t,4).coeffs[1], (0.1 + t).coeffs[1] )  --> true
-    @fact isapprox( mod(4.1 + t,4).coeffs[1], (0.1 + t).coeffs[1] )  --> true
-    @fact isapprox( mod2pi(2pi+0.1+t).coeffs[1],(0.1 + t).coeffs[1])  --> true
+    @fact isapprox( rem(4.1 + t,4).coeffs[1], 0.1 )  --> true
+    @fact isapprox( mod(4.1 + t,4).coeffs[1], 0.1 )  --> true
+    @fact isapprox( rem(1+Taylor1(Int,4),4.0).coeffs[1], 1.0 )  --> true
+    @fact isapprox( mod(1+Taylor1(Int,4),4.0).coeffs[1], 1.0 )  --> true
+    @fact isapprox( mod2pi(2pi+0.1+t).coeffs[1], 0.1 )  --> true
 
     @fact abs(ta(1))  --> ta(1)
     @fact abs(ta(-1.0))  --> -ta(-1.0)
@@ -275,6 +277,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact (yT/(1-xT)).coeffs[5] == xH^3 * yH  --> true
     @fact mod(1+xT,1) == +xT  --> true
     @fact (rem(1+xT,1)).coeffs[1] == 0  --> true
+    @fact mod(1+xT,1.0) == +xT  --> true
+    @fact (rem(1+xT,1.0)).coeffs[1] == 0  --> true
     @fact abs(1-xT)  --> 1-xT
     @fact abs(-1-xT)  --> 1+xT
     @fact derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3,2)  --> true
@@ -387,6 +391,20 @@ facts("Tests with mixures of Taylor1 and TaylorN") do
     @fact tN1-tN1 == zero(tN1) --> true
     @fact string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
+
+    @fact mod(tN1+1.125,1.0) == 0.125+tN1  --> true
+    @fact mod(tN1-1.125,2) == 0.875+tN1  --> true
+    @fact (rem(tN1+1.125,1.0)).coeffs[1].coeffs[1] == 0.125 + t --> true
+    @fact (rem(tN1-1.125,2)).coeffs[1].coeffs[1] == -1.125 + t --> true
+    @fact mod2pi(-3pi+tN1).coeffs[1].coeffs[1].coeffs[1] ≈ pi --> true
+    @fact mod2pi(0.125+2pi+tN1).coeffs[1].coeffs[1].coeffs[1] ≈ 0.125 --> true
+    @fact mod(t1N+1.125,1.0) == 0.125+t1N  --> true
+    @fact mod(t1N-1.125,2) == 0.875+t1N  --> true
+    @fact (rem(t1N+1.125,1.0)).coeffs[1] == 0.125 + t1N.coeffs[1] --> true
+    @fact (rem(t1N-1.125,2)).coeffs[1] == -1.125 + t1N.coeffs[1] --> true
+    @fact mod2pi(-3pi+t1N).coeffs[1].coeffs[1].coeffs[1] ≈ pi --> true
+    @fact mod2pi(0.125+2pi+t1N).coeffs[1].coeffs[1].coeffs[1] ≈ 0.125 --> true
+
     @fact convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) ==
         [t1N, t1N] --> true
     @fact convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) ==

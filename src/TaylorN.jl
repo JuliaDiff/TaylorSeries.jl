@@ -657,7 +657,29 @@ for op in (:mod, :rem)
             coeffs = copy(a.coeffs)
             y = ($op)(a.coeffs[1].coeffs[1], x)
             coeffs[1] = HomogeneousPolynomial(y)
-            return TaylorN{T}( coeffs, a.order )
+            return TaylorN( coeffs, a.order )
+        end
+        @inbounds function ($op){T<:Real}(a::TaylorN{Taylor1{T}}, x::T)
+            coeffs = copy(a.coeffs)
+            y = ($op)(a.coeffs[1].coeffs[1], x)
+            coeffs[1] = HomogeneousPolynomial(y)
+            return TaylorN( coeffs, a.order )
+        end
+        @inbounds function ($op){T<:Real,S<:Real}(a::TaylorN{Taylor1{T}}, x::S)
+            R = promote_type(T,S)
+            a = convert(TaylorN{Taylor1{R}}, a)
+            return ($op)(a, convert(R,x))
+        end
+        @inbounds function ($op){T<:Real}(a::Taylor1{TaylorN{T}}, x::T)
+            coeffs = copy(a.coeffs)
+            y = ($op)(a.coeffs[1], x)
+            coeffs[1] = y
+            return Taylor1( coeffs, a.order )
+        end
+        @inbounds function ($op){T<:Real,S<:Real}(a::Taylor1{TaylorN{T}}, x::S)
+            R = promote_type(T,S)
+            a = convert(Taylor1{TaylorN{R}}, a)
+            return ($op)(a, convert(R,x))
         end
     end
 end
@@ -666,7 +688,19 @@ function mod2pi{T<:Real}(a::TaylorN{T})
     coeffs = copy(a.coeffs)
     @inbounds y = mod2pi(a.coeffs[1].coeffs[1])
     @inbounds coeffs[1] = HomogeneousPolynomial(y)
-    return TaylorN{T}( coeffs, a.order )
+    return TaylorN( coeffs, a.order )
+end
+function mod2pi{T<:Real}(a::TaylorN{Taylor1{T}})
+    coeffs = copy(a.coeffs)
+    @inbounds y = mod2pi(a.coeffs[1].coeffs[1])
+    @inbounds coeffs[1] = HomogeneousPolynomial(y)
+    return TaylorN( coeffs, a.order )
+end
+function mod2pi{T<:Real}(a::Taylor1{TaylorN{T}})
+    coeffs = copy(a.coeffs)
+    @inbounds y = mod2pi(a.coeffs[1])
+    @inbounds coeffs[1] = y
+    return Taylor1( coeffs, a.order )
 end
 
 ## abs function ##
