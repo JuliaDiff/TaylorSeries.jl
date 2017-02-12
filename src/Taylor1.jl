@@ -354,10 +354,15 @@ end
 ## Division functions: rem and mod
 for op in (:mod, :rem)
     @eval begin
-        function ($op){T<:Real, S<:Real}(a::Taylor1{T}, x::S)
+        function ($op){T<:Real}(a::Taylor1{T}, x::T)
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(a.coeffs[1], x)
             return Taylor1(coeffs, a.order)
+        end
+        function ($op){T<:Real, S<:Real}(a::Taylor1{T}, x::S)
+            R = promote_type(T,S)
+            a = convert(Taylor1{R}, a)
+            return ($op)(a, convert(R,x))
         end
     end
 end
