@@ -645,16 +645,27 @@ Return the Taylor expansion of $e^a$, of order `a.order`, for
 For details on making the Taylor expansion, see
 [`TaylorSeries.expHomogCoef`](@ref).
 """
-function exp(a::Taylor1)
-    @inbounds aux = exp( a.coeffs[1] )
-    T = typeof(aux)
-    v = convert(Array{T,1}, a.coeffs)
+function exp{T}(a::Taylor1{T}, output_type=float(T))
+
+    zeroth_order = a.coeffs[1]
+
+    #T = typeof(float(zeroth_order))
+    #T = typeof(zeroth_order)
+    v = convert(Vector{output_type}, a.coeffs)
+
     coeffs = similar(v)
-    @inbounds coeffs[1] = aux
+
+    if zeroth_order == zero(zeroth_order)
+        @inbounds coeffs[1] = one(output_type)
+    else
+        @inbounds coeffs[1] = exp(zeroth_order)
+    end
+
     @inbounds for k = 1:a.order
         coeffs[k+1] = expHomogCoef(k, v, coeffs)
     end
-    Taylor1( coeffs, a.order )
+
+    Taylor1(coeffs, a.order)
 end
 
 # Homogeneous coefficients for exp
