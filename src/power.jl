@@ -321,7 +321,7 @@ function ^{S<:Real}(a::TaylorN, x::S)
     aux = ( a0 )^x
     T = typeof(aux)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds coeffs[1] = HomogeneousPolynomial( aux )
+    @inbounds coeffs[1] = HomogeneousPolynomial( [aux], 0 )
 
     for ord in eachindex(coeffs)
         ord == a.order+1 && continue
@@ -344,9 +344,9 @@ function square(a::HomogeneousPolynomial)
     T = eltype(a)
 
     order = 2*a.order
-    order > get_order() && return HomogeneousPolynomial(zero(T), get_order())
+    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
 
-    res = HomogeneousPolynomial(zero(T), order)
+    res = HomogeneousPolynomial([zero(T)], order)
     mul!(res, a)
     return res
 end
@@ -385,7 +385,7 @@ function sqrt(a::TaylorN)
 
     T = typeof(p0)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds coeffs[1] = HomogeneousPolynomial( p0 )
+    @inbounds coeffs[1] = HomogeneousPolynomial( [p0], 0 )
 
     for ord in eachindex(coeffs)
         ord == a.order+1 && continue

@@ -62,7 +62,7 @@ to the `r`-th variable.
 function derivative(a::HomogeneousPolynomial, r::Int)
     @assert 1 <= r <= get_numvars()
     T = eltype(a)
-    a.order == 0 && return HomogeneousPolynomial(zero(T))
+    a.order == 0 && return HomogeneousPolynomial([zero(T)], 0)
     @inbounds num_coeffs = size_table[a.order]
     coeffs = zeros(T,num_coeffs)
     @inbounds posTb = pos_table[a.order]

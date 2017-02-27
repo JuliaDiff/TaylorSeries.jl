@@ -9,7 +9,7 @@
 
 ## Constructors ##
 
-## Taylor1
+######################### Taylor1
 doc"""
     Taylor1{T<:Number} <: Number
 
@@ -59,7 +59,7 @@ given `order`. The default type for `T` is `Float64`.
 julia> Taylor1(16)
  1.0 t + 𝒪(t¹⁷)
 
-julia> Taylor1(Rational{Int},4)
+julia> Taylor1(Rational{Int}, 4)
  1//1 t + 𝒪(t⁵)
 
 ```
@@ -68,8 +68,7 @@ Taylor1{T<:Number}(::Type{T}, order::Int=1) = Taylor1{T}( [zero(T), one(T)], ord
 Taylor1(order::Int=1) = Taylor1(Float64, order)
 
 
-
-## HomogeneousPolynomial (homogeneous polynomial) constructors ##
+######################### HomogeneousPolynomial
 doc"""
     HomogeneousPolynomial{T<:Number} <: Number
 
@@ -109,10 +108,32 @@ HomogeneousPolynomial{T<:Number}(coeffs::Array{T,1}) =
     HomogeneousPolynomial{T}(coeffs, orderH(coeffs))
 HomogeneousPolynomial{T<:Number}(x::T, order::Int) =
     HomogeneousPolynomial{T}([x], order)
-HomogeneousPolynomial{T<:Number}(x::T) = HomogeneousPolynomial{T}([x], 0)
 
+# Shortcut to define HomogeneousPolynomial independent variable
+"""
+    HomogeneousPolynomial([T::Type=Float64], nv::Int])
 
+Shortcut to define the `nv`-th independent `HomogeneousPolynomial{T}`.
+The default type for `T` is `Float64`.
 
+```jldoctest
+julia> HomogeneousPolynomial(1)
+ 1.0 x₁
+
+julia> HomogeneousPolynomial(Rational{Int}, 2)
+ 1//1 x₂
+
+```
+"""
+function HomogeneousPolynomial{T<:Number}(::Type{T}, nv::Int)
+    @assert 0 < nv <= get_numvars()
+    v = zeros(T, get_numvars())
+    @inbounds v[nv] = one(T)
+    return HomogeneousPolynomial(v, 1)
+end
+HomogeneousPolynomial(nv::Int) = HomogeneousPolynomial(Float64, nv)
+
+######################### TaylorN
 doc"""
     TaylorN{T<:Number} <: Number
 
@@ -150,25 +171,29 @@ TaylorN{T<:Number}(x::HomogeneousPolynomial{T},order::Int) =
     TaylorN{T}([x], order)
 TaylorN{T<:Number}(x::HomogeneousPolynomial{T}) = TaylorN{T}([x], x.order)
 TaylorN{T<:Number}(x::T, order::Int) =
-    TaylorN{T}([HomogeneousPolynomial(x)],order)
-# TaylorN{T<:Number}(x::T) = TaylorN{T}([HomogeneousPolynomial(x)], 0)
+    TaylorN{T}([HomogeneousPolynomial([x], 0)], order)
 
-## Shortcut to define TaylorN independent variables
+# Shortcut to define TaylorN independent variables
 """
     TaylorN([T::Type=Float64], nv::Int; [order::Int=get_order()])
 
 Shortcut to define the `nv`-th independent `TaylorN{T}` variable as a
 polynomial. The order is defined through the keyword parameter `order`,
-whose default corresponds to `get_order()`. The default of `T::Type`
-`Float64`.
+whose default corresponds to `get_order()`. The default of type for
+`T` is Float64`.
+
+```jldoctest
+julia> TaylorN(1)
+ 1.0 x₁
+
+julia> TaylorN(Rational{Int},2)
+ 1//1 x₂
+
+```
 """
-function TaylorN{T<:Number}(::Type{T}, nv::Int; order::Int=get_order())
-    @assert 0 < nv <= get_numvars()
-    v = zeros(T, get_numvars())
-    @inbounds v[nv] = one(T)
-    return TaylorN( HomogeneousPolynomial(v,1), order )
-end
-TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv; order=order)
+TaylorN{T<:Number}(::Type{T}, nv::Int; order::Int=get_order()) =
+    return TaylorN( [HomogeneousPolynomial(T, nv)], order )
+TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
 
 
 

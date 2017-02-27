@@ -19,6 +19,8 @@ facts("Tests for Taylor1 expansions") do
     @fact get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0) --> true
     @fact eltype(convert(Taylor1{Complex128},ot)) == Complex128  --> true
     @fact eltype(convert(Taylor1{Complex128},1)) == Complex128  --> true
+    @fact eltype(convert(Taylor1, 1im)) == Complex{Int}  --> true
+    @fact convert(Taylor1, 1im) == Taylor1(1im, 0)  --> true
     @fact convert(Taylor1{Int},[0,2]) == 2*t  --> true
     @fact convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t  --> true
     @fact convert(Taylor1{BigFloat},[0.0, 1.0]) == ta(big(0.0))  --> true
@@ -222,23 +224,37 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact x.order == 6 --> true
     @fact TaylorSeries.set_variable_names(["x","y"]) == ["x", "y"]  --> true
     @fact TaylorSeries.get_variable_names() == ["x", "y"]  --> true
-
+    @fact x == HomogeneousPolynomial(Float64, 1) -->  true
+    @fact x == HomogeneousPolynomial(1) -->  true
+    @fact y == HomogeneousPolynomial(Float64, 2) -->  true
+    @fact y == HomogeneousPolynomial(2) -->  true
     set_variables("x", numvars=2, order=17)
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
-    xT = TaylorN(xH,17)
+    @fact HomogeneousPolynomial(0,0)  == 0 -->  true
+    xT = TaylorN(xH, 17)
     yT = TaylorN(Int64, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
     uT = one(convert(TaylorN{Float64},yT))
-    @fact ones(xH,1) == [HomogeneousPolynomial(1), xH+yH]  --> true
+    @fact zeroT.coeffs[1] == HomogeneousPolynomial(0, 0) -->  true
+    @fact uT.coeffs[1] == HomogeneousPolynomial(1, 0) -->  true
+    @fact ones(xH,1) == [1, xH+yH]  --> true
     @fact ones(HomogeneousPolynomial{Complex{Int}},0) ==
-        [HomogeneousPolynomial(1+0im)]  --> true
+        [HomogeneousPolynomial([complex(1,0)], 0)]  --> true
+
     @fact get_order(zeroT) == 1  --> true
     @fact get_coeff(xT,[1,0]) == 1  --> true
     @fact get_coeff(yH,[1,0]) == 0  --> true
+    @fact typeof(convert(HomogeneousPolynomial,1im)) ==
+        HomogeneousPolynomial{Complex{Int}}  --> true
+    @fact convert(HomogeneousPolynomial,1im) ==
+        HomogeneousPolynomial([complex(0,1)], 0)  --> true
     @fact convert(HomogeneousPolynomial{Int64},[1,1]) == xH+yH  --> true
     @fact convert(HomogeneousPolynomial{Float64},[2,-1]) == 2.0xH-yH  --> true
+    @fact typeof(convert(TaylorN,1im)) == TaylorN{Complex{Int}}  --> true
+    @fact convert(TaylorN, 1im) ==
+        TaylorN([HomogeneousPolynomial([complex(0,1)], 0)], 0)  --> true
     @fact convert(TaylorN{Float64}, yH) == 1.0*yT  --> true
     @fact convert(TaylorN{Float64}, [xH,yH]) == xT+1.0*yT  --> true
     @fact convert(TaylorN{Int}, [xH,yH]) == xT+yT  --> true
@@ -272,8 +288,8 @@ facts("Tests for HomogeneousPolynomial and TaylorN") do
     @fact 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)  --> true
     @fact xT-yT-1 == TaylorN([-1,xH-yH])  --> true
     @fact xT*yT == TaylorN([HomogeneousPolynomial([0,1,0],2)])  --> true
-    @fact (1/(1-xT)).coeffs[4] == HomogeneousPolynomial(1.0,3)  --> true
-    @fact xH^20 == HomogeneousPolynomial([0],get_order())  --> true
+    @fact (1/(1-xT)).coeffs[4] == HomogeneousPolynomial([1.0],3)  --> true
+    @fact xH^20 == HomogeneousPolynomial([0], get_order())  --> true
     @fact (yT/(1-xT)).coeffs[5] == xH^3 * yH  --> true
     @fact mod(1+xT,1) == +xT  --> true
     @fact (rem(1+xT,1)).coeffs[1] == 0  --> true
@@ -350,10 +366,15 @@ end
 
 facts("Tests with mixures of Taylor1 and TaylorN") do
     set_variables("x", numvars=2, order=17)
-    xH = HomogeneousPolynomial([1,0])
-    yH = HomogeneousPolynomial([0,1],1)
-    tN = Taylor1([zero(TaylorN(Int,1)), one(TaylorN(Int,1))],2)
+    xH = HomogeneousPolynomial(Int, 1)
+    yH = HomogeneousPolynomial(Int, 2)
+    tN = Taylor1(TaylorN{Int}, 2)
+    @fact eltype(tN) == TaylorN{Int} -->  true
+    @fact tN.order == 2 -->  true
+    @fact string(zero(tN)) == "  0 + 𝒪(‖x‖¹) + 𝒪(t³)" --> true
+    @fact string(tN) == " ( 1 + 𝒪(‖x‖¹)) t + 𝒪(t³)" --> true
 
+    tN = Taylor1([zero(TaylorN(Int,1)), one(TaylorN(Int,1))],2)
     @fact string(zero(tN)) == "  0 + 𝒪(‖x‖¹⁸) + 𝒪(t³)" --> true
     @fact string(tN) == " ( 1 + 𝒪(‖x‖¹⁸)) t + 𝒪(t³)" --> true
     @fact string(Taylor1([xH+yH])) == "  1 x₁ + 1 x₂ + 𝒪(t¹)"  --> true
@@ -363,6 +384,8 @@ facts("Tests with mixures of Taylor1 and TaylorN") do
         " ( 1 x₁ + 1 x₂ + 𝒪(‖x‖¹⁸)) t² + 𝒪(t³)" --> true
 
     t = Taylor1(2)
+    xHt = HomogeneousPolynomial(typeof(t), 1)
+    @fact string(xHt) == " ( 1.0 + 𝒪(t¹)) x₁" --> true
     xHt = HomogeneousPolynomial([one(t), zero(t)])
     yHt = HomogeneousPolynomial([zero(t), t])
     @fact string(xHt) == " ( 1.0 + 𝒪(t³)) x₁" --> true
@@ -451,10 +474,10 @@ facts("High order polynomials test inspired by Fateman (takes a few seconds)") d
 
     function fateman2(degree::Int)
         T = Int128
-        oneH = HomogeneousPolynomial(one(T), 0)
+        oneH = HomogeneousPolynomial([one(T)], 0)
         # s = 1 + x + y + z + w
         s = TaylorN(
-         [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree)
+            [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree)
         s = s^degree
         # s is converted to order 2*ndeg
         s = TaylorN(s, 2*degree)

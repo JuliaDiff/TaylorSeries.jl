@@ -172,7 +172,7 @@ function horner{T<:Number,S<:Union{Real,Complex}}(a::HomogeneousPolynomial{T},
             iIndices[nv] = 0
             kdic = in_base(get_order(), iIndices)
             newpos = pos_table[neworder+1][kdic]
-            zhp = HomogeneousPolynomial(zero(R), neworder)
+            zhp = HomogeneousPolynomial([zero(R)], neworder)
             zhp.coeffs[newpos] = a.coeffs[pos]
             suma_ord += TaylorN(zhp, a.order)
         end

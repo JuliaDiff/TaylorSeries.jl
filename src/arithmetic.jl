@@ -18,22 +18,18 @@ end
 
 function ==(a::TaylorN, b::TaylorN)
     a, b = fixshape(a, b)
-    test = true
-    for i in eachindex(a.coeffs)
-        @inbounds test = a.coeffs[i] == b.coeffs[i]
-        test || return test
+    @inbounds for i in eachindex(a.coeffs)
+        (a.coeffs[i] == b.coeffs[i]) || return false
     end
-    return test
+    return true
 end
 
 
 function iszero{T}(a::HomogeneousPolynomial{T})
-    test = true
-    for i in eachindex(a.coeffs)
-        @inbounds test = a.coeffs[i] == zero(T)
-        test || return test
+    @inbounds for i in eachindex(a.coeffs)
+        (a.coeffs[i] == zero(T)) || return false
     end
-    return test
+    return true
 end
 
 
@@ -43,54 +39,51 @@ one{T<:Number}(a::Taylor1{T}) = Taylor1(one(a.coeffs[1]), a.order)
 
 
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial(zero(a.coeffs[1]), 0)
-    @inbounds num_coeffs = size_table[a.order+1]
-    v = Array{T}(num_coeffs)
-    for ind in eachindex(a.coeffs)
+    a.order == 0 && return HomogeneousPolynomial([zero(a.coeffs[1])], 0)
+    v = Array{T}( size_table[a.order+1] )
+    @simd for ind in eachindex(a.coeffs)
         @inbounds v[ind] = zero(a.coeffs[ind])
     end
     return HomogeneousPolynomial(v, a.order)
 end
 
 function zeros{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
-    order == 0 && return [HomogeneousPolynomial(zero(a.coeffs[1]),0)]
+    order == 0 && return [HomogeneousPolynomial([zero(a.coeffs[1])], 0)]
     v = Array{HomogeneousPolynomial{T}}(order+1)
     @simd for ord in eachindex(v)
-        @inbounds num_coeffs = size_table[ord]
-        @inbounds v[ord] = HomogeneousPolynomial(zero(a.coeffs[1]),ord-1)
+        @inbounds v[ord] = HomogeneousPolynomial([zero(a.coeffs[1])], ord-1)
     end
     return v
 end
 
 zeros{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
-    zeros( HomogeneousPolynomial(zero(T), 0), order)
+    zeros( HomogeneousPolynomial([zero(T)], 0), order)
 
 function one{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial(one(a.coeffs[1]), 0)
-    @inbounds num_coeffs = size_table[a.order+1]
-    v = Array{T}(num_coeffs)
-    for ind in eachindex(a.coeffs)
+    a.order == 0 && return HomogeneousPolynomial([one(a.coeffs[1])], 0)
+    v = Array{T}( size_table[a.order+1] )
+    @simd for ind in eachindex(a.coeffs)
         @inbounds v[ind] = one(a.coeffs[ind])
     end
     return HomogeneousPolynomial{T}(v, a.order)
 end
 
 function ones{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
-    order == 0 && return [HomogeneousPolynomial(one(a.coeffs[1]),0)]
+    order == 0 && return [HomogeneousPolynomial([one(a.coeffs[1])], 0)]
     v = Array{HomogeneousPolynomial{T}}(order+1)
     @simd for ord in eachindex(v)
         @inbounds num_coeffs = size_table[ord]
         vT = Array{T}(num_coeffs)
-        for ind in 1:num_coeffs
+        @simd for ind in 1:num_coeffs
             @inbounds vT[ind] = one(a.coeffs[1])
         end
-        @inbounds v[ord] = HomogeneousPolynomial(vT,ord-1)
+        @inbounds v[ord] = HomogeneousPolynomial(vT, ord-1)
     end
     return v
 end
 
 ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
-    ones( HomogeneousPolynomial(one(T), 0), order)
+    ones( HomogeneousPolynomial([one(T)], 0), order)
 
 zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(T), a.order)
 one{T<:Number}(a::TaylorN{T}) = TaylorN(one(T), a.order)
@@ -269,13 +262,13 @@ function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     T = promote_type( eltype(a), eltype(b) )
 
     order = a.order + b.order
-    order > get_order() && return HomogeneousPolynomial(zero(T), get_order())
+    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
 
     if eltype(a) != eltype(b)
         a, b = promote(a, b)
     end
 
-    res = HomogeneousPolynomial(zero(T), order)
+    res = HomogeneousPolynomial([zero(T)], order)
     mul!(res, a, b)
     return res
 end

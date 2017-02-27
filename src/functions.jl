@@ -565,7 +565,7 @@ function exp(a::TaylorN)
     @inbounds aux = exp( a.coeffs[1].coeffs[1] )
     T = typeof(aux)
     coeffs = zeros(HomogeneousPolynomial{T}, order)
-    @inbounds coeffs[1] = HomogeneousPolynomial(aux, 0)
+    @inbounds coeffs[1] = HomogeneousPolynomial([aux], 0)
 
     @inbounds for ord in eachindex(coeffs)
         ord == order+1 && continue
@@ -590,7 +590,7 @@ function log(a::TaylorN)
     l0 = log( a0 )
     T = typeof(l0)
     coeffs = zeros(HomogeneousPolynomial{T}, order)
-    @inbounds coeffs[1] = HomogeneousPolynomial(l0)
+    @inbounds coeffs[1] = HomogeneousPolynomial([l0], 0)
 
     @inbounds for ord in eachindex(coeffs)
         ord == order+1 && continue
@@ -616,8 +616,8 @@ cos(a::TaylorN) = real( exp(im*a) )
 #     T = typeof(s0)
 #     coeffsSin = zeros(HomogeneousPolynomial{T}, order)
 #     coeffsCos = zeros(HomogeneousPolynomial{T}, order)
-#     @inbounds coeffsSin[1] = HomogeneousPolynomial(s0)
-#     @inbounds coeffsCos[1] = HomogeneousPolynomial(c0)
+#     @inbounds coeffsSin[1] = HomogeneousPolynomial([s0], 0)
+#     @inbounds coeffsCos[1] = HomogeneousPolynomial([c0], 0)
 #
 #     @inbounds for ord in eachindex(coeffsSin)
 #         ord == order+1 && continue
@@ -638,7 +638,7 @@ function tan(a::TaylorN)
     t0 = tan(a0)
     T = typeof(t0)
     coeffsTan = zeros(HomogeneousPolynomial{T}, order)
-    @inbounds coeffsTan[1] = HomogeneousPolynomial(t0)
+    @inbounds coeffsTan[1] = HomogeneousPolynomial([t0], 0)
 
     @inbounds for ord in eachindex(coeffsTan)
         ord == order+1 && continue
