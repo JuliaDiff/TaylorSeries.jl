@@ -34,21 +34,39 @@ set_variable_names{T<:AbstractString}(names::Vector{T}) = _params_TaylorN_.varia
 
 get_variables() = [TaylorN(i) for i in 1:get_numvars()]
 
-@doc """
-    set_variables(R, names; [order=6])
-    set_variables(names; [order=6])
-    set_variables(R, names; [order=6, numvars=-1])
-    set_variables(names; [order=6, numvars=-1])
+"""
+    set_variables([T::Type], names::String; [order=get_order(), numvars=-1])
 
-Return a `TaylorN{R}` vector with `numvars` polynomials, each representing an
-independent variable, using `names` as the `String` for the output.
+Return a `TaylorN{T}` vector with each entry representing an
+independent variable. `names` defines the output for each variable
+(separated by a space). The default type `T` is `Float64`,
+and the default for `order` is the one defined globally.
+Changing the `order` or `numvars` resets the hash_tables.
 
-If `numvars` is not specified, it is inferred from the length of `names`.
-If `length(names)==1` and `numvars>1`, it uses this name with subscripts for
-the different variables. When changing the `order` or `numvars`, the
-hash_tables are reset.
-""" ->
-function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=6)
+If `numvars` is not specified, it is inferred from `names`. If only
+one variable name is defined and `numvars>1`, it uses this name with
+subscripts for the different variables.
+
+```jldoctest
+julia> set_variables(Int, "x y z", order=4)
+3-element Array{TaylorSeries.TaylorN{Int64},1}:
+  1 x + 𝒪(‖x‖⁵)
+  1 y + 𝒪(‖x‖⁵)
+  1 z + 𝒪(‖x‖⁵)
+
+julia> set_variables("α", numvars=2)
+2-element Array{TaylorSeries.TaylorN{Float64},1}:
+  1.0 α₁ + 𝒪(‖x‖⁵)
+  1.0 α₂ + 𝒪(‖x‖⁵)
+
+julia> set_variables("x", order=6, numvars=2)
+2-element Array{TaylorSeries.TaylorN{Float64},1}:
+  1.0 x₁ + 𝒪(‖x‖⁷)
+  1.0 x₂ + 𝒪(‖x‖⁷)
+
+```
+"""
+function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=get_order())
     order >= 1 || error("Order must be at least 1")
 
     num_vars = length(names)
@@ -75,9 +93,10 @@ function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=6)
     TaylorN{R}[TaylorN(R,i) for i in 1:get_numvars()]
 end
 
-set_variables{T}(names::Vector{T}; order=6) = set_variables(Float64, names, order=order)
+set_variables{T}(names::Vector{T}; order=get_order()) =
+    set_variables(Float64, names, order=order)
 
-function set_variables{T<:AbstractString}(R::Type, names::T; order=6, numvars=-1)
+function set_variables{T<:AbstractString}(R::Type, names::T; order=get_order(), numvars=-1)
     variable_names = split(names)
 
     if length(variable_names) == 1 && numvars >= 1
@@ -88,8 +107,9 @@ function set_variables{T<:AbstractString}(R::Type, names::T; order=6, numvars=-1
     set_variables(R, variable_names, order=order)
 end
 
-set_variables{T<:AbstractString}(names::T; order=6, numvars=-1) =
+set_variables{T<:AbstractString}(names::T; order=get_order(), numvars=-1) =
     set_variables(Float64, names, order=order, numvars=numvars)
+
 
 @doc """
     show_params_TaylorN()
