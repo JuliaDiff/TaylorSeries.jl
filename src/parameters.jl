@@ -2,6 +2,9 @@
 #
 # Parameters for HomogeneousPolynomial and TaylorN
 
+"Abbreviation for the union of Real and Complex"
+const RealOrComplex = Union{Real, Complex}
+
 @doc """
     ParamsTaylorN
 
