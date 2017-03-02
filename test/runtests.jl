@@ -373,6 +373,7 @@ facts("Tests with mixures of Taylor1 and TaylorN") do
     @fact tN.order == 2 -->  true
     @fact string(zero(tN)) == "  0 + 𝒪(‖x‖¹) + 𝒪(t³)" --> true
     @fact string(tN) == " ( 1 + 𝒪(‖x‖¹)) t + 𝒪(t³)" --> true
+    @fact string(tN + 3Taylor1(2)) == " ( 4.0 + 𝒪(‖x‖¹)) t + 𝒪(t³)" --> true
 
     tN = Taylor1([zero(TaylorN(Int,1)), one(TaylorN(Int,1))],2)
     @fact string(zero(tN)) == "  0 + 𝒪(‖x‖¹⁸) + 𝒪(t³)" --> true
@@ -415,7 +416,7 @@ facts("Tests with mixures of Taylor1 and TaylorN") do
     @fact string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + 𝒪(t³)" --> true
 
-    @fact mod(tN1+1.125,1.0) == 0.125+tN1  --> true
+    @fact mod(tN1+1,1.0) == 0+tN1  --> true
     @fact mod(tN1-1.125,2) == 0.875+tN1  --> true
     @fact (rem(tN1+1.125,1.0)).coeffs[1].coeffs[1] == 0.125 + t --> true
     @fact (rem(tN1-1.125,2)).coeffs[1].coeffs[1] == -1.125 + t --> true
