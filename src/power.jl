@@ -50,7 +50,7 @@ function power_by_squaring(x::Taylor1, p::Integer)
     while p > 0
         t = trailing_zeros(p) + 1
         p >>= t
-        while (t -= 1) >= 0
+        while (t -= 1) ≥ 0
             x = square(x)
         end
         y *= x
@@ -71,7 +71,7 @@ function ^{S<:Real}(a::Taylor1, x::S)
     isinteger(x) && return a^round(Int,x)
 
     # First non-zero coefficient
-    l0nz = firstnonzero(a)
+    l0nz = findfirst(a)
     l0nz > a.order && return zero(a)
 
     # The first non-zero coefficient of the result; must be integer
@@ -186,7 +186,7 @@ For details on making the Taylor expansion, see
 """
 function sqrt(a::Taylor1)
     # First non-zero coefficient
-    l0nz = firstnonzero(a)
+    l0nz = findfirst(a)
     if l0nz > a.order
         return zero(a)
     elseif l0nz%2 == 1 # l0nz must be pair
@@ -295,7 +295,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
             while p > 0
                 t = trailing_zeros(p) + 1
                 p >>= t
-                while (t -= 1) >= 0
+                while (t -= 1) ≥ 0
                     x = square(x)
                 end
                 y *= x

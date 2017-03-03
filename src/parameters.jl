@@ -70,10 +70,10 @@ julia> set_variables("x", order=6, numvars=2)
 ```
 """
 function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=get_order())
-    order >= 1 || error("Order must be at least 1")
+    order ≥ 1 || error("Order must be at least 1")
 
     num_vars = length(names)
-    num_vars >= 1 || error("Number of variables must be at least 1")
+    num_vars ≥ 1 || error("Number of variables must be at least 1")
 
     _params_TaylorN_.variable_names = names
 
@@ -102,7 +102,7 @@ set_variables{T}(names::Vector{T}; order=get_order()) =
 function set_variables{T<:AbstractString}(R::Type, names::T; order=get_order(), numvars=-1)
     variable_names = split(names)
 
-    if length(variable_names) == 1 && numvars >= 1
+    if length(variable_names) == 1 && numvars ≥ 1
         name = variable_names[1]
         variable_names = [string(name, subscriptify(i)) for i in 1:numvars]
     end

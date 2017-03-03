@@ -102,22 +102,11 @@ length(a::TaylorN) = length( a.coeffs )
 get_order(x::TaylorN) = x.order
 
 
-# Almost equivalent to `findfirst`
-## Auxiliary function ##
-function firstnonzero{T<:Number}(ac::Vector{T})
-    # nonzero::Int = length(ac)
-    for i in eachindex(ac)
-        if ac[i] != zero(T)
-            return i-1
-            # nonzero = i-1
-            # break
-        end
-    end
-    # nonzero
-    return length(ac)
-end
-firstnonzero{T<:Number}(a::Taylor1{T}) = firstnonzero(a.coeffs)
+# Finds the first non zero entry; extended to Taylor1
+Base.findfirst{T<:Number}(a::Taylor1{T}) = findfirst(a.coeffs)-1
 
+
+## fixorder ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
         fixorder{T<:Number}(a::$T{T}, order::Int64) = $T{T}(a.coeffs, order)

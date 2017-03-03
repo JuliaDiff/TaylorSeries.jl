@@ -30,13 +30,12 @@ facts("Tests for Taylor1 expansions") do
     @fact eltype(promote(ta(0.0),zeros(Int,2))[2]) == Float64  --> true
     @fact eltype(promote(0,Taylor1(ot))[1]) == Float64  --> true
     @fact eltype(promote(1.0+im, zt)[1]) == Complex{Float64}  --> true
-    # @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  --> true
 
     @fact length(Taylor1(10)) == 10  --> true
-    # @fact length(TaylorSeries.fixshape(zt,Taylor1([1.0]))[2]) == 15  --> true
-    # @fact eltype(TaylorSeries.fixshape(zt,Taylor1([1.0]))[1]) == Float64  --> true
-    @fact TaylorSeries.firstnonzero(t) == 1  --> true
-    @fact TaylorSeries.firstnonzero(zt) == zt.order+1  --> true
+    @fact length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 15  --> true
+    @fact eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int  --> true
+    @fact TaylorSeries.findfirst(t) == 1  --> true
+    @fact TaylorSeries.findfirst(zt) == -1  --> true
     @fact isinf(Taylor1([typemax(1.0)])) --> true
     @fact isnan(Taylor1([typemax(1.0), NaN])) --> true
 
@@ -70,7 +69,7 @@ facts("Tests for Taylor1 expansions") do
     @fact imag(tsquare+2im*t-1) == 2t  --> true
     @fact (Rational(1,2)*tsquare).coeffs[3] == 1//2  --> true
     @fact t^2/tsquare == ot  --> true
-    @fact ((1+t)^(1/3)).coeffs[3]+1/9 <= tol1  --> true
+    @fact ((1+t)^(1/3)).coeffs[3]+1/9 ≤ tol1  --> true
     @fact 1-tsquare == (1+t)-t*(1+t)  --> true
     @fact (1-tsquare)^2 == (1+t)^2.0 * (1-t)^2.0  --> true
     @fact (sqrt(1+t)).coeffs[3] == -1/8  --> true
@@ -156,6 +155,7 @@ facts("Tests for Taylor1 expansions") do
     @fact_throws ArgumentError cos(t)/sin(t)
     @fact_throws AssertionError derivative(30, exp(ta(1.0pi)))
     @fact_throws ArgumentError reverse(exp(t))
+    @fact_throws MethodError TaylorSeries.fixorder(zt,Taylor1([1.0]))
 
     @fact string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"  --> true
     @fact string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"  --> true

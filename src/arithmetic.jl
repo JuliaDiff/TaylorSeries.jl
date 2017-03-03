@@ -14,8 +14,8 @@ for T in (:Taylor1, :TaylorN)
         =={T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = ==(promote(a,b)...)
         function =={T<:Number}(a::$T{T}, b::$T{T})
             a, b = fixorder(a, b)
-            @inbounds for i in eachindex(a.coeffs)
-                (a.coeffs[i] == b.coeffs[i]) || return false
+            @simd for i in eachindex(a.coeffs)
+                @inbounds (a.coeffs[i] == b.coeffs[i]) || return false
             end
             true
         end
@@ -26,8 +26,8 @@ end
 
 
 function iszero{T}(a::HomogeneousPolynomial{T})
-    @inbounds for i in eachindex(a.coeffs)
-        (a.coeffs[i] == zero(T)) || return false
+    @simd for i in eachindex(a.coeffs)
+        @inbounds (a.coeffs[i] == zero(T)) || return false
     end
     return true
 end
@@ -315,10 +315,10 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
 
     @inbounds posTb = pos_table[c.order+1]
 
-    @inbounds for na = 1:num_coeffs_a
-        ca = a.coeffs[na]
+    for na = 1:num_coeffs_a
+        @inbounds ca = a.coeffs[na]
         ca == zero(T) && continue
-        inda = index_table[a.order+1][na]
+        @inbounds inda = index_table[a.order+1][na]
         @inbounds pos = posTb[2*inda]
         @inbounds c.coeffs[pos] += ca * ca
         @inbounds for nb = na+1:num_coeffs_a
@@ -414,10 +414,10 @@ end
 
 function divfactorization(a1::Taylor1, b1::Taylor1)
     # order of first factorized term; a1 and b1 assumed to be of the same order
-    a1nz = firstnonzero(a1)
-    b1nz = firstnonzero(b1)
+    a1nz = findfirst(a1)
+    b1nz = findfirst(b1)
     orddivfact = min(a1nz, b1nz)
-    if orddivfact > a1.order
+    if orddivfact < 0
         orddivfact = a1.order
     end
     cdivfact = a1.coeffs[orddivfact+1] / b1.coeffs[orddivfact+1]

@@ -64,7 +64,7 @@ For details on making the Taylor expansion, see
 [`TaylorSeries.logHomogCoef`](@ref).
 """
 function log(a::Taylor1)
-    ( firstnonzero(a)>0 ) && throw(
+    findfirst(a)>0 && throw(
         ArgumentError("Impossible to expand `log` around 0."))
     @inbounds aux = log( a.coeffs[1] )
     T = typeof(aux)

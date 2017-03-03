@@ -28,7 +28,7 @@ end
 Return the value of the `n`-th derivative of the polynomial `a`.
 """
 function derivative{T<:Number}(n::Int, a::Taylor1{T})
-    @assert a.order >= n >= 0
+    @assert a.order ≥ n ≥ 0
     factorial( widen(n) ) * a.coeffs[n+1] :: T
 end
 
@@ -60,7 +60,7 @@ Partial differentiation of `a::HomogeneousPolynomial` series with respect
 to the `r`-th variable.
 """
 function derivative(a::HomogeneousPolynomial, r::Int)
-    @assert 1 <= r <= get_numvars()
+    @assert 1 ≤ r ≤ get_numvars()
     T = eltype(a)
     a.order == 0 && return HomogeneousPolynomial([zero(T)], 0)
     @inbounds num_coeffs = size_table[a.order]
