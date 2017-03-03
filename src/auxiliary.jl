@@ -8,13 +8,59 @@
 
 ## Auxiliary function ##
 
+function check_taylor1_order!{T<:Number}(coeffs::Array{T,1}, order::Int)
+    lencoef = length(coeffs)
+    order = max(order, lencoef-1)
+    order == lencoef-1 && return nothing
+    resize!(coeffs, order+1)
+    @simd for i = lencoef+1:order+1
+        @inbounds coeffs[i] = zero(coeffs[1])
+    end
+    nothing
+end
+
+function check_hpoly_order!{T<:Number}(coeffs::Array{T,1}, order::Int)
+    lencoef = length( coeffs )
+    @inbounds num_coeffs = size_table[order+1]
+    @assert order ≤ get_order() && lencoef ≤ num_coeffs
+    num_coeffs == lencoef && return nothing
+    resize!(coeffs, num_coeffs)
+    @simd for i = lencoef+1:num_coeffs
+        @inbounds coeffs[i] = zero(coeffs[1])
+    end
+    nothing
+end
+
+## Minimum order of an HomogeneousPolynomial compatible with the vector's length
+function orderH{T}(coeffs::Array{T,1})
+    ord = 0
+    ll = length(coeffs)
+    for i = 1:get_order()+1
+        @inbounds num_coeffs = size_table[i]
+        ll ≤ num_coeffs && break
+        ord += 1
+    end
+    return ord
+end
+
+## Maximum order of a HomogeneousPolynomial vector; used by TaylorN constructor
+function maxorderH{T<:Number}(v::Array{HomogeneousPolynomial{T},1})
+    m = 0
+    @inbounds for i in eachindex(v)
+        m = max(m, v[i].order)
+    end
+    return m
+end
+
+
+
 ## get_coeff ##
 """
     get_coeff(a, n)
 
 Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 """
-get_coeff(a::Taylor1, n::Int) = (@assert 0 <= n <= a.order+1;
+get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order+1;
     return a.coeffs[n+1])
 
 """
@@ -89,26 +135,6 @@ function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 end
 
 
-## Minimum order of an HomogeneousPolynomial compatible with the vector's length
-function orderH{T}(coeffs::Array{T,1})
-    ord = 0
-    ll = length(coeffs)
-    for i = 1:get_order()+1
-        @inbounds num_coeffs = size_table[i]
-        ll <= num_coeffs && break
-        ord += 1
-    end
-    return ord
-end
-
-## Maximum order of a HomogeneousPolynomial vector; used by TaylorN constructor
-function maxorderH{T<:Number}(v::Array{HomogeneousPolynomial{T},1})
-    m = 0
-    @inbounds for i in eachindex(v)
-        m = max(m, v[i].order)
-    end
-    return m
-end
 
 """
     order_posTb(order, nv, ord)
@@ -117,7 +143,7 @@ Return a vector with the positions, in a `HomogeneousPolynomial` of
 order `order`, where the variable `nv` has order `ord`.
 """
 function order_posTb(order::Int, nv::Int, ord::Int)
-    @assert order <= get_order()
+    @assert order ≤ get_order()
     @inbounds indTb = coeff_table[order+1]
     @inbounds num_coeffs = size_table[order+1]
     posV = Int[]

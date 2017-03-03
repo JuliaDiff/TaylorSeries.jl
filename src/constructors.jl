@@ -26,18 +26,9 @@ immutable Taylor1{T<:Number} <: Number
     order :: Int
 
     ## Inner constructor ##
-    function Taylor1(coeffs::Array{T,1}, order::Int)
-        lencoef = length(coeffs)
-        order = max(order, lencoef-1)
-        if order == lencoef-1
-            return new( coeffs, order)
-        else
-            resize!(coeffs, order+1)
-            @inbounds for i = lencoef+1:order+1
-                coeffs[i] = zero(T)
-            end
-            return new( coeffs, order)
-        end
+    function (::Type{Taylor1{T}}){T}(coeffs::Array{T,1}, order::Int)
+        check_taylor1_order!(coeffs, order)
+        return new{T}(coeffs, order)
     end
 end
 
@@ -85,17 +76,9 @@ immutable HomogeneousPolynomial{T<:Number} <: Number
     coeffs  :: Array{T,1}
     order   :: Int
 
-    function HomogeneousPolynomial( coeffs::Array{T,1}, order::Int )
-        @assert order <= get_order()
-        lencoef = length( coeffs )
-        @inbounds num_coeffs = size_table[order+1]
-        @assert lencoef <= num_coeffs
-        num_coeffs == lencoef && return new(coeffs, order)
-        resize!(coeffs, num_coeffs)
-        @simd for i = lencoef+1:num_coeffs
-            @inbounds coeffs[i] = zero(coeffs[1])
-        end
-        new(coeffs, order)
+    function (::Type{HomogeneousPolynomial{T}}){T}( coeffs::Array{T,1}, order::Int )
+        check_hpoly_order!(coeffs, order)
+        return new{T}(coeffs, order)
     end
 end
 
@@ -126,12 +109,14 @@ julia> HomogeneousPolynomial(Rational{Int}, 2)
 ```
 """
 function HomogeneousPolynomial{T<:Number}(::Type{T}, nv::Int)
-    @assert 0 < nv <= get_numvars()
+    @assert 0 < nv ≤ get_numvars()
     v = zeros(T, get_numvars())
     @inbounds v[nv] = one(T)
     return HomogeneousPolynomial(v, 1)
 end
 HomogeneousPolynomial(nv::Int) = HomogeneousPolynomial(Float64, nv)
+
+
 
 ######################### TaylorN
 doc"""
@@ -150,7 +135,7 @@ immutable TaylorN{T<:Number} <: Number
     coeffs  :: Array{HomogeneousPolynomial{T},1}
     order   :: Int
 
-    function TaylorN( v::Array{HomogeneousPolynomial{T},1}, order::Int )
+    function (::Type{TaylorN{T}}){T}( v::Array{HomogeneousPolynomial{T},1}, order::Int )
         m = maxorderH(v)
         order = max( m, order )
         coeffs = zeros(HomogeneousPolynomial{T}, order)
@@ -158,7 +143,7 @@ immutable TaylorN{T<:Number} <: Number
             @inbounds ord = v[i].order
             @inbounds coeffs[ord+1] += v[i]
         end
-        new(coeffs, order)
+        new{T}(coeffs, order)
     end
 end
 
@@ -194,15 +179,3 @@ julia> TaylorN(Rational{Int},2)
 TaylorN{T<:Number}(::Type{T}, nv::Int; order::Int=get_order()) =
     return TaylorN( [HomogeneousPolynomial(T, nv)], order )
 TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
-
-
-
-
-
-## NCoeffType
-# """
-#     NCoeffType{T}
-#
-# Non exported trait
-# """
-# immutable NCoeffType{T} end
