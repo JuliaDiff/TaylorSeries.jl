@@ -9,20 +9,20 @@
 # Arithmetic operations: +, -, *, /
 
 ## Equality ##
-function ==(a::Taylor1, b::Taylor1)
-    a, b = fixshape(a, b)
-    return a.coeffs == b.coeffs
+for T in (:Taylor1, :TaylorN)
+    @eval begin
+        =={T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = ==(promote(a,b)...)
+        function =={T<:Number}(a::$T{T}, b::$T{T})
+            a, b = fixorder(a, b)
+            @inbounds for i in eachindex(a.coeffs)
+                (a.coeffs[i] == b.coeffs[i]) || return false
+            end
+            true
+        end
+    end
 end
 
 ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial) = a.coeffs == b.coeffs
-
-function ==(a::TaylorN, b::TaylorN)
-    a, b = fixshape(a, b)
-    @inbounds for i in eachindex(a.coeffs)
-        (a.coeffs[i] == b.coeffs[i]) || return false
-    end
-    return true
-end
 
 
 function iszero{T}(a::HomogeneousPolynomial{T})
@@ -94,8 +94,9 @@ one{T<:Number}(a::TaylorN{T}) = TaylorN(one(T), a.order)
 for f in (:+, :-)
     for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @eval begin
-            function $f(a::$T, b::$T)
-                a, b = fixshape(a, b)
+            ($f){T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = $f(promote(a,b)...)
+            function $f{T<:Number}(a::$T{T}, b::$T{T})
+                a, b = fixorder(a, b)
                 v = similar(a.coeffs)
                 @simd for i in eachindex(v)
                     @inbounds v[i] = $f(a.coeffs[i], b.coeffs[i])
@@ -162,8 +163,8 @@ end
 ## Multiplication ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval begin
-        *(a::Bool, b::$T) = *(promote(a,b)...)
-        *(a::$T, b::Bool) = b*a
+        *(a::Bool, b::$T) = *(convert(Int, a), b)
+        *(a::$T, b::Bool) = b * a
         function *(a::RealOrComplex, b::$T)
             @inbounds aux = a * b.coeffs[1]
             v = Array{typeof(aux)}(length(b.coeffs))
@@ -174,8 +175,8 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         end
         *(b::$T, a::RealOrComplex) = a * b
         if $T != Taylor1
-            function *{R1<:RealOrComplex,R2<:RealOrComplex}(
-                    a::Taylor1{R2}, b::$T{Taylor1{R1}})
+            function *{T<:RealOrComplex,R<:RealOrComplex}(
+                    a::Taylor1{R}, b::$T{Taylor1{T}})
                 @inbounds aux = a * b.coeffs[1]
                 S = typeof(aux)
                 coeffs = Array{S}(length(a.coeffs))
@@ -184,8 +185,8 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
                 end
                 return $T(coeffs, a.order)
             end
-            *{R1<:RealOrComplex,R2<:RealOrComplex}(
-                    b::$T{Taylor1{R1}}, a::Taylor1{R2}) = a * b
+            *{T<:RealOrComplex,R<:RealOrComplex}(
+                    b::$T{Taylor1{T}}, a::Taylor1{R}) = a * b
         end
     end
 end
@@ -201,8 +202,9 @@ Return the Taylor expansion of $a \cdot b$, of order `max(a.order,b.order)`, for
 
 For details on making the Taylor expansion, see [`TaylorSeries.mulHomogCoef`](@ref).
 """
-function *(a::Taylor1, b::Taylor1)
-    a, b = fixshape(a, b)
+*{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = *(promote(a,b)...)
+function *{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
+    a, b = fixorder(a, b)
     coeffs = similar(a.coeffs)
     @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
     @inbounds for k = 1:a.order
@@ -210,6 +212,34 @@ function *(a::Taylor1, b::Taylor1)
     end
     Taylor1(coeffs, a.order)
 end
+
+*{T<:Number,S<:Number}(a::TaylorN{T}, b::TaylorN{S}) = *(promote(a,b)...)
+function *{T<:Number}(a::TaylorN{T}, b::TaylorN{T})
+    a, b = fixorder(a, b)
+    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
+
+    for ord in eachindex(coeffs)
+        for i = 0:ord-1
+            @inbounds mul!(coeffs[ord], a.coeffs[i+1], b.coeffs[ord-i])
+        end
+    end
+
+    return TaylorN(coeffs, a.order)
+end
+
+## Multiplication ##
+*{T<:Number,S<:Number}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) =
+    *(promote(a,b)...)
+function *{T<:Number}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T})
+    order = a.order + b.order
+    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
+
+    res = HomogeneousPolynomial([zero(T)], order)
+    mul!(res, a, b)
+    return res
+end
+
+
 
 # Homogeneous coefficient for the multiplication
 doc"""
@@ -235,37 +265,6 @@ function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     coefhomog
 end
 
-## Multiplication ##
-function *(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-    T = promote_type( eltype(a), eltype(b) )
-
-    order = a.order + b.order
-    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
-
-    if eltype(a) != eltype(b)
-        a, b = promote(a, b)
-    end
-
-    res = HomogeneousPolynomial([zero(T)], order)
-    mul!(res, a, b)
-    return res
-end
-
-
-function *(a::TaylorN, b::TaylorN)
-    a, b = fixshape(a, b)
-    T = eltype(a)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-
-    for ord in eachindex(coeffs)
-        for i = 0:ord-1
-            @inbounds mul!(coeffs[ord], a.coeffs[i+1], b.coeffs[ord-i])
-        end
-    end
-
-    return TaylorN{T}(coeffs, a.order)
-end
-
 
 """
 ```
@@ -282,7 +281,6 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::Homogeneous
     @inbounds num_coeffs_b = size_table[b.order+1]
     @inbounds num_coeffs  = size_table[c.order+1]
 
-    coeffs = c.coeffs
     @inbounds posTb = pos_table[c.order+1]
 
     @inbounds for na = 1:num_coeffs_a
@@ -296,7 +294,7 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::Homogeneous
             indb = index_table[b.order+1][nb]
 
             pos = posTb[inda + indb]
-            coeffs[pos] += ca * cb
+            c.coeffs[pos] += ca * cb
         end
     end
 
@@ -315,7 +313,6 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
     @inbounds num_coeffs_a = size_table[a.order+1]
     @inbounds num_coeffs  = size_table[c.order+1]
 
-    coeffs = c.coeffs
     @inbounds posTb = pos_table[c.order+1]
 
     @inbounds for na = 1:num_coeffs_a
@@ -323,13 +320,13 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
         ca == zero(T) && continue
         inda = index_table[a.order+1][na]
         @inbounds pos = posTb[2*inda]
-        @inbounds coeffs[pos] += ca * ca
+        @inbounds c.coeffs[pos] += ca * ca
         @inbounds for nb = na+1:num_coeffs_a
             cb = a.coeffs[nb]
             cb == zero(T) && continue
             indb = index_table[a.order+1][nb]
             pos = posTb[inda+indb]
-            coeffs[pos] += 2 * ca * cb
+            c.coeffs[pos] += 2 * ca * cb
         end
     end
 
@@ -355,9 +352,12 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
             R = promote_type(eltype(a), T)
             convert($T{R}, a) * inv(convert(R, b))
         end
+        if $T != Taylor1
+            /{T<:RealOrComplex,R<:RealOrComplex}(
+                a::$T{Taylor1{T}}, x::Taylor1{R}) = a * inv(x)
+        end
     end
 end
-
 
 
 doc"""
@@ -371,8 +371,9 @@ Return the Taylor expansion of $a/b$, of order `max(a.order,b.order)`, for
 For details on making the Taylor expansion, see
 [`TaylorSeries.divHomogCoef`](@ref).
 """
-function /(a::Taylor1, b::Taylor1)
-    a, b = fixshape(a, b)
+/{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = /(promote(a,b)...)
+function /{R<:Number}(a::Taylor1{R}, b::Taylor1{R})
+    a, b = fixorder(a, b)
     # order and coefficient of first factorized term
     orddivfact, cdivfact = divfactorization(a, b)
     T = typeof(cdivfact)
@@ -385,6 +386,31 @@ function /(a::Taylor1, b::Taylor1)
     end
     Taylor1(coeffs, a.order)
 end
+
+/{T<:Number,S<:Number}(a::TaylorN{T}, b::TaylorN{S}) = /(promote(a,b)...)
+function /{R<:Number}(a::TaylorN{R}, b::TaylorN{R})
+    @inbounds b0 = b.coeffs[1].coeffs[1]
+    @assert b0 != zero(b0)
+    a, b = fixorder(a, b)
+    # order and coefficient of first factorized term
+    # orddivfact, cdivfact = divfactorization(a, b)
+    b0 = inv(b0)
+    @inbounds cdivfact = a.coeffs[1] * b0
+    T = eltype(cdivfact)
+    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
+    @inbounds coeffs[1] = cdivfact
+
+    for ord in eachindex(coeffs)
+        ord == a.order+1 && continue
+        @inbounds for i = 0:ord-1
+            mul!(coeffs[ord+1], coeffs[i+1], b.coeffs[ord-i+1])
+        end
+        @inbounds coeffs[ord+1] = (a.coeffs[ord+1] - coeffs[ord+1]) * b0
+    end
+
+    return TaylorN(coeffs, a.order)
+end
+
 
 function divfactorization(a1::Taylor1, b1::Taylor1)
     # order of first factorized term; a1 and b1 assumed to be of the same order
@@ -437,33 +463,6 @@ end
 
 ## TODO: Implement factorization (divfactorization) for TaylorN polynomials
 
-
-
-function /(a::TaylorN, b::TaylorN)
-    @inbounds b0 = b.coeffs[1].coeffs[1]
-    @assert b0 != zero(b0)
-    a, b = fixshape(a, b)
-    # order and coefficient of first factorized term
-    # orddivfact, cdivfact = divfactorization(a, b)
-    b0 = inv(b0)
-    @inbounds cdivfact = a.coeffs[1] * b0
-    T = eltype(cdivfact)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds coeffs[1] = cdivfact
-
-    for ord in eachindex(coeffs)
-        ord == a.order+1 && continue
-        @inbounds for i = 0:ord-1
-            mul!(coeffs[ord+1], coeffs[i+1], b.coeffs[ord-i+1])
-        end
-        @inbounds coeffs[ord+1] = (a.coeffs[ord+1] - coeffs[ord+1]) * b0
-    end
-
-    return TaylorN{T}(coeffs, a.order)
-end
-/{T<:RealOrComplex}(a::HomogeneousPolynomial{Taylor1{T}}, x::Taylor1{T}) =
-    a*inv(x)
-/{T<:RealOrComplex}(a::TaylorN{Taylor1{T}}, x::Taylor1{T}) = a*inv(x)
 
 
 

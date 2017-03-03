@@ -38,6 +38,7 @@ Return the coefficient of `a::TaylorN`, specified by
 """
 function get_coeff(a::TaylorN, v::Array{Int,1})
     order = sum(v)
+    @assert order ≤ a.order
     get_coeff(a.coeffs[order+1], v)
 end
 
@@ -71,38 +72,20 @@ function firstnonzero{T<:Number}(ac::Vector{T})
 end
 firstnonzero{T<:Number}(a::Taylor1{T}) = firstnonzero(a.coeffs)
 
-function fixshape{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
-    if a.order == b.order
-        return a, b
-    elseif a.order < b.order
-        return Taylor1(a, b.order), b
+for T in (:Taylor1, :TaylorN)
+    @eval begin
+        fixorder{T<:Number}(a::$T{T}, order::Int64) = $T{T}(a.coeffs, order)
+        function fixorder{R<:Number}(a::$T{R}, b::$T{R})
+            a.order == b.order && return a, b
+            a.order < b.order && return $T{R}(a.coeffs, b.order), b
+            return a, $T{R}(b.coeffs, a.order)
+        end
     end
-    return a, Taylor1(b, a.order)
 end
 
-function fixshape{T<:Number, S<:Number}(a::Taylor1{T}, b::Taylor1{S})
-    fixshape(promote(a,b)...)
-end
-
-
-fixorder{T<:Number}(a::TaylorN{T}, order::Int64) = TaylorN{T}(a.coeffs, order)
-
-function fixorder(a::TaylorN, b::TaylorN)
-    a.order == b.order && return a, b
-    a.order < b.order && return TaylorN(a.coeffs, b.order), b
-    return a, TaylorN(b.coeffs, a.order)
-end
-
-function fixshape(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     @assert a.order == b.order
-    return promote(a, b)
-end
-
-function fixshape(a::TaylorN, b::TaylorN)
-    if eltype(a) != eltype(b)
-        a, b = promote(a, b)
-    end
-    return fixorder(a, b)
+    return a, b
 end
 
 

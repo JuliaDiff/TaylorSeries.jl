@@ -76,8 +76,10 @@ end
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
 """
-function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S})
-    a, x = fixshape(a, x)
+evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S}) =
+    evaluate(promote(a,x)...)
+function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
+    a, x = fixorder(a, x)
     @inbounds suma = a.coeffs[end]
     @inbounds for k = a.order:-1:1
         suma = suma*x + a.coeffs[k]

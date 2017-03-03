@@ -30,11 +30,11 @@ facts("Tests for Taylor1 expansions") do
     @fact eltype(promote(ta(0.0),zeros(Int,2))[2]) == Float64  --> true
     @fact eltype(promote(0,Taylor1(ot))[1]) == Float64  --> true
     @fact eltype(promote(1.0+im, zt)[1]) == Complex{Float64}  --> true
-    @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  --> true
+    # @fact eltype(TaylorSeries.fixshape(zt,ot)[1]) == Float64  --> true
 
     @fact length(Taylor1(10)) == 10  --> true
-    @fact length(TaylorSeries.fixshape(zt,Taylor1([1.0]))[2]) == 15  --> true
-    @fact eltype(TaylorSeries.fixshape(zt,Taylor1([1.0]))[1]) == Float64  --> true
+    # @fact length(TaylorSeries.fixshape(zt,Taylor1([1.0]))[2]) == 15  --> true
+    # @fact eltype(TaylorSeries.fixshape(zt,Taylor1([1.0]))[1]) == Float64  --> true
     @fact TaylorSeries.firstnonzero(t) == 1  --> true
     @fact TaylorSeries.firstnonzero(zt) == zt.order+1  --> true
     @fact isinf(Taylor1([typemax(1.0)])) --> true
