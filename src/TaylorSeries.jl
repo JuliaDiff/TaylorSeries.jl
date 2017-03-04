@@ -34,14 +34,17 @@ export get_coeff, derivative, integrate,
     set_variables, get_variables,
     ∇, jacobian, hessian
 
-# one variable:
-include("Taylor1.jl")
-
-# several variables:
 include("parameters.jl")
 include("hash_tables.jl")
-include("TaylorN.jl")
-
+include("constructors.jl")
+include("conversion.jl")
+include("auxiliary.jl")
+include("arithmetic.jl")
+include("power.jl")
+include("functions.jl")
+include("other_functions.jl")
+include("evaluate.jl")
+include("calculus.jl")
 include("printing.jl")
 
 end # module

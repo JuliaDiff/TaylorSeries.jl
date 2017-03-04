@@ -5,7 +5,7 @@ const x, y, z, w = set_variables(Int128, "x", numvars=4, order=2order)
 
 function fateman1(degree::Int)
     T = Int128
-    oneH = HomogeneousPolynomial(one(T), 0)
+    oneH = convert(HomogeneousPolynomial{T},1)#HomogeneousPolynomial(one(T), 0)
     # s = 1 + x + y + z + w
     s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
     s = s^degree
@@ -17,7 +17,7 @@ end
 
 function fateman2(degree::Int)
     T = Int128
-    oneH = HomogeneousPolynomial(one(T), 0)
+    oneH = convert(HomogeneousPolynomial{T},1)#HomogeneousPolynomial(one(T), 0)
     # s = 1 + x + y + z + w
     s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
     s = s^degree
