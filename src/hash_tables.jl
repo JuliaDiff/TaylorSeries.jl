@@ -15,9 +15,9 @@ and `pos_table`. Internally, these are treated as `const`.
 The $i+1$-th component contains a vector with the vectors of all the possible
 combinations of monomials of a `HomogeneousPolynomial` of order $i$.
 
-    index_table :: Array{Array{Int64,1},1}
+    index_table :: Array{Array{UInt128,1},1}
 
-The $i+1$-th component contains a vector of (hashed) indices that represent
+The $i+1$-th component contains a vector of `UInt128` indices that represent
 the distinct monomials of a `HomogeneousPolynomial` of order (degree) $i$.
 
     size_table :: Array{Int64,1}
@@ -25,15 +25,15 @@ the distinct monomials of a `HomogeneousPolynomial` of order (degree) $i$.
 The $i+1$-th component contains the number of distinct monomials of the
 `HomogeneousPolynomial` of order $i$, equivalent to `length(coeff_table[i])`.
 
-    pos_table :: Array{Dict{Int64,Int64},1}
+    pos_table :: Array{Dict{UInt128,UInt128},1}
 
-The $i+1$-th component maps the hash index to the (lexicographic) position
+The $i+1$-th component maps the `UInt128` index to the (lexicographic) position
 of the corresponding monomial in `coeffs_table`.
 """
 function generate_tables(num_vars, order)
     coeff_table = [generate_index_vectors(num_vars, i) for i in 0:order]
 
-    index_table = Vector{Int}[map(x->in_base(order, x), coeffs) for coeffs in coeff_table]
+    index_table = Vector{UInt128}[map(x->in_base(order, x), coeffs) for coeffs in coeff_table]
 
     pos_table = map(make_inverse_dict, index_table)
     size_table = map(length, index_table)
@@ -84,15 +84,16 @@ end
 """
     in_base(order, v)
 
-Convert vector `v` of non-negative integers to base `order+1`.
+Convert vector `v` of non-negative integers to base `order+1` using
+`UInt128` arithmetic.
 """
 function in_base(order, v)
-    order = order+1
+    order = UInt128(order+1)
 
-    result = 0
+    result = UInt128(0)
 
     for i in v
-        result = result*order + i
+        result = result*order + UInt128(i)
     end
 
     result

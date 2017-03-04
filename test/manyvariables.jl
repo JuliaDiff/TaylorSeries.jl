@@ -16,12 +16,19 @@ using Base.Test
     @test typeof(show_params_TaylorN()) == Void
 
     @test TaylorSeries.coeff_table[2][1] == [1,0]
-    @test TaylorSeries.index_table[2][1] == 7
-    @test TaylorSeries.in_base(get_order(),[2,1]) == 15
+    @test TaylorSeries.index_table[2][1] == UInt128(7)
+    @test TaylorSeries.in_base(get_order(),[2,1]) == UInt128(15)
     @test TaylorSeries.pos_table[4][15] == 2
 
     @test get_order() == 6
     @test get_numvars() == 2
+
+    set_variables("δ", order=1, numvars=70)
+    @test TaylorSeries.coeff_table[2][1][1] == 1
+    @test TaylorSeries.coeff_table[2][2][2] == 1
+    @test TaylorSeries.index_table[2][1] === 0x00000000000000200000000000000000
+    @test TaylorSeries.pos_table[2][0x00000000000000000000002000000000] == 33
+    @test TaylorSeries.pos_table[2][0x00000000000000000000000000000001] == 70
 
     x, y = set_variables("x y", order=6)
     @test x.order == 6
