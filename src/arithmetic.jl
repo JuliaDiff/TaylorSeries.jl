@@ -13,11 +13,16 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         =={T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = ==(promote(a,b)...)
         function =={T<:Number}(a::$T{T}, b::$T{T})
-            a, b = fixorder(a, b)
-            @simd for i in eachindex(a.coeffs)
-                @inbounds (a.coeffs[i] == b.coeffs[i]) || return false
+            if a.order == b.order
+                return all( a.coeffs .== b.coeffs )
+            elseif a.order < b.order
+                res1 = all( a.coeffs[1:a.order+1] .== b.coeffs[1:a.order+1] )
+                res2 = iszero(b.coeffs[a.order+2:b.order+1])
+            else a.order > b.order
+                res1 = all( a.coeffs[1:b.order+1] .== b.coeffs[1:b.order+1] )
+                res2 = iszero(a.coeffs[b.order+2:a.order+1])
             end
-            true
+            return res1 && res2
         end
     end
 end
@@ -25,12 +30,7 @@ end
 ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial) = a.coeffs == b.coeffs
 
 
-function iszero{T}(a::HomogeneousPolynomial{T})
-    @simd for i in eachindex(a.coeffs)
-        @inbounds (a.coeffs[i] == zero(T)) || return false
-    end
-    return true
-end
+iszero(a::HomogeneousPolynomial) = iszero(a.coeffs)
 
 
 ## zero and one ##

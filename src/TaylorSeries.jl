@@ -15,6 +15,14 @@ or more independent variables.
 """
 module TaylorSeries
 
+using Compat
+
+if VERSION ≤ v"0.6.0-dev"
+    import Compat: iszero
+else
+    import Base: iszero
+end
+
 import Base: ==, +, -, *, /, ^
 
 import Base: zero, one, zeros, ones, isinf, isnan,
