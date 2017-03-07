@@ -186,7 +186,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
             end
             *{T<:RealOrComplex}(b::$T{Taylor1{T}}, a::Taylor1{T}) = a * b
             function *{T<:RealOrComplex,R<:RealOrComplex}(a::Taylor1{T},
-                    b::$T{Taylor1{return }})
+                    b::$T{Taylor1{R}})
                 S = promote_type(T,R)
                 return convert(Taylor1{S}, a) * convert($T{Taylor1{S}}, b)
             end
