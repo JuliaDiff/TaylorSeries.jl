@@ -208,4 +208,17 @@ hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
 hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numvars()) )
 
+"""
+```
+    hessian!(hes, f)
+    hessian!(hes, f, [vals])
+```
+
+Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
+evaluated at the vector `vals`, and write results to `hes`. If `vals` is
+ommited, it is evaluated at zero.
+"""
+hessian!{T<:Number}(hes::Array{T,2}, f::TaylorN{T}, vals::Array{T,1}) = jacobian!(hes, gradient(f), vals)
+hessian!{T<:Number}(hes::Array{T,2}, f::TaylorN{T}) = jacobian!(hes, gradient(f))
+
 ## TODO: Integration...
