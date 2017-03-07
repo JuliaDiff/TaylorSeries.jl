@@ -90,7 +90,7 @@ using Base.Test
     t = Taylor1(10)
     x = TaylorN( [HomogeneousPolynomial(zero(t)), HomogeneousPolynomial([one(t),zero(t)])], 5)
     y = TaylorN(typeof(tint), 2, order=5)
-    @test one(y)/(1+x) == 1-x-x^2-x^3-x^4-x^5
-    @test one(y)/(1+y) == 1-y-y^2-y^3-y^4-y^5
+    @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
+    @test one(y)/(1+y) == 1 - y + y^2 - y^3 + y^4 - y^5
 
 end
