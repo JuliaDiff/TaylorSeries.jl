@@ -175,22 +175,26 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         end
         *(b::$T, a::RealOrComplex) = a * b
         if $T != Taylor1
-            function *{T<:RealOrComplex,R<:RealOrComplex}(
-                    a::Taylor1{R}, b::$T{Taylor1{T}})
+            function *{T<:RealOrComplex}(a::Taylor1{T}, b::$T{Taylor1{T}})
                 @inbounds aux = a * b.coeffs[1]
                 S = typeof(aux)
-                coeffs = Array{S}(length(a.coeffs))
+                coeffs = Array{S}(length(b.coeffs))
                 @simd for i in eachindex(coeffs)
                     @inbounds coeffs[i] = a * b.coeffs[i]
                 end
-                return $T(coeffs, a.order)
+                return $T(coeffs, b.order)
             end
-            *{T<:RealOrComplex,R<:RealOrComplex}(
-                    b::$T{Taylor1{T}}, a::Taylor1{R}) = a * b
+            *{T<:RealOrComplex}(b::$T{Taylor1{T}}, a::Taylor1{T}) = a * b
+            function *{T<:RealOrComplex,R<:RealOrComplex}(a::Taylor1{T},
+                    b::$T{Taylor1{return }})
+                S = promote_type(T,R)
+                return convert(Taylor1{S}, a) * convert($T{Taylor1{S}}, b)
+            end
+            *{T<:RealOrComplex,R<:RealOrComplex}(b::$T{Taylor1{T}},
+                a::Taylor1{R}) = a * b
         end
     end
 end
-
 
 doc"""
 ```

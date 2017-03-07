@@ -2,8 +2,12 @@
 #
 # Tests for TaylorSeries
 
-testfiles = ("onevariable.jl", "manyvariables.jl", "mixtures.jl",
-"identities_Euler.jl", "fateman40.jl")
+testfiles = (
+    "onevariable.jl",
+    "manyvariables.jl",
+    "mixtures.jl",
+    "identities_Euler.jl",
+    "fateman40.jl")
 
 for file in testfiles
     include(file)
