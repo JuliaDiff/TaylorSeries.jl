@@ -142,10 +142,27 @@ using Base.Test
     @test gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
     @test jacobian([f1,f2], [2,1]) == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
+    jac = Array{Int64}(2, 2)
+    jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
+    @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
+    jacobian!(jac, [f1,f2], [2,1])
+    @test jac == jacobian([f1,f2], [2,1])
     @test [xT yT]*hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
     @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
     @test hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    hes = Array{Int64}(2, 2)
+    hessian!(hes, f1*f2)
+    @test hes == hessian(f1*f2)
+    @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
+    hessian!(hes, f1^2)
+    @test hes/2 == [ [49,0] [0,12] ]
+    hessian!(hes, f1-f2-2*f1*f2)
+    @test hes == hes'
+    hes1 = hes2 = Array{Int64}(2, 2)
+    hessian!(hes1,f1-f2,[1,-1])
+    hessian!(hes2,g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    @test hes1 == hes2
 
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"

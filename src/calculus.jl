@@ -163,6 +163,39 @@ end
 
 """
 ```
+    jacobian!(jac, vf)
+    jacobian!(jac, vf, [vals])
+```
+
+Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials
+evaluated at the vector `vals`, and write results to `jac`. If `vals` is ommited, it is evaluated at zero.
+"""
+function jacobian!{T<:Number}(jac::Array{T,2}, vf::Array{TaylorN{T},1})
+    numVars = get_numvars()
+    @assert length(vf) == numVars
+    @assert (numVars, numVars) == size(jac)
+    for comp2 = 1:numVars
+        for comp1 = 1:numVars
+            @inbounds jac[comp1,comp2] = vf[comp1].coeffs[2].coeffs[comp2]
+        end
+    end
+    nothing
+end
+function jacobian!{T<:Number}(jac::Array{T,2}, vf::Array{TaylorN{T},1},vals::Array{T,1})
+    numVars = get_numvars()
+    @assert length(vf) == numVars == length(vals)
+    @assert (numVars, numVars) == size(jac)
+    for comp = 1:numVars
+        @inbounds for nv = 1:numVars
+            jac[nv,comp] = evaluate(derivative(vf[nv], comp), vals)
+        end
+    end
+    nothing
+end
+
+
+"""
+```
     hessian(f)
     hessian(f, [vals])
 ```
@@ -174,5 +207,18 @@ zero.
 hessian{T<:Number,S<:Number}(f::TaylorN{T}, vals::Array{S,1}) =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
 hessian{T<:Number}(f::TaylorN{T}) = hessian( f, zeros(T, get_numvars()) )
+
+"""
+```
+    hessian!(hes, f)
+    hessian!(hes, f, [vals])
+```
+
+Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
+evaluated at the vector `vals`, and write results to `hes`. If `vals` is
+ommited, it is evaluated at zero.
+"""
+hessian!{T<:Number}(hes::Array{T,2}, f::TaylorN{T}, vals::Array{T,1}) = jacobian!(hes, gradient(f), vals)
+hessian!{T<:Number}(hes::Array{T,2}, f::TaylorN{T}) = jacobian!(hes, gradient(f))
 
 ## TODO: Integration...
