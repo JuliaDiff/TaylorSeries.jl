@@ -30,6 +30,7 @@ using Base.Test
     @test !isnan(x)
     set_variables("x", numvars=2, order=17)
 
+    set_variables("x", numvars=2, order=17)
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
     @test HomogeneousPolynomial(0,0)  == 0

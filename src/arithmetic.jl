@@ -41,9 +41,7 @@ one{T<:Number}(a::Taylor1{T}) = Taylor1(one(a.coeffs[1]), a.order)
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
     a.order == 0 && return HomogeneousPolynomial([zero(a.coeffs[1])], 0)
     v = Array{T}( size_table[a.order+1] )
-    @simd for ind in eachindex(a.coeffs)
-        @inbounds v[ind] = zero(a.coeffs[ind])
-    end
+    v .= zero.(a.coeffs)
     return HomogeneousPolynomial(v, a.order)
 end
 
@@ -62,9 +60,7 @@ zeros{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
 function one{T<:Number}(a::HomogeneousPolynomial{T})
     a.order == 0 && return HomogeneousPolynomial([one(a.coeffs[1])], 0)
     v = Array{T}( size_table[a.order+1] )
-    @simd for ind in eachindex(a.coeffs)
-        @inbounds v[ind] = one(a.coeffs[ind])
-    end
+    v .= one.(a.coeffs)
     return HomogeneousPolynomial{T}(v, a.order)
 end
 
@@ -85,62 +81,78 @@ end
 ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
     ones( HomogeneousPolynomial([one(T)], 0), order)
 
-zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(T), a.order)
-one{T<:Number}(a::TaylorN{T}) = TaylorN(one(T), a.order)
+zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(a.coeffs[1]), a.order)
+one{T<:Number}(a::TaylorN{T}) = TaylorN(one(a.coeffs[1]), a.order)
 
 
 
 ## Addition and substraction ##
 for f in (:+, :-)
-    for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    dotf = ifelse( f == :+, :.+, :.-)
+    for T in (:Taylor1, :TaylorN)
         @eval begin
             ($f){T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = $f(promote(a,b)...)
             function $f{T<:Number}(a::$T{T}, b::$T{T})
-                a, b = fixorder(a, b)
-                v = similar(a.coeffs)
-                @simd for i in eachindex(v)
-                    @inbounds v[i] = $f(a.coeffs[i], b.coeffs[i])
+                aord = a.order
+                bord = b.order
+                ac = view(a.coeffs, :)
+                bc = view(b.coeffs, :)
+                if aord == bord
+                    v = similar(ac)
+                    v .= $dotf(ac, bc)
+                elseif aord < bord
+                    v = similar(bc)
+                    @inbounds v[1:aord+1] .= $dotf(ac[1:aord+1], bc[1:aord+1])
+                    @inbounds v[aord+2:bord+1] .= $f(bc[aord+2:bord+1])
+                else
+                    v = similar(ac)
+                    @inbounds v[1:bord+1] .= $dotf(ac[1:bord+1], bc[1:bord+1])
+                    @inbounds v[bord+2:aord+1] .= ac[bord+2:aord+1]
                 end
-                return $T(v, a.order)
+                return $T(v)
             end
             function $f(a::$T)
                 v = similar(a.coeffs)
-                @simd for i in eachindex(v)
-                    @inbounds v[i] = $f(a.coeffs[i])
-                end
+                broadcast!($f, v, a.coeffs)
                 return $T(v, a.order)
             end
-            if $T != HomogeneousPolynomial
-                function $f(a::$T, b::RealOrComplex)
-                    R = promote_type(eltype(a.coeffs), eltype(b))
-                    coeffs = Array{R}(a.order+1)
-                    @simd for i in eachindex(coeffs)
-                        @inbounds coeffs[i] = a.coeffs[i]
-                    end
-                    @inbounds coeffs[1] = $f(a.coeffs[1], b)
-                    return $T(coeffs, a.order)
-                end
-                function $f(b::RealOrComplex, a::$T)
-                    R = promote_type(eltype(a.coeffs), eltype(b))
-                    coeffs = Array{R}(a.order+1)
-                    @simd for i in eachindex(coeffs)
-                        @inbounds coeffs[i] = $f(a.coeffs[i])
-                    end
-                    @inbounds coeffs[1] = $f(b, a.coeffs[1])
-                    return $T(coeffs, a.order)
-                end
+            function $f(a::$T, b::RealOrComplex)
+                R = promote_type(eltype(a.coeffs), eltype(b))
+                coeffs = Array{R}(a.order+1)
+                coeffs .= a.coeffs
+                @inbounds coeffs[1] = $f(a.coeffs[1], b)
+                return $T(coeffs, a.order)
+            end
+            function $f(b::RealOrComplex, a::$T)
+                R = promote_type(eltype(a.coeffs), eltype(b))
+                coeffs = Array{R}(a.order+1)
+                coeffs .= $f(a.coeffs)
+                @inbounds coeffs[1] = $f(b, a.coeffs[1])
+                return $T(coeffs, a.order)
             end
         end
     end
     @eval begin
+        ($f){T<:Number,S<:Number}(a::HomogeneousPolynomial{T},
+            b::HomogeneousPolynomial{S}) = $f(promote(a,b)...)
+        function $f{T<:Number}(a::HomogeneousPolynomial{T},
+                b::HomogeneousPolynomial{T})
+            @assert a.order == b.order
+            v = similar(a.coeffs)
+            v .= $dotf(a.coeffs, b.coeffs)
+            return HomogeneousPolynomial(v, a.order)
+        end
+        function $f(a::HomogeneousPolynomial)
+            v = similar(a.coeffs)
+            v .= $f(a.coeffs)
+            return HomogeneousPolynomial(v, a.order)
+        end
         function ($f){T<:RealOrComplex,S<:RealOrComplex}(
                 a::TaylorN{Taylor1{T}}, b::Taylor1{S})
             @inbounds aux = $f(a.coeffs[1].coeffs[1], b)
             R = typeof(aux)
-            coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(length(a.coeffs))
-            @simd for i in eachindex(coeffs)
-                @inbounds coeffs[i] = a.coeffs[i]
-            end
+            coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(a.order+1)
+            coeffs .= a.coeffs
             @inbounds coeffs[1] = aux
             return TaylorN(coeffs, a.order)
         end
@@ -148,10 +160,8 @@ for f in (:+, :-)
             b::Taylor1{S}, a::TaylorN{Taylor1{T}})
             @inbounds aux = $f(b, a.coeffs[1].coeffs[1])
             R = typeof(aux)
-            coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(length(a.coeffs))
-            @simd for i in eachindex(coeffs)
-                @inbounds coeffs[i] = $f(a.coeffs[i])
-            end
+            coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(a.order+1)
+            coeffs .= $f(a.coeffs)
             @inbounds coeffs[1] = aux
             return TaylorN(coeffs, a.order)
         end
@@ -210,11 +220,10 @@ For details on making the Taylor expansion, see [`TaylorSeries.mulHomogCoef`](@r
 function *{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
     a, b = fixorder(a, b)
     coeffs = similar(a.coeffs)
-    @inbounds coeffs[1] = a.coeffs[1] * b.coeffs[1]
-    @inbounds for k = 1:a.order
+    @inbounds for k = 0:a.order
         coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
     end
-    Taylor1(coeffs, a.order)
+    return Taylor1(coeffs, a.order)
 end
 
 *{T<:Number,S<:Number}(a::TaylorN{T}, b::TaylorN{S}) = *(promote(a,b)...)
@@ -236,9 +245,10 @@ end
     *(promote(a,b)...)
 function *{T<:Number}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T})
     order = a.order + b.order
-    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
+    # order > get_order() && return HomogeneousPolynomial([a.coeffs[1]], get_order())
+    order > get_order() && return HomogeneousPolynomial([zero(a.coeffs[1])], get_order())
 
-    res = HomogeneousPolynomial([zero(T)], order)
+    res = HomogeneousPolynomial([zero(a.coeffs[1])], order)
     mul!(res, a, b)
     return res
 end
@@ -262,7 +272,7 @@ Inputs are the `kcoef`-th coefficient, and the vectors of the expansion coeffici
 """
 function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
     kcoef == 0 && return ac[1] * bc[1]
-    coefhomog = zero(T)
+    coefhomog = zero(ac[1])
     @inbounds for i = 0:kcoef
         coefhomog += ac[i+1] * bc[kcoef-i+1]
     end
