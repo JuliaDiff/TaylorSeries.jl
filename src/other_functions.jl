@@ -22,20 +22,16 @@ ctranspose{T<:Number}(a::HomogeneousPolynomial{T}) = conj(a)
 ctranspose{T<:Number}(a::TaylorN{T}) = conj(a)
 
 
-# Tests `isinf` and `isnan` for all polynomial coefficients
-for f in (:isinf, :isnan)
-    @eval begin
-        function ($f)(a::Taylor1)
-            test = false
-            for i in eachindex(a.coeffs)
-                @inbounds test = ($f)(a.coeffs[i])
-                test && break
+# Tests `isinf` and `isnan` for *any* of the polynomial coefficients
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    for f in (:isinf, :isnan)
+        @eval begin
+            function ($f)(a::$T)
+                return any( $f(a.coeffs) )
             end
-            test
         end
     end
 end
-
 
 ## Division functions: rem and mod
 for op in (:mod, :rem)

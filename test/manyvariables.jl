@@ -27,6 +27,7 @@ using Base.Test
     @test x == HomogeneousPolynomial(1)
     @test y == HomogeneousPolynomial(Float64, 2)
     @test y == HomogeneousPolynomial(2)
+    @test !isnan(x)
     set_variables("x", numvars=2, order=17)
 
     xH = HomogeneousPolynomial([1,0])
@@ -41,6 +42,7 @@ using Base.Test
     @test ones(xH,1) == [1, xH+yH]
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
+    @test !isnan(uT)
 
     @test get_order(zeroT) == 1
     @test get_coeff(xT,[1,0]) == 1

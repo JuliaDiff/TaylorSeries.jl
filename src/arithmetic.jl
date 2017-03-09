@@ -352,10 +352,11 @@ end
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval begin
         /{T<:RealOrComplex}(a::$T{T}, b::T) = a * inv(b)
-        function /{T<:RealOrComplex}(a::$T, b::T)
-            R = promote_type(eltype(a), T)
-            convert($T{R}, a) * inv(convert(R, b))
+        function /{T<:RealOrComplex,S<:RealOrComplex}(a::$T{T}, b::S)
+            R = promote_type(T,S)
+            return convert($T{R}, a) * inv(convert(R, b))
         end
+        /{T<:RealOrComplex}(a::$T, b::T) = a * inv(b)
         if $T != Taylor1
             /{T<:RealOrComplex,R<:RealOrComplex}(
                 a::$T{Taylor1{T}}, x::Taylor1{R}) = a * inv(x)
