@@ -34,8 +34,8 @@ iszero(a::HomogeneousPolynomial) = iszero(a.coeffs)
 
 
 ## zero and one ##
-zero{T<:Number}(a::Taylor1{T}) = Taylor1(zero(a.coeffs[1]), a.order)
-one{T<:Number}(a::Taylor1{T}) = Taylor1(one(a.coeffs[1]), a.order)
+zero(a::Taylor1) = Taylor1(zero(a.coeffs[1]), a.order)
+one(a::Taylor1) = Taylor1(one(a.coeffs[1]), a.order)
 
 
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
@@ -69,11 +69,7 @@ function ones{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
     v = Array{HomogeneousPolynomial{T}}(order+1)
     @simd for ord in eachindex(v)
         @inbounds num_coeffs = size_table[ord]
-        vT = Array{T}(num_coeffs)
-        @simd for ind in 1:num_coeffs
-            @inbounds vT[ind] = one(a.coeffs[1])
-        end
-        @inbounds v[ord] = HomogeneousPolynomial(vT, ord-1)
+        @inbounds v[ord] = HomogeneousPolynomial(ones(T, num_coeffs), ord-1)
     end
     return v
 end
@@ -81,8 +77,8 @@ end
 ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
     ones( HomogeneousPolynomial([one(T)], 0), order)
 
-zero{T<:Number}(a::TaylorN{T}) = TaylorN(zero(a.coeffs[1]), a.order)
-one{T<:Number}(a::TaylorN{T}) = TaylorN(one(a.coeffs[1]), a.order)
+zero(a::TaylorN) = TaylorN(zero(a.coeffs[1]), a.order)
+one(a::TaylorN) = TaylorN(one(a.coeffs[1]), a.order)
 
 
 
@@ -352,11 +348,9 @@ end
 ## Division ##
 function /{T<:Integer, S<:RealOrComplex}(a::Taylor1{Rational{T}}, b::S)
     R = typeof( a.coeffs[1] // b)
-    v = Array{R}(length(a.coeffs))
-    @simd for i in eachindex(v)
-        @inbounds v[i] = a.coeffs[i] // b
-    end
-    Taylor1(v, a.order)
+    v = Array{R}(a.order+1)
+    v .= a.coeffs .// b
+    return Taylor1(v, a.order)
 end
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
