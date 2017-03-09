@@ -98,4 +98,5 @@ using Base.Test
     @test !isnan(tx)
     @test !isinf(tx)
     @test tx/tx == one(tx)
+    @test tx/1.0 == tx
 end
