@@ -18,6 +18,7 @@ using Base.Test
     @test string(xH * tN) == " ( 1.0 x₁ + 𝒪(‖x‖²)) t + 𝒪(t⁴)"
 
     tN = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 3)
+    @test typeof(tN) == Taylor1{TaylorN{Float64}}
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖⁷) + 𝒪(t⁴)"
     @test string(tN) == " ( 1.0 + 𝒪(‖x‖⁷)) t + 𝒪(t⁴)"
     @test string(Taylor1([xH+yH])) == "  1 x₁ + 1 x₂ + 𝒪(t¹)"
@@ -56,6 +57,8 @@ using Base.Test
     @test tN1-tN1 == zero(tN1)
     @test string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + ( 2.0 x₂² + 𝒪(‖x‖³)) t³ + 𝒪(t⁴)"
+    @test !isnan(tN1)
+    @test !isinf(tN1)
 
     @test mod(tN1+1,1.0) == 0+tN1
     @test mod(tN1-1.125,2) == 0.875+tN1
@@ -70,14 +73,10 @@ using Base.Test
     @test mod2pi(-3pi+t1N).coeffs[1].coeffs[1].coeffs[1] ≈ pi
     @test mod2pi(0.125+2pi+t1N).coeffs[1].coeffs[1].coeffs[1] ≈ 0.125
 
-    @test convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) ==
-        [t1N, t1N]
-    @test convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) ==
-        [t1N t1N]
-    @test convert(Array{TaylorN{Taylor1{Float64}},1}, [t1N, t1N]) ==
-        [tN1, tN1]
-    @test convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) ==
-        [tN1 tN1]
+    @test convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) == [t1N, t1N]
+    @test convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) == [t1N t1N]
+    @test convert(Array{TaylorN{Taylor1{Float64}},1}, [t1N, t1N]) == [tN1, tN1]
+    @test convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) == [tN1 tN1]
 
     @test string(evaluate(t1N, 0.0)) == " 1.0 x₁ + 𝒪(‖x‖³)"
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
@@ -93,4 +92,10 @@ using Base.Test
     @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
     @test one(y)/(1+y) == 1 - y + y^2 - y^3 + y^4 - y^5
 
+    # See
+    xx = 1.0 + TaylorN(Float64, 1, order=5)
+    tx = Taylor1(xx, 16)
+    @test !isnan(tx)
+    @test !isinf(tx)
+    @test tx/tx == one(tx)
 end
