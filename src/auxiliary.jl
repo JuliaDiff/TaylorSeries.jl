@@ -109,11 +109,11 @@ Base.findfirst{T<:Number}(a::Taylor1{T}) = findfirst(a.coeffs)-1
 ## fixorder ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        fixorder{T<:Number}(a::$T{T}, order::Int64) = $T{T}(a.coeffs, order)
+        fixorder(a::$T, order::Int64) = $T(a.coeffs, order)
         function fixorder{R<:Number}(a::$T{R}, b::$T{R})
             a.order == b.order && return a, b
-            a.order < b.order && return $T{R}(a.coeffs, b.order), b
-            return a, $T{R}(b.coeffs, a.order)
+            a.order < b.order && return $T(a.coeffs, b.order), b
+            return a, $T(b.coeffs, a.order)
         end
     end
 end

@@ -96,10 +96,13 @@ end
 Evaluate a `HomogeneousPolynomial` polynomial using Horner's rule (hand coded)
 at `vals`.
 """
-function evaluate{T<:Number}(a::HomogeneousPolynomial{T}, vals::Array{T,1} )
+# function evaluate{T<:Number}(a::HomogeneousPolynomial{T}, vals::Array{T,1} )
+function evaluate{T<:Number,S<:RealOrComplex}(a::HomogeneousPolynomial{T},
+        vals::Array{S,1} )
     @assert length(vals) == get_numvars()
+    R = promote_type(T,S)
     numVars = get_numvars()
-    suma = TaylorN(a, a.order)
+    suma = convert(TaylorN{R}, a)
 
     @inbounds for nv = 1:numVars
         suma = horner(suma, (nv, vals[nv]))
@@ -107,12 +110,7 @@ function evaluate{T<:Number}(a::HomogeneousPolynomial{T}, vals::Array{T,1} )
 
     return suma.coeffs[1].coeffs[1]
 end
-function evaluate{T<:Number,S<:RealOrComplex}(a::HomogeneousPolynomial{T},
-        vals::Array{S,1} )
-    R = promote_type(T,S)
-    return evaluate( convert(HomogeneousPolynomial{R}, a), convert(Array{R,1}, vals))
-end
-function evaluate{T<:Number}(a::HomogeneousPolynomial{T})
+function evaluate(a::HomogeneousPolynomial)
     a.order > 0 && return zero(a.coeffs[1])
     return a.coeffs[1]
 end
@@ -123,10 +121,11 @@ end
 Evaluate the `TaylorN` polynomial `a` using Horner's rule (hand coded) at `vals`.
 If `vals` is ommitted, it is evaluated at zero.
 """
-function evaluate{T<:Number}(a::TaylorN{T}, vals::Array{T,1} )
+function evaluate{T<:Number,S<:RealOrComplex}(a::TaylorN{T}, vals::Array{S,1} )
     @assert length(vals) == get_numvars()
     numVars = get_numvars()
-    suma = a
+    R = promote_type(T,S)
+    suma = convert(TaylorN{R}, a)
 
     @inbounds for nv = 1:numVars
         suma = horner(suma, (nv, vals[nv]))
@@ -134,12 +133,8 @@ function evaluate{T<:Number}(a::TaylorN{T}, vals::Array{T,1} )
 
     return suma.coeffs[1].coeffs[1]
 end
-function evaluate{T<:Number,S<:RealOrComplex}(a::TaylorN{T}, vals::Array{S,1} )
-    R = promote_type(T,S)
-    return evaluate( convert(TaylorN{R}, a), convert(Array{R,1}, vals))
-end
 
-evaluate{T<:Number}(a::TaylorN{T}) = evaluate(a, zeros(T, get_numvars()))
+evaluate{T<:Number}(a::TaylorN{T}) = a.coeffs[1].coeffs[1]
 
 function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
         x0::Array{T,1})
