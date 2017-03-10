@@ -12,6 +12,12 @@ using Base.Test
     ot = 1.0*one(t)
     tol1 = eps(1.0)
 
+    v = [1,2]
+    @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Void
+    @test v == [1,2,0,0]
+    TaylorSeries.resize_coeffs1!(v,0)
+    @test v == [1,2,0,0]
+
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
     @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
@@ -128,7 +134,10 @@ using Base.Test
     @test sinh(t) == imag(sin(im*t))
 
     v = [sin(t), exp(-t)]
-    @test evaluate(v) == [0.0, 1.0]
+    vv = Vector{Float64}(2)
+    @test evaluate!(v, zero(Int), vv) == nothing
+    @test vv == [0.0,1.0]
+    @test evaluate(v) == vv
     @test evaluate(v, complex(0.0,0.2)) ==
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]
     @test derivative(5, exp(ta(1.0))) == exp(1.0)

@@ -28,9 +28,13 @@ using Base.Test
     @test y == HomogeneousPolynomial(Float64, 2)
     @test y == HomogeneousPolynomial(2)
     @test !isnan(x)
-    set_variables("x", numvars=2, order=17)
 
     set_variables("x", numvars=2, order=17)
+    v = [1,2]
+    @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Void
+    @test v == [1,2,0]
+    @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
+
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
     @test HomogeneousPolynomial(0,0)  == 0
@@ -41,9 +45,12 @@ using Base.Test
     @test zeroT.coeffs[1] == HomogeneousPolynomial(0, 0)
     @test uT.coeffs[1] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
+    @test typeof(ones(xH,2)) == Array{HomogeneousPolynomial{Int},1}
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
     @test !isnan(uT)
+    @test TaylorSeries.fixorder(xH,yH) == (xH,yH)
+    @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
 
     @test get_order(zeroT) == 1
     @test get_coeff(xT,[1,0]) == 1
@@ -110,6 +117,7 @@ using Base.Test
     @test xT/complex(0,BigInt(3)) == -im*xT/BigInt(3)
     @test (xH/complex(0,BigInt(3)))' ==
         im*HomogeneousPolynomial([BigInt(1),0])/3
+    @test evaluate(xH) == zero(eltype(xH))
 
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4

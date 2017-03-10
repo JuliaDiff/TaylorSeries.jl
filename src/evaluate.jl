@@ -110,10 +110,7 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
 
     return suma.coeffs[1].coeffs[1]
 end
-function evaluate(a::HomogeneousPolynomial)
-    a.order > 0 && return zero(a.coeffs[1])
-    return a.coeffs[1]
-end
+evaluate(a::HomogeneousPolynomial) = zero(a.coeffs[1])
 
 """
     evaluate(a, [vals])

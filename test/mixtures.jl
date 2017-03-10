@@ -89,18 +89,26 @@ using Base.Test
     t = Taylor1(10)
     x = TaylorN( [HomogeneousPolynomial(zero(t)), HomogeneousPolynomial([one(t),zero(t)])], 5)
     y = TaylorN(typeof(tint), 2, order=5)
+    @test typeof(x) == TaylorN{Taylor1{Float64}}
+    @test eltype(y) == Taylor1{Int}
+    @test -x == 0 - x
+    @test +y == y
     @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
     @test one(y)/(1+y) == 1 - y + y^2 - y^3 + y^4 - y^5
 
     # See #92 and #94
     δx, δy = set_variables("δx δy")
     xx = 1+Taylor1(δx,5)
+    @test typeof(xx) == Taylor1{TaylorN{Float64}}
+    @test eltype(xx) == TaylorN{Float64}
     @test !isnan(xx)
     @test !isnan(δx)
     @test !isinf(xx)
     @test !isinf(δx)
-    @test xx/1.0 == xx
-    @test xx + xx == 2xx
+    @test +xx == xx
+    @test -xx == 0 - xx
+    @test xx/1.0 == 1.0*xx
+    @test xx + xx == xx*2
     @test xx - xx == zero(xx)
     @test xx*xx == xx^2
     @test xx/xx == one(xx)
