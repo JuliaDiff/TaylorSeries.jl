@@ -7,10 +7,7 @@
 #
 
 "Abstract type for Taylor1, HomogeneousPolynomial and TaylorN"
-abstract AbstractSeries{T<:Number} <: Number
-
-"Abbreviation for the union of Real and Complex"
-const RealOrComplex = Union{Real, Complex}
+@compat abstract type AbstractSeries{T<:Number} <: Number end
 
 
 ## Constructors ##
@@ -187,8 +184,9 @@ TaylorN{T<:Number}(::Type{T}, nv::Int; order::Int=get_order()) =
 TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
 
 
-# DataType that is a `Number` but not an `AbstractSeries`
+# A `Number` which is not an `AbstractSeries`
 const NumberNotSeries = Union{setdiff(subtypes(Number), [AbstractSeries])...}
-# DataType that is a `Number` but not a TaylorN or HomogeneousPolynomial
+
+# A `Number` which is not a TaylorN nor a HomogeneousPolynomial
 const NumberNotSeriesN =
     Union{setdiff(subtypes(Number), [AbstractSeries])..., Taylor1}

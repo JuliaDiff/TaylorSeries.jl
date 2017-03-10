@@ -97,7 +97,7 @@ Evaluate a `HomogeneousPolynomial` polynomial using Horner's rule (hand coded)
 at `vals`.
 """
 # function evaluate{T<:Number}(a::HomogeneousPolynomial{T}, vals::Array{T,1} )
-function evaluate{T<:Number,S<:RealOrComplex}(a::HomogeneousPolynomial{T},
+function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
         vals::Array{S,1} )
     @assert length(vals) == get_numvars()
     R = promote_type(T,S)
@@ -121,7 +121,7 @@ end
 Evaluate the `TaylorN` polynomial `a` using Horner's rule (hand coded) at `vals`.
 If `vals` is ommitted, it is evaluated at zero.
 """
-function evaluate{T<:Number,S<:RealOrComplex}(a::TaylorN{T}, vals::Array{S,1} )
+function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorN{T}, vals::Array{S,1} )
     @assert length(vals) == get_numvars()
     numVars = get_numvars()
     R = promote_type(T,S)
@@ -155,7 +155,7 @@ end
 
 ## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
 ## using Horner's rule on the nv variable
-function horner{T<:Number,S<:RealOrComplex}(a::HomogeneousPolynomial{T},
+function horner{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
         b::Tuple{Int,S} )
     nv, val = b
     numVars = get_numvars()
@@ -189,7 +189,7 @@ function horner{T<:Number,S<:RealOrComplex}(a::HomogeneousPolynomial{T},
     return suma
 end
 
-function horner{T<:Number,S<:RealOrComplex}(a::TaylorN{T}, b::Tuple{Int,S} )
+function horner{T<:Number,S<:NumberNotSeriesN}(a::TaylorN{T}, b::Tuple{Int,S} )
 
     nv, val = b
     @assert 1 <= nv <= get_numvars()
