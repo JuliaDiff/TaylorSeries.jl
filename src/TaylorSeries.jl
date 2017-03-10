@@ -19,6 +19,7 @@ using Compat
 
 if VERSION ≤ v"0.6.0-dev"
     import Compat: iszero
+    export iszero
 else
     import Base: iszero
 end

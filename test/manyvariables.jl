@@ -65,7 +65,10 @@ using Base.Test
     @test promote(xT, [xH,yH])[2] == xT+yT
     @test typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}
     @test TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT
-    @test TaylorSeries.iszero(zeroT.coeffs[2])
+    @test iszero(zeroT.coeffs)
+    @test iszero(zero(xH))
+    @test !iszero(uT)
+    @test iszero(zeroT)
 
     @test HomogeneousPolynomial(xH,1) == HomogeneousPolynomial(xH)
     @test eltype(xH) == Int

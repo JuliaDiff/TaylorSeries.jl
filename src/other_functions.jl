@@ -24,12 +24,9 @@ ctranspose{T<:Number}(a::TaylorN{T}) = conj(a)
 
 # Tests `isinf` and `isnan` for *any* of the polynomial coefficients
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    for f in (:isinf, :isnan)
-        @eval begin
-            function ($f)(a::$T)
-                return any( $f(a.coeffs) )
-            end
-        end
+    @eval begin
+        isinf(a::$T) = any( isinf.(a.coeffs) )
+        isnan(a::$T) = any( isnan.(a.coeffs) )
     end
 end
 

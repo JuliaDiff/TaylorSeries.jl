@@ -34,6 +34,8 @@ using Base.Test
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(zt) == -1
+    @test iszero(zero(t))
+    @test !iszero(one(t))
     @test isinf(Taylor1([typemax(1.0)]))
     @test isnan(Taylor1([typemax(1.0), NaN]))
 
