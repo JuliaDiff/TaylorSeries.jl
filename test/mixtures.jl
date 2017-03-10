@@ -5,6 +5,9 @@ using TaylorSeries
 using Base.Test
 
 @testset "Tests with mixures of Taylor1 and TaylorN" begin
+    @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
+    @test TaylorSeries.NumberNotSeriesN == Union{Real,Complex,Taylor1}
+
     set_variables("x", numvars=2, order=6)
     xH = HomogeneousPolynomial(Int, 1)
     yH = HomogeneousPolynomial(Int, 2)
@@ -96,6 +99,7 @@ using Base.Test
     @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
     @test one(y)/(1+y) == 1 - y + y^2 - y^3 + y^4 - y^5
     @test (1+y)/one(t) == 1 + y
+    @test typeof(y+t) == TaylorN{Taylor1{Float64}}
 
     # See #92 and #94
     δx, δy = set_variables("δx δy")
@@ -115,4 +119,5 @@ using Base.Test
     @test xx/xx == one(xx)
     @test xx*δx + Taylor1(typeof(δx),5) == δx + δx^2 + Taylor1(typeof(δx),5)
     @test xx/(1+δx) == one(xx)
+    @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
 end
