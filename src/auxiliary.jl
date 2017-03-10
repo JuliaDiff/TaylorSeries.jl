@@ -8,27 +8,35 @@
 
 ## Auxiliary function ##
 
-function check_taylor1_order!{T<:Number}(coeffs::Array{T,1}, order::Int)
+"""
+    resize_coeffs1!{T<Number}(coeffs::Array{T,1}, order::Int)
+
+If the length of `coeffs` is smaller than `order+1`, it resizes
+`coeffs` appropriately filling it with zeros.
+"""
+function resize_coeffs1!{T<:Number}(coeffs::Array{T,1}, order::Int)
     lencoef = length(coeffs)
-    order = max(order, lencoef-1)
-    order == lencoef-1 && return nothing
+    order ≤ lencoef-1 && return nothing
     resize!(coeffs, order+1)
-    @simd for i = lencoef+1:order+1
-        @inbounds coeffs[i] = zero(coeffs[1])
-    end
-    nothing
+    coeffs[lencoef+1:order+1] .= zero(coeffs[1])
+    return nothing
 end
 
-function check_hpoly_order!{T<:Number}(coeffs::Array{T,1}, order::Int)
+"""
+    resize_coeffsHP!{T<Number}(coeffs::Array{T,1}, order::Int)
+
+If the length of `coeffs` is smaller than the number of coefficients
+correspondinf to `order` (given by `size_table[order+1]`), it resizes
+`coeffs` appropriately filling it with zeros.
+"""
+function resize_coeffsHP!{T<:Number}(coeffs::Array{T,1}, order::Int)
     lencoef = length( coeffs )
     @inbounds num_coeffs = size_table[order+1]
     @assert order ≤ get_order() && lencoef ≤ num_coeffs
     num_coeffs == lencoef && return nothing
     resize!(coeffs, num_coeffs)
-    @simd for i = lencoef+1:num_coeffs
-        @inbounds coeffs[i] = zero(coeffs[1])
-    end
-    nothing
+    coeffs[lencoef+1:num_coeffs] .= zero(coeffs[1])
+    return nothing
 end
 
 ## Minimum order of an HomogeneousPolynomial compatible with the vector's length
