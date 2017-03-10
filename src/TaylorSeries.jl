@@ -33,7 +33,7 @@ import Base: zero, one, zeros, ones, isinf, isnan,
     asin, acos, atan, sinh, cosh, tanh,
     reverse, A_mul_B!
 
-export Taylor1, TaylorN, HomogeneousPolynomial, AbstractTaylor
+export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
 export get_coeff, derivative, integrate,
     evaluate, evaluate!,

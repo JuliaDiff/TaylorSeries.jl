@@ -92,11 +92,17 @@ using Base.Test
     @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
     @test one(y)/(1+y) == 1 - y + y^2 - y^3 + y^4 - y^5
 
-    # See
-    xx = 1.0 + TaylorN(Float64, 1, order=5)
-    tx = Taylor1(xx, 16)
-    @test !isnan(tx)
-    @test !isinf(tx)
-    @test tx/tx == one(tx)
-    @test tx/1.0 == tx
+    # See #92 and #94
+    δx, δy = set_variables("δx δy")
+    xx = 1+Taylor1(δx,5)
+    @test !isnan(xx)
+    @test !isnan(δx)
+    @test !isinf(xx)
+    @test !isinf(δx)
+    @test xx/1.0 == xx
+    @test xx + xx == 2xx
+    @test xx - xx == zero(xx)
+    @test xx*xx == xx^2
+    @test xx/xx == one(xx)
+    @test xx/(1+δx) == one(xx)
 end
