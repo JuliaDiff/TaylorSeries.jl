@@ -468,10 +468,9 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
     # order of first factorized term; a1 and b1 assumed to be of the same order
     a1nz = findfirst(a1)
     b1nz = findfirst(b1)
+    a1nz = a1nz ≥ 0 ? a1nz : a1.order
+    b1nz = b1nz ≥ 0 ? b1nz : a1.order
     orddivfact = min(a1nz, b1nz)
-    if orddivfact < 0
-        orddivfact = a1.order
-    end
     cdivfact = a1.coeffs[orddivfact+1] / b1.coeffs[orddivfact+1]
 
     # Is the polynomial factorizable?

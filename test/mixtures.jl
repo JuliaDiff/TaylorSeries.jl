@@ -95,6 +95,7 @@ using Base.Test
     @test +y == y
     @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
     @test one(y)/(1+y) == 1 - y + y^2 - y^3 + y^4 - y^5
+    @test (1+y)/one(t) == 1 + y
 
     # See #92 and #94
     δx, δy = set_variables("δx δy")
@@ -112,5 +113,6 @@ using Base.Test
     @test xx - xx == zero(xx)
     @test xx*xx == xx^2
     @test xx/xx == one(xx)
+    @test xx*δx + Taylor1(typeof(δx),5) == δx + δx^2 + Taylor1(typeof(δx),5)
     @test xx/(1+δx) == one(xx)
 end

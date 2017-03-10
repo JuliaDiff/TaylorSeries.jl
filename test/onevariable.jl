@@ -12,6 +12,9 @@ using Base.Test
     ot = 1.0*one(t)
     tol1 = eps(1.0)
 
+    @test Taylor1 <: AbstractSeries
+    @test Taylor1{Float64} <: AbstractSeries{Float64}
+
     v = [1,2]
     @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Void
     @test v == [1,2,0,0]
@@ -64,6 +67,8 @@ using Base.Test
     @test 0*t == zt
     @test (-t)^2 == tsquare
     @test t^3 == tsquare*t
+    @test zero(t)/t == zero(t)
+    @test one(t)/one(t) == 1.0
     @test tsquare/t == t
     @test t/(t*3) == (1/3)*ot
     @test t/3im == -tim/3

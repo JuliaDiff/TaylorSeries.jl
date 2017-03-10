@@ -5,6 +5,10 @@ using TaylorSeries
 using Base.Test
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
+    @test HomogeneousPolynomial <: AbstractSeries
+    @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
+    @test TaylorN{Float64} <: AbstractSeries{Float64}
+
     @test eltype(set_variables(Int, "x", numvars=2, order=6))  == TaylorN{Int}
     @test eltype(set_variables("x", numvars=2, order=6))  == TaylorN{Float64}
     @test eltype(set_variables(BigInt, "x y", order=6))  == TaylorN{BigInt}
