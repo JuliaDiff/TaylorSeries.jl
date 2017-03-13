@@ -96,7 +96,6 @@ end
 Evaluate a `HomogeneousPolynomial` polynomial using Horner's rule (hand coded)
 at `vals`.
 """
-# function evaluate{T<:Number}(a::HomogeneousPolynomial{T}, vals::Array{T,1} )
 function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
         vals::Array{S,1} )
     @assert length(vals) == get_numvars()

@@ -18,7 +18,7 @@ function resize_coeffs1!{T<:Number}(coeffs::Array{T,1}, order::Int)
     lencoef = length(coeffs)
     order ≤ lencoef-1 && return nothing
     resize!(coeffs, order+1)
-    coeffs[lencoef+1:order+1] .= zero(coeffs[1])
+    coeffs[lencoef+1:end] .= zero(coeffs[1])
     return nothing
 end
 
@@ -35,7 +35,7 @@ function resize_coeffsHP!{T<:Number}(coeffs::Array{T,1}, order::Int)
     @assert order ≤ get_order() && lencoef ≤ num_coeffs
     num_coeffs == lencoef && return nothing
     resize!(coeffs, num_coeffs)
-    coeffs[lencoef+1:num_coeffs] .= zero(coeffs[1])
+    coeffs[lencoef+1:end] .= zero(coeffs[1])
     return nothing
 end
 
