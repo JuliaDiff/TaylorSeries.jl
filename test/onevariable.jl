@@ -12,6 +12,15 @@ using Base.Test
     ot = 1.0*one(t)
     tol1 = eps(1.0)
 
+    @test Taylor1 <: AbstractSeries
+    @test Taylor1{Float64} <: AbstractSeries{Float64}
+
+    v = [1,2]
+    @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Void
+    @test v == [1,2,0,0]
+    TaylorSeries.resize_coeffs1!(v,0)
+    @test v == [1,2,0,0]
+
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
     @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
@@ -34,6 +43,8 @@ using Base.Test
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(zt) == -1
+    @test iszero(zero(t))
+    @test !iszero(one(t))
     @test isinf(Taylor1([typemax(1.0)]))
     @test isnan(Taylor1([typemax(1.0), NaN]))
 
@@ -56,6 +67,8 @@ using Base.Test
     @test 0*t == zt
     @test (-t)^2 == tsquare
     @test t^3 == tsquare*t
+    @test zero(t)/t == zero(t)
+    @test one(t)/one(t) == 1.0
     @test tsquare/t == t
     @test t/(t*3) == (1/3)*ot
     @test t/3im == -tim/3
@@ -126,7 +139,10 @@ using Base.Test
     @test sinh(t) == imag(sin(im*t))
 
     v = [sin(t), exp(-t)]
-    @test evaluate(v) == [0.0, 1.0]
+    vv = Vector{Float64}(2)
+    @test evaluate!(v, zero(Int), vv) == nothing
+    @test vv == [0.0,1.0]
+    @test evaluate(v) == vv
     @test evaluate(v, complex(0.0,0.2)) ==
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]
     @test derivative(5, exp(ta(1.0))) == exp(1.0)

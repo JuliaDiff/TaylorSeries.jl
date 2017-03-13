@@ -15,6 +15,15 @@ or more independent variables.
 """
 module TaylorSeries
 
+using Compat
+
+if VERSION ≤ v"0.6.0-dev"
+    import Compat: iszero
+    export iszero
+else
+    import Base: iszero
+end
+
 import Base: ==, +, -, *, /, ^
 
 import Base: zero, one, zeros, ones, isinf, isnan,
@@ -25,7 +34,7 @@ import Base: zero, one, zeros, ones, isinf, isnan,
     asin, acos, atan, sinh, cosh, tanh,
     reverse, A_mul_B!
 
-export Taylor1, TaylorN, HomogeneousPolynomial
+export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
 export get_coeff, derivative, integrate,
     evaluate, evaluate!,

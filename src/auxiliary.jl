@@ -8,27 +8,35 @@
 
 ## Auxiliary function ##
 
-function check_taylor1_order!{T<:Number}(coeffs::Array{T,1}, order::Int)
+"""
+    resize_coeffs1!{T<Number}(coeffs::Array{T,1}, order::Int)
+
+If the length of `coeffs` is smaller than `order+1`, it resizes
+`coeffs` appropriately filling it with zeros.
+"""
+function resize_coeffs1!{T<:Number}(coeffs::Array{T,1}, order::Int)
     lencoef = length(coeffs)
-    order = max(order, lencoef-1)
-    order == lencoef-1 && return nothing
+    order ≤ lencoef-1 && return nothing
     resize!(coeffs, order+1)
-    @simd for i = lencoef+1:order+1
-        @inbounds coeffs[i] = zero(coeffs[1])
-    end
-    nothing
+    coeffs[lencoef+1:end] .= zero(coeffs[1])
+    return nothing
 end
 
-function check_hpoly_order!{T<:Number}(coeffs::Array{T,1}, order::Int)
+"""
+    resize_coeffsHP!{T<Number}(coeffs::Array{T,1}, order::Int)
+
+If the length of `coeffs` is smaller than the number of coefficients
+correspondinf to `order` (given by `size_table[order+1]`), it resizes
+`coeffs` appropriately filling it with zeros.
+"""
+function resize_coeffsHP!{T<:Number}(coeffs::Array{T,1}, order::Int)
     lencoef = length( coeffs )
     @inbounds num_coeffs = size_table[order+1]
     @assert order ≤ get_order() && lencoef ≤ num_coeffs
     num_coeffs == lencoef && return nothing
     resize!(coeffs, num_coeffs)
-    @simd for i = lencoef+1:num_coeffs
-        @inbounds coeffs[i] = zero(coeffs[1])
-    end
-    nothing
+    coeffs[lencoef+1:end] .= zero(coeffs[1])
+    return nothing
 end
 
 ## Minimum order of an HomogeneousPolynomial compatible with the vector's length
@@ -109,11 +117,11 @@ Base.findfirst{T<:Number}(a::Taylor1{T}) = findfirst(a.coeffs)-1
 ## fixorder ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        fixorder{T<:Number}(a::$T{T}, order::Int64) = $T{T}(a.coeffs, order)
+        fixorder(a::$T, order::Int64) = $T(a.coeffs, order)
         function fixorder{R<:Number}(a::$T{R}, b::$T{R})
             a.order == b.order && return a, b
-            a.order < b.order && return $T{R}(a.coeffs, b.order), b
-            return a, $T{R}(b.coeffs, a.order)
+            a.order < b.order && return $T(a.coeffs, b.order), b
+            return a, $T(b.coeffs, a.order)
         end
     end
 end

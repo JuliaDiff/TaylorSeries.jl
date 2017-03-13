@@ -6,12 +6,15 @@
 # MIT Expat license
 #
 
+"Abstract type for Taylor1, HomogeneousPolynomial and TaylorN"
+@compat abstract type AbstractSeries{T<:Number} <: Number end
+
 
 ## Constructors ##
 
 ######################### Taylor1
 doc"""
-    Taylor1{T<:Number} <: Number
+    Taylor1{T<:Number} <: AbstractSeries{T}
 
 DataType for polynomial expansions in one independent variable.
 
@@ -21,14 +24,14 @@ DataType for polynomial expansions in one independent variable.
     component is the coefficient of degree $i-1$ of the expansion.
 - `order  :: Int64` Maximum order (degree) of the polynomial.
 """
-immutable Taylor1{T<:Number} <: Number
+immutable Taylor1{T<:Number} <: AbstractSeries{T}
     coeffs :: Array{T,1}
     order :: Int
 
     ## Inner constructor ##
     function (::Type{Taylor1{T}}){T}(coeffs::Array{T,1}, order::Int)
-        check_taylor1_order!(coeffs, order)
-        return new{T}(coeffs, order)
+        resize_coeffs1!(coeffs, order)
+        return new{T}(coeffs, length(coeffs)-1)
     end
 end
 
@@ -61,7 +64,7 @@ Taylor1(order::Int=1) = Taylor1(Float64, order)
 
 ######################### HomogeneousPolynomial
 doc"""
-    HomogeneousPolynomial{T<:Number} <: Number
+    HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
 
 DataType for homogenous polynomials in many (>1) independent variables.
 
@@ -72,12 +75,12 @@ polynomial; the $i$-th component is related to a monomial, where the degrees
 of the independent variables are specified by `coeff_table[order+1][i]`.
 - `order   :: Int` order (degree) of the homogenous polynomial.
 """
-immutable HomogeneousPolynomial{T<:Number} <: Number
+immutable HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{T,1}
     order   :: Int
 
-    function (::Type{HomogeneousPolynomial{T}}){T}( coeffs::Array{T,1}, order::Int )
-        check_hpoly_order!(coeffs, order)
+    function (::Type{HomogeneousPolynomial{T}}){T}(coeffs::Array{T,1}, order::Int)
+        resize_coeffsHP!(coeffs, order)
         return new{T}(coeffs, order)
     end
 end
@@ -120,7 +123,7 @@ HomogeneousPolynomial(nv::Int) = HomogeneousPolynomial(Float64, nv)
 
 ######################### TaylorN
 doc"""
-    TaylorN{T<:Number} <: Number
+    TaylorN{T<:Number} <: AbstractSeries{T}
 
 DataType for polynomial expansions in many (>1) independent variables.
 
@@ -131,11 +134,11 @@ DataType for polynomial expansions in many (>1) independent variables.
 homogeneous polynomial of degree $i-1$.
 - `order   :: Int`  maximum order of the polynomial expansion.
 """
-immutable TaylorN{T<:Number} <: Number
+immutable TaylorN{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{HomogeneousPolynomial{T},1}
     order   :: Int
 
-    function (::Type{TaylorN{T}}){T}( v::Array{HomogeneousPolynomial{T},1}, order::Int )
+    function (::Type{TaylorN{T}}){T}(v::Array{HomogeneousPolynomial{T},1}, order::Int)
         m = maxorderH(v)
         order = max( m, order )
         coeffs = zeros(HomogeneousPolynomial{T}, order)
@@ -179,3 +182,11 @@ julia> TaylorN(Rational{Int},2)
 TaylorN{T<:Number}(::Type{T}, nv::Int; order::Int=get_order()) =
     return TaylorN( [HomogeneousPolynomial(T, nv)], order )
 TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
+
+
+# A `Number` which is not an `AbstractSeries`
+const NumberNotSeries = Union{setdiff(subtypes(Number), [AbstractSeries])...}
+
+# A `Number` which is not a TaylorN nor a HomogeneousPolynomial
+const NumberNotSeriesN =
+    Union{setdiff(subtypes(Number), [AbstractSeries])..., Taylor1}

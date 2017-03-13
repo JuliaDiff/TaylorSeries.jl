@@ -5,6 +5,9 @@ using TaylorSeries
 using Base.Test
 
 @testset "Tests with mixures of Taylor1 and TaylorN" begin
+    @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
+    @test TaylorSeries.NumberNotSeriesN == Union{Real,Complex,Taylor1}
+
     set_variables("x", numvars=2, order=6)
     xH = HomogeneousPolynomial(Int, 1)
     yH = HomogeneousPolynomial(Int, 2)
@@ -89,14 +92,32 @@ using Base.Test
     t = Taylor1(10)
     x = TaylorN( [HomogeneousPolynomial(zero(t)), HomogeneousPolynomial([one(t),zero(t)])], 5)
     y = TaylorN(typeof(tint), 2, order=5)
+    @test typeof(x) == TaylorN{Taylor1{Float64}}
+    @test eltype(y) == Taylor1{Int}
+    @test -x == 0 - x
+    @test +y == y
     @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
     @test one(y)/(1+y) == 1 - y + y^2 - y^3 + y^4 - y^5
+    @test (1+y)/one(t) == 1 + y
+    @test typeof(y+t) == TaylorN{Taylor1{Float64}}
 
-    # See
-    xx = 1.0 + TaylorN(Float64, 1, order=5)
-    tx = Taylor1(xx, 16)
-    @test !isnan(tx)
-    @test !isinf(tx)
-    @test tx/tx == one(tx)
-    @test tx/1.0 == tx
+    # See #92 and #94
+    δx, δy = set_variables("δx δy")
+    xx = 1+Taylor1(δx,5)
+    @test typeof(xx) == Taylor1{TaylorN{Float64}}
+    @test eltype(xx) == TaylorN{Float64}
+    @test !isnan(xx)
+    @test !isnan(δx)
+    @test !isinf(xx)
+    @test !isinf(δx)
+    @test +xx == xx
+    @test -xx == 0 - xx
+    @test xx/1.0 == 1.0*xx
+    @test xx + xx == xx*2
+    @test xx - xx == zero(xx)
+    @test xx*xx == xx^2
+    @test xx/xx == one(xx)
+    @test xx*δx + Taylor1(typeof(δx),5) == δx + δx^2 + Taylor1(typeof(δx),5)
+    @test xx/(1+δx) == one(xx)
+    @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
 end

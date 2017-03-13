@@ -5,6 +5,10 @@ using TaylorSeries
 using Base.Test
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
+    @test HomogeneousPolynomial <: AbstractSeries
+    @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
+    @test TaylorN{Float64} <: AbstractSeries{Float64}
+
     @test eltype(set_variables(Int, "x", numvars=2, order=6))  == TaylorN{Int}
     @test eltype(set_variables("x", numvars=2, order=6))  == TaylorN{Float64}
     @test eltype(set_variables(BigInt, "x y", order=6))  == TaylorN{BigInt}
@@ -28,7 +32,12 @@ using Base.Test
     @test y == HomogeneousPolynomial(Float64, 2)
     @test y == HomogeneousPolynomial(2)
     @test !isnan(x)
+
     set_variables("x", numvars=2, order=17)
+    v = [1,2]
+    @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Void
+    @test v == [1,2,0]
+    @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
@@ -40,9 +49,12 @@ using Base.Test
     @test zeroT.coeffs[1] == HomogeneousPolynomial(0, 0)
     @test uT.coeffs[1] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
+    @test typeof(ones(xH,2)) == Array{HomogeneousPolynomial{Int},1}
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
     @test !isnan(uT)
+    @test TaylorSeries.fixorder(xH,yH) == (xH,yH)
+    @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
 
     @test get_order(zeroT) == 1
     @test get_coeff(xT,[1,0]) == 1
@@ -64,7 +76,10 @@ using Base.Test
     @test promote(xT, [xH,yH])[2] == xT+yT
     @test typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}
     @test TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT
-    @test TaylorSeries.iszero(zeroT.coeffs[2])
+    @test iszero(zeroT.coeffs)
+    @test iszero(zero(xH))
+    @test !iszero(uT)
+    @test iszero(zeroT)
 
     @test HomogeneousPolynomial(xH,1) == HomogeneousPolynomial(xH)
     @test eltype(xH) == Int
@@ -106,6 +121,7 @@ using Base.Test
     @test xT/complex(0,BigInt(3)) == -im*xT/BigInt(3)
     @test (xH/complex(0,BigInt(3)))' ==
         im*HomogeneousPolynomial([BigInt(1),0])/3
+    @test evaluate(xH) == zero(eltype(xH))
 
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
