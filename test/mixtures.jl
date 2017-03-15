@@ -65,16 +65,16 @@ using Base.Test
 
     @test mod(tN1+1,1.0) == 0+tN1
     @test mod(tN1-1.125,2) == 0.875+tN1
-    @test (rem(tN1+1.125,1.0)).coeffs[1].coeffs[1] == 0.125 + t
-    @test (rem(tN1-1.125,2)).coeffs[1].coeffs[1] == -1.125 + t
-    @test mod2pi(-3pi+tN1).coeffs[1].coeffs[1].coeffs[1] ≈ pi
-    @test mod2pi(0.125+2pi+tN1).coeffs[1].coeffs[1].coeffs[1] ≈ 0.125
+    @test (rem(tN1+1.125,1.0))[1][1] == 0.125 + t
+    @test (rem(tN1-1.125,2))[1][1] == -1.125 + t
+    @test mod2pi(-3pi+tN1)[1][1][1] ≈ pi
+    @test mod2pi(0.125+2pi+tN1)[1][1][1] ≈ 0.125
     @test mod(t1N+1.125,1.0) == 0.125+t1N
     @test mod(t1N-1.125,2) == 0.875+t1N
-    @test (rem(t1N+1.125,1.0)).coeffs[1] == 0.125 + t1N.coeffs[1]
-    @test (rem(t1N-1.125,2)).coeffs[1] == -1.125 + t1N.coeffs[1]
-    @test mod2pi(-3pi+t1N).coeffs[1].coeffs[1].coeffs[1] ≈ pi
-    @test mod2pi(0.125+2pi+t1N).coeffs[1].coeffs[1].coeffs[1] ≈ 0.125
+    @test (rem(t1N+1.125,1.0))[1] == 0.125 + t1N[1]
+    @test (rem(t1N-1.125,2))[1] == -1.125 + t1N[1]
+    @test mod2pi(-3pi+t1N)[1][1][1] ≈ pi
+    @test mod2pi(0.125+2pi+t1N)[1][1][1] ≈ 0.125
 
     @test convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) == [t1N, t1N]
     @test convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) == [t1N t1N]

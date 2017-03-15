@@ -35,7 +35,7 @@ for op in (:mod, :rem)
     @eval begin
         function ($op){T<:Real}(a::Taylor1{T}, x::T)
             coeffs = copy(a.coeffs)
-            @inbounds coeffs[1] = ($op)(a.coeffs[1], x)
+            @inbounds coeffs[1] = ($op)(a[1], x)
             return Taylor1(coeffs, a.order)
         end
         function ($op){T<:Real, S<:Real}(a::Taylor1{T}, x::S)
@@ -48,7 +48,7 @@ end
 
 function mod2pi{T<:Real}(a::Taylor1{T})
     coeffs = copy(a.coeffs)
-    @inbounds coeffs[1] = mod2pi( a.coeffs[1] )
+    @inbounds coeffs[1] = mod2pi( a[1] )
     return Taylor1( coeffs, a.order)
 end
 
@@ -58,12 +58,12 @@ end
 
 Return `a` or `-a` depending on the 0-th order coefficient of the
 `Taylor1` polynomial `a`.
-If `a.coeffs[1]` is zero, an `ArgumentError` is thrown.
+If `a[1]` is zero, an `ArgumentError` is thrown.
 """
 function abs{T<:Real}(a::Taylor1{T})
-    if a.coeffs[1] > zero(T)
+    if a[1] > zero(T)
         return a
-    elseif a.coeffs[1] < zero(T)
+    elseif a[1] < zero(T)
         return -a
     else
         throw(ArgumentError(
@@ -79,13 +79,13 @@ for op in (:mod, :rem)
     @eval begin
         @inbounds function ($op){T<:Real,S<:Real}(a::TaylorN{T}, x::S)
             coeffs = copy(a.coeffs)
-            y = ($op)(a.coeffs[1].coeffs[1], x)
+            y = ($op)(a[1][1], x)
             coeffs[1] = HomogeneousPolynomial([y], 0)
             return TaylorN( coeffs, a.order )
         end
         @inbounds function ($op){T<:Real}(a::TaylorN{Taylor1{T}}, x::T)
             coeffs = copy(a.coeffs)
-            y = ($op)(a.coeffs[1].coeffs[1], x)
+            y = ($op)(a[1][1], x)
             coeffs[1] = HomogeneousPolynomial([y], 0)
             return TaylorN( coeffs, a.order )
         end
@@ -96,7 +96,7 @@ for op in (:mod, :rem)
         end
         @inbounds function ($op){T<:Real}(a::Taylor1{TaylorN{T}}, x::T)
             coeffs = copy(a.coeffs)
-            y = ($op)(a.coeffs[1], x)
+            y = ($op)(a[1], x)
             coeffs[1] = y
             return Taylor1( coeffs, a.order )
         end
@@ -110,19 +110,19 @@ end
 
 function mod2pi{T<:Real}(a::TaylorN{T})
     coeffs = copy(a.coeffs)
-    @inbounds y = mod2pi(a.coeffs[1].coeffs[1])
+    @inbounds y = mod2pi(a[1][1])
     @inbounds coeffs[1] = HomogeneousPolynomial([y], 0)
     return TaylorN( coeffs, a.order )
 end
 function mod2pi{T<:Real}(a::TaylorN{Taylor1{T}})
     coeffs = copy(a.coeffs)
-    @inbounds y = mod2pi(a.coeffs[1].coeffs[1])
+    @inbounds y = mod2pi(a[1][1])
     @inbounds coeffs[1] = HomogeneousPolynomial([y], 0)
     return TaylorN( coeffs, a.order )
 end
 function mod2pi{T<:Real}(a::Taylor1{TaylorN{T}})
     coeffs = copy(a.coeffs)
-    @inbounds y = mod2pi(a.coeffs[1])
+    @inbounds y = mod2pi(a[1])
     @inbounds coeffs[1] = y
     return Taylor1( coeffs, a.order )
 end
@@ -137,9 +137,9 @@ Return `a` or `-a`, depending on the 0-th order coefficient of `a`.
 If it is zero, it throws an `ArgumentError`.
 """
 function abs{T<:Real}(a::TaylorN{T})
-    if a.coeffs[1].coeffs[1] > zero(T)
+    if a[1][1] > zero(T)
         return a
-    elseif a.coeffs[1].coeffs[1] < zero(T)
+    elseif a[1][1] < zero(T)
         return -a
     else
         throw(ArgumentError(

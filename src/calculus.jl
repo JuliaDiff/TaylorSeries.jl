@@ -15,9 +15,9 @@ The last coefficient is set to zero.
 """
 function derivative(a::Taylor1)
     coeffs = zero(a.coeffs)
-    @inbounds coeffs[1] = a.coeffs[2]
+    @inbounds coeffs[1] = a[2]
     @inbounds for i = 1:a.order
-        coeffs[i] = i*a.coeffs[i+1]
+        coeffs[i] = i*a[i+1]
     end
     return Taylor1(coeffs, a.order)
 end
@@ -29,7 +29,7 @@ Return the value of the `n`-th derivative of the polynomial `a`.
 """
 function derivative{T<:Number}(n::Int, a::Taylor1{T})
     @assert a.order ≥ n ≥ 0
-    factorial( widen(n) ) * a.coeffs[n+1] :: T
+    factorial( widen(n) ) * a[n+1] :: T
 end
 
 ## Integrating ##
@@ -40,10 +40,10 @@ Return the integral of `a::Taylor1`. The constant of integration
 (0-th order coefficient) is set to `x`, which is zero if ommitted.
 """
 function integrate{T<:Number, S<:Number}(a::Taylor1{T}, x::S)
-    R = promote_type(T, typeof(a.coeffs[1] / 1), S)
+    R = promote_type(T, typeof(a[1] / 1), S)
     coeffs = zeros(R, a.order+1)
     @inbounds for i = 1:a.order
-        coeffs[i+1] = a.coeffs[i] / i
+        coeffs[i+1] = a[i] / i
     end
     @inbounds coeffs[1] = convert(R, x)
     return Taylor1(coeffs, a.order)
@@ -75,7 +75,7 @@ function derivative(a::HomogeneousPolynomial, r::Int)
         iind[r] -= 1
         kdic = in_base(get_order(),iind)
         pos = posTb[kdic]
-        coeffs[pos] = n * a.coeffs[i]
+        coeffs[pos] = n * a[i]
         iind[r] += 1
     end
 
@@ -94,7 +94,7 @@ function derivative(a::TaylorN, r=1::Int)
 
     @inbounds for ord in eachindex(coeffs)
         ord == a.order+1 && continue
-        coeffs[ord] = derivative( a.coeffs[ord+1], r)
+        coeffs[ord] = derivative( a[ord+1], r)
     end
     return TaylorN{T}( coeffs, a.order )
 end
@@ -135,7 +135,7 @@ function jacobian{T<:Number}(vf::Array{TaylorN{T},1})
     jac = Array{T}(numVars,numVars)
 
     @inbounds for comp = 1:numVars
-        jac[:,comp] = vf[comp].coeffs[2].coeffs[1:end]
+        jac[:,comp] = vf[comp][2][1:end]
     end
 
     return transpose(jac)
@@ -176,7 +176,7 @@ function jacobian!{T<:Number}(jac::Array{T,2}, vf::Array{TaylorN{T},1})
     @assert (numVars, numVars) == size(jac)
     for comp2 = 1:numVars
         for comp1 = 1:numVars
-            @inbounds jac[comp1,comp2] = vf[comp1].coeffs[2].coeffs[comp2]
+            @inbounds jac[comp1,comp2] = vf[comp1][2][comp2]
         end
     end
     nothing
