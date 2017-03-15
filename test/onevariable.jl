@@ -38,8 +38,8 @@ using Base.Test
     @test eltype(promote(0,Taylor1(ot))[1]) == Float64
     @test eltype(promote(1.0+im, zt)[1]) == Complex{Float64}
 
-    @test length(Taylor1(10)) == 10
-    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 15
+    @test length(Taylor1(10)) == 11
+    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(zt) == -1

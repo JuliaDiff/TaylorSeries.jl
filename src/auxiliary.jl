@@ -104,7 +104,8 @@ end
 
 ## Type, length ##
 eltype{T<:Number}(::Taylor1{T}) = T
-length{T<:Number}(a::Taylor1{T}) = a.order + 1
+length{T<:Number}(a::Taylor1{T}) = length(a.coeffs)
+endof(a::Taylor1) = length(a.coeffs)
 
 eltype{T<:Number}(::HomogeneousPolynomial{T}) = T
 length(a::HomogeneousPolynomial) = length( a.coeffs )
