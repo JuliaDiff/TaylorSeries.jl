@@ -20,9 +20,13 @@ using Base.Test
     @test v == [1,2,0,0]
     TaylorSeries.resize_coeffs1!(v,0)
     @test v == [1,2,0,0]
+    setindex!(Taylor1(v),3,3)
+    @test v == [1,2,3,0]
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
+    @test Taylor1(Complex128,3)[2] == complex(1.0,0.0)
+    @test getindex(Taylor1(3),2) == 1.0
     @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
     @test eltype(convert(Taylor1{Complex128},ot)) == Complex128
     @test eltype(convert(Taylor1{Complex128},1)) == Complex128

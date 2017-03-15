@@ -41,7 +41,9 @@ using Base.Test
     @test complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)])
 
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
+    @test tN1[1] == HomogeneousPolynomial([t])
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
+    @test t1N[1] == HomogeneousPolynomial(1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
     @test eltype(xHt) == Taylor1{Float64}
     @test eltype(tN1) == Taylor1{Float64}

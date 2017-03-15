@@ -38,6 +38,8 @@ using Base.Test
     @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Void
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
+    HomogeneousPolynomial(v)[3] = 3
+    @test v == [1,2,3]
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
@@ -57,6 +59,8 @@ using Base.Test
     @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
 
     @test get_order(zeroT) == 1
+    @test xT[2][1] == 1
+    @test yH[2] == 1
     @test get_coeff(xT,[1,0]) == 1
     @test get_coeff(yH,[1,0]) == 0
     @test typeof(convert(HomogeneousPolynomial,1im)) ==
