@@ -71,7 +71,9 @@ Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order+1;
     return a[n+1])
 
-getindex(a::Taylor1, n) = a.coeffs[n]
+getindex(a::Taylor1, n::Int) = a.coeffs[n]
+getindex(a::Taylor1, n::UnitRange) = a.coeffs[n]
+
 
 
 """
