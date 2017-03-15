@@ -85,7 +85,7 @@ function ^{S<:Real}(a::Taylor1, x::S)
     # polynomial. The last l0nz coefficients are set to zero.
     lnull = trunc(Int,lnull)
     #l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.")
-    @inbounds aux = (a.coeffs[l0nz+1])^x
+    @inbounds aux = (a[l0nz+1])^x
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = zeros(T, a.order+1)
@@ -134,7 +134,7 @@ end
 ## Square ##
 function square(a::Taylor1)
     coeffs = Array{eltype(a)}(a.order+1)
-    coeffs[1] = a.coeffs[1]^2
+    coeffs[1] = a[1]^2
     @inbounds for k = 1:a.order
         coeffs[k+1] = squareHomogCoef(k, a.coeffs)
     end
@@ -199,7 +199,7 @@ function sqrt(a::Taylor1)
     # The last l0nz coefficients are set to zero.
     ##l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.")
     lnull = div(l0nz, 2)
-    @inbounds aux = sqrt(a.coeffs[l0nz+1])
+    @inbounds aux = sqrt(a[l0nz+1])
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = zeros(T, a.order+1)
@@ -316,7 +316,7 @@ function ^{S<:Real}(a::TaylorN, x::S)
     x == zero(x) && return TaylorN( one(eltype(a)), 0 )
     x == one(x)/2 && return sqrt(a)
     isinteger(x) && return a^round(Int,x)
-    @inbounds a0 = a.coeffs[1].coeffs[1]
+    @inbounds a0 = a[1][1]
     @assert a0 != zero(a0)
     aux = ( a0 )^x
     T = typeof(aux)
@@ -328,7 +328,7 @@ function ^{S<:Real}(a::TaylorN, x::S)
         @inbounds for i = 0:ord-1
             tt = x*(ord-i)-i
             cpol = coeffs[i+1]
-            apol = a.coeffs[ord-i+1]
+            apol = a[ord-i+1]
             (iszero(cpol) || iszero(apol)) && continue
             coeffs[ord+1] += tt * cpol * apol
         end
@@ -355,19 +355,19 @@ end
 function square(a::TaylorN)
     T = eltype(a)
     coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds mul!(coeffs[1], a.coeffs[1])
+    @inbounds mul!(coeffs[1], a[1])
 
     for ord in eachindex(coeffs)
         ord == a.order+1 && continue
         kodd = ord%2
         kord = div(ord-2+kodd, 2)
         for i = 0 : kord
-            @inbounds mul!(coeffs[ord+1], a.coeffs[i+1], a.coeffs[ord-i+1])
+            @inbounds mul!(coeffs[ord+1], a[i+1], a[ord-i+1])
         end
         @inbounds coeffs[ord+1] = 2 * coeffs[ord+1]
         kodd == 1 && continue
         kodd = div(ord,2)
-        @inbounds mul!(coeffs[ord+1], a.coeffs[kodd+1] )
+        @inbounds mul!(coeffs[ord+1], a[kodd+1] )
     end
 
     return TaylorN{T}(coeffs, a.order)
@@ -376,7 +376,7 @@ end
 
 ## sqrt ##
 function sqrt(a::TaylorN)
-    @inbounds p0 = sqrt( a.coeffs[1].coeffs[1] )
+    @inbounds p0 = sqrt( a[1][1] )
     if p0 == zero(p0)
         throw(ArgumentError(
         """The 0-th order TaylorN coefficient must be non-zero
@@ -394,7 +394,7 @@ function sqrt(a::TaylorN)
         @inbounds for i = 1:kord
             coeffs[ord+1] += coeffs[i+1] * coeffs[ord-i+1]
         end
-        @inbounds coeffs[ord+1] = a.coeffs[ord+1] - 2 * coeffs[ord+1]
+        @inbounds coeffs[ord+1] = a[ord+1] - 2 * coeffs[ord+1]
         if iseven(ord)
             @inbounds coeffs[ord+1]=coeffs[ord+1]-square( coeffs[div(ord,2)+1])
         end

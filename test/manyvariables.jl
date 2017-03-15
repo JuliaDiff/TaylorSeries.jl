@@ -38,6 +38,8 @@ using Base.Test
     @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Void
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
+    HomogeneousPolynomial(v)[3] = 3
+    @test v == [1,2,3]
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
@@ -46,8 +48,8 @@ using Base.Test
     yT = TaylorN(Int64, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
     uT = one(convert(TaylorN{Float64},yT))
-    @test zeroT.coeffs[1] == HomogeneousPolynomial(0, 0)
-    @test uT.coeffs[1] == HomogeneousPolynomial(1, 0)
+    @test zeroT[1] == HomogeneousPolynomial(0, 0)
+    @test uT[1] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
     @test typeof(ones(xH,2)) == Array{HomogeneousPolynomial{Int},1}
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
@@ -57,6 +59,8 @@ using Base.Test
     @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
 
     @test get_order(zeroT) == 1
+    @test xT[2][1] == 1
+    @test yH[2] == 1
     @test get_coeff(xT,[1,0]) == 1
     @test get_coeff(yH,[1,0]) == 0
     @test typeof(convert(HomogeneousPolynomial,1im)) ==
@@ -104,13 +108,13 @@ using Base.Test
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])
     @test xT*yT == TaylorN([HomogeneousPolynomial([0,1,0],2)])
-    @test (1/(1-xT)).coeffs[4] == HomogeneousPolynomial([1.0],3)
+    @test (1/(1-xT))[4] == HomogeneousPolynomial([1.0],3)
     @test xH^20 == HomogeneousPolynomial([0], get_order())
-    @test (yT/(1-xT)).coeffs[5] == xH^3 * yH
+    @test (yT/(1-xT))[5] == xH^3 * yH
     @test mod(1+xT,1) == +xT
-    @test (rem(1+xT,1)).coeffs[1] == 0
+    @test (rem(1+xT,1))[1] == 0
     @test mod(1+xT,1.0) == +xT
-    @test (rem(1+xT,1.0)).coeffs[1] == 0
+    @test (rem(1+xT,1.0))[1] == 0
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
     @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3,2)
@@ -165,14 +169,14 @@ using Base.Test
     @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jacobian!(jac, [f1,f2], [2,1])
     @test jac == jacobian([f1,f2], [2,1])
-    @test [xT yT]*hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
+    @test [xT yT]*hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2)[3]) ]
     @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
     @test hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
     hes = Array{Int64}(2, 2)
     hessian!(hes, f1*f2)
     @test hes == hessian(f1*f2)
-    @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2).coeffs[3]) ]
+    @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[3]) ]
     hessian!(hes, f1^2)
     @test hes/2 == [ [49,0] [0,12] ]
     hessian!(hes, f1-f2-2*f1*f2)

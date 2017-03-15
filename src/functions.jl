@@ -17,7 +17,7 @@ For details on making the Taylor expansion, see
 [`TaylorSeries.expHomogCoef`](@ref).
 """
 function exp(a::Taylor1)
-    @inbounds aux = exp( a.coeffs[1] )
+    @inbounds aux = exp( a[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = similar(v)
@@ -66,7 +66,7 @@ For details on making the Taylor expansion, see
 function log(a::Taylor1)
     findfirst(a)>0 && throw(
         ArgumentError("Impossible to expand `log` around 0."))
-    @inbounds aux = log( a.coeffs[1] )
+    @inbounds aux = log( a[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
     coeffs = similar(ac)
@@ -131,13 +131,13 @@ cos(a::Taylor1) = sincos(a)[2]
 
 ## Sin and Cos ## 
 function sincos(a::Taylor1)
-    @inbounds aux = sin( a.coeffs[1] )
+    @inbounds aux = sin( a[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     sincoeffs = similar(v)
     coscoeffs = similar(v)
     @inbounds sincoeffs[1] = aux
-    @inbounds coscoeffs[1] = cos( a.coeffs[1] )
+    @inbounds coscoeffs[1] = cos( a[1] )
     @inbounds for k = 1:a.order
         sincoeffs[k+1], coscoeffs[k+1] = sincosHomogCoef(k, v, sincoeffs, coscoeffs)
     end
@@ -192,7 +192,7 @@ For details on making the Taylor expansion, see
 [`TaylorSeries.tanHomogCoef`](@ref).
 """
 function tan(a::Taylor1)
-    aux = tan( a.coeffs[1] )
+    aux = tan( a[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = similar(v)
@@ -245,7 +245,7 @@ For details on making the Taylor expansion, see
 [`TaylorSeries.asinHomogCoef`](@ref).
 """
 function asin(a::Taylor1)
-    @inbounds aux = asin( a.coeffs[1] )
+    @inbounds aux = asin( a[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
     ac[1]^2 == one(T) && throw(ArgumentError("""
@@ -299,7 +299,7 @@ For details on making the Taylor expansion, see
 [`TaylorSeries.acosHomogCoef`](@ref).
 """
 function acos(a::Taylor1)
-    @inbounds aux = asin( a.coeffs[1] )
+    @inbounds aux = asin( a[1] )
     T = typeof(aux)
     ac = convert(Array{T,1}, a.coeffs)
     ac[1]^2 == one(T) && throw(ArgumentError("""
@@ -310,7 +310,7 @@ function acos(a::Taylor1)
     @inbounds for k in 1:a.order
         coeffs[k+1] = acosHomogCoef(k, ac, rc, coeffs)
     end
-    @inbounds coeffs[1] = acos( a.coeffs[1] )
+    @inbounds coeffs[1] = acos( a[1] )
     Taylor1( coeffs, a.order )
 end
 
@@ -350,7 +350,7 @@ For details on making the Taylor expansion, see
 [`TaylorSeries.atanHomogCoef`](@ref).
 """
 function atan(a::Taylor1)
-    @inbounds aux = atan( a.coeffs[1] )
+    @inbounds aux = atan( a[1] )
     T = typeof(aux)
     rc = (one(T) + a^2).coeffs
     rc[1] == zero(T) && throw(ArgumentError("""
@@ -420,13 +420,13 @@ cosh(a::Taylor1) = sinhcosh(a)[2]
 
 ## Sinh and Cosh ## 
 function sinhcosh(a::Taylor1)
-    @inbounds aux = sinh( a.coeffs[1] )
+    @inbounds aux = sinh( a[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     sinhcoeffs = similar(v)
     coshcoeffs = similar(v)
     @inbounds sinhcoeffs[1] = aux
-    @inbounds coshcoeffs[1] = cosh( a.coeffs[1] )
+    @inbounds coshcoeffs[1] = cosh( a[1] )
     @inbounds for k = 1:a.order
         sinhcoeffs[k+1], coshcoeffs[k+1] = sinhcoshHomogCoef(k, v, sinhcoeffs, coshcoeffs)
     end
@@ -482,7 +482,7 @@ For details on making the Taylor expansion, see
 [`TaylorSeries.tanhHomogCoef`](@ref).
 """
 function tanh(a::Taylor1)
-    aux = tanh( a.coeffs[1] )
+    aux = tanh( a[1] )
     T = typeof(aux)
     v = convert(Array{T,1}, a.coeffs)
     coeffs = similar(v)
@@ -538,7 +538,7 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
 \end{equation*}
 """
 function reverse{T<:Number}(f::Taylor1{T})
-    if f.coeffs[1] != zero(T)
+    if f[1] != zero(T)
         throw(ArgumentError(
         """Evaluation of Taylor1 series at 0 is non-zero. For high accuracy, revert
         a Taylor1 series with first coefficient 0 and re-expand about f(0)."""))
@@ -551,7 +551,7 @@ function reverse{T<:Number}(f::Taylor1{T})
 
     coeffs[1] = zero(S)
     @inbounds for n = 1:f.order
-        coeffs[n+1] = zdivfpown.coeffs[n]/n
+        coeffs[n+1] = zdivfpown[n]/n
         zdivfpown *= zdivf
     end
     Taylor1(coeffs, f.order)
@@ -562,7 +562,7 @@ end
 ## exp ##
 function exp(a::TaylorN)
     order = a.order
-    @inbounds aux = exp( a.coeffs[1].coeffs[1] )
+    @inbounds aux = exp( a[1][1] )
     T = typeof(aux)
     coeffs = zeros(HomogeneousPolynomial{T}, order)
     @inbounds coeffs[1] = HomogeneousPolynomial([aux], 0)
@@ -570,7 +570,7 @@ function exp(a::TaylorN)
     @inbounds for ord in eachindex(coeffs)
         ord == order+1 && continue
         @inbounds for j = 0:ord-1
-            coeffs[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffs[j+1]
+            coeffs[ord+1] += (ord-j) * a[ord-j+1] * coeffs[j+1]
         end
         @inbounds coeffs[ord+1] = coeffs[ord+1] / ord
     end
@@ -581,7 +581,7 @@ end
 ## log ##
 function log(a::TaylorN)
     order = a.order
-    @inbounds a0 = a.coeffs[1].coeffs[1]
+    @inbounds a0 = a[1][1]
     if a0 == zero(a0)
         throw(ArgumentError(
         """The 0-th order `TaylorN` coefficient must be non-zero
@@ -595,9 +595,9 @@ function log(a::TaylorN)
     @inbounds for ord in eachindex(coeffs)
         ord == order+1 && continue
         @inbounds for j = 1:ord-1
-            coeffs[ord+1] += j * a.coeffs[ord-j+1] * coeffs[j+1]
+            coeffs[ord+1] += j * a[ord-j+1] * coeffs[j+1]
         end
-        coeffs[ord+1] = (a.coeffs[ord+1] - coeffs[ord+1] / ord ) / a0
+        coeffs[ord+1] = (a[ord+1] - coeffs[ord+1] / ord ) / a0
     end
 
     return TaylorN{T}(coeffs, order)
@@ -610,7 +610,7 @@ cos(a::TaylorN) = real( exp(im*a) )
 # cos(a::TaylorN) = sincos(a)[2]
 # function sincos(a::TaylorN)
 #     order = a.order
-#     @inbounds a0 = a.coeffs[1].coeffs[1]
+#     @inbounds a0 = a[1][1]
 #     s0 = sin( a0 )
 #     c0 = cos( a0 )
 #     T = typeof(s0)
@@ -622,8 +622,8 @@ cos(a::TaylorN) = real( exp(im*a) )
 #     @inbounds for ord in eachindex(coeffsSin)
 #         ord == order+1 && continue
 #         @inbounds for j = 0:ord-1
-#             coeffsSin[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffsCos[j+1]
-#             coeffsCos[ord+1] += (ord-j) * a.coeffs[ord-j+1] * coeffsSin[j+1]
+#             coeffsSin[ord+1] += (ord-j) * a[ord-j+1] * coeffsCos[j+1]
+#             coeffsCos[ord+1] += (ord-j) * a[ord-j+1] * coeffsSin[j+1]
 #         end
 #         @inbounds coeffsSin[ord+1] =  coeffsSin[ord+1] / ord
 #         @inbounds coeffsCos[ord+1] = -coeffsCos[ord+1] / ord
@@ -634,7 +634,7 @@ cos(a::TaylorN) = real( exp(im*a) )
 ## tan ##
 function tan(a::TaylorN)
     order = a.order
-    @inbounds a0 = a.coeffs[1].coeffs[1]
+    @inbounds a0 = a[1][1]
     t0 = tan(a0)
     T = typeof(t0)
     coeffsTan = zeros(HomogeneousPolynomial{T}, order)
@@ -645,9 +645,9 @@ function tan(a::TaylorN)
         v = coeffsTan[1:ord]
         tAux = (TaylorN(v, ord))^2
         @inbounds for j = 0:ord-1
-            coeffsTan[ord+1] += (ord-j) * a.coeffs[ord-j+1] * tAux.coeffs[j+1]
+            coeffsTan[ord+1] += (ord-j) * a[ord-j+1] * tAux[j+1]
         end
-        coeffsTan[ord+1] = a.coeffs[ord+1] + coeffsTan[ord+1] / ord
+        coeffsTan[ord+1] = a[ord+1] + coeffsTan[ord+1] / ord
     end
 
     return TaylorN{T}(coeffsTan, order)

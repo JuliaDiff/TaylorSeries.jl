@@ -20,9 +20,13 @@ using Base.Test
     @test v == [1,2,0,0]
     TaylorSeries.resize_coeffs1!(v,0)
     @test v == [1,2,0,0]
+    setindex!(Taylor1(v),3,3)
+    @test v == [1,2,3,0]
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
+    @test Taylor1(Complex128,3)[2] == complex(1.0,0.0)
+    @test getindex(Taylor1(3),2) == 1.0
     @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
     @test eltype(convert(Taylor1{Complex128},ot)) == Complex128
     @test eltype(convert(Taylor1{Complex128},1)) == Complex128
@@ -38,8 +42,8 @@ using Base.Test
     @test eltype(promote(0,Taylor1(ot))[1]) == Float64
     @test eltype(promote(1.0+im, zt)[1]) == Complex{Float64}
 
-    @test length(Taylor1(10)) == 10
-    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 15
+    @test length(Taylor1(10)) == 11
+    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(zt) == -1
@@ -78,15 +82,15 @@ using Base.Test
     @test (t+im)^3 == Taylor1([-1im,-3,3im,1],15)
     @test (t+im)^4 == Taylor1([1,-4im,-6,4im,1],15)
     @test imag(tsquare+2im*t-1) == 2t
-    @test (Rational(1,2)*tsquare).coeffs[3] == 1//2
+    @test (Rational(1,2)*tsquare)[3] == 1//2
     @test t^2/tsquare == ot
-    @test ((1+t)^(1/3)).coeffs[3]+1/9 ≤ tol1
+    @test ((1+t)^(1/3))[3]+1/9 ≤ tol1
     @test 1-tsquare == (1+t)-t*(1+t)
     @test (1-tsquare)^2 == (1+t)^2.0 * (1-t)^2.0
-    @test (sqrt(1+t)).coeffs[3] == -1/8
+    @test (sqrt(1+t))[3] == -1/8
     @test ((1-tsquare)^(1//2))^2 == 1-tsquare
-    @test ((1-t)^(1//4)).coeffs[15] == -4188908511//549755813888
-    @test abs(((1+t)^3.2).coeffs[14] + 5.4021062656e-5) < tol1
+    @test ((1-t)^(1//4))[15] == -4188908511//549755813888
+    @test abs(((1+t)^3.2)[14] + 5.4021062656e-5) < tol1
     @test Taylor1(BigFloat,5)/6 == 1im*Taylor1(5)/complex(0,BigInt(6))
     @test Taylor1(BigFloat,5)/(6*Taylor1(3)) == 1/BigInt(6)
     @test Taylor1(BigFloat,5)/(6im*Taylor1(3)) == -1im/BigInt(6)
@@ -99,11 +103,11 @@ using Base.Test
     @test trational^2/3 == Taylor1([0//1,0//1,1//3],15)
     @test trational^3/complex(7,1) == Taylor1([0,0,0,complex(7//50,-1//50)],15)
 
-    @test isapprox( rem(4.1 + t,4).coeffs[1], 0.1 )
-    @test isapprox( mod(4.1 + t,4).coeffs[1], 0.1 )
-    @test isapprox( rem(1+Taylor1(Int,4),4.0).coeffs[1], 1.0 )
-    @test isapprox( mod(1+Taylor1(Int,4),4.0).coeffs[1], 1.0 )
-    @test isapprox( mod2pi(2pi+0.1+t).coeffs[1], 0.1 )
+    @test isapprox( rem(4.1 + t,4)[1], 0.1 )
+    @test isapprox( mod(4.1 + t,4)[1], 0.1 )
+    @test isapprox( rem(1+Taylor1(Int,4),4.0)[1], 1.0 )
+    @test isapprox( mod(1+Taylor1(Int,4),4.0)[1], 1.0 )
+    @test isapprox( mod2pi(2pi+0.1+t)[1], 0.1 )
 
     @test abs(ta(1)) == ta(1)
     @test abs(ta(-1.0)) == -ta(-1.0)
@@ -117,8 +121,8 @@ using Base.Test
     @test (exp(t))^(2im) == cos(2t)+im*sin(2t)
     @test (exp(t))^Taylor1([-5.2im]) == cos(5.2t)-im*sin(5.2t)
     @test get_coeff(convert(Taylor1{Rational{Int}},cos(t)),8) == 1//factorial(8)
-    @test abs((tan(t)).coeffs[8]- 17/315) < tol1
-    @test abs((tan(t)).coeffs[14]- 21844/6081075) < tol1
+    @test abs((tan(t))[8]- 17/315) < tol1
+    @test abs((tan(t))[14]- 21844/6081075) < tol1
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
@@ -155,7 +159,7 @@ using Base.Test
 
     @test norm((reverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1
     cfs = [(-n)^(n-1)/gamma(n+1) for n = 1:15]
-    @test norm(reverse(t*exp(t)).coeffs[2:end]./cfs-1) < 4tol1
+    @test norm(reverse(t*exp(t))[2:end]./cfs-1) < 4tol1
 
     @test_throws ArgumentError abs(ta(big(0)))
     @test_throws ArgumentError 1/t
@@ -201,7 +205,7 @@ end
 
         # is the result compatible with the matrix multiplication?  We
         # only check the zeroth order of the Taylor series.
-        y1=sum(Y).coeffs[1]
+        y1=sum(Y)[1]
         Y=A*B1[:,1]
         y2=sum(Y)
 

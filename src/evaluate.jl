@@ -14,21 +14,21 @@ Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
 ommitted, its value is considered as zero.
 """
 function evaluate{T<:Number}(a::Taylor1{T}, dx::T)
-    @inbounds suma = a.coeffs[end]
+    @inbounds suma = a[end]
     @inbounds for k = a.order:-1:1
-        suma = suma*dx + a.coeffs[k]
+        suma = suma*dx + a[k]
     end
     suma
 end
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
-    @inbounds suma = convert(R, a.coeffs[end])
+    @inbounds suma = convert(R, a[end])
     @inbounds for k = a.order:-1:1
-        suma = suma*dx + a.coeffs[k]
+        suma = suma*dx + a[k]
     end
     suma
 end
-evaluate{T<:Number}(a::Taylor1{T}) = a.coeffs[1]
+evaluate{T<:Number}(a::Taylor1{T}) = a[1]
 
 doc"""
     evaluate(x, δt)
@@ -80,9 +80,9 @@ evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S}) =
     evaluate(promote(a,x)...)
 function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
     a, x = fixorder(a, x)
-    @inbounds suma = a.coeffs[end]
+    @inbounds suma = a[end]
     @inbounds for k = a.order:-1:1
-        suma = suma*x + a.coeffs[k]
+        suma = suma*x + a[k]
     end
     suma
 end
@@ -107,9 +107,9 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
         suma = horner(suma, (nv, vals[nv]))
     end
 
-    return suma.coeffs[1].coeffs[1]
+    return suma[1][1]
 end
-evaluate(a::HomogeneousPolynomial) = zero(a.coeffs[1])
+evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
 """
     evaluate(a, [vals])
@@ -127,10 +127,10 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorN{T}, vals::Array{S,1}
         suma = horner(suma, (nv, vals[nv]))
     end
 
-    return suma.coeffs[1].coeffs[1]
+    return suma[1][1]
 end
 
-evaluate{T<:Number}(a::TaylorN{T}) = a.coeffs[1].coeffs[1]
+evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
 
 function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
         x0::Array{T,1})
@@ -166,13 +166,13 @@ function horner{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
         posOrd = order_posTb(a.order, nv, ord)
         neworder = a.order-ord
         for pos in posOrd
-            c = a.coeffs[pos]
+            c = a[pos]
             iIndices = copy(indTb[pos])
             iIndices[nv] = 0
             kdic = in_base(get_order(), iIndices)
             newpos = pos_table[neworder+1][kdic]
             zhp = HomogeneousPolynomial([zero(R)], neworder)
-            zhp.coeffs[newpos] = a.coeffs[pos]
+            zhp[newpos] = a[pos]
             suma_ord += TaylorN(zhp, a.order)
         end
         if ord == a.order
@@ -193,7 +193,7 @@ function horner{T<:Number,S<:NumberNotSeriesN}(a::TaylorN{T}, b::Tuple{Int,S} )
 
     suma = TaylorN(zero(R), a.order)
     for ord = a.order:-1:0
-        @inbounds polH = a.coeffs[ord+1]
+        @inbounds polH = a[ord+1]
         suma += horner( polH, b)
     end
     suma

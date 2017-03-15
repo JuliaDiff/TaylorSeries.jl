@@ -69,7 +69,14 @@ end
 Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 """
 get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order+1;
-    return a.coeffs[n+1])
+    return a[n+1])
+
+getindex(a::Taylor1, n::Int) = a.coeffs[n]
+getindex(a::Taylor1, n::UnitRange) = a.coeffs[n]
+setindex!{T<:Number}(a::Taylor1{T}, x::T, n::Int) = a.coeffs[n] = x
+setindex!{T<:Number}(a::Taylor1{T}, x::T, n::UnitRange) = a.coeffs[n] = x
+
+
 
 """
     get_coeff(a, v)
@@ -81,8 +88,16 @@ function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
     @assert length(v) == get_numvars()
     kdic = in_base(get_order(),v)
     @inbounds n = pos_table[a.order+1][kdic]
-    a.coeffs[n]
+    a[n]
 end
+
+getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
+getindex(a::HomogeneousPolynomial, n::UnitRange) = a.coeffs[n]
+setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, n::Int) =
+    a.coeffs[n] = x
+setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, n::UnitRange) =
+    a.coeffs[n] = x
+
 
 """
     get_coeff(a, v)
@@ -93,20 +108,28 @@ Return the coefficient of `a::TaylorN`, specified by
 function get_coeff(a::TaylorN, v::Array{Int,1})
     order = sum(v)
     @assert order ≤ a.order
-    get_coeff(a.coeffs[order+1], v)
+    get_coeff(a[order+1], v)
 end
+
+getindex(a::TaylorN, n::Int) = a.coeffs[n]
+getindex(a::TaylorN, n::UnitRange) = a.coeffs[n]
+setindex!{T<:Number}(a::TaylorN{T}, x::T, n::Int) = a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::T, n::UnitRange) = a.coeffs[n] = x
 
 
 ## Type, length ##
 eltype{T<:Number}(::Taylor1{T}) = T
-length{T<:Number}(a::Taylor1{T}) = a.order
+length{T<:Number}(a::Taylor1{T}) = length(a.coeffs)
+endof(a::Taylor1) = length(a.coeffs)
 
 eltype{T<:Number}(::HomogeneousPolynomial{T}) = T
 length(a::HomogeneousPolynomial) = length( a.coeffs )
+endof(a::HomogeneousPolynomial) = length(a.coeffs)
 get_order(a::HomogeneousPolynomial) = a.order
 
 eltype{T<:Number}(::TaylorN{T}) = T
 length(a::TaylorN) = length( a.coeffs )
+endof(a::TaylorN) = length(a.coeffs)
 get_order(x::TaylorN) = x.order
 
 

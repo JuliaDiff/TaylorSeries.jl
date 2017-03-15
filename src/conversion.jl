@@ -14,7 +14,7 @@ function convert{T<:Integer, S<:AbstractFloat}(::Type{Taylor1{Rational{T}}},
     a::Taylor1{S})
     v = Array{Rational{T}}(length(a.coeffs))
     for i in eachindex(v)
-        v[i] = rationalize(a.coeffs[i])
+        v[i] = rationalize(a[i])
     end
     Taylor1(v)
 end
@@ -38,8 +38,8 @@ function convert{T<:Integer, S<:AbstractFloat}(
     ::Type{HomogeneousPolynomial{Rational{T}}}, a::HomogeneousPolynomial{S})
     v = Array{Rational{T}}(length(a.coeffs))
     for i in eachindex(v)
-        # v[i] = convert(Rational{T}, a.coeffs[i])
-        v[i] = rationalize(a.coeffs[i], tol=eps(one(S)))
+        # v[i] = convert(Rational{T}, a[i])
+        v[i] = rationalize(a[i], tol=eps(one(S)))
     end
     HomogeneousPolynomial(v, a.order)
 end
@@ -90,10 +90,10 @@ function convert{T<:Number}(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}})
     v = zeros(T, s.order+1)
     for ordT in 1:s.order+1
         v[ordT] = one(T)
-        for ordHP in eachindex(s.coeffs[ordT].coeffs)
-            for ic in eachindex(s.coeffs[ordT].coeffs[ordHP].coeffs)
-                coef = s.coeffs[ordT].coeffs[ordHP].coeffs[ic]
-                r[ordHP].coeffs[ic] += Taylor1(coef*v)
+        for ordHP in eachindex(s[ordT].coeffs)
+            for ic in eachindex(s[ordT][ordHP].coeffs)
+                coef = s[ordT][ordHP][ic]
+                r[ordHP][ic] += Taylor1(coef*v)
             end
         end
         v[ordT] = zero(T)
@@ -104,7 +104,7 @@ end
 function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}})
     ordert = 0
     for ordHP in eachindex(s.coeffs)
-        ordert = max(ordert, s.coeffs[ordHP].coeffs[1].order)
+        ordert = max(ordert, s[ordHP][1].order)
     end
     vT = Array{TaylorN{T}}(ordert+1)
     for ordT in eachindex(vT)
@@ -112,13 +112,13 @@ function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}})
     end
 
     for ordN in eachindex(s.coeffs)
-        vHP = HomogeneousPolynomial(zeros(T,length(s.coeffs[ordN])))
-        for ihp in eachindex(s.coeffs[ordN].coeffs)
-            for ind in eachindex(s.coeffs[ordN].coeffs[ihp].coeffs)
-                c = s.coeffs[ordN].coeffs[ihp].coeffs[ind]
-                vHP.coeffs[ihp] = c
+        vHP = HomogeneousPolynomial(zeros(T,length(s[ordN])))
+        for ihp in eachindex(s[ordN].coeffs)
+            for ind in eachindex(s[ordN][ihp].coeffs)
+                c = s[ordN][ihp][ind]
+                vHP[ihp] = c
                 vT[ind] += TaylorN(vHP)
-                vHP.coeffs[ihp] = zero(T)
+                vHP[ihp] = zero(T)
             end
         end
     end
