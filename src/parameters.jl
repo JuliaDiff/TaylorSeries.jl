@@ -17,7 +17,7 @@ DataType holding the current parameters for `TaylorN` and
 
 These parameters can be changed using `set_params_TaylorN(order, numVars)`.
 """ ->
-type ParamsTaylorN
+mutable struct ParamsTaylorN
     order          :: Int
     num_vars       :: Int
     variable_names :: Array{String,1}
