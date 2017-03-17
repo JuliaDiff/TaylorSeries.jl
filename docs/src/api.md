@@ -58,8 +58,7 @@ in_base
 make_inverse_dict
 order_posTb
 mul!
-mulHomogCoef
-divHomogCoef
+div!
 powHomogCoef
 squareHomogCoef
 sqrtHomogCoef

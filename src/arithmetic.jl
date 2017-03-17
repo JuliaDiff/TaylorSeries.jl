@@ -257,35 +257,33 @@ doc"""
 *(a, b)
 ```
 
-Return the Taylor expansion of $a \cdot b$, of order `max(a.order,b.order)`, for
-`a::Taylor1`, `b::Taylor1` polynomials.
-
-For details on making the Taylor expansion, see [`TaylorSeries.mulHomogCoef`](@ref).
+Return the Taylor expansion of $a \cdot b$, of order `max(a.order,b.order)`,
+for `a` and `b` `Taylor1` or `TaylorN` polynomials; see
+[`TaylorSeries.mul!`](@ref).
 """
 *{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = *(promote(a,b)...)
 
 function *{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
     a, b = fixorder(a, b)
-    coeffs = similar(a.coeffs)
-    @inbounds for k = 0:a.order
-        coeffs[k+1] = mulHomogCoef(k, a.coeffs, b.coeffs)
+
+    c = Taylor1(similar(a.coeffs), a.order)
+    @inbounds for ord = 0:a.order
+        mul!(c, a, b, ord) # updates c[ord+1]
     end
-    return Taylor1(coeffs, a.order)
+    return c
 end
 
-*{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{S}) = *(promote(a,b)...)
+*{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{S}) =
+    *(promote(a,b)...)
 
 function *{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
     a, b = fixorder(a, b)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-
-    for ord in eachindex(coeffs)
-        for i = 0:ord-1
-            @inbounds mul!(coeffs[ord], a[i+1], b[ord-i])
-        end
+    c = TaylorN(zeros(HomogeneousPolynomial{T}, a.order))
+    for ord in 0:a.order
+        mul!(c, a, b, ord) # updates c[ord+1]
     end
 
-    return TaylorN(coeffs, a.order)
+    return c
 end
 
 ## Multiplication ##
@@ -306,7 +304,7 @@ end
 
 # Homogeneous coefficient for the multiplication
 doc"""
-    mulHomogCoef(kcoef, ac, bc)
+    mul!(c, a, b, k)
 
 Compute the `k`-th expansion coefficient of $c = a\cdot b$ given by
 
@@ -316,16 +314,27 @@ c_k = \sum_{j=0}^k a_j b_{k-j},
 
 with $a$ and $b$ `Taylor1` polynomials.
 
-Inputs are the `kcoef`-th coefficient, and the vectors of the expansion coefficients
-`ac` and `bc`, corresponding respectively to `a` and `b`.
+Inputs are the `AbstractSeries` polynomials `c`, `a` and `b`, and
+the `k`-th coefficient to be calculated.
 """
-function mulHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1})
-    kcoef == 0 && return ac[1] * bc[1]
-    coefhomog = zero(ac[1])
-    @inbounds for i = 0:kcoef
-        coefhomog += ac[i+1] * bc[kcoef-i+1]
+function mul!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int)
+
+    c[k+1] = zero(eltype(c))
+    @inbounds for i = 0:k
+        c[k+1] += a[i+1] * b[k-i+1]
     end
-    coefhomog
+
+    return nothing
+end
+
+function mul!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
+
+    c[k+1] = HomogeneousPolynomial(zero(eltype(c)), k)
+    for i = 0:k
+        @inbounds mul!(c[k+1], a[i+1], b[k-i+1])
+    end
+
+    return nothing
 end
 
 
@@ -334,7 +343,7 @@ end
 mul!(c, a, b)
 ```
 
-Return `c = a*b` with no allocation; all parameters are `HomogeneousPolynomial`.
+Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
 """
 function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     (iszero(b) || iszero(a)) && return nothing
@@ -447,36 +456,35 @@ doc"""
 ```
 
 Return the Taylor expansion of $a/b$, of order `max(a.order,b.order)`, for
-`a::Taylor1`, `b::Taylor1` polynomials.
-
-For details on making the Taylor expansion, see
-[`TaylorSeries.divHomogCoef`](@ref).
+`a::Taylor1`, `b::Taylor1` polynomials; see [`TaylorSeries.div!`](@ref).
 """
 /{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = /(promote(a,b)...)
 function /{R<:Number}(a::Taylor1{R}, b::Taylor1{R})
     a, b = fixorder(a, b)
     # order and coefficient of first factorized term
-    orddivfact, cdivfact = divfactorization(a, b)
+    ordfact, cdivfact = divfactorization(a, b)
     T = typeof(cdivfact)
-    v1 = convert(Array{T,1}, a.coeffs)
-    v2 = convert(Array{T,1}, b.coeffs)
-    coeffs = zeros(T, a.order+1)
-    @inbounds coeffs[1] = cdivfact
-    @inbounds for k = orddivfact+1:a.order
-        coeffs[k-orddivfact+1] = divHomogCoef(k, v1, v2, coeffs, orddivfact)
+    v1 = convert(Taylor1{T}, a.coeffs)
+    v2 = convert(Taylor1{T}, b.coeffs)
+
+    coeffs = Taylor1([cdivfact], a.order)
+    @inbounds for ord = 0:a.order-ordfact
+        div!(coeffs, v1, v2, ord, ordfact) # updates c[ord+1]
     end
-    Taylor1(coeffs, a.order)
+
+    return coeffs
 end
 
-/{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{S}) = /(promote(a,b)...)
+/{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{S}) =
+    /(promote(a,b)...)
+
 function /{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
     @inbounds b0 = b[1][1]
     @assert b0 != zero(b0)
     a, b = fixorder(a, b)
     # order and coefficient of first factorized term
     # orddivfact, cdivfact = divfactorization(a, b)
-    b0 = inv(b0)
-    @inbounds cdivfact = a[1] * b0
+    @inbounds cdivfact = a[1] / b0
     R = eltype(cdivfact)
     coeffs = zeros(HomogeneousPolynomial{R}, a.order)
     @inbounds coeffs[1] = cdivfact
@@ -486,7 +494,7 @@ function /{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
         @inbounds for i = 0:ord-1
             mul!(coeffs[ord+1], coeffs[i+1], b[ord-i+1])
         end
-        @inbounds coeffs[ord+1] = (a[ord+1] - coeffs[ord+1]) * b0
+        @inbounds coeffs[ord+1] = (a[ord+1] - coeffs[ord+1]) / b0
     end
 
     return TaylorN(coeffs, a.order)
@@ -499,24 +507,24 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
     b1nz = findfirst(b1)
     a1nz = a1nz ≥ 0 ? a1nz : a1.order
     b1nz = b1nz ≥ 0 ? b1nz : a1.order
-    orddivfact = min(a1nz, b1nz)
-    cdivfact = a1[orddivfact+1] / b1[orddivfact+1]
+    ordfact = min(a1nz, b1nz)
+    cdivfact = a1[ordfact+1] / b1[ordfact+1]
 
     # Is the polynomial factorizable?
     if isinf(cdivfact) || isnan(cdivfact)
         throw(ArgumentError(
         """Division does not define a Taylor1 polynomial
         or its first non-zero coefficient is Inf/NaN.
-        Order k=$(orddivfact) => coeff[$(orddivfact+1)]=$(cdivfact)."""))
+        Order k=$(ordfact) => coeff[$(ordfact+1)]=$(cdivfact)."""))
     end
 
-    return orddivfact, cdivfact
+    return ordfact, cdivfact
 end
 
 
 # Homogeneous coefficient for the division
 doc"""
-    divHomogCoef(kcoef, ac, bc, coeffs, ordfact)
+    div!(c, a, b, k, ordfact::Int=0)
 
 Compute the `k-th` expansion coefficient of $c = a / b$ given by
 
@@ -526,19 +534,24 @@ c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}),
 
 with $a$ and $b$ `Taylor1` polynomials.
 
-Inputs are the `kcoef`-th coefficient, the vectors of the expansion coefficients
-`ac` and `bc`, corresponding respectively to `a` and `b`, the
-already calculated expansion coefficients `coeffs` of `c`, and `ordfact`
-which is the order of the factorized term of the denominator,
-whenever `b_0` is zero.
+Inputs are the Taylor polynomials `c`, `a` and `b`,
+the `k`-th coefficient (of `c`) to be calculated, and `ordfact`
+which is the order of the factorized term of the denominator.
 """
-function divHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, bc::Array{T,1},
-    coeffs::Array{T,1}, ordfact::Int)
-    #
-    @inbounds kcoef == ordfact && return ac[ordfact+1] / bc[ordfact+1]
-    coefhomog = mulHomogCoef(kcoef, coeffs, bc)
-    @inbounds coefhomog = (ac[kcoef+1]-coefhomog) / bc[ordfact+1]
-    coefhomog
+function div!{T<:Number}(cc::Taylor1{T}, ac::Taylor1{T}, bc::Taylor1{T},
+        k::Int, ordfact::Int=0)
+
+    if k == 0
+        @inbounds cc[1] = ac[ordfact+1] / bc[ordfact+1]
+        return nothing
+    end
+
+    coef = zero(ac[1])
+    @inbounds for i = 0:k
+        coef += cc[i+1] * bc[k+ordfact-i+1]
+    end
+    @inbounds cc[k+1] = (ac[k+ordfact+1]-coef) / bc[ordfact+1]
+    return nothing
 end
 
 ## TODO: Implement factorization (divfactorization) for TaylorN polynomials

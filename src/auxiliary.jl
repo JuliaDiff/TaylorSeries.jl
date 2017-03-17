@@ -113,8 +113,10 @@ end
 
 getindex(a::TaylorN, n::Int) = a.coeffs[n]
 getindex(a::TaylorN, n::UnitRange) = a.coeffs[n]
-setindex!{T<:Number}(a::TaylorN{T}, x::T, n::Int) = a.coeffs[n] = x
-setindex!{T<:Number}(a::TaylorN{T}, x::T, n::UnitRange) = a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) =
+    a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::UnitRange) =
+    a.coeffs[n] = x
 
 
 ## Type, length ##
