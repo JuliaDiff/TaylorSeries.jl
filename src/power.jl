@@ -22,7 +22,7 @@ function ^{T<:Number}(a::Taylor1{T}, n::Integer)
     n == 1 && return a
     n == 2 && return square(a)
     n < 0 && return inv( a^(-n) )
-    return power_by_squaring(a, n)
+    return Base.power_by_squaring(a, n)
 end
 
 function ^{T<:Integer}(a::Taylor1{T}, n::Integer)
@@ -30,33 +30,7 @@ function ^{T<:Integer}(a::Taylor1{T}, n::Integer)
     n == 1 && return a
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
-    return power_by_squaring(a, n)
-end
-
-## power_by_squaring; slightly modified from base/intfuncs.jl
-## Licensed under MIT "Expat"
-function power_by_squaring(x::Taylor1, p::Integer)
-    p == 1 && return copy(x)
-    p == 0 && return one(x)
-    p == 2 && return square(x)
-    t = trailing_zeros(p) + 1
-    p >>= t
-
-    while (t -= 1) > 0
-        x = square(x)
-    end
-
-    y = x
-    while p > 0
-        t = trailing_zeros(p) + 1
-        p >>= t
-        while (t -= 1) ≥ 0
-            x = square(x)
-        end
-        y *= x
-    end
-
-    return y
+    return Base.power_by_squaring(a, n)
 end
 
 ## Rational power ##
@@ -257,7 +231,7 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     n == 1 && return a
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
-    return power_by_squaring(a, n)
+    return Base.power_by_squaring(a, n)
 end
 
 function ^{T<:Number}(a::TaylorN{T}, n::Integer)
@@ -265,7 +239,7 @@ function ^{T<:Number}(a::TaylorN{T}, n::Integer)
     n == 1 && return a
     n == 2 && return square(a)
     n < 0 && return inv( a^(-n) )
-    return power_by_squaring(a, n)
+    return Base.power_by_squaring(a, n)
 end
 
 function ^{T<:Integer}(a::TaylorN{T}, n::Integer)
@@ -273,37 +247,7 @@ function ^{T<:Integer}(a::TaylorN{T}, n::Integer)
     n == 1 && return a
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
-    return power_by_squaring(a, n)
-end
-
-## power_by_squaring; slightly modified from base/intfuncs.jl
-## Licensed under MIT "Expat"
-for T in (:HomogeneousPolynomial, :TaylorN)
-    @eval begin
-        function power_by_squaring(x::($T), p::Integer)
-            p == 1 && return x# copy(x)
-            p == 0 && return one(x)
-            p == 2 && return square(x)
-            t = trailing_zeros(p) + 1
-            p >>= t
-
-            while (t -= 1) > 0
-                x = square(x)
-            end
-
-            y = x
-            while p > 0
-                t = trailing_zeros(p) + 1
-                p >>= t
-                while (t -= 1) ≥ 0
-                    x = square(x)
-                end
-                y *= x
-            end
-
-            return y
-        end
-    end
+    return Base.power_by_squaring(a, n)
 end
 
 ## Rational power ##
