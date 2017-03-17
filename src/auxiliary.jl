@@ -149,25 +149,6 @@ get_order(x::TaylorN) = x.order
 Base.findfirst{T<:Number}(a::Taylor1{T}) = findfirst(a.coeffs)-1
 
 
-## fixorder ##
-for T in (:Taylor1, :TaylorN)
-    @eval begin
-        fixorder(a::$T, order::Int64) = $T(a.coeffs, order)
-        function fixorder{R<:Number}(a::$T{R}, b::$T{R})
-            a.order == b.order && return a, b
-            a.order < b.order && return $T(a.coeffs, b.order), b
-            return a, $T(b.coeffs, a.order)
-        end
-    end
-end
-
-function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-    @assert a.order == b.order
-    return a, b
-end
-
-
-
 """
     order_posTb(order, nv, ord)
 

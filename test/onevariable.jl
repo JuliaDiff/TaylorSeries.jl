@@ -43,8 +43,6 @@ using Base.Test
     @test eltype(promote(1.0+im, zt)[1]) == Complex{Float64}
 
     @test length(Taylor1(10)) == 11
-    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
-    @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(zt) == -1
     @test iszero(zero(t))
@@ -171,7 +169,6 @@ using Base.Test
     @test_throws ArgumentError cos(t)/sin(t)
     @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
     @test_throws ArgumentError reverse(exp(t))
-    @test_throws MethodError TaylorSeries.fixorder(zt,Taylor1([1.0]))
 
     @test string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
