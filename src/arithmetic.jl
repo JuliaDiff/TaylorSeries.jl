@@ -35,7 +35,6 @@ end
 
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-
     @eval iszero(a::$T) = iszero(a.coeffs)
 end
 
@@ -250,48 +249,35 @@ for T in (:HomogeneousPolynomial, :TaylorN)
     end
 end
 
+for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
+    @eval *{T<:$W, S<:$W}(a::$T{T}, b::$T{S}) = *(promote(a,b)...)
 
+    @eval function *{T<:$W}(a::$T{T}, b::$T{T})
+        corder = max(a.order, b.order)
+        if $T == Taylor1
+            c = Taylor1(zero(a[1]), corder)
+        else
+            c = TaylorN(zeros(HomogeneousPolynomial{T}, corder))
+        end
 
-doc"""
-```
-*(a, b)
-```
-
-Return the Taylor expansion of $a \cdot b$, of order `max(a.order,b.order)`,
-for `a` and `b` `Taylor1` or `TaylorN` polynomials; see
-[`TaylorSeries.mul!`](@ref).
-"""
-*{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = *(promote(a,b)...)
-
-function *{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
-    corder = max(a.order, b.order)
-    c = Taylor1(zero(a[1]), corder)
-    @inbounds for ord = 0:corder
-        mul!(c, a, b, ord) # updates c[ord+1]
+        @inbounds for ord = 0:corder
+            mul!(c, a, b, ord) # updates c[ord+1]
+        end
+        return c
     end
-    return c
 end
 
-*{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{S}) =
-    *(promote(a,b)...)
 
-function *{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
-    corder = max(a.order, b.order)
-    c = TaylorN(zeros(HomogeneousPolynomial{T}, corder))
-    for ord in 0:corder
-        mul!(c, a, b, ord) # updates c[ord+1]
-    end
-    return c
-end
+*{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
+    b::HomogeneousPolynomial{S}) = *(promote(a,b)...)
 
-## Multiplication ##
-*{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) =
-    *(promote(a,b)...)
+function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
+        b::HomogeneousPolynomial{T})
 
-function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T})
     order = a.order + b.order
 
-    order > get_order() && return HomogeneousPolynomial([zero(a[1])], get_order())
+    order > get_order() &&
+        return HomogeneousPolynomial([zero(a[1])], get_order())
 
     res = HomogeneousPolynomial([zero(a[1])], order)
     mul!(res, a, b)
@@ -299,48 +285,45 @@ function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T}, b::HomogeneousPolyn
 end
 
 
-
 # Homogeneous coefficient for the multiplication
-doc"""
-    mul!(c, a, b, k)
+for T in (:Taylor1, :TaylorN)
+    @eval function mul!(c::$T, a::$T, b::$T, k::Int)
+        if $T == Taylor1
+            c[k+1] = zero(eltype(c))
+        else
+            c[k+1] = HomogeneousPolynomial(zero(eltype(c)), k)
+        end
+        @inbounds for i = 0:k
+            c[k+1] += a[i+1] * b[k-i+1]
+        end
 
-Compute the `k`-th expansion coefficient of $c = a\cdot b$ given by
+        return nothing
+    end
+end
+
+@doc """
+    mul!(c, a, b, k::Int) --> nothing
+
+Updates (in-place) the `k`-th expansion coefficient `c[k+1]` of
+`c = a * b` given by
 
 \begin{equation*}
-c_k = \sum_{j=0}^k a_j b_{k-j},
+c_k = \sum_{j=0}^k a_j b_{k-j}.
 \end{equation*}
 
-with $a$ and $b$ `Taylor1` polynomials.
+Here, `c`, `a`, and `b` are all `Taylor1` or `TaylorN`.
+""" mul!
 
-Inputs are the `AbstractSeries` polynomials `c`, `a` and `b`, and
-the `k`-th coefficient to be calculated.
-"""
-function mul!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int)
-    c[k+1] = zero(eltype(c))
-    @inbounds for i = 0:k
-        c[k+1] += a[i+1] * b[k-i+1]
-    end
-
-    return nothing
-end
-
-function mul!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
-    c[k+1] = HomogeneousPolynomial(zero(eltype(c)), k)
-    for i = 0:k
-        @inbounds mul!(c[k+1], a[i+1], b[k-i+1])
-    end
-
-    return nothing
-end
 
 """
-```
-mul!(c, a, b)
-```
+    mul!(c, a, b) --> nothing
 
 Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
+
 """
-function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
+        b::HomogeneousPolynomial)
+
     (iszero(b) || iszero(a)) && return nothing
 
     T = eltype(c)
@@ -372,6 +355,7 @@ end
     mul!(c, a)
 
 Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
+
 """
 function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
     iszero(a) && return nothing
@@ -411,54 +395,47 @@ function /{T<:Integer, S<:NumberNotSeries}(a::Taylor1{Rational{T}}, b::S)
 end
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval begin
-        /{T<:NumberNotSeries}(a::$T{T}, b::T) = a * inv(b)
-        function /{T<:NumberNotSeries,S<:NumberNotSeries}(a::$T{T}, b::S)
-            R = promote_type(T,S)
-            return convert($T{R}, a) * inv(convert(R, b))
-        end
-        /{T<:NumberNotSeries}(a::$T, b::T) = a * inv(b)
+
+    @eval /{T<:NumberNotSeries}(a::$T{T}, b::T) = a * inv(b)
+
+    @eval function /{T<:NumberNotSeries,S<:NumberNotSeries}(a::$T{T}, b::S)
+        R = promote_type(T,S)
+        return convert($T{R}, a) * inv(convert(R, b))
     end
+
+    @eval /{T<:NumberNotSeries}(a::$T, b::T) = a * inv(b)
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
-    @eval begin
-        function /{T<:NumberNotSeries,S<:NumberNotSeries}(
-                b::$T{Taylor1{S}}, a::Taylor1{T})
-            @inbounds aux = b[1] / a
-            R = typeof(aux)
-            coeffs = Array{R}(length(b.coeffs))
-            coeffs .= b.coeffs ./ a
-            return $T(coeffs, b.order)
-        end
-        function /{T<:NumberNotSeries,S<:NumberNotSeries}(
-                b::Taylor1{$T{S}}, a::$T{T})
-            @inbounds aux = b[1] / a
-            R = typeof(aux)
-            coeffs = Array{R}(length(b.coeffs))
-            coeffs .= b.coeffs ./ a
-            return Taylor1(coeffs, b.order)
-        end
+    @eval function /{T<:NumberNotSeries,S<:NumberNotSeries}(
+            b::$T{Taylor1{S}}, a::Taylor1{T})
+        @inbounds aux = b[1] / a
+        R = typeof(aux)
+        coeffs = Array{R}(length(b.coeffs))
+        coeffs .= b.coeffs ./ a
+        return $T(coeffs, b.order)
+    end
+
+    @eval function /{T<:NumberNotSeries,S<:NumberNotSeries}(
+            b::Taylor1{$T{S}}, a::$T{T})
+        @inbounds aux = b[1] / a
+        R = typeof(aux)
+        coeffs = Array{R}(length(b.coeffs))
+        coeffs .= b.coeffs ./ a
+        return Taylor1(coeffs, b.order)
     end
 end
 
 
 
-
-doc"""
-```
-/(a, b)
-```
-
-Return the Taylor expansion of $a/b$, of order `max(a.order,b.order)`, for
-`a::Taylor1`, `b::Taylor1` polynomials; see [`TaylorSeries.div!`](@ref).
-"""
 /{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = /(promote(a,b)...)
 
 function /{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
     corder = max(a.order, b.order)
+
     # order and coefficient of first factorized term
     ordfact, cdivfact = divfactorization(a, b)
+
     c = Taylor1([cdivfact], corder)
     @inbounds for ord = 1:corder-ordfact
         div!(c, a, b, ord, ordfact) # updates c[ord+1]
@@ -473,8 +450,8 @@ end
 function /{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
     @assert !iszero(b[1][1])
     corder = max(a.order, b.order)
-    # order and coefficient of first factorized term
-    # orddivfact, cdivfact = divfactorization(a, b)
+
+    # first coefficient
     @inbounds cdivfact = a[1] / b[1][1]
     c = TaylorN(cdivfact, corder)
     for ord in 1:corder
@@ -513,17 +490,19 @@ end
 doc"""
     div!(c, a, b, k, ordfact::Int=0)
 
-Compute the `k-th` expansion coefficient of $c = a / b$ given by
+Compute the `k-th` expansion coefficient `c[k]` of $c = a / b$ given by
 
 \begin{equation*}
 c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}),
 \end{equation*}
 
-with $a$ and $b$ `Taylor1` polynomials.
+with $a$ and $b$ both `Taylor1` or `TaylorN` polynomials.
 
-Inputs are the Taylor polynomials `c`, `a` and `b`,
-the `k`-th coefficient (of `c`) to be calculated, and `ordfact`
-which is the order of the factorized term of the denominator.
+Inputs are the polynomials `c`, `a` and `b`,
+the `k`-th coefficient to be calculated.
+
+For `Taylor1` polynomials, `ordfact` is the order of the factorized
+term of the denominator.
 """
 function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
     if k == 0

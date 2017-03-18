@@ -71,7 +71,6 @@ Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order+1;
     return a[n+1])
 
-# getindex(a::Taylor1, n::Int) = a.coeffs[n]
 function getindex(a::Taylor1, n::Int)
     (1 ≤ n ≤ length(a.coeffs)) && return a.coeffs[n]
     return zero(a.coeffs[1])
@@ -115,12 +114,11 @@ function get_coeff(a::TaylorN, v::Array{Int,1})
     get_coeff(a[order+1], v)
 end
 
-# getindex(a::TaylorN, n::Int) = a.coeffs[n]
 function getindex(a::TaylorN, n::Int)
     1 ≤ n ≤ length(a.coeffs) && return a.coeffs[n]
     n ≤ get_order()+1 &&
         return zero( HomogeneousPolynomial([zero(eltype(a))], n-1) )
-    throw(BoundsError)
+    throw(BoundsError(a.coeffs,n))
 end
 getindex(a::TaylorN, n::UnitRange) = a.coeffs[n]
 setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) =
