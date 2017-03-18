@@ -7,25 +7,7 @@
 #
 
 
-## Int power ##
-doc"""
-```
-^(a, x)
-```
-
-Return the Taylor expansion of $a^x$ for `a::Taylor1` polynomial and `x::Number`.
-If `x` is non integer and the 0-th order coefficient is zero, an
-`ArgumentError` is thrown.
-"""
-function ^{T<:Number}(a::Taylor1{T}, n::Integer)
-    n == 0 && return one(a)
-    n == 1 && return a
-    n == 2 && return square(a)
-    n < 0 && return inv( a^(-n) )
-    return Base.power_by_squaring(a, n)
-end
-
-function ^{T<:Integer}(a::Taylor1{T}, n::Integer)
+function ^(a::HomogeneousPolynomial, n::Integer)
     n == 0 && return one(a)
     n == 1 && return a
     n == 2 && return square(a)
@@ -33,104 +15,243 @@ function ^{T<:Integer}(a::Taylor1{T}, n::Integer)
     return Base.power_by_squaring(a, n)
 end
 
-## Rational power ##
-^{T<:Integer}(a::Taylor1,x::Rational{T}) = a^(x.num/x.den)
+for T in (:Taylor1, :TaylorN)
+    @eval function ^{T<:Number}(a::$T{T}, n::Integer)
+        n == 0 && return one(a)
+        n == 1 && return a
+        n == 2 && return square(a)
+        n < 0 && return inv( a^(-n) )
+        return Base.power_by_squaring(a, n)
+    end
 
-^(a::Taylor1, b::Taylor1) = exp( b*log(a) )
+    @eval function ^{T<:Integer}(a::$T{T}, n::Integer)
+        n == 0 && return one(a)
+        n == 1 && return a
+        n == 2 && return square(a)
+        n < 0 && throw(DomainError())
+        return Base.power_by_squaring(a, n)
+    end
+
+    @eval ^(a::$T, x::Rational) = a^(x.num/x.den)
+
+    @eval ^(a::$T, b::$T) = exp( b*log(a) )
+
+    @eval ^{T<:Complex}(a::$T, x::T) = exp( x*log(a) )
+end
+
 
 ## Real power ##
-function ^{S<:Real}(a::Taylor1, x::S)
-    x == zero(x) && return one(a)
-    x == one(x)/2 && return sqrt(a)
-    isinteger(x) && return a^round(Int,x)
+function ^{S<:Real}(a::Taylor1, r::S)
+    r == zero(r) && return one(a)
+    r == one(r)/2 && return sqrt(a)
+    isinteger(r) && return a^round(Int,r)
 
     # First non-zero coefficient
     l0nz = findfirst(a)
     l0nz > a.order && return zero(a)
 
     # The first non-zero coefficient of the result; must be integer
-    lnull = x*l0nz
-    !isinteger(lnull) &&
-        throw(ArgumentError(
+    !isinteger(r*l0nz) && throw(ArgumentError(
         """The 0th order Taylor1 coefficient must be non-zero
         to raise the Taylor1 polynomial to a non-integer exponent."""))
+    lnull = trunc(Int, r*l0nz )
 
-    # Reaching this point, it is possible to implement the power of the Taylor1
-    # polynomial. The last l0nz coefficients are set to zero.
-    lnull = trunc(Int,lnull)
-    #l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.")
-    @inbounds aux = (a[l0nz+1])^x
-    T = typeof(aux)
-    v = convert(Array{T,1}, a.coeffs)
-    coeffs = zeros(T, a.order+1)
-    @inbounds coeffs[lnull+1] = aux
+    @inbounds aux = ( a[l0nz+1] )^r
     k0 = lnull+l0nz
-    @inbounds for k = k0+1:a.order
-        coeffs[k-l0nz+1] = powHomogCoef(k, v, x, coeffs, l0nz)
+    c = Taylor1( zero(aux), a.order)
+    @inbounds c[lnull+1] = aux
+    for k = k0+1:a.order
+        pow!(c, a, r, k, l0nz)
     end
 
-    Taylor1(coeffs,a.order)
+    return c
 end
-^{T<:Complex}(a::Taylor1, x::T) = exp( x*log(a) )
+
+## Real power ##
+function ^{S<:Real}(a::TaylorN, r::S)
+    r == zero(r) && return TaylorN( one(eltype(a)), 0 )
+    r == one(r)/2 && return sqrt(a)
+    isinteger(r) && return a^round(Int,r)
+
+    @inbounds a0 = a[1][1]
+    @assert a0 != zero(a0)
+    aux = ( a0 )^r
+
+    c = TaylorN( aux, a.order)
+    for ord in 1:a.order
+        pow!(c, a, r, ord)
+    end
+
+    return c
+end
+
 
 # Homogeneous coefficients for real power
 doc"""
-    powHomogCoef(kcoef, ac, x, coeffs, knull)
+    pow!(c, a, r::Real, k::Int, k0::Int=0)
 
-Compute the `k-th` expansion coefficient of $c = a^x$, given by
+Update the `k-th` expansion coefficient `c[k+1]` of `c = a^r`, for
+both `c` and `a` either `Taylor1` or `TaylorN`.
+
+The coefficients are given by
 
 \begin{equation*}
-c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} ((k-j)x -j) - j)a_{k-j} c_j,
+c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} \big(r(k-j) -j\big)a_{k-j} c_j.
 \end{equation*}
 
-with $a$ a `Taylor1` polynomial, and `x` a number.
+For `Taylor1` polynomials, `k0` is the order of the first non-zero
+coefficient of `a`.
 
-Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
-`ac` of `a`, the exponent `x`, the already calculated expansion
-coefficients `coeffs` of `c`, and `knull`
-which is the order of the first non-zero coefficient of `a`.
 """
-function powHomogCoef{T<:Number, S<:Real}(kcoef::Int, ac::Array{T,1}, x::S,
-    coeffs::Array{T,1}, knull::Int)
-
-    kcoef == knull && return (ac[knull+1])^x
-    coefhomog = zero(T)
-    for i = 0:kcoef-knull-1
-        aux = x*(kcoef-i)-i
-        @inbounds coefhomog += aux*ac[kcoef-i+1]*coeffs[i+1]
+function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
+    if k == l0
+        @inbounds c[1] = ( a[l0+1] )^r
+        return nothing
     end
-    aux = kcoef - knull*(x+1)
-    @inbounds coefhomog = coefhomog / (aux*ac[knull+1])
 
-    coefhomog
+    coefhomog = zero(eltype(c))
+    for i = 0:k-l0-1
+        aux = r*(k-i) - i
+        @inbounds coefhomog += aux * a[k-i+1] * c[i+1]
+    end
+    aux = k - l0*(r+1)
+    @inbounds coefhomog = coefhomog / (aux * a[l0+1])
+
+    c[k-l0+1] = coefhomog
+    return nothing
 end
+
+function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
+    if k == 0
+        @inbounds c[1] = ( a[1][1] )^r
+        return nothing
+    end
+
+    coefhomog = zero(eltype(c))
+    coefhomog = HomogeneousPolynomial(zero(eltype(c)), k)
+    for i = 0:k-1
+        aux = r*(k-i) - i
+        @inbounds coefhomog += aux * a[k-i+1] * c[i+1]
+    end
+    @inbounds c[k+1] = coefhomog / (k * a[1][1])
+
+    return nothing
+end
+
+
 
 ## Square ##
-function square(a::Taylor1)
-    coeffs = Array{eltype(a)}(a.order+1)
-    coeffs[1] = a[1]^2
-    @inbounds for k = 1:a.order
-        coeffs[k+1] = squareHomogCoef(k, a.coeffs)
+"""
+    square(a::AbstractSeries) --> typeof(a)
+
+Return `a^2`; see [TaylorSeries.sqr!](@ref).
+""" square
+
+for T in (:Taylor1, :TaylorN)
+    @eval function square(a::$T)
+        if $T == Taylor1
+            c = Taylor1(Array{eltype(a)}(a.order+1))
+        else
+            c = TaylorN( zeros(HomogeneousPolynomial{eltype(a)}, a.order) )
+        end
+
+        @inbounds for k = 0:a.order
+            sqr!(c, a, k)
+        end
+        return c
     end
-    Taylor1(coeffs,a.order)
 end
+
+function square(a::HomogeneousPolynomial)
+    T = eltype(a)
+
+    order = 2*a.order
+    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
+
+    res = HomogeneousPolynomial([zero(T)], order)
+    sqr!(res, a)
+    return res
+end
+
 
 # Homogeneous coefficients for square
 doc"""
-    squareHomogCoef(kcoef, ac)
+    sqr!(c, a, k::Int) --> nothing
 
-Compute the `k-th` expansion coefficient of $c = a^2$, given by
+Update the `k-th` expansion coefficient `c[k+1]` of `c = a^2`, for
+both `c` and `a` either `Taylor1` or `TaylorN`.
 
-\begin{eqnarray*}
-c_k &=& 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j, \text{ if $k$ is odd, or }  \\\\
-c_k &=& 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2, \text{ if $k$ is even, }
-\end{eqnarray*}
+The coefficients are given by
 
-with $a$ a `Taylor1` polynomial.
+\\begin{eqnarray*}
+c_k & = & 2 \\sum_{j=0}^{(k-1)/2} a_{k-j} a_j,
+    \\text{ if k is odd, or }  \\\\
+c_k & = & 2 \\sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
+    \\text{ if k is even. }
+\\end{eqnarray*}
 
-Inputs are the `kcoef`-th coefficient and the vector of the expansion coefficients
-`ac` of `a`.
+""" sqr!
+
+for T = (:Taylor1, :TaylorN)
+    @eval function sqr!(c::$T, a::$T, k::Int)
+        if k == 0
+            @inbounds c[1] = a[1]^2
+            return nothing
+        end
+
+        if $T == Taylor1
+            @inbounds c[k+1] = zero(c[1])
+        else
+            c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+        end
+
+        kodd = k%2
+        kend = div(k - 2 + kodd, 2)
+        for i = 0:kend
+            @inbounds c[k+1] += a[i+1]*a[k-i+1]
+        end
+        c[k+1] = 2 * c[k+1]
+        kodd == 1 && return nothing
+        @inbounds c[k+1] += a[div(k,2)+1]^2
+
+        return nothing
+    end
+end
+
+
 """
+    sqr!(c, a)
+
+Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
+
+"""
+function sqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
+    iszero(a) && return nothing
+
+    T = eltype(c)
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs  = size_table[c.order+1]
+
+    @inbounds posTb = pos_table[c.order+1]
+
+    for na = 1:num_coeffs_a
+        @inbounds ca = a[na]
+        ca == zero(T) && continue
+        @inbounds inda = index_table[a.order+1][na]
+        @inbounds pos = posTb[2*inda]
+        @inbounds c[pos] += ca * ca
+        @inbounds for nb = na+1:num_coeffs_a
+            cb = a[nb]
+            cb == zero(T) && continue
+            indb = index_table[a.order+1][nb]
+            pos = posTb[inda+indb]
+            c[pos] += 2 * ca * cb
+        end
+    end
+
+    return nothing
+end
+
 function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     kcoef == 0 && return ac[1]^2
     coefhomog = zero(T)
@@ -146,19 +267,11 @@ function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
     coefhomog
 end
 
+
+
 ## Square root ##
-doc"""
-    sqrt(a)
-
-Return  the Taylor expansion of $\sqrt(a)$, of order `a.order`,
-for `a::Taylor1` polynomial.
-If the first non-vanishing coefficient of `a` is an odd power, and
-`ArgumentError` is thrown.
-
-For details on making the Taylor expansion, see
-[`TaylorSeries.sqrtHomogCoef`](@ref).
-"""
 function sqrt(a::Taylor1)
+
     # First non-zero coefficient
     l0nz = findfirst(a)
     if l0nz > a.order
@@ -169,156 +282,20 @@ function sqrt(a::Taylor1)
         to an **even power** in order to expand `sqrt` around 0."""))
     end
 
-    # Reaching this point, it is possible to implement the sqrt of the Taylor1 polynomial.
     # The last l0nz coefficients are set to zero.
-    ##l0nz > 0 && warn("The last k=$(l0nz) Taylor1 coefficients ARE SET to 0.")
     lnull = div(l0nz, 2)
-    @inbounds aux = sqrt(a[l0nz+1])
+    @inbounds aux = sqrt( a[l0nz+1] )
     T = typeof(aux)
-    v = convert(Array{T,1}, a.coeffs)
-    coeffs = zeros(T, a.order+1)
-    @inbounds coeffs[lnull+1] = aux
+
+    c = Taylor1( zeros(T, a.order+1) )
+    @inbounds c[lnull+1] = aux
     @inbounds for k = lnull+1:a.order-l0nz
-        coeffs[k+1] = sqrtHomogCoef(k, v, coeffs, lnull)
-    end
-    Taylor1(coeffs, a.order)
-end
-
-# Homogeneous coefficients for the square-root
-doc"""
-    sqrtHomogCoef(kcoef, ac, coeffs, knull)
-
-Compute the `k-th` expansion coefficient of $c = \sqrt(a)$, given by
-
-\begin{eqnarray*}
-c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j),
-\text{ if $k$ is odd, or } \\\\
-c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2,
-\text{ if $k$ is even,}
-\end{eqnarray*}
-
-with $a$ a `Taylor1` polynomial.
-
-Inputs are the `kcoef`-th coefficient, the vector of the expansion coefficients
-`ac` of `a`, the already calculated expansion coefficients `coeffs` of `c`,
-and `knull`, which is half of the order of the first non-zero coefficient of `a`.
-"""
-function sqrtHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1}, coeffs::Array{T,1},
-        knull::Int)
-    kcoef == knull && return sqrt(ac[2*knull+1])
-    coefhomog = zero(T)
-    kodd = (kcoef - knull)%2
-    kend = div(kcoef - knull - 2 + kodd, 2)
-    two = convert(T,2)
-    @inbounds for i = knull+1:knull+kend
-        coefhomog += coeffs[i+1]*coeffs[kcoef+knull-i+1]
-    end
-    @inbounds aux = ac[kcoef+knull+1] - two*coefhomog
-
-    if kodd == 0
-        @inbounds aux = aux - (coeffs[kend+knull+2])^2
-    end
-    @inbounds coefhomog = aux / (two*coeffs[knull+1])
-
-    coefhomog
-end
-
-
-
-## Int power ##
-function ^(a::HomogeneousPolynomial, n::Integer)
-    n == 0 && return one(a)
-    n == 1 && return a
-    n == 2 && return square(a)
-    n < 0 && throw(DomainError())
-    return Base.power_by_squaring(a, n)
-end
-
-function ^{T<:Number}(a::TaylorN{T}, n::Integer)
-    n == 0 && return one(a)
-    n == 1 && return a
-    n == 2 && return square(a)
-    n < 0 && return inv( a^(-n) )
-    return Base.power_by_squaring(a, n)
-end
-
-function ^{T<:Integer}(a::TaylorN{T}, n::Integer)
-    n == 0 && return one(a)
-    n == 1 && return a
-    n == 2 && return square(a)
-    n < 0 && throw(DomainError())
-    return Base.power_by_squaring(a, n)
-end
-
-## Rational power ##
-^(a::TaylorN, x::Rational) = a^(x.num/x.den)
-
-^(a::TaylorN, b::TaylorN) = exp( b*log(a) )
-
-## Real power ##
-function ^{S<:Real}(a::TaylorN, x::S)
-    x == zero(x) && return TaylorN( one(eltype(a)), 0 )
-    x == one(x)/2 && return sqrt(a)
-    isinteger(x) && return a^round(Int,x)
-    @inbounds a0 = a[1][1]
-    @assert a0 != zero(a0)
-    aux = ( a0 )^x
-    T = typeof(aux)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds coeffs[1] = HomogeneousPolynomial( [aux], 0 )
-
-    for ord in eachindex(coeffs)
-        ord == a.order+1 && continue
-        @inbounds for i = 0:ord-1
-            tt = x*(ord-i)-i
-            cpol = coeffs[i+1]
-            apol = a[ord-i+1]
-            (iszero(cpol) || iszero(apol)) && continue
-            coeffs[ord+1] += tt * cpol * apol
-        end
-        coeffs[ord+1] = coeffs[ord+1] / (ord*a0)
+        sqrt!(c, a, k, lnull)
     end
 
-    return TaylorN{T}(coeffs, a.order)
-end
-^{T<:Complex}(a::TaylorN, x::T) = exp( x*log(a) )
-
-## Square ##
-function square(a::HomogeneousPolynomial)
-    T = eltype(a)
-
-    order = 2*a.order
-    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
-
-    res = HomogeneousPolynomial([zero(T)], order)
-    mul!(res, a)
-    return res
+    return c
 end
 
-
-function square(a::TaylorN)
-    T = eltype(a)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds mul!(coeffs[1], a[1])
-
-    for ord in eachindex(coeffs)
-        ord == a.order+1 && continue
-        kodd = ord%2
-        kord = div(ord-2+kodd, 2)
-        for i = 0 : kord
-            @inbounds mul!(coeffs[ord+1], a[i+1], a[ord-i+1])
-        end
-        @inbounds coeffs[ord+1] = 2 * coeffs[ord+1]
-        kodd == 1 && continue
-        kodd = div(ord,2)
-        @inbounds mul!(coeffs[ord+1], a[kodd+1] )
-    end
-
-    return TaylorN{T}(coeffs, a.order)
-end
-
-
-## sqrt ##
 function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( a[1][1] )
     if p0 == zero(p0)
@@ -327,23 +304,74 @@ function sqrt(a::TaylorN)
         in order to expand `sqrt` around 0."""))
     end
 
-    T = typeof(p0)
-    coeffs = zeros(HomogeneousPolynomial{T}, a.order)
-    @inbounds coeffs[1] = HomogeneousPolynomial( [p0], 0 )
-
-    for ord in eachindex(coeffs)
-        ord == a.order+1 && continue
-        kodd = ord%2
-        kord = div(ord-2+kodd, 2)
-        @inbounds for i = 1:kord
-            coeffs[ord+1] += coeffs[i+1] * coeffs[ord-i+1]
-        end
-        @inbounds coeffs[ord+1] = a[ord+1] - 2 * coeffs[ord+1]
-        if iseven(ord)
-            @inbounds coeffs[ord+1]=coeffs[ord+1]-square( coeffs[div(ord,2)+1])
-        end
-        @inbounds coeffs[ord+1] = coeffs[ord+1] / (2 * p0)
+    c = TaylorN( p0, a.order)
+    @inbounds for k = 1:a.order
+        sqrt!(c, a, k)
     end
 
-    return TaylorN{T}(coeffs, a.order)
+    return c
+end
+
+# Homogeneous coefficients for the square-root
+doc"""
+    sqrt!(c, a, k::Int, k0::Int=0)
+
+Compute the `k-th` expansion coefficient `c[k+1]` of `c = sqrt(a)`
+for both`c` and `a` either `Taylor1` or `TaylorN`.
+
+The coefficients are given by
+
+\begin{eqnarray*}
+c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j),
+\text{ if $k$ is odd, or } \\\\
+c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2,
+\text{ if $k$ is even.}
+\end{eqnarray*}
+
+For `Taylor1` polynomials, `k0` is the order of the first non-zero
+coefficient, which must be even.
+
+"""
+function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
+
+    if k == k0
+        @inbounds c[k+1] = sqrt(a[2*k0+1])
+        return nothing
+    end
+
+    kodd = (k - k0)%2
+    kend = div(k - k0 - 2 + kodd, 2)
+    c[k+1] = zero(c[1])
+    @inbounds for i = k0+1:k0+kend
+        c[k+1] += c[i+1]*c[k+k0-i+1]
+    end
+    @inbounds aux = a[k+k0+1] - 2*c[k+1]
+    if kodd == 0
+        @inbounds aux = aux - (c[kend+k0+2])^2
+    end
+    @inbounds c[k+1] = aux / (2*c[k0+1])
+
+    return nothing
+end
+
+function sqrt!(c::TaylorN, a::TaylorN, k::Int)
+
+    if k == 0
+        c[1] = sqrt(a[1][1])
+        return nothing
+    end
+
+    kodd = k%2
+    kend = div(k - 2 + kodd, 2)
+    c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+    @inbounds for i = 1:kend
+        c[k+1] += c[i+1]*c[k-i+1]
+    end
+    @inbounds aux = a[k+1] - 2*c[k+1]
+    if kodd == 0
+        @inbounds aux = aux - (c[kend+2])^2
+    end
+    @inbounds c[k+1] = aux / (2*c[1][1])
+
+    return nothing
 end

@@ -95,7 +95,6 @@ for f in (:+, :-)
     dotf = Symbol(".",f)
 
     for T in (:Taylor1, :TaylorN)
-
         @eval begin
             ($f){T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = $f(promote(a,b)...)
 
@@ -288,11 +287,14 @@ end
 # Homogeneous coefficient for the multiplication
 for T in (:Taylor1, :TaylorN)
     @eval function mul!(c::$T, a::$T, b::$T, k::Int)
+        a == b && return sqr!(c, a, k)
+
         if $T == Taylor1
             c[k+1] = zero(eltype(c))
         else
             c[k+1] = HomogeneousPolynomial(zero(eltype(c)), k)
         end
+
         @inbounds for i = 0:k
             c[k+1] += a[i+1] * b[k-i+1]
         end
@@ -301,17 +303,18 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-@doc """
+doc"""
     mul!(c, a, b, k::Int) --> nothing
 
-Updates (in-place) the `k`-th expansion coefficient `c[k+1]` of
-`c = a * b` given by
+Update the `k`-th expansion coefficient `c[k+1]` of `c = a * b`,
+where all `c`, `a`, and `b` are either `Taylor1` or `TaylorN`.
+
+The coefficients are given by
 
 \begin{equation*}
 c_k = \sum_{j=0}^k a_j b_{k-j}.
 \end{equation*}
 
-Here, `c`, `a`, and `b` are all `Taylor1` or `TaylorN`.
 """ mul!
 
 
@@ -345,39 +348,6 @@ function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
 
             pos = posTb[inda + indb]
             c[pos] += ca * cb
-        end
-    end
-
-    return nothing
-end
-
-"""
-    mul!(c, a)
-
-Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
-
-"""
-function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
-    iszero(a) && return nothing
-
-    T = eltype(c)
-    @inbounds num_coeffs_a = size_table[a.order+1]
-    @inbounds num_coeffs  = size_table[c.order+1]
-
-    @inbounds posTb = pos_table[c.order+1]
-
-    for na = 1:num_coeffs_a
-        @inbounds ca = a[na]
-        ca == zero(T) && continue
-        @inbounds inda = index_table[a.order+1][na]
-        @inbounds pos = posTb[2*inda]
-        @inbounds c[pos] += ca * ca
-        @inbounds for nb = na+1:num_coeffs_a
-            cb = a[nb]
-            cb == zero(T) && continue
-            indb = index_table[a.order+1][nb]
-            pos = posTb[inda+indb]
-            c[pos] += 2 * ca * cb
         end
     end
 
@@ -488,18 +458,16 @@ end
 
 # Homogeneous coefficient for the division
 doc"""
-    div!(c, a, b, k, ordfact::Int=0)
+    div!(c, a, b, k::Int, ordfact::Int=0)
 
-Compute the `k-th` expansion coefficient `c[k]` of $c = a / b$ given by
+Compute the `k-th` expansion coefficient `c[k+1]` of `c = a / b`,
+where all `c`, `a` and `b` are either `Taylor1` or `TaylorN`.
+
+The coefficients are given by
 
 \begin{equation*}
-c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}),
+c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}).
 \end{equation*}
-
-with $a$ and $b$ both `Taylor1` or `TaylorN` polynomials.
-
-Inputs are the polynomials `c`, `a` and `b`,
-the `k`-th coefficient to be calculated.
 
 For `Taylor1` polynomials, `ordfact` is the order of the factorized
 term of the denominator.
@@ -510,7 +478,7 @@ function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
         return nothing
     end
 
-    coef = zero(a[1])
+    coef = zero(c[1])
     @inbounds for i = 0:k
         coef += c[i+1] * b[k+ordfact-i+1]
     end
@@ -524,7 +492,7 @@ function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
         return nothing
     end
 
-    c[k+1] = HomogeneousPolynomial(zero(eltype(c)), k)
+    c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
     @inbounds for i = 0:k-1
         mul!(c[k+1], c[i+1], b[k-i+1])
     end
