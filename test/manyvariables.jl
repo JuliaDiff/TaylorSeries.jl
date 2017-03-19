@@ -127,7 +127,7 @@ using Base.Test
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
-    @test (1+TaylorN(1,order=4))^TaylorN(2,order=4) == txy
+    @test getindex((1+TaylorN(1))^TaylorN(2),1:5) == txy.coeffs[1:5]
     @test_throws DomainError yT^(-2)
     @test_throws DomainError yT^(-2.0)
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
@@ -148,7 +148,7 @@ using Base.Test
     txy = tan(xT+yT)
     @test get_coeff(txy,[8,7]) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
-    @test tan(TaylorN(1,order=4)+TaylorN(2,order=4)) == ptxy
+    @test getindex(tan(TaylorN(1)+TaylorN(2)),1:5) == ptxy.coeffs[1:5]
     @test evaluate(xH*yH,[1.0,2.0]) == 2.0
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
