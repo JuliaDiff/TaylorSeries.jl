@@ -10,7 +10,6 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 
     ## real, imag, conj and ctranspose ##
     for f in (:real, :imag, :conj)
-        fdot = Symbol(f, ".")
         @eval ($f)(a::$T) = $T(($f).(a.coeffs), a.order)
     end
 

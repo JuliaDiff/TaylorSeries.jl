@@ -151,20 +151,12 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function exp!(c::$T, a::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds c[1] = exp(a[1])
-                    return nothing
-                end
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds c[1] = exp(a[1][1])
-                    return nothing
-                end
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                @inbounds c[1] = exp(constant_term(a))
+                return nothing
             end
 
+            c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
                 c[k+1] += (k-i) * a[k-i+1] * c[i+1]
             end
@@ -174,49 +166,29 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function log!(c::$T, a::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds c[1] = log(a[1])
-                    return nothing
-                end
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds c[1] = log(a[1][1])
-                    return nothing
-                end
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                @inbounds c[1] = log(constant_term(a))
+                return nothing
             end
 
+            c[k+1] = zero_korder(c, k)
             @inbounds for i = 1:k-1
                 c[k+1] += (k-i) * a[i+1] * c[k-i+1]
             end
+            @inbounds c[k+1] = (a[k+1] -c[k+1]/k) / constant_term(a)
 
-            if $T == Taylor1
-                @inbounds c[k+1] = (a[k+1] -c[k+1]/k) / a[1]
-            else
-                @inbounds c[k+1] = (a[k+1] -c[k+1]/k) / a[1][1]
-            end
             return nothing
         end
 
         function sincos!(s::$T, c::$T, a::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds s[1], c[1] = sin( a[1] ), cos( a[1] )
-                    return nothing
-                end
-                @inbounds s[k+1] = zero(s[1])
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds s[1], c[1] = sin( a[1][1] ), cos( a[1][1] )
-                    return nothing
-                end
-                @inbounds s[k+1] = HomogeneousPolynomial(zero(s[1][1]), k)
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds s[1], c[1] = sin( a0 ), cos( a0 )
+                return nothing
             end
 
+            s[k+1] = zero_korder(s, k)
+            c[k+1] = zero_korder(c, k)
             @inbounds for i = 1:k
                 x = i * a[i+1]
                 s[k+1] += x * c[k-i+1]
@@ -229,24 +201,14 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function tan!(c::$T, a::$T, c2::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds aux = tan( a[1] )
-                    @inbounds c[1] = aux
-                    @inbounds c2[1] = aux^2
-                    return nothing
-                end
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds aux = tan( a[1][1] )
-                    @inbounds c[1] = aux
-                    @inbounds c2[1] = aux^2
-                    return nothing
-                end
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                @inbounds aux = tan( constant_term(a) )
+                @inbounds c[1] = aux
+                @inbounds c2[1] = aux^2
+                return nothing
             end
 
+            c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
                 c[k+1] += (k-i)*a[k-i+1]*c2[i+1]
             end
@@ -257,104 +219,62 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function asin!(c::$T, a::$T, r::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds c[1] = asin( a[1] )
-                    @inbounds r[1] = sqrt( 1 - a[1]^2)
-                    return nothing
-                end
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds c[1] = asin( a[1][1] )
-                    @inbounds r[1] = sqrt( 1 - a[1][1]^2)
-                    return nothing
-                end
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[1] = asin( a0 )
+                @inbounds r[1] = sqrt( 1 - a0^2)
+                return nothing
             end
 
+            c[k+1] = zero_korder(c, k)
             @inbounds for i in 1:k-1
                 c[k+1] += (k-i) * r[i+1] * c[k-i+1]
             end
             sqrt!(r, 1-a^2, k)
-            if $T == Taylor1
-                @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / r[1]
-            else
-                @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / r[1][1]
-            end
+            @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(r)
             return nothing
         end
 
         function acos!(c::$T, a::$T, r::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds c[1] = acos( a[1] )
-                    @inbounds r[1] = sqrt( 1 - a[1]^2)
-                    return nothing
-                end
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds c[1] = acos( a[1][1] )
-                    @inbounds r[1] = sqrt( 1 - a[1][1]^2)
-                    return nothing
-                end
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[1] = acos( a0 )
+                @inbounds r[1] = sqrt( 1 - a0^2)
+                return nothing
             end
 
+            c[k+1] = zero_korder(c, k)
             asin!(c, -a, r, k)
             return nothing
         end
 
         function atan!(c::$T, a::$T, r::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds c[1] = atan( a[1] )
-                    @inbounds r[1] = 1 + a[1]^2
-                    return nothing
-                end
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds c[1] = atan( a[1][1] )
-                    @inbounds r[1] = 1 + a[1][1]^2
-                    return nothing
-                end
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[1] = atan( a0 )
+                @inbounds r[1] = 1 + a0^2
+                return nothing
             end
 
+            c[k+1] = zero_korder(c, k)
             @inbounds for i in 1:k-1
                 c[k+1] += (k-i) * r[i+1] * c[k-i+1]
             end
             @inbounds sqr!(r, a, k)
-            if $T == Taylor1
-                @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / r[1]
-            else
-                @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / r[1][1]
-            end
-
+            @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(r)
             return nothing
         end
 
         function sinhcosh!(s::$T, c::$T, a::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds s[1] = asinh( a[1] )
-                    @inbounds c[1] = acosh( a[1] )
-                    return nothing
-                end
-                @inbounds s[k+1] = zero(s[1])
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds s[1] = asinh( a[1][1] )
-                    @inbounds c[1] = acosh( a[1][1] )
-                    return nothing
-                end
-                @inbounds s[k+1] = HomogeneousPolynomial(zero(s[1][1]), k)
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds s[1] = asinh( a0 )
+                @inbounds c[1] = acosh( a0 )
+                return nothing
             end
 
+            s[k+1] = zero_korder(s, k)
+            c[k+1] = zero_korder(c, k)
             @inbounds for i = 1:k
                 x = i * a[i+1]
                 s[k+1] += x * c[k-i+1]
@@ -366,24 +286,14 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function tanh!(c::$T, a::$T, c2::$T, k::Int)
-            if $T == Taylor1
-                if k == 0
-                    @inbounds aux = tanh( a[1] )
-                    @inbounds c[1] = aux
-                    @inbounds c2[1] = aux^2
-                    return nothing
-                end
-                @inbounds c[k+1] = zero(c[1])
-            else
-                if k == 0
-                    @inbounds aux = tanh( a[1][1] )
-                    @inbounds c[1] = aux
-                    @inbounds c2[1] = aux^2
-                    return nothing
-                end
-                @inbounds c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+            if k == 0
+                @inbounds aux = tanh( constant_term(a) )
+                @inbounds c[1] = aux
+                @inbounds c2[1] = aux^2
+                return nothing
             end
 
+            c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
                 c[k+1] += (k-i)*a[k-i+1]*c2[i+1]
             end

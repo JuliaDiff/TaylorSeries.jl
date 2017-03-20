@@ -286,12 +286,7 @@ for T in (:Taylor1, :TaylorN)
     @eval function mul!(c::$T, a::$T, b::$T, k::Int)
         a == b && return sqr!(c, a, k)
 
-        if $T == Taylor1
-            c[k+1] = zero(eltype(c))
-        else
-            c[k+1] = HomogeneousPolynomial(zero(eltype(c)), k)
-        end
-
+        c[k+1] = zero_korder(c, k)
         @inbounds for i = 0:k
             c[k+1] += a[i+1] * b[k-i+1]
         end
@@ -473,11 +468,12 @@ function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
         return nothing
     end
 
-    coef = zero(constant_term(c))
-    @inbounds for i = 0:k
-        coef += c[i+1] * b[k+ordfact-i+1]
+    # coef = zero(constant_term(c))
+    c[k+1] = zero_korder(c, k)
+    @inbounds for i = 0:k-1
+        c[k+1] += c[i+1] * b[k+ordfact-i+1]
     end
-    @inbounds c[k+1] = (a[k+ordfact+1]-coef) / b[ordfact+1]
+    @inbounds c[k+1] = (a[k+ordfact+1]-c[k+1]) / b[ordfact+1]
     return nothing
 end
 
@@ -487,7 +483,7 @@ function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
         return nothing
     end
 
-    c[k+1] = HomogeneousPolynomial(zero(constant_term(c)), k)
+    c[k+1] = zero_korder(c, k)
     @inbounds for i = 0:k-1
         mul!(c[k+1], c[i+1], b[k-i+1])
     end

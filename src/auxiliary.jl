@@ -144,6 +144,9 @@ max_order(a::Taylor1) = a.order
 
 max_order(a::TaylorN) = get_order()
 
+zero_korder(a::Taylor1, k::Int) = zero(a[1])
+
+zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(a[1][1]), k)
 
 
 # Finds the first non zero entry; extended to Taylor1
