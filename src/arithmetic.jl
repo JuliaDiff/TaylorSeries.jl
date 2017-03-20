@@ -91,7 +91,7 @@ one(a::TaylorN) = TaylorN(one(a[1]), a.order)
 
 
 ## Addition and substraction ##
-for f in (:+, :-)
+for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     dotf = Symbol(".",f)
 
     for T in (:Taylor1, :TaylorN)
@@ -138,6 +138,12 @@ for f in (:+, :-)
                 coeffs .= $f(a.coeffs)
                 @inbounds coeffs[1] = $f(b, a[1])
                 return $T(coeffs, a.order)
+            end
+
+            ## add! and subst! ##
+            function ($fc)(v::$T, a::$T, b::$T, k::Int)
+                @inbounds v[k+1] = ($f)(a[k+1], b[k+1])
+                return nothing
             end
         end
     end

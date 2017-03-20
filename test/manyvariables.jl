@@ -48,6 +48,7 @@ using Base.Test
     yT = TaylorN(Int64, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
     uT = one(convert(TaylorN{Float64},yT))
+    @test uT == one(HomogeneousPolynomial)
     @test zeroT[1] == HomogeneousPolynomial(0, 0)
     @test uT[1] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
@@ -101,6 +102,12 @@ using Base.Test
     @test get_numvars() == 2
     @test length(uT) == get_order()+1
     @test eltype(convert(TaylorN{Complex128},1)) == Complex128
+
+    xx = TaylorN(zeroT.coeffs)
+    TaylorSeries.add!(xx,xT,2yT,1)
+    @test xx[2] == HomogeneousPolynomial([1,2])
+    TaylorSeries.subst!(xx,xT,yT,1)
+    @test xx[2] == HomogeneousPolynomial([1,-1])
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])
