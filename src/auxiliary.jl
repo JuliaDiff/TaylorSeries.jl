@@ -117,13 +117,16 @@ end
 function getindex(a::TaylorN, n::Int)
     1 ≤ n ≤ length(a.coeffs) && return a.coeffs[n]
     n ≤ get_order()+1 && return zero_korder(a, n-1)
-        # return zero( HomogeneousPolynomial([zero(eltype(a))], n-1) )
     throw(BoundsError(a.coeffs,n))
 end
 getindex(a::TaylorN, n::UnitRange) = a.coeffs[n]
 setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) =
     a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::T, n::Int) =
+    a.coeffs[n] = HomogeneousPolynomial(x, n-1)
 setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::UnitRange) =
+    a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::T, n::UnitRange) =
     a.coeffs[n] = x
 
 
@@ -140,10 +143,26 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 
+
+"""
+    max_order(a)
+
+Returns the maximum order of a `Taylor1` or `TaylorN`.
+
+For `a::Taylor1` returns `a.order` while for `a::TaylorN` returns
+`get_order()`.
+"""
 max_order(a::Taylor1) = a.order
 
 max_order(a::TaylorN) = get_order()
 
+
+"""
+    zero_korder(a)
+
+For `a::Taylor1` returns `zero(a[1])` while for `a::TaylorN` returns
+a zero of a k-th order `HomogeneousPolynomial` of proper type.
+"""
 zero_korder(a::Taylor1, k::Int) = zero(a[1])
 
 zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(a[1][1]), k)
@@ -175,7 +194,8 @@ end
 """
     constant_term(a)
 
-Return the constant value for `Taylor1` and `TaylorN`.
+Return the constant value (zero order coefficient) for `Taylor1`
+and `TaylorN`.
 """
 constant_term(a::Taylor1) = a[1]
 

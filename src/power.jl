@@ -48,7 +48,7 @@ function ^{S<:Real}(a::Taylor1, r::S)
 
     # First non-zero coefficient
     l0nz = findfirst(a)
-    l0nz > a.order && return zero(a)
+    l0nz < 0 && return zero(a)
 
     # The first non-zero coefficient of the result; must be integer
     !isinteger(r*l0nz) && throw(ArgumentError(
@@ -125,8 +125,6 @@ function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
         return nothing
     end
 
-    # coefhomog = zero(eltype(c))
-    # coefhomog = HomogeneousPolynomial(zero(eltype(c)), k)
     @inbounds c[k+1] = zero_korder(c, k)
     for i = 0:k-1
         aux = r*(k-i) - i
@@ -250,7 +248,7 @@ function sqrt(a::Taylor1)
 
     # First non-zero coefficient
     l0nz = findfirst(a)
-    if l0nz > a.order
+    if l0nz < 0
         return zero(a)
     elseif l0nz%2 == 1 # l0nz must be pair
         throw(ArgumentError(

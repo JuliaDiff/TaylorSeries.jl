@@ -22,11 +22,14 @@ using Base.Test
     @test v == [1,2,0,0]
     setindex!(Taylor1(v),3,3)
     @test v == [1,2,3,0]
+    setindex!(Taylor1(v),0,1:3)
+    @test v == zero(v)
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
     @test Taylor1(Complex128,3)[2] == complex(1.0,0.0)
     @test getindex(Taylor1(3),2) == 1.0
+    @test t[30] == 0
     @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
     @test eltype(convert(Taylor1{Complex128},ot)) == Complex128
     @test eltype(convert(Taylor1{Complex128},1)) == Complex128
@@ -100,6 +103,7 @@ using Base.Test
     @test complex(3,1)*trational^2 == Taylor1([0//1,0//1,complex(3,1)//1],15)
     @test trational^2/3 == Taylor1([0//1,0//1,1//3],15)
     @test trational^3/complex(7,1) == Taylor1([0,0,0,complex(7//50,-1//50)],15)
+    @test sqrt(zero(t)) == zero(t)
 
     @test isapprox( rem(4.1 + t,4)[1], 0.1 )
     @test isapprox( mod(4.1 + t,4)[1], 0.1 )
@@ -139,6 +143,54 @@ using Base.Test
     @test  evaluate(tanh(t/2),1.5) == evaluate(sinh(t) / (cosh(t) + 1),1.5)
     @test cosh(t) == real(cos(im*t))
     @test sinh(t) == imag(sin(im*t))
+
+    ut = 1.0*t
+    tt = zero(ut)
+    TaylorSeries.add!(tt, ut, ut, 1)
+    @test tt[2] == 2.0
+    TaylorSeries.subst!(tt, ut, ut, 1)
+    @test tt[2] == 0.0
+    iind, cind = TaylorSeries.divfactorization(ut, ut)
+    @test iind == 1
+    @test cind == 1.0
+    TaylorSeries.div!(tt, ut, ut, 0, iind)
+    @test tt[1] == cind
+    TaylorSeries.div!(tt, 1+ut, 1+ut, 0)
+    @test tt[1] == 1.0
+    TaylorSeries.pow!(tt, 1+t, 1.5, 0, 0)
+    @test tt[1] == 1.0
+    TaylorSeries.pow!(tt, 1+t, 1.5, 0)
+    @test tt[1] == 1.0
+    TaylorSeries.sqrt!(tt, 1+t, 0, 0)
+    @test tt[1] == 1.0
+    TaylorSeries.sqrt!(tt, 1+t, 0)
+    @test tt[1] == 1.0
+    TaylorSeries.exp!(tt, t, 0)
+    @test tt[1] == exp(t[1])
+    TaylorSeries.log!(tt, 1.0+t, 0)
+    @test tt[1] == 0.0
+    ct = zero(ut)
+    TaylorSeries.sincos!(tt, ct, t, 0)
+    @test tt[1] == sin(t[1])
+    @test ct[1] == cos(t[1])
+    TaylorSeries.tan!(tt, t, ct, 0)
+    @test tt[1] == tan(t[1])
+    @test ct[1] == tan(t[1])^2
+    TaylorSeries.asin!(tt, t, ct, 0)
+    @test tt[1] == asin(t[1])
+    @test ct[1] == sqrt(1.0-t[1]^2)
+    TaylorSeries.acos!(tt, t, ct, 0)
+    @test tt[1] == acos(t[1])
+    @test ct[1] == sqrt(1.0-t[1]^2)
+    TaylorSeries.atan!(tt, ut, ct, 0)
+    @test tt[1] == atan(t[1])
+    @test ct[1] == 1.0+t[1]^2
+    TaylorSeries.sinhcosh!(tt, ct, ut, 0)
+    @test tt[1] == sinh(t[1])
+    @test ct[1] == cosh(t[1])
+    TaylorSeries.tanh!(tt, ut, ct, 0)
+    @test tt[1] == tanh(t[1])
+    @test ct[1] == tanh(t[1])^2
 
     v = [sin(t), exp(-t)]
     vv = Vector{Float64}(2)

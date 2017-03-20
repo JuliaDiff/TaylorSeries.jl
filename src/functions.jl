@@ -258,8 +258,8 @@ for T in (:Taylor1, :TaylorN)
 
         function sinhcosh!(s::$T, c::$T, a::$T, k::Int)
             if k == 0
-                @inbounds s[1] = asinh( constant_term(a) )
-                @inbounds c[1] = acosh( constant_term(a) )
+                @inbounds s[1] = sinh( constant_term(a) )
+                @inbounds c[1] = cosh( constant_term(a) )
                 return nothing
             end
 

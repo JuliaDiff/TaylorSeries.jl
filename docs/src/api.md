@@ -41,6 +41,11 @@ generate_index_vectors
 in_base
 make_inverse_dict
 order_posTb
+max_order
+resize_coeffs1!
+resize_coeffsHP!
+zero_korder
+constant_term
 mul!
 div!
 pow!
