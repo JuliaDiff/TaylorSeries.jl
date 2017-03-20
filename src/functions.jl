@@ -10,18 +10,15 @@
 # Functions
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        ## exp ##
         function exp(a::$T)
             order = max_order(a)
-            @inbounds aux = exp( constant_term(a) )
-            c = $T( aux, order )
-            @inbounds for k = 1:order
+            c = $T( exp( constant_term(a) ), order )
+            for k = 1:order
                 exp!(c, a, k)
             end
             return c
         end
 
-        ## log ##
         function log(a::$T)
             constant_term(a) == zero(constant_term(a)) &&
                 throw(ArgumentError("""
@@ -30,40 +27,36 @@ for T in (:Taylor1, :TaylorN)
                     """))
 
             order = max_order(a)
-            @inbounds aux = log( constant_term(a) )
-            c = $T( aux, order )
-            @inbounds for k = 1:order
+            c = $T( log( constant_term(a) ), order )
+            for k = 1:order
                 log!(c, a, k)
             end
             return c
         end
 
-        ## sin and cos ##
         sin(a::$T) = sincos(a)[1]
         cos(a::$T) = sincos(a)[2]
         function sincos(a::$T)
             order = max_order(a)
-            @inbounds s = $T( sin(constant_term(a)), order )
-            @inbounds c = $T( cos(constant_term(a)), order )
-            @inbounds for k = 1:order
+            s = $T( sin(constant_term(a)), order )
+            c = $T( cos(constant_term(a)), order )
+            for k = 1:order
                 sincos!(s, c, a, k)
             end
             return s, c
         end
 
-        ## tan ##
         function tan(a::$T)
             order = max_order(a)
-            @inbounds aux = tan(constant_term(a))
+            aux = tan(constant_term(a))
             c = $T(aux, order)
             c2 = $T(aux^2, order)
-            @inbounds for k = 1:order
+            for k = 1:order
                 tan!(c, a, c2, k)
             end
             return c
         end
 
-        ## asin ##
         function asin(a::$T)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(ArgumentError(
@@ -75,13 +68,12 @@ for T in (:Taylor1, :TaylorN)
             order = max_order(a)
             c = $T( asin(a0), order )
             r = $T( sqrt(1 - a0^2), order )
-            @inbounds for k in 1:order
+            for k in 1:order
                 asin!(c, a, r, k)
             end
             return c
         end
 
-        ## acos ##
         function acos(a::$T)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(ArgumentError(
@@ -90,17 +82,19 @@ for T in (:Taylor1, :TaylorN)
                 in the denominator.
                 """))
 
+            # The following exploits a trick that the series of
+            # `acos(a)` is generated as the series of `asin(a)` except
+            # for a sign and the constant term; see `acos!`.
             order = max_order(a)
             c = $T( asin(a0), order )
             r = $T( sqrt(1 - a0^2), order )
-            @inbounds for k in 1:order
+            for k in 1:order
                 acos!(c, a, r, k)
             end
             @inbounds c[1] = acos(a0)
             return c
         end
 
-        ## atan ##
         function atan(a::$T)
             order = max_order(a)
             a0 = constant_term(a)
@@ -112,33 +106,30 @@ for T in (:Taylor1, :TaylorN)
                     Recursion formula has a pole.
                     """))
 
-            @inbounds for k in 1:order
+            for k in 1:order
                 atan!(c, a, r, k)
             end
             return c
         end
 
-        ## sinh and cosh ##
         sinh(a::$T) = sinhcosh(a)[1]
         cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)
             order = max_order(a)
-            a0 = constant_term(a)
-            s = $T( sinh(a0), order)
-            c = $T( cosh(a0), order)
-            @inbounds for k = 1:order
+            s = $T( sinh(constant_term(a)), order)
+            c = $T( cosh(constant_term(a)), order)
+            for k = 1:order
                 sinhcosh!(s, c, a, k)
             end
             return s, c
         end
 
-        ## tanh ##
         function tanh(a::$T)
             order = max_order(a)
-            @inbounds aux = tanh( constant_term(a) )
+            aux = tanh( constant_term(a) )
             c = $T( aux, order)
             c2 = $T( aux^2, order)
-            @inbounds for k = 1:order
+            for k = 1:order
                 tanh!(c, a, c2, k)
             end
             return c
@@ -175,7 +166,7 @@ for T in (:Taylor1, :TaylorN)
             @inbounds for i = 1:k-1
                 c[k+1] += (k-i) * a[i+1] * c[k-i+1]
             end
-            @inbounds c[k+1] = (a[k+1] -c[k+1]/k) / constant_term(a)
+            @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(a)
 
             return nothing
         end
@@ -195,8 +186,8 @@ for T in (:Taylor1, :TaylorN)
                 c[k+1] -= x * s[k-i+1]
             end
 
-            @inbounds s[k+1] = s[k+1]/k
-            @inbounds c[k+1] = c[k+1]/k
+            @inbounds s[k+1] = s[k+1] / k
+            @inbounds c[k+1] = c[k+1] / k
             return nothing
         end
 
@@ -210,7 +201,7 @@ for T in (:Taylor1, :TaylorN)
 
             c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
-                c[k+1] += (k-i)*a[k-i+1]*c2[i+1]
+                c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
             end
             @inbounds c[k+1] = a[k+1] + c[k+1]/k
             sqr!(c2, c, k)
@@ -267,9 +258,8 @@ for T in (:Taylor1, :TaylorN)
 
         function sinhcosh!(s::$T, c::$T, a::$T, k::Int)
             if k == 0
-                a0 = constant_term(a)
-                @inbounds s[1] = asinh( a0 )
-                @inbounds c[1] = acosh( a0 )
+                @inbounds s[1] = asinh( constant_term(a) )
+                @inbounds c[1] = acosh( constant_term(a) )
                 return nothing
             end
 
@@ -280,8 +270,8 @@ for T in (:Taylor1, :TaylorN)
                 s[k+1] += x * c[k-i+1]
                 c[k+1] += x * s[k-i+1]
             end
-            s[k+1] = s[k+1]/k
-            c[k+1] = c[k+1]/k
+            s[k+1] = s[k+1] / k
+            c[k+1] = c[k+1] / k
             return nothing
         end
 
@@ -295,7 +285,7 @@ for T in (:Taylor1, :TaylorN)
 
             c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
-                c[k+1] += (k-i)*a[k-i+1]*c2[i+1]
+                c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
             end
             @inbounds c[k+1] = a[k+1] - c[k+1]/k
             sqr!(c2, c, k)
@@ -307,7 +297,7 @@ end
 
 
 doc"""
-    reverse(f)
+    inverse(f)
 
 Return the Taylor expansion of $f^{-1}(t)$, of order `N = f.order`,
 for `f::Taylor1` polynomial if the first coefficient of `f` is zero.
@@ -320,7 +310,7 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
     \right\vert_{z=0}.
 \end{equation*}
 """
-function reverse{T<:Number}(f::Taylor1{T})
+function inverse{T<:Number}(f::Taylor1{T})
     if f[1] != zero(T)
         throw(ArgumentError(
         """

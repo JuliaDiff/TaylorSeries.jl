@@ -73,11 +73,10 @@ function ^{S<:Real}(a::TaylorN, r::S)
     r == one(r)/2 && return sqrt(a)
     isinteger(r) && return a^round(Int,r)
 
-    @inbounds a0 = a[1][1]
+    a0 = constant_term(a)
     @assert a0 != zero(a0)
-    aux = ( a0 )^r
 
-    c = TaylorN( aux, a.order)
+    c = TaylorN( a0^r, a.order)
     for ord in 1:a.order
         pow!(c, a, r, ord)
     end
@@ -109,31 +108,31 @@ function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
         return nothing
     end
 
-    coefhomog = zero(eltype(c))
+    @inbounds c[k-l0+1] = zero(eltype(c))
     for i = 0:k-l0-1
         aux = r*(k-i) - i
-        @inbounds coefhomog += aux * a[k-i+1] * c[i+1]
+        @inbounds c[k-l0+1] += aux * a[k-i+1] * c[i+1]
     end
     aux = k - l0*(r+1)
-    @inbounds coefhomog = coefhomog / (aux * a[l0+1])
+    @inbounds c[k-l0+1] = c[k-l0+1] / (aux * a[l0+1])
 
-    c[k-l0+1] = coefhomog
     return nothing
 end
 
 function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
     if k == 0
-        @inbounds c[1] = ( a[1][1] )^r
+        @inbounds c[1] = ( constant_term(a) )^r
         return nothing
     end
 
-    coefhomog = zero(eltype(c))
-    coefhomog = HomogeneousPolynomial(zero(eltype(c)), k)
+    # coefhomog = zero(eltype(c))
+    # coefhomog = HomogeneousPolynomial(zero(eltype(c)), k)
+    @inbounds c[k+1] = zero_korder(c, k)
     for i = 0:k-1
         aux = r*(k-i) - i
-        @inbounds coefhomog += aux * a[k-i+1] * c[i+1]
+        @inbounds c[k+1] += aux * a[k-i+1] * c[i+1]
     end
-    @inbounds c[k+1] = coefhomog / (k * a[1][1])
+    @inbounds c[k+1] = c[k+1] / (k * constant_term(a))
 
     return nothing
 end
@@ -149,13 +148,9 @@ Return `a^2`; see [TaylorSeries.sqr!](@ref).
 
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
-        if $T == Taylor1
-            c = Taylor1(Array{eltype(a)}(a.order+1))
-        else
-            c = TaylorN( zeros(HomogeneousPolynomial{eltype(a)}, a.order) )
-        end
-
-        @inbounds for k = 0:a.order
+        order = max_order(a)
+        c = $T( zero(constant_term(a)), order)
+        for k = 0:order
             sqr!(c, a, k)
         end
         return c
@@ -199,18 +194,13 @@ for T = (:Taylor1, :TaylorN)
             return nothing
         end
 
-        if $T == Taylor1
-            @inbounds c[k+1] = zero(c[1])
-        else
-            c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
-        end
-
+        @inbounds c[k+1] = zero_korder(c, k)
         kodd = k%2
         kend = div(k - 2 + kodd, 2)
-        for i = 0:kend
-            @inbounds c[k+1] += a[i+1]*a[k-i+1]
+        @inbounds for i = 0:kend
+            c[k+1] += a[i+1] * a[k-i+1]
         end
-        c[k+1] = 2 * c[k+1]
+        @inbounds c[k+1] = 2 * c[k+1]
         kodd == 1 && return nothing
         @inbounds c[k+1] += a[div(k,2)+1]^2
 
@@ -233,38 +223,24 @@ function sqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
     @inbounds num_coeffs  = size_table[c.order+1]
 
     @inbounds posTb = pos_table[c.order+1]
+    @inbounds idxTb = index_table[a.order+1]
 
-    for na = 1:num_coeffs_a
-        @inbounds ca = a[na]
+    @inbounds for na = 1:num_coeffs_a
+        ca = a[na]
         ca == zero(T) && continue
-        @inbounds inda = index_table[a.order+1][na]
-        @inbounds pos = posTb[2*inda]
-        @inbounds c[pos] += ca * ca
+        inda = idxTb[na]
+        pos = posTb[2*inda]
+        c[pos] += ca * ca
         @inbounds for nb = na+1:num_coeffs_a
             cb = a[nb]
             cb == zero(T) && continue
-            indb = index_table[a.order+1][nb]
+            indb = idxTb[nb]
             pos = posTb[inda+indb]
             c[pos] += 2 * ca * cb
         end
     end
 
     return nothing
-end
-
-function squareHomogCoef{T<:Number}(kcoef::Int, ac::Array{T,1})
-    kcoef == 0 && return ac[1]^2
-    coefhomog = zero(T)
-    kodd = kcoef%2
-    kend = div(kcoef - 2 + kodd, 2)
-    @inbounds for i = 0:kend
-        coefhomog += ac[i+1]*ac[kcoef-i+1]
-    end
-    coefhomog = convert(T,2) * coefhomog
-    if kodd == 0
-        @inbounds coefhomog += ac[div(kcoef,2)+1]^2
-    end
-    coefhomog
 end
 
 
@@ -289,7 +265,7 @@ function sqrt(a::Taylor1)
 
     c = Taylor1( zeros(T, a.order+1) )
     @inbounds c[lnull+1] = aux
-    @inbounds for k = lnull+1:a.order-l0nz
+    for k = lnull+1:a.order-l0nz
         sqrt!(c, a, k, lnull)
     end
 
@@ -297,7 +273,7 @@ function sqrt(a::Taylor1)
 end
 
 function sqrt(a::TaylorN)
-    @inbounds p0 = sqrt( a[1][1] )
+    @inbounds p0 = sqrt( constant_term(a) )
     if p0 == zero(p0)
         throw(ArgumentError(
         """The 0-th order TaylorN coefficient must be non-zero
@@ -305,7 +281,7 @@ function sqrt(a::TaylorN)
     end
 
     c = TaylorN( p0, a.order)
-    @inbounds for k = 1:a.order
+    for k = 1:a.order
         sqrt!(c, a, k)
     end
 
@@ -341,9 +317,9 @@ function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
 
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
-    c[k+1] = zero(c[1])
+    @inbounds c[k+1] = zero( constant_term(c) )
     @inbounds for i = k0+1:k0+kend
-        c[k+1] += c[i+1]*c[k+k0-i+1]
+        c[k+1] += c[i+1] * c[k+k0-i+1]
     end
     @inbounds aux = a[k+k0+1] - 2*c[k+1]
     if kodd == 0
@@ -357,21 +333,21 @@ end
 function sqrt!(c::TaylorN, a::TaylorN, k::Int)
 
     if k == 0
-        c[1] = sqrt(a[1][1])
+        @inbounds c[1] = sqrt( constant_term(a) )
         return nothing
     end
 
     kodd = k%2
     kend = div(k - 2 + kodd, 2)
-    c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+    @inbounds c[k+1] = zero_korder(c, k)
     @inbounds for i = 1:kend
-        c[k+1] += c[i+1]*c[k-i+1]
+        c[k+1] += c[i+1] * c[k-i+1]
     end
     @inbounds aux = a[k+1] - 2*c[k+1]
     if kodd == 0
         @inbounds aux = aux - (c[kend+2])^2
     end
-    @inbounds c[k+1] = aux / (2*c[1][1])
+    @inbounds c[k+1] = aux / (2*constant_term(c))
 
     return nothing
 end

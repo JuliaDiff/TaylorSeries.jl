@@ -468,7 +468,6 @@ function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
         return nothing
     end
 
-    # coef = zero(constant_term(c))
     c[k+1] = zero_korder(c, k)
     @inbounds for i = 0:k-1
         c[k+1] += c[i+1] * b[k+ordfact-i+1]
@@ -490,8 +489,6 @@ function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     @inbounds c[k+1] = (a[k+1] - c[k+1]) / constant_term(b)
     return nothing
 end
-
-
 
 
 

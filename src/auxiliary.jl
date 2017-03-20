@@ -116,8 +116,8 @@ end
 
 function getindex(a::TaylorN, n::Int)
     1 ≤ n ≤ length(a.coeffs) && return a.coeffs[n]
-    n ≤ get_order()+1 &&
-        return zero( HomogeneousPolynomial([zero(eltype(a))], n-1) )
+    n ≤ get_order()+1 && return zero_korder(a, n-1)
+        # return zero( HomogeneousPolynomial([zero(eltype(a))], n-1) )
     throw(BoundsError(a.coeffs,n))
 end
 getindex(a::TaylorN, n::UnitRange) = a.coeffs[n]

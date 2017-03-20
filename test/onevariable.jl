@@ -155,9 +155,9 @@ using Base.Test
 
     @test promote(ta(0.0), t) == (ta(0.0),ta(0.0))
 
-    @test norm((reverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1
+    @test norm((inverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1
     cfs = [(-n)^(n-1)/gamma(n+1) for n = 1:15]
-    @test norm(reverse(t*exp(t))[2:end]./cfs-1) < 4tol1
+    @test norm(inverse(t*exp(t))[2:end]./cfs-1) < 4tol1
 
     @test_throws ArgumentError abs(ta(big(0)))
     @test_throws ArgumentError 1/t
@@ -168,7 +168,7 @@ using Base.Test
     @test_throws ArgumentError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
     @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
-    @test_throws ArgumentError reverse(exp(t))
+    @test_throws ArgumentError inverse(exp(t))
 
     @test string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
