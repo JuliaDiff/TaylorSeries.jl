@@ -140,6 +140,10 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 
+max_order(a::Taylor1) = a.order
+
+max_order(a::TaylorN) = get_order()
+
 
 
 # Finds the first non zero entry; extended to Taylor1
@@ -163,3 +167,13 @@ function order_posTb(order::Int, nv::Int, ord::Int)
     end
     posV
 end
+
+
+"""
+    constant_term(a)
+
+Return the constant value for `Taylor1` and `TaylorN`.
+"""
+constant_term(a::Taylor1) = a[1]
+
+constant_term(a::TaylorN) = a[1][1]

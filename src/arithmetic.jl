@@ -269,15 +269,13 @@ end
 *{T<:NumberNotSeriesN,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
     b::HomogeneousPolynomial{S}) = *(promote(a,b)...)
 
-function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
-        b::HomogeneousPolynomial{T})
+function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T})
 
     order = a.order + b.order
 
-    order > get_order() &&
-        return HomogeneousPolynomial([zero(a[1])], get_order())
+    order > get_order() && return HomogeneousPolynomial(zero(T), get_order())
 
-    res = HomogeneousPolynomial([zero(a[1])], order)
+    res = HomogeneousPolynomial(zero(T), order)
     mul!(res, a, b)
     return res
 end
@@ -415,11 +413,11 @@ end
     /(promote(a,b)...)
 
 function /{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
-    @assert !iszero(b[1][1])
+    @assert !iszero(constant_term(b))
     corder = max(a.order, b.order)
 
     # first coefficient
-    @inbounds cdivfact = a[1] / b[1][1]
+    @inbounds cdivfact = a[1] / constant_term(b)
     c = TaylorN(cdivfact, corder)
     for ord in 1:corder
         div!(c, a, b, ord) # updates c[ord+1]
@@ -475,7 +473,7 @@ function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
         return nothing
     end
 
-    coef = zero(c[1])
+    coef = zero(constant_term(c))
     @inbounds for i = 0:k
         coef += c[i+1] * b[k+ordfact-i+1]
     end
@@ -485,15 +483,15 @@ end
 
 function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0
-        @inbounds c[1] = a[1] / b[1][1]
+        @inbounds c[1] = a[1] / constant_term(b)
         return nothing
     end
 
-    c[k+1] = HomogeneousPolynomial(zero(c[1][1]), k)
+    c[k+1] = HomogeneousPolynomial(zero(constant_term(c)), k)
     @inbounds for i = 0:k-1
         mul!(c[k+1], c[i+1], b[k-i+1])
     end
-    @inbounds c[k+1] = (a[k+1] - c[k+1]) / b[1][1]
+    @inbounds c[k+1] = (a[k+1] - c[k+1]) / constant_term(b)
     return nothing
 end
 

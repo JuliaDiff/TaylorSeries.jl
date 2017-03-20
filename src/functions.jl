@@ -12,16 +12,9 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         ## exp ##
         function exp(a::$T)
-            if $T == Taylor1
-                order = a.order
-                @inbounds aux = exp( a[1] )
-                c = $T( aux, order )
-            else
-                order = get_order()
-                @inbounds aux = exp( a[1][1] )
-                c = $T( aux, order )
-            end
-
+            order = max_order(a)
+            @inbounds aux = exp( constant_term(a) )
+            c = $T( aux, order )
             @inbounds for k = 1:order
                 exp!(c, a, k)
             end
@@ -30,24 +23,15 @@ for T in (:Taylor1, :TaylorN)
 
         ## log ##
         function log(a::$T)
-            if $T == Taylor1
-                findfirst(a)>0 && throw(
-                    ArgumentError("Impossible to expand `log` around 0."))
-                order = a.order
-                @inbounds aux = log( a[1] )
-                c = $T( aux, order )
-            else
-                @inbounds a0 = a[1][1]
-                if a0 == zero(a0)
-                    throw(ArgumentError(
-                    """The 0-th order `TaylorN` coefficient must be non-zero
-                    in order to expand `log` around 0."""))
-                end
-                order = get_order()
-                @inbounds aux = log( a[1][1] )
-                c = $T( aux, order )
-            end
+            constant_term(a) == zero(constant_term(a)) &&
+                throw(ArgumentError("""
+                    The 0-th order `TaylorN` coefficient must be non-zero
+                    in order to expand `log` around 0.
+                    """))
 
+            order = max_order(a)
+            @inbounds aux = log( constant_term(a) )
+            c = $T( aux, order )
             @inbounds for k = 1:order
                 log!(c, a, k)
             end
@@ -58,16 +42,9 @@ for T in (:Taylor1, :TaylorN)
         sin(a::$T) = sincos(a)[1]
         cos(a::$T) = sincos(a)[2]
         function sincos(a::$T)
-            if $T == Taylor1
-                order = a.order
-                @inbounds s = $T( sin(a[1]), order )
-                @inbounds c = $T( cos(a[1]), order )
-            else
-                order = get_order()
-                @inbounds s = $T( sin(a[1][1]), order )
-                @inbounds c = $T( cos(a[1][1]), order )
-            end
-
+            order = max_order(a)
+            @inbounds s = $T( sin(constant_term(a)), order )
+            @inbounds c = $T( cos(constant_term(a)), order )
             @inbounds for k = 1:order
                 sincos!(s, c, a, k)
             end
@@ -76,18 +53,10 @@ for T in (:Taylor1, :TaylorN)
 
         ## tan ##
         function tan(a::$T)
-            if $T == Taylor1
-                order = a.order
-                @inbounds aux = tan(a[1])
-                c = $T(aux, order)
-                c2 = $T(aux^2, order)
-            else
-                order = get_order()
-                @inbounds aux = tan(a[1][1])
-                @inbounds c = $T((aux), order)
-                @inbounds c2 = $T((aux)^2, order)
-            end
-
+            order = max_order(a)
+            @inbounds aux = tan(constant_term(a))
+            c = $T(aux, order)
+            c2 = $T(aux^2, order)
             @inbounds for k = 1:order
                 tan!(c, a, c2, k)
             end
@@ -96,26 +65,16 @@ for T in (:Taylor1, :TaylorN)
 
         ## asin ##
         function asin(a::$T)
-            if $T == Taylor1
-                a[1]^2 == one(a[1]) && throw(ArgumentError(
-                    """
-                    Recursion formula diverges due to vanishing `sqrt`
-                    in the denominator.
-                    """))
-                order = a.order
-                @inbounds c = $T( asin(a[1]), order )
-                @inbounds r = $T( sqrt(1 - a[1]^2), order )
-            else
-                a[1][1]^2 == one(a[1][1]) && throw(ArgumentError(
-                    """
-                    Recursion formula diverges due to vanishing `sqrt`
-                    in the denominator.
-                    """))
-                order = get_order()
-                @inbounds c = $T( asin(a[1][1]), get_order() )
-                @inbounds r = $T( sqrt(1 - a[1][1]^2), get_order() )
-            end
+            a0 = constant_term(a)
+            a0^2 == one(a0) && throw(ArgumentError(
+                """
+                Recursion formula diverges due to vanishing `sqrt`
+                in the denominator.
+                """))
 
+            order = max_order(a)
+            c = $T( asin(a0), order )
+            r = $T( sqrt(1 - a0^2), order )
             @inbounds for k in 1:order
                 asin!(c, a, r, k)
             end
@@ -124,56 +83,34 @@ for T in (:Taylor1, :TaylorN)
 
         ## acos ##
         function acos(a::$T)
-            if $T == Taylor1
-                a[1]^2 == one(a[1]) && throw(ArgumentError(
-                    """
-                    Recursion formula diverges due to vanishing `sqrt`
-                    in the denominator.
-                    """))
-                order = a.order
-                @inbounds c = $T( asin(a[1]), order )
-                @inbounds r = $T( sqrt(1 - a[1]^2), order )
-            else
-                a[1][1]^2 == one(a[1][1]) && throw(ArgumentError(
-                    """
-                    Recursion formula diverges due to vanishing `sqrt`
-                    in the denominator.
-                    """))
-                order = get_order()
-                @inbounds c = $T( asin(a[1][1]), order )
-                @inbounds r = $T( sqrt(1 - a[1][1]^2), order )
-            end
+            a0 = constant_term(a)
+            a0^2 == one(a0) && throw(ArgumentError(
+                """
+                Recursion formula diverges due to vanishing `sqrt`
+                in the denominator.
+                """))
 
+            order = max_order(a)
+            c = $T( asin(a0), order )
+            r = $T( sqrt(1 - a0^2), order )
             @inbounds for k in 1:order
                 acos!(c, a, r, k)
             end
-            if $T == Taylor1
-                c[1] = acos(a[1])
-            else
-                c[1] = acos(a[1][1])
-            end
+            @inbounds c[1] = acos(a0)
             return c
         end
 
         ## atan ##
         function atan(a::$T)
-            if $T == Taylor1
-                order = a.order
-                @inbounds c = $T( atan(a[1]), order)
-                @inbounds r = $T(1 + a[1]^2, order)
-                r[1] == zero(a[1]) && throw(ArgumentError(
+            order = max_order(a)
+            a0 = constant_term(a)
+            c = $T( atan(a0), order)
+            r = $T(1 + a0^2, order)
+            constant_term(r) == zero(constant_term(a)) &&
+                throw(ArgumentError(
                     """
                     Recursion formula has a pole.
                     """))
-            else
-                order = get_order()
-                @inbounds c = $T( atan(a[1][1]), order )
-                @inbounds r = $T(1 + a[1][1]^2, order )
-                r[1] == zero(a[1]) && throw(ArgumentError(
-                    """
-                    Recursion formula has a pole.
-                    """))
-            end
 
             @inbounds for k in 1:order
                 atan!(c, a, r, k)
@@ -185,16 +122,10 @@ for T in (:Taylor1, :TaylorN)
         sinh(a::$T) = sinhcosh(a)[1]
         cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)
-            if $T == Taylor1
-                order = a.order
-                @inbounds s = $T( sinh(a[1]), order)
-                @inbounds c = $T( cosh(a[1]), order)
-            else
-                order = get_order()
-                @inbounds s = $T( sinh(a[1][1]), order)
-                @inbounds c = $T( cosh(a[1][1]), order)
-            end
-
+            order = max_order(a)
+            a0 = constant_term(a)
+            s = $T( sinh(a0), order)
+            c = $T( cosh(a0), order)
             @inbounds for k = 1:order
                 sinhcosh!(s, c, a, k)
             end
@@ -203,18 +134,10 @@ for T in (:Taylor1, :TaylorN)
 
         ## tanh ##
         function tanh(a::$T)
-            if $T == Taylor1
-                order = a.order
-                @inbounds aux = tanh( a[1] )
-                c = $T( aux, order)
-                c2 = $T( aux^2, order)
-            else
-                order = get_order()
-                @inbounds aux = tanh( a[1][1] )
-                c = $T( aux, order)
-                c2 = $T( aux^2, order)
-            end
-
+            order = max_order(a)
+            @inbounds aux = tanh( constant_term(a) )
+            c = $T( aux, order)
+            c2 = $T( aux^2, order)
             @inbounds for k = 1:order
                 tanh!(c, a, c2, k)
             end
