@@ -127,20 +127,19 @@ setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::UnitRange) =
     a.coeffs[n] = x
 
 
-## Type, length ##
-eltype{T<:Number}(::Taylor1{T}) = T
-length{T<:Number}(a::Taylor1{T}) = length(a.coeffs)
-endof(a::Taylor1) = length(a.coeffs)
+## eltype, length, endof, get_order ##
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    @eval begin
+        eltype{T<:Number}(::$T{T}) = T
 
-eltype{T<:Number}(::HomogeneousPolynomial{T}) = T
-length(a::HomogeneousPolynomial) = length( a.coeffs )
-endof(a::HomogeneousPolynomial) = length(a.coeffs)
-get_order(a::HomogeneousPolynomial) = a.order
+        length(a::$T) = length(a.coeffs)
 
-eltype{T<:Number}(::TaylorN{T}) = T
-length(a::TaylorN) = length( a.coeffs )
-endof(a::TaylorN) = length(a.coeffs)
-get_order(x::TaylorN) = x.order
+        endof(a::$T) = length(a.coeffs)
+
+        get_order(a::$T) = a.order
+    end
+end
+
 
 
 # Finds the first non zero entry; extended to Taylor1

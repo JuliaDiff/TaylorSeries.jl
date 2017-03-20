@@ -39,23 +39,26 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 ## zero and one ##
-zero(a::Taylor1) = Taylor1(zero(a[1]), a.order)
+for T in (:Taylor1, :TaylorN), f in (:zero, :one)
+    @eval begin
+        ($f)(a::$T) = $T(($f)(a[1]), a.order)
 
-one(a::Taylor1) = Taylor1(one(a[1]), a.order)
-
+        ($f)(a::$T, order) = $T(($f)(a[1]), order)
+    end
+end
 
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial([zero(a[1])], 0)
+    a.order == 0 && return HomogeneousPolynomial(zero(T), 0)
     v = Array{T}( size_table[a.order+1] )
     v .= zero.(a.coeffs)
     return HomogeneousPolynomial(v, a.order)
 end
 
 function zeros{T<:Number}(a::HomogeneousPolynomial{T}, order::Int)
-    order == 0 && return [HomogeneousPolynomial([zero(a[1])], 0)]
+    order == 0 && return [HomogeneousPolynomial(zero(T), 0)]
     v = Array{HomogeneousPolynomial{T}}(order+1)
     @simd for ord in eachindex(v)
-        @inbounds v[ord] = HomogeneousPolynomial([zero(a[1])], ord-1)
+        @inbounds v[ord] = HomogeneousPolynomial(zero(T), ord-1)
     end
     return v
 end
@@ -82,11 +85,6 @@ end
 
 ones{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
     ones( HomogeneousPolynomial([one(T)], 0), order)
-
-
-zero(a::TaylorN) = TaylorN(zero(a[1]), a.order)
-
-one(a::TaylorN) = TaylorN(one(a[1]), a.order)
 
 
 
@@ -259,12 +257,7 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
 
     @eval function *{T<:$W}(a::$T{T}, b::$T{T})
         corder = max(a.order, b.order)
-        if $T == Taylor1
-            c = Taylor1(zero(a[1]), corder)
-        else
-            c = TaylorN(zeros(HomogeneousPolynomial{T}, corder))
-        end
-
+        c = zero(a, corder)
         @inbounds for ord = 0:corder
             mul!(c, a, b, ord) # updates c[ord+1]
         end
@@ -371,8 +364,6 @@ function /{T<:Integer, S<:NumberNotSeries}(a::Taylor1{Rational{T}}, b::S)
 end
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-
-    @eval /{T<:NumberNotSeries}(a::$T{T}, b::T) = a * inv(b)
 
     @eval function /{T<:NumberNotSeries,S<:NumberNotSeries}(a::$T{T}, b::S)
         R = promote_type(T,S)
