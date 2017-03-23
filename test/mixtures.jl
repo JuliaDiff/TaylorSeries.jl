@@ -67,7 +67,7 @@ using Base.Test
     @test tN1-t == -t+tN1
     @test tN1-tN1 == zero(tN1)
     @test string(t1N*t1N) ==
-        "  1.0 x₁² + 𝒪(‖x‖⁷) + ( 2.0 x₁ + 𝒪(‖x‖⁷)) t + ( 1.0 + 𝒪(‖x‖⁷)) t² + ( 2.0 x₂² + 𝒪(‖x‖⁷)) t³ + 𝒪(t⁴)"
+        "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + ( 2.0 x₂² + 𝒪(‖x‖³)) t³ + 𝒪(t⁴)"
     @test !isnan(tN1)
     @test !isinf(tN1)
 
@@ -90,7 +90,7 @@ using Base.Test
     @test convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) == [tN1 tN1]
 
     @test string(evaluate(t1N, 0.0)) == " 1.0 x₁ + 𝒪(‖x‖³)"
-    @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖⁷)"
+    @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = zeros(TaylorN{Float64},2)
     @test evaluate!([t1N, t1N^2], 0.0, v) == nothing
     @test v[1] == TaylorN([xHt])

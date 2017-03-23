@@ -154,7 +154,7 @@ For `a::Taylor1` returns `a.order` while for `a::TaylorN` returns
 """
 max_order(a::Taylor1) = a.order
 
-max_order(a::TaylorN) = get_order()
+max_order(::TaylorN) = get_order()
 
 
 """
@@ -163,7 +163,7 @@ max_order(a::TaylorN) = get_order()
 For `a::Taylor1` returns `zero(a[1])` while for `a::TaylorN` returns
 a zero of a k-th order `HomogeneousPolynomial` of proper type.
 """
-zero_korder(a::Taylor1, k::Int) = zero(a[1])
+zero_korder(a::Taylor1, ::Int) = zero(a[1])
 
 zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(a[1][1]), k)
 

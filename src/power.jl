@@ -9,7 +9,7 @@
 
 function ^(a::HomogeneousPolynomial, n::Integer)
     n == 0 && return one(a)
-    n == 1 && return a
+    n == 1 && return copy(a)
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
     return Base.power_by_squaring(a, n)
@@ -18,7 +18,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function ^{T<:Number}(a::$T{T}, n::Integer)
         n == 0 && return one(a)
-        n == 1 && return a
+        n == 1 && return copy(a)
         n == 2 && return square(a)
         n < 0 && return inv( a^(-n) )
         return Base.power_by_squaring(a, n)
@@ -26,7 +26,7 @@ for T in (:Taylor1, :TaylorN)
 
     @eval function ^{T<:Integer}(a::$T{T}, n::Integer)
         n == 0 && return one(a)
-        n == 1 && return a
+        n == 1 && return copy(a)
         n == 2 && return square(a)
         n < 0 && throw(DomainError())
         return Base.power_by_squaring(a, n)
@@ -108,7 +108,6 @@ function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
         return nothing
     end
 
-    @inbounds c[k-l0+1] = zero(eltype(c))
     for i = 0:k-l0-1
         aux = r*(k-i) - i
         @inbounds c[k-l0+1] += aux * a[k-i+1] * c[i+1]
@@ -125,10 +124,10 @@ function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
         return nothing
     end
 
-    @inbounds c[k+1] = zero_korder(c, k)
     for i = 0:k-1
         aux = r*(k-i) - i
-        @inbounds c[k+1] += aux * a[k-i+1] * c[i+1]
+        # @inbounds c[k+1] += aux * a[k-i+1] * c[i+1]
+        mul!(c[k+1], aux*a[k-i+1], c[i+1])
     end
     @inbounds c[k+1] = c[k+1] / (k * constant_term(a))
 
@@ -146,9 +145,9 @@ Return `a^2`; see [TaylorSeries.sqr!](@ref).
 
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
-        order = max_order(a)
-        c = $T( zero(constant_term(a)), order)
-        for k = 0:order
+        # order = max_order(a)
+        c = $T( constant_term(a)^2, a.order)
+        for k = 1:a.order
             sqr!(c, a, k)
         end
         return c
@@ -192,15 +191,23 @@ for T = (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inbounds c[k+1] = zero_korder(c, k)
         kodd = k%2
         kend = div(k - 2 + kodd, 2)
         @inbounds for i = 0:kend
-            c[k+1] += a[i+1] * a[k-i+1]
+            if $T == Taylor1
+                c[k+1] += a[i+1] * a[k-i+1]
+            else
+                mul!(c[k+1], a[i+1], a[k-i+1])
+            end
         end
         @inbounds c[k+1] = 2 * c[k+1]
         kodd == 1 && return nothing
-        @inbounds c[k+1] += a[div(k,2)+1]^2
+
+        if $T == Taylor1
+            @inbounds c[k+1] += a[div(k,2)+1]^2
+        else
+            sqr!(c[k+1], a[div(k,2)+1])
+        end
 
         return nothing
     end
@@ -315,7 +322,6 @@ function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
 
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
-    @inbounds c[k+1] = zero( constant_term(c) )
     @inbounds for i = k0+1:k0+kend
         c[k+1] += c[i+1] * c[k+k0-i+1]
     end
@@ -337,9 +343,8 @@ function sqrt!(c::TaylorN, a::TaylorN, k::Int)
 
     kodd = k%2
     kend = div(k - 2 + kodd, 2)
-    @inbounds c[k+1] = zero_korder(c, k)
     @inbounds for i = 1:kend
-        c[k+1] += c[i+1] * c[k-i+1]
+        mul!(c[k+1], c[i+1], c[k-i+1])
     end
     @inbounds aux = a[k+1] - 2*c[k+1]
     if kodd == 0

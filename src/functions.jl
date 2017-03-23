@@ -147,9 +147,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
-                c[k+1] += (k-i) * a[k-i+1] * c[i+1]
+                if $T == Taylor1
+                    c[k+1] += (k-i) * a[k-i+1] * c[i+1]
+                else
+                    mul!(c[k+1], (k-i) * a[k-i+1], c[i+1])
+                end
             end
             @inbounds c[k+1] = c[k+1] / k
 
@@ -162,9 +165,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            c[k+1] = zero_korder(c, k)
             @inbounds for i = 1:k-1
-                c[k+1] += (k-i) * a[i+1] * c[k-i+1]
+                if $T == Taylor1
+                    c[k+1] += (k-i) * a[i+1] * c[k-i+1]
+                else
+                    mul!(c[k+1], (k-i)*a[i+1], c[k-i+1])
+                end
             end
             @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(a)
 
@@ -178,12 +184,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            s[k+1] = zero_korder(s, k)
-            c[k+1] = zero_korder(c, k)
             @inbounds for i = 1:k
                 x = i * a[i+1]
-                s[k+1] += x * c[k-i+1]
-                c[k+1] -= x * s[k-i+1]
+                if $T == Taylor1
+                    s[k+1] += x * c[k-i+1]
+                    c[k+1] -= x * s[k-i+1]
+                else
+                    mul!(s[k+1], x, c[k-i+1])
+                    mul!(c[k+1], -x, s[k-i+1])
+                end
             end
 
             @inbounds s[k+1] = s[k+1] / k
@@ -199,9 +208,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
-                c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
+                if $T == Taylor1
+                    c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
+                else
+                    mul!(c[k+1], (k-i) * a[k-i+1], c2[i+1])
+                end
             end
             @inbounds c[k+1] = a[k+1] + c[k+1]/k
             sqr!(c2, c, k)
@@ -217,9 +229,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            c[k+1] = zero_korder(c, k)
             @inbounds for i in 1:k-1
-                c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                if $T == Taylor1
+                    c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                else
+                    mul!(c[k+1], (k-i) * r[i+1], c[k-i+1])
+                end
             end
             sqrt!(r, 1-a^2, k)
             @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(r)
@@ -234,7 +249,6 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            c[k+1] = zero_korder(c, k)
             asin!(c, -a, r, k)
             return nothing
         end
@@ -247,9 +261,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            c[k+1] = zero_korder(c, k)
             @inbounds for i in 1:k-1
-                c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                if $T == Taylor1
+                    c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                else
+                    mul!(c[k+1], (k-i) * r[i+1], c[k-i+1])
+                end
             end
             @inbounds sqr!(r, a, k)
             @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(r)
@@ -263,12 +280,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            s[k+1] = zero_korder(s, k)
-            c[k+1] = zero_korder(c, k)
             @inbounds for i = 1:k
                 x = i * a[i+1]
-                s[k+1] += x * c[k-i+1]
-                c[k+1] += x * s[k-i+1]
+                if $T == Taylor1
+                    s[k+1] += x * c[k-i+1]
+                    c[k+1] += x * s[k-i+1]
+                else
+                    mul!(s[k+1], x, c[k-i+1])
+                    mul!(c[k+1], x, s[k-i+1])
+                end
             end
             s[k+1] = s[k+1] / k
             c[k+1] = c[k+1] / k
@@ -283,9 +303,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            c[k+1] = zero_korder(c, k)
             @inbounds for i = 0:k-1
-                c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
+                if $T == Taylor1
+                    c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
+                else
+                    mul!(c[k+1], (k-i) * a[k-i+1], c2[i+1])
+                end
             end
             @inbounds c[k+1] = a[k+1] - c[k+1]/k
             sqr!(c2, c, k)
