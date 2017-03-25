@@ -161,6 +161,20 @@ using Base.Test
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
     @test v == ones(2)
 
+    @test evaluate(sin(asin(xT+yT)), [1.0,0.5]) == 1.5
+    @test evaluate(asin(sin(xT+yT)), [1.0,0.5]) == 1.5
+    @test tan(atan(xT+yT)) == xT+yT
+    @test atan(tan(xT+yT)) == xT+yT
+    @test asin(xT+yT) + acos(xT+yT) == pi/2
+
+    @test -sinh(xT+yT) + cosh(xT+yT) == exp(-(xT+yT))
+    @test  sinh(xT+yT) + cosh(xT+yT) == exp(xT+yT)
+    @test evaluate(- sinh(xT+yT)^2 + cosh(xT+yT)^2 , rand(2)) == 1
+    @test evaluate(- sinh(xT+yT)^2 + cosh(xT+yT)^2 , zeros(2)) == 1
+    @test tanh(xT + yT + 0im) == -1im * tan((xT+yT)*1im)
+    @test cosh(xT+yT) == real(cos(im*(xT+yT)))
+    @test sinh(xT+yT) == imag(sin(im*(xT+yT)))
+
     xx = 1.0*zeroT
     TaylorSeries.add!(xx, 1.0*xT, 2yT, 1)
     @test xx[2] == HomogeneousPolynomial([1,2])
