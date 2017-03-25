@@ -13,6 +13,7 @@ using Base.Test
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
 
+    @test eltype(xH) == Int
     @test eltype(tN) == TaylorN{Float64}
     @test tN.order == 3
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖¹) + 𝒪(t⁴)"
@@ -31,6 +32,7 @@ using Base.Test
 
     t = Taylor1(3)
     xHt = HomogeneousPolynomial(typeof(t), 1)
+    @test eltype(xHt) == Taylor1{Float64}
     @test string(xHt) == " ( 1.0 + 𝒪(t¹)) x₁"
     xHt = HomogeneousPolynomial([one(t), zero(t)])
     yHt = HomogeneousPolynomial([zero(t), t])
@@ -38,7 +40,9 @@ using Base.Test
     @test string(yHt) == " ( 1.0 t + 𝒪(t⁴)) x₂"
     @test string(HomogeneousPolynomial([t])) == " ( 1.0 t + 𝒪(t⁴))"
     @test 3*xHt == HomogeneousPolynomial([3*one(t), zero(t)])
+    @test t*xHt == HomogeneousPolynomial([t, zero(t)])
     @test complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)])
+    @test eltype(complex(0,1)*xHt) == Taylor1{Complex128}
 
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
     @test tN1[1] == HomogeneousPolynomial([t])
@@ -50,6 +54,8 @@ using Base.Test
     @test eltype(Taylor1([xH])) == HomogeneousPolynomial{Int64}
     @test eltype(tN1) == Taylor1{Float64}
     @test get_order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) == 1
+    @test 3*tN1 == TaylorN([HomogeneousPolynomial([3t]),3xHt,3yHt^2])
+    @test t*tN1 == TaylorN([HomogeneousPolynomial([t^2]),xHt*t,t*yHt^2])
     @test string(tN1) ==
         " ( 1.0 t + 𝒪(t⁴)) + ( 1.0 + 𝒪(t⁴)) x₁ + ( 1.0 t² + 𝒪(t⁴)) x₂² + 𝒪(‖x‖³)"
     @test string(t1N) ==

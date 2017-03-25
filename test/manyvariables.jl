@@ -9,10 +9,10 @@ using Base.Test
     @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
     @test TaylorN{Float64} <: AbstractSeries{Float64}
 
-    @test eltype(set_variables(Int, "x", numvars=2, order=6))  == TaylorN{Int}
-    @test eltype(set_variables("x", numvars=2, order=6))  == TaylorN{Float64}
-    @test eltype(set_variables(BigInt, "x y", order=6))  == TaylorN{BigInt}
-    @test eltype(set_variables("x y", order=6))  == TaylorN{Float64}
+    @test eltype(set_variables(Int, "x", numvars=2, order=6)) == TaylorN{Int}
+    @test eltype(set_variables("x", numvars=2, order=6)) == TaylorN{Float64}
+    @test eltype(set_variables(BigInt, "x y", order=6)) == TaylorN{BigInt}
+    @test eltype(set_variables("x y", order=6)) == TaylorN{Float64}
     @test typeof(show_params_TaylorN()) == Void
 
     @test TaylorSeries.coeff_table[2][1] == [1,0]
@@ -40,6 +40,8 @@ using Base.Test
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
     HomogeneousPolynomial(v)[3] = 3
     @test v == [1,2,3]
+    HomogeneousPolynomial(v)[1:3] = 3
+    @test v == [3,3,3]
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
@@ -47,16 +49,19 @@ using Base.Test
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int64, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
+    @test zeroT.coeffs == zeros(HomogeneousPolynomial{Int}, 1)
+    @test length(zeros(HomogeneousPolynomial{Int}, 1)) == 2
+    @test one(HomogeneousPolynomial(1,1)) == HomogeneousPolynomial([1,1])
     uT = one(convert(TaylorN{Float64},yT))
+    @test uT == one(HomogeneousPolynomial)
     @test zeroT[1] == HomogeneousPolynomial(0, 0)
     @test uT[1] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
     @test typeof(ones(xH,2)) == Array{HomogeneousPolynomial{Int},1}
+    @test length(ones(xH,2)) == 3
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
     @test !isnan(uT)
-    @test TaylorSeries.fixorder(xH,yH) == (xH,yH)
-    @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
 
     @test get_order(zeroT) == 1
     @test xT[2][1] == 1
@@ -79,7 +84,6 @@ using Base.Test
     @test promote(xH, yT)[1] == xT
     @test promote(xT, [xH,yH])[2] == xT+yT
     @test typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}
-    @test TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT
     @test iszero(zeroT.coeffs)
     @test iszero(zero(xH))
     @test !iszero(uT)
@@ -130,7 +134,7 @@ using Base.Test
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
-    @test (1+TaylorN(1,order=4))^TaylorN(2,order=4) == txy
+    @test getindex((1+TaylorN(1))^TaylorN(2),1:5) == txy.coeffs[1:5]
     @test_throws DomainError yT^(-2)
     @test_throws DomainError yT^(-2.0)
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
@@ -151,11 +155,63 @@ using Base.Test
     txy = tan(xT+yT)
     @test get_coeff(txy,[8,7]) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
-    @test tan(TaylorN(1,order=4)+TaylorN(2,order=4)) == ptxy
+    @test getindex(tan(TaylorN(1)+TaylorN(2)),1:5) == ptxy.coeffs[1:5]
     @test evaluate(xH*yH,[1.0,2.0]) == 2.0
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
     @test v == ones(2)
+
+    @test evaluate(sin(asin(xT+yT)), [1.0,0.5]) == 1.5
+    @test evaluate(asin(sin(xT+yT)), [1.0,0.5]) == 1.5
+    @test tan(atan(xT+yT)) == xT+yT
+    @test atan(tan(xT+yT)) == xT+yT
+    @test asin(xT+yT) + acos(xT+yT) == pi/2
+
+    @test -sinh(xT+yT) + cosh(xT+yT) == exp(-(xT+yT))
+    @test  sinh(xT+yT) + cosh(xT+yT) == exp(xT+yT)
+    @test evaluate(- sinh(xT+yT)^2 + cosh(xT+yT)^2 , rand(2)) == 1
+    @test evaluate(- sinh(xT+yT)^2 + cosh(xT+yT)^2 , zeros(2)) == 1
+    @test tanh(xT + yT + 0im) == -1im * tan((xT+yT)*1im)
+    @test cosh(xT+yT) == real(cos(im*(xT+yT)))
+    @test sinh(xT+yT) == imag(sin(im*(xT+yT)))
+
+    xx = 1.0*zeroT
+    TaylorSeries.add!(xx, 1.0*xT, 2yT, 1)
+    @test xx[2] == HomogeneousPolynomial([1,2])
+    TaylorSeries.subst!(xx, 1.0*xT, yT, 1)
+    @test xx[2] == HomogeneousPolynomial([1,-1])
+    TaylorSeries.div!(xx, 1.0+xT, 1.0+xT, 0)
+    @test xx[1] == 1.0
+    TaylorSeries.pow!(xx, 1.0+xT, 1.5, 0)
+    @test xx[1] == 1.0
+    TaylorSeries.sqrt!(xx, 1.0+xT, 0)
+    @test xx[1] == 1.0
+    TaylorSeries.exp!(xx, xT, 0)
+    @test xx[1] == 1.0
+    TaylorSeries.log!(xx, 1.0+xT, 0)
+    @test xx[1] == 0.0
+    cxx = zero(xx)
+    TaylorSeries.sincos!(xx, cxx, 1.0*xT, 0)
+    @test xx[1] == 0.0
+    @test cxx[1] == 1.0
+    TaylorSeries.tan!(xx, 1.0*xT, cxx, 0)
+    @test xx[1] == 0.0
+    @test cxx[1] == 0.0
+    TaylorSeries.asin!(xx, 1.0*xT, cxx, 0)
+    @test xx[1] == 0.0
+    @test cxx[1] == 1.0
+    TaylorSeries.acos!(xx, 1.0*xT, cxx, 0)
+    @test xx[1] == acos(0.0)
+    @test cxx[1] == 1.0
+    TaylorSeries.atan!(xx, 1.0*xT, cxx, 0)
+    @test xx[1] == 0.0
+    @test cxx[1] == 1.0
+    TaylorSeries.sinhcosh!(xx, cxx, 1.0*xT, 0)
+    @test xx[1] == 0.0
+    @test cxx[1] == 1.0
+    TaylorSeries.tanh!(xx, 1.0*xT, cxx, 0)
+    @test xx[1] == 0.0
+    @test cxx[1] == 0.0
 
     g1(xT,yT) = xT^3 + 3yT^2 - 2xT^2 * yT - 7xT + 2
     g2(xT,yT) = yT + xT^2 - xT^4
@@ -198,4 +254,6 @@ using Base.Test
     @test_throws AssertionError x^(-2)
     @test_throws ArgumentError log(x)
     @test_throws AssertionError cos(x)/sin(y)
+    @test_throws BoundsError xH[20]
+    @test_throws BoundsError xT[20]
 end

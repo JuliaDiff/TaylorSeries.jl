@@ -7,7 +7,8 @@ testfiles = (
     "manyvariables.jl",
     "mixtures.jl",
     "identities_Euler.jl",
-    "fateman40.jl")
+    "fateman40.jl"
+    )
 
 for file in testfiles
     include(file)
