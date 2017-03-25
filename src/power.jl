@@ -126,7 +126,6 @@ function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
 
     for i = 0:k-1
         aux = r*(k-i) - i
-        # @inbounds c[k+1] += aux * a[k-i+1] * c[i+1]
         mul!(c[k+1], aux*a[k-i+1], c[i+1])
     end
     @inbounds c[k+1] = c[k+1] / (k * constant_term(a))
@@ -225,7 +224,6 @@ function sqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
 
     T = eltype(c)
     @inbounds num_coeffs_a = size_table[a.order+1]
-    @inbounds num_coeffs  = size_table[c.order+1]
 
     @inbounds posTb = pos_table[c.order+1]
     @inbounds idxTb = index_table[a.order+1]
