@@ -76,8 +76,10 @@ function getindex(a::Taylor1, n::Int)
     return zero(a.coeffs[1])
 end
 getindex(a::Taylor1, n::UnitRange) = a.coeffs[n]
+getindex(a::Taylor1, c::Colon) = a.coeffs[c]
 setindex!{T<:Number}(a::Taylor1{T}, x::T, n::Int) = a.coeffs[n] = x
 setindex!{T<:Number}(a::Taylor1{T}, x::T, n::UnitRange) = a.coeffs[n] = x
+setindex!{T<:Number}(a::Taylor1{T}, x::T, c::Colon) = a.coeffs[c] = x
 
 
 
@@ -96,10 +98,13 @@ end
 
 getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
 getindex(a::HomogeneousPolynomial, n::UnitRange) = a.coeffs[n]
+getindex(a::HomogeneousPolynomial, c::Colon) = a.coeffs[c]
 setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, n::Int) =
     a.coeffs[n] = x
 setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, n::UnitRange) =
     a.coeffs[n] = x
+setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, c::Colon) =
+    a.coeffs[c] = x
 
 
 """
@@ -120,6 +125,7 @@ function getindex(a::TaylorN, n::Int)
     throw(BoundsError(a.coeffs,n))
 end
 getindex(a::TaylorN, n::UnitRange) = a.coeffs[n]
+getindex(a::TaylorN, c::Colon) = a.coeffs[c]
 setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) =
     a.coeffs[n] = x
 setindex!{T<:Number}(a::TaylorN{T}, x::T, n::Int) =
@@ -128,6 +134,10 @@ setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::UnitRange) =
     a.coeffs[n] = x
 setindex!{T<:Number}(a::TaylorN{T}, x::T, n::UnitRange) =
     a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, c::Colon) =
+    a.coeffs[c] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::T, c::Colon) =
+    a.coeffs[c] = x
 
 
 ## eltype, length, endof, get_order ##

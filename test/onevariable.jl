@@ -24,6 +24,10 @@ using Base.Test
     @test v == [1,2,3,0]
     setindex!(Taylor1(v),0,1:3)
     @test v == zero(v)
+    setindex!(Taylor1(v),1,:)
+    @test v == [1,1,1,1]
+    Taylor1(v)[:] = 0
+    @test v == zero(v)
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
