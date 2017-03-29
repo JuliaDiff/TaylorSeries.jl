@@ -4,7 +4,7 @@
 using TaylorSeries
 using Base.Test
 
-@testset "Tests with mixures of Taylor1 and TaylorN" begin
+@testset "Tests with mixtures of Taylor1 and TaylorN" begin
     @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
     @test TaylorSeries.NumberNotSeriesN == Union{Real,Complex,Taylor1}
 
