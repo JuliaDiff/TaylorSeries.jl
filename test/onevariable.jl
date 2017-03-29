@@ -22,12 +22,27 @@ using Base.Test
     @test v == [1,2,0,0]
     setindex!(Taylor1(v),3,3)
     @test v == [1,2,3,0]
+    @test Taylor1(v)[:] == [1,2,3,0]
+    @test Taylor1(v)[:] == Taylor1(v).coeffs[:]
     setindex!(Taylor1(v),0,1:3)
     @test v == zero(v)
     setindex!(Taylor1(v),1,:)
     @test v == [1,1,1,1]
     Taylor1(v)[:] = 0
     @test v == zero(v)
+    rv = [rand(0:3) for i in 1:4]
+    @test Taylor1(rv)[:] == Taylor1(rv)[1:end]
+    y = sin(Taylor1(16))
+    @test y[:] == sin(Taylor1(16))[:]
+    y[:] = cos(Taylor1(16))[:]
+    @test y[:] == cos(Taylor1(16))[:]
+    y = sin(Taylor1(16))
+    rv = rand(5)
+    y[1:5] = rv
+    @test y[1:5] == rv
+    @test y[6:end] == sin(Taylor1(16))[6:end]
+    y[:] = 0.0
+    @test y[:] == zero(y[:])
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
