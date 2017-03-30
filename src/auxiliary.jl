@@ -75,10 +75,13 @@ function getindex(a::Taylor1, n::Int)
     (1 ≤ n ≤ length(a.coeffs)) && return a.coeffs[n]
     return zero(a.coeffs[1])
 end
-getindex(a::Taylor1, n::UnitRange) = a.coeffs[n]
+getindex(a::Taylor1, n::UnitRange) = view(a.coeffs, n)
+getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 setindex!{T<:Number}(a::Taylor1{T}, x::T, n::Int) = a.coeffs[n] = x
 setindex!{T<:Number}(a::Taylor1{T}, x::T, n::UnitRange) = a.coeffs[n] = x
-
+setindex!{T<:Number}(a::Taylor1{T}, x::Array{T,1}, n::UnitRange) = a.coeffs[n] = x
+setindex!{T<:Number}(a::Taylor1{T}, x::T, c::Colon) = a.coeffs[c] = x
+setindex!{T<:Number}(a::Taylor1{T}, x::Array{T,1}, c::Colon) = a.coeffs[c] = x
 
 
 """
@@ -95,11 +98,18 @@ function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
 end
 
 getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
-getindex(a::HomogeneousPolynomial, n::UnitRange) = a.coeffs[n]
+getindex(a::HomogeneousPolynomial, n::UnitRange) = view(a.coeffs, n)
+getindex(a::HomogeneousPolynomial, c::Colon) = view(a.coeffs, c)
 setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, n::Int) =
     a.coeffs[n] = x
 setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, n::UnitRange) =
     a.coeffs[n] = x
+setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::Array{T,1}, n::UnitRange) =
+    a.coeffs[n] = x
+setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::T, c::Colon) =
+    a.coeffs[c] = x
+setindex!{T<:Number}(a::HomogeneousPolynomial{T}, x::Array{T,1}, c::Colon) =
+    a.coeffs[c] = x
 
 
 """
@@ -119,7 +129,8 @@ function getindex(a::TaylorN, n::Int)
     n ≤ get_order()+1 && return zero_korder(a, n-1)
     throw(BoundsError(a.coeffs,n))
 end
-getindex(a::TaylorN, n::UnitRange) = a.coeffs[n]
+getindex(a::TaylorN, n::UnitRange) = view(a.coeffs, n)
+getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
 setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) =
     a.coeffs[n] = x
 setindex!{T<:Number}(a::TaylorN{T}, x::T, n::Int) =
@@ -128,6 +139,18 @@ setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::UnitRange) =
     a.coeffs[n] = x
 setindex!{T<:Number}(a::TaylorN{T}, x::T, n::UnitRange) =
     a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, n::UnitRange) =
+    a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::Array{T,1}, n::UnitRange) =
+    a.coeffs[n] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, c::Colon) =
+    a.coeffs[c] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::T, c::Colon) =
+    a.coeffs[c] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, c::Colon) =
+    a.coeffs[c] = x
+setindex!{T<:Number}(a::TaylorN{T}, x::Array{T,1}, c::Colon) =
+    a.coeffs[c] = x
 
 
 ## eltype, length, endof, get_order ##

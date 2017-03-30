@@ -135,6 +135,90 @@ using Base.Test
     @test xT*xT^3 == xT^4
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
     @test getindex((1+TaylorN(1))^TaylorN(2),1:5) == txy.coeffs[1:5]
+    @test ( (1+TaylorN(1))^TaylorN(2) )[:] == ( (1+TaylorN(1))^TaylorN(2) ).coeffs[:]
+    @test txy.coeffs[:] == txy[:]
+    @test txy.coeffs[:] == txy[1:end]
+    txy[:] .= ( -1.0 + 3xT*yT - xT^2*yT + (4/3)*xT^3*yT + (1/3)*xT*yT^3 + 0.5*xT^2*yT^2 + 0.5*xT*yT^3 )[:]
+    @test txy[:] == ( -1.0 + 3xT*yT - xT^2*yT + (4/3)*xT^3*yT + (1/3)*xT*yT^3 + 0.5*xT^2*yT^2 + 0.5*xT*yT^3 )[:]
+    txy[2:end-1] .= ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
+    @test txy[2:end-1] == ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
+
+    a = -5.0 + sin(xT+yT^2)
+    b = deepcopy(a)
+    @test a[:] == a[1:end]
+    @test a[:] == b[:]
+    @test a[1:end] == b[1:end]
+    @test a[end][:] == b[end][:]
+    @test a[end][1:end] == b[end][1:end]
+    rv = a[end][:] .= rand.()
+    @test a[end][:] == rv
+    @test a[end][:] != b[end][:]
+    rv = a[end][1:end] .= rand.()
+    @test a[end][1:end] == rv
+    @test a[end][1:end] != b[end][1:end]
+
+    hp = HomogeneousPolynomial(1)^8
+    rv1 = rand( length(hp) )
+    hp[:] = rv1
+    @test rv1 == hp[:]
+    rv2 = rand( length(hp)-2 )
+    hp[1:end-2] = rv2
+    @test hp[1:end-2] == rv2
+    @test hp[end-1:end] == rv1[end-1:end]
+    hp[3:4] = 0.0
+    @test hp[1:2] == rv2[1:2]
+    @test hp[3:4] == zeros(2)
+    @test hp[5:end-2] == rv2[5:end]
+    @test hp[end-1:end] == rv1[end-1:end]
+    hp[:] = 0.0
+    @test hp[:] == zero(rv1)
+
+    pol = sin(xT+yT*xT)+yT^2-(1-xT)^3
+    q = deepcopy(pol)
+    q[:] = 0.0
+    @test q[:] == zero(q[:])
+    q[:] = pol.coeffs
+    @test q == pol
+    @test q[:] == pol[:]
+    q[2:end-1] = 0.0
+    @test q[2:end-1] == zero(q[2:end-1])
+    @test q[1] == pol[1]
+    @test q[end] == pol[end]
+    q[:] = pol.coeffs
+    zH0 = zero(HomogeneousPolynomial{Float64})
+    q[:] = zH0
+    @test q[:] == zero(q[:])
+    q[:] = pol.coeffs
+    q[2:end-1] = zH0
+    @test q[2:end-1] == zero(q[2:end-1])
+    @test q[1] == pol[1]
+    @test q[end] == pol[end]
+    q[:] = pol.coeffs
+    zHall = zeros(HomogeneousPolynomial{Float64}, q.order)
+    q[:] = zHall
+    @test q[:] == zHall
+    q[:] = pol.coeffs
+    q[2:end-1] = zHall[2:end-1]
+    @test q[2:end-1] == zHall[2:end-1]
+    q[:] = pol.coeffs
+    @test q[:] != zeros(q.order+1)
+    q[:] = zeros(q.order+1)
+    @test q[:] == zeros(q.order+1)
+    q[:] = pol.coeffs
+    q[2:end-1] = zeros(q.order+1)[2:end-1]
+    @test q != pol
+    @test q[:] != pol[:]
+    @test q[2:end-1] == zeros(q.order+1)[2:end-1]
+    @test q[1] == pol[1]
+    @test q[end] == pol[end]
+    q[:] = pol.coeffs
+    pol2 = cos(sin(xT)-yT^3*xT)-3yT^2+sqrt(1-xT)
+    q[3:end-2] = pol2.coeffs[3:end-2]
+    @test q[1:2] == pol[1:2]
+    @test q[3:end-2] == pol2[3:end-2]
+    @test q[end-1:end] == pol[end-1:end]
+
+
     @test_throws DomainError yT^(-2)
     @test_throws DomainError yT^(-2.0)
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
