@@ -42,6 +42,12 @@ using Base.Test
     y[1:5] = rv
     @test y[1:5] == rv
     @test y[6:end] == sin(Taylor1(16))[6:end]
+    rv = rand( length(y.coeffs) )
+    y[:] = rv
+    @test y[:] == rv
+    y[:] = cos(Taylor1(16)).coeffs
+    @test y == cos(Taylor1(16))
+    @test y[:] == cos(Taylor1(16))[:]
     y[:] = 0.0
     @test y[:] == zero(y[:])
     y = sin(Taylor1(16))
