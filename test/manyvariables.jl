@@ -155,6 +155,20 @@ using Base.Test
     rv = a[end][1:end] .= rand.()
     @test a[end][1:end] == rv
     @test a[end][1:end] != b[end][1:end]
+    hp = HomogeneousPolynomial(1)^8
+    rv1 = rand( length(hp) )
+    hp[:] = rv1
+    @test rv1 == hp[:]
+    rv2 = rand( length(hp)-2 )
+    hp[1:end-2] = rv2
+    @test hp[1:end-2] == rv2
+    @test hp[end-1:end] == rv1[end-1:end]
+    hp[3:4] = 0.0
+    @test hp[1:2] == rv2[1:2]
+    @test hp[3:4] == [0.0, 0.0]
+    @test hp[5:end-2] == rv2[5:end]
+    @test hp[end-1:end] == rv1[end-1:end]
+
 
     @test_throws DomainError yT^(-2)
     @test_throws DomainError yT^(-2.0)
