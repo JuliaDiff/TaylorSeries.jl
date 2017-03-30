@@ -185,19 +185,33 @@ using Base.Test
     @test q[1] == pol[1]
     @test q[end] == pol[end]
     q[:] = pol.coeffs
-    @test q == pol
-    @test q[:] == pol[:]
     zH0 = zero(HomogeneousPolynomial{Float64})
     q[:] = zH0
     @test q[:] == zero(q[:])
     q[:] = pol.coeffs
-    @test q == pol
-    @test q[:] == pol[:]
     q[2:end-1] = zH0
     @test q[2:end-1] == zero(q[2:end-1])
     @test q[1] == pol[1]
     @test q[end] == pol[end]
-
+    q[:] = pol.coeffs
+    zHall = zeros(HomogeneousPolynomial{Float64}, q.order)
+    q[:] = zHall
+    @test q[:] == zHall
+    q[:] = pol.coeffs
+    q[2:end-1] = zHall[2:end-1]
+    @test q[2:end-1] == zHall[2:end-1]
+    q[:] = pol.coeffs
+    @test q[:] != zeros(q.order+1)
+    q[:] = zeros(q.order+1)
+    @test q[:] == zeros(q.order+1)
+    q[:] = pol.coeffs
+    q[2:end-1] = zeros(q.order+1)[2:end-1]
+    @test q != pol
+    @test q[:] != pol[:]
+    @test q[2:end-1] == zeros(q.order+1)[2:end-1]
+    @test q[1] == pol[1]
+    @test q[end] == pol[end]
+    
 
     @test_throws DomainError yT^(-2)
     @test_throws DomainError yT^(-2.0)
