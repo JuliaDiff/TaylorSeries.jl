@@ -211,7 +211,13 @@ using Base.Test
     @test q[2:end-1] == zeros(q.order+1)[2:end-1]
     @test q[1] == pol[1]
     @test q[end] == pol[end]
-    
+    q[:] = pol.coeffs
+    pol2 = cos(sin(xT)-yT^3*xT)-3yT^2+sqrt(1-xT)
+    q[3:end-2] = pol2.coeffs[3:end-2]
+    @test q[1:2] == pol[1:2]
+    @test q[3:end-2] == pol2[3:end-2]
+    @test q[end-1:end] == pol[end-1:end]
+
 
     @test_throws DomainError yT^(-2)
     @test_throws DomainError yT^(-2.0)
