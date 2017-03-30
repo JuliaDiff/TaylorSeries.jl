@@ -138,25 +138,23 @@ using Base.Test
     @test ( (1+TaylorN(1))^TaylorN(2) )[:] == ( (1+TaylorN(1))^TaylorN(2) ).coeffs[:]
     @test txy.coeffs[:] == txy[:]
     @test txy.coeffs[:] == txy[1:end]
-    txy[:] = ( -1.0 + 3xT*yT - xT^2*yT + (4/3)*xT^3*yT + (1/3)*xT*yT^3 + 0.5*xT^2*yT^2 + 0.5*xT*yT^3 )[:]
+    txy[:] .= ( -1.0 + 3xT*yT - xT^2*yT + (4/3)*xT^3*yT + (1/3)*xT*yT^3 + 0.5*xT^2*yT^2 + 0.5*xT*yT^3 )[:]
     @test txy[:] == ( -1.0 + 3xT*yT - xT^2*yT + (4/3)*xT^3*yT + (1/3)*xT*yT^3 + 0.5*xT^2*yT^2 + 0.5*xT*yT^3 )[:]
-    txy[2:end-1] = ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
+    txy[2:end-1] .= ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
     @test txy[2:end-1] == ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
-    aTN = -5.0 + sin(xT+yT^2)
-    bTN = deepcopy(aTN)
-    @test aTN[:] == aTN[1:end]
-    @test aTN[:] == bTN[:]
-    @test aTN[1:end] == bTN[1:end]
-    @test aTN[end][:] == bTN[end][:]
-    @test aTN[end][1:end] == bTN[end][1:end]
-    rv = rand(18)
-    aTN[end][:] = rv
-    @test aTN[end][:] == rv
-    @test aTN[end][:] != bTN[end][:]
-    rv = rand(18)
-    aTN[end][1:end] = rv
-    @test aTN[end][1:end] == rv
-    @test aTN[end][1:end] != bTN[end][1:end]
+    a = -5.0 + sin(xT+yT^2)
+    b = deepcopy(a)
+    @test a[:] == a[1:end]
+    @test a[:] == b[:]
+    @test a[1:end] == b[1:end]
+    @test a[end][:] == b[end][:]
+    @test a[end][1:end] == b[end][1:end]
+    rv = a[end][:] .= rand.()
+    @test a[end][:] == rv
+    @test a[end][:] != b[end][:]
+    rv = a[end][1:end] .= rand.()
+    @test a[end][1:end] == rv
+    @test a[end][1:end] != b[end][1:end]
 
     @test_throws DomainError yT^(-2)
     @test_throws DomainError yT^(-2.0)

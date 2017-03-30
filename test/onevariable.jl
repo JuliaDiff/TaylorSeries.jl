@@ -34,7 +34,8 @@ using Base.Test
     @test Taylor1(rv)[:] == Taylor1(rv)[1:end]
     y = sin(Taylor1(16))
     @test y[:] == sin(Taylor1(16))[:]
-    y[:] = cos(Taylor1(16))[:]
+    y[:] .= cos(Taylor1(16))[:]
+    @test y == cos(Taylor1(16))
     @test y[:] == cos(Taylor1(16))[:]
     y = sin(Taylor1(16))
     rv = rand(5)
@@ -43,6 +44,12 @@ using Base.Test
     @test y[6:end] == sin(Taylor1(16))[6:end]
     y[:] = 0.0
     @test y[:] == zero(y[:])
+    y = sin(Taylor1(16))
+    rv = y[1:5] .= rand.()
+    @test y[1:5] == rv
+    @test y[6:end] == sin(Taylor1(16))[6:end]
+    rv = y[:] .= rand.()
+    @test y[:] == rv
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
