@@ -165,9 +165,11 @@ using Base.Test
     @test hp[end-1:end] == rv1[end-1:end]
     hp[3:4] = 0.0
     @test hp[1:2] == rv2[1:2]
-    @test hp[3:4] == [0.0, 0.0]
+    @test hp[3:4] == zeros(2)
     @test hp[5:end-2] == rv2[5:end]
     @test hp[end-1:end] == rv1[end-1:end]
+    hp[:] = 0.0
+    @test hp[:] == zero(rv1)
 
 
     @test_throws DomainError yT^(-2)
