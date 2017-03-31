@@ -13,12 +13,12 @@ The first example shows that the four-square identity holds:
   & & (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 + \\nonumber \\\\
   & & (a_1 b_4 - a_2 b_3 - a_3 b_2 -a_4 b_1)^2, \\nonumber
 \\end{eqnarray}
-as proved by Euler. The code can we found in one of the tests of the package.
+which was originally proved by Euler. The code can also be found in
+[one of the tests](../../test/identities_Euler.jl) of the package.
 
 First, we reset the maximum degree of the polynomial to 4, since the RHS
-of the equation
-has *a priori* terms of fourth order, and the number of independent variables to
-8.
+of the equation has *a priori* terms of fourth order, and define the 8
+independent variables.
 
 ```@repl euler
 using TaylorSeries
@@ -31,7 +31,7 @@ a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4)
 a1 # variable a1
 ```
 
-Now we compute each term appearing in (\\ref{eq:Euler}), and compare them
+Now we compute each term appearing in Eq. (\\ref{eq:Euler})
 
 ```@repl euler
 # left-hand side
@@ -62,9 +62,10 @@ Richard J. Fateman, from Berkley, proposed as a stringent test
 of polynomial multiplication
 the evaluation of $s*(s+1)$, where $s = (1+x+y+z+w)^{20}$. This is
 implemented in
-the function `fateman1`. We shall also evaluate the form $s^2+s$ in `fateman2`,
+the function `fateman1` below. We shall also consider the form
+$s^2+s$ in `fateman2`,
 which involves fewer operations (and makes a fairer comparison to what
-Mathematica does). Below we have used Julia v0.4.
+Mathematica does). Below we have used Julia v0.5.
 
 ```@repl fateman
 using TaylorSeries
@@ -73,7 +74,7 @@ function fateman1(degree::Int)
     T = Int128
     oneH = HomogeneousPolynomial(one(T), 0)
     # s = 1 + x + y + z + w
-    s = TaylorN([oneH,HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)],degree)
+    s = TaylorN( [oneH,HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree)
     s = s^degree
     # s is converted to order 2*ndeg
     s = TaylorN(s, 2*degree)
@@ -105,8 +106,8 @@ The tests above show the necessity of using `Int128`, that
 `fateman2` is nearly twice as fast as `fateman1`, and that the series has 135751
 monomials on 4 variables.
 
-Mathematica (version 10.2) requires 3.139831 seconds. Then,
-with TaylorSeries v0.1.2, our implementation of `fateman1` is about 20% faster,
-and `fateman2` is more than a factor 2 faster. (The original test by Fateman
-corresponds to `fateman1`, which avoids specific optimizations in `^2`.)
-
+Mathematica (version 10.2) requires 3.139831 seconds. Then, with
+the current version of TaylorSeries, our implementation of `fateman1`
+is about 20% faster, and `fateman2` is more than a factor 2 faster.
+(The original test by Fateman corresponds to `fateman1`, which avoids
+specific optimizations related to squaring.)

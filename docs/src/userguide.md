@@ -14,7 +14,7 @@ which correspond to
 expansions in one independent variable, homogeneous polynomials of various variables,
 and the polynomial
 series in many independent variables, respectively. These types are subtypes
-of `Number` and are defined parametrically.
+of `AbstractSeries`, which in turn is a subtype of `Number`, and are defined parametrically.
 
 The package is loaded as usual:
 
@@ -161,7 +161,7 @@ There is an optional `order` keyword argument for [`set_variables`](@ref):
 
 ```@repl userguide
 set_variables("x y", order=10)
-x
+#x
 ```
 
 Numbered variables are also available by specifying a single

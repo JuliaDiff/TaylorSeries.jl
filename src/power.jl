@@ -122,9 +122,9 @@ both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
-\begin{equation*}
+```math
 c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} \big(r(k-j) -j\big)a_{k-j} c_j.
-\end{equation*}
+```
 
 For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient of `a`.
@@ -167,7 +167,7 @@ end
 """
     square(a::AbstractSeries) --> typeof(a)
 
-Return `a^2`; see [TaylorSeries.sqr!](@ref).
+Return `a^2`; see [`TaylorSeries.sqr!`](@ref).
 """ square
 
 for T in (:Taylor1, :TaylorN)
@@ -201,12 +201,14 @@ both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
-\\begin{eqnarray*}
-c_k & = & 2 \\sum_{j=0}^{(k-1)/2} a_{k-j} a_j,
-    \\text{ if k is odd, or }  \\\\
-c_k & = & 2 \\sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
-    \\text{ if k is even. }
-\\end{eqnarray*}
+```math
+\begin{eqnarray*}
+c_k & = & 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j,
+    \text{ if k is odd,} \\
+c_k & = & 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
+    \text{ if k is even. }
+\end{eqnarray*}
+```
 
 """ sqr!
 
@@ -329,12 +331,14 @@ for both`c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
+```math
 \begin{eqnarray*}
-c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j),
-\text{ if $k$ is odd, or } \\\\
-c_k &=& \frac{1}{2 c_0} ( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j) - (c_{k/2})^2,
-\text{ if $k$ is even.}
+c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j\big),
+    \text{ if $k$ is odd,} \\
+c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j\big)
+    - (c_{k/2})^2, \text{ if $k$ is even.}
 \end{eqnarray*}
+```
 
 For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient, which must be even.

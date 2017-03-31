@@ -35,19 +35,18 @@ f_k (\\mathbf{x_0}) = \\sum_{m_1+\\cdots+m_d = k}\\, f_{m_1,\\dots,m_d} \\;\\,
 \\sum_{|\\mathbf{m}|=k} f_\\mathbf{m}\\, (\\mathbf{x}-\\mathbf{x_0})^\\mathbf{m}.
 \\end{equation}
 
-Here, $\\mathbf{m}\in \\mathbb{N}^d$ is a multi-index of the $k$-th order
-homogeneous polynomial and $\\mathbf{x}=(x_1,x_2,\\ldots,x_d)$ are the
+Here, $\mathbf{m}\in \mathbb{N}^d$ is a multi-index of the $k$-th order
+homogeneous polynomial and $\mathbf{x}=(x_1,x_2,\ldots,x_d)$ are the
 $d$ independent variables.
 
 In both cases, a Taylor series expansion can be represented by a
-vector containing
-its coefficients. The difference between the cases of one or more independent variables
-is that the
-coefficients are real or complex numbers in the former case, but homogeneous polynomials
-in the latter case. This motivates
-the construction of the `Taylor` and `TaylorN` types, described later.
+vector containing its coefficients. The difference between the cases of
+one or more independent variables is that the
+coefficients are real or complex numbers in the former case, but
+homogeneous polynomials in the latter case. This motivates
+the construction of the [`Taylor1`](@ref) and [`TaylorN`](@ref) types.
 
-### Arithmetic operations
+## Arithmetic operations
 
 Arithmetic operations involving Taylor series can be expressed as
 operations on the coefficients:
@@ -65,7 +64,7 @@ Equation (\\ref{eq:multT}) corresponds to a convolution.
 ## Elementary functions of polynomials
 
 Consider a function $y(t)$ that satisfies the ordinary differential equation
-$\\dot{y} = f(y)$, $y(t_0)=y_0$, where $t$ is the independent variable.
+$\dot{y} = f(y)$, $y(t_0)=y_0$, where $t$ is the independent variable.
 Writing $y(t)$ and $f(t)$ as Taylor polynomials of $t$, substituting these in the
 differential equation and equating equal powers of
 the independent variable leads to the recursion relation
@@ -75,7 +74,8 @@ the independent variable leads to the recursion relation
 y_{n+1} = \frac{f_n}{n+1}.
 \\end{equation}
 
-Equation (\\ref{eq:rec}), together with the corresponding initial condition, defines a recurrence relation
+Equation (\\ref{eq:rec}), together with the corresponding initial condition,
+defines a recurrence relation
 for the Taylor coefficients of $y(t)$ around $t_0$. For more independent
 variables, using the chain rule for the *radial derivative*
 yields recurrence relations for the homogeneous polynomial coefficients
@@ -99,9 +99,12 @@ c(t) = \\cos(t) , \\qquad &
   c_k & = -\\frac{1}{k}\\sum_{j=0}^{k-1} (k-j) \\, f_{k-j} \\, s_j.
 \\end{eqnarray}
 
-The recursion relations for $s(t) = \\sin(f(t))$ and $c(t) = \\cos(f(t))$ depend
+The recursion relations for $s(t) = \sin\big(f(t)\big)$ and
+$c(t) = \cos\big(f(t)\big)$ depend
 on each other; this reflects the fact that they are solutions of a second-order
-differential equation. All these relations hold for Taylor expansions in one
+differential equation.
+
+All these relations hold for Taylor expansions in one
 and more independent variables; in the latter case, the Taylor coefficients
 $f_k$ are homogeneous polynomials of degree $k$.
 
@@ -113,4 +116,3 @@ Computations*, Princeton University Press (2011).
 [2] A. Haro, *Automatic differentiation methods in computational dynamical
 systems: Invariant manifolds and normal forms of vector fields at fixed points*,
 [preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
-

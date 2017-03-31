@@ -3,7 +3,7 @@
 # Parameters for HomogeneousPolynomial and TaylorN
 
 
-@doc """
+doc"""
     ParamsTaylorN
 
 DataType holding the current parameters for `TaylorN` and
@@ -16,7 +16,7 @@ DataType holding the current parameters for `TaylorN` and
 - `variable_names :: Array{String,1}` Name of the variables
 
 These parameters can be changed using `set_params_TaylorN(order, numVars)`.
-""" ->
+"""
 type ParamsTaylorN
     order          :: Int
     num_vars       :: Int
@@ -48,7 +48,7 @@ If `numvars` is not specified, it is inferred from `names`. If only
 one variable name is defined and `numvars>1`, it uses this name with
 subscripts for the different variables.
 
-```jldoctest
+```julia
 julia> set_variables(Int, "x y z", order=4)
 3-element Array{TaylorSeries.TaylorN{Int64},1}:
   1 x + 𝒪(‖x‖⁵)
@@ -64,7 +64,6 @@ julia> set_variables("x", order=6, numvars=2)
 2-element Array{TaylorSeries.TaylorN{Float64},1}:
   1.0 x₁ + 𝒪(‖x‖⁷)
   1.0 x₂ + 𝒪(‖x‖⁷)
-
 ```
 """
 function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=get_order())
@@ -112,11 +111,11 @@ set_variables{T<:AbstractString}(names::T; order=get_order(), numvars=-1) =
     set_variables(Float64, names, order=order, numvars=numvars)
 
 
-@doc """
+"""
     show_params_TaylorN()
 
 Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
-""" ->
+"""
 function show_params_TaylorN()
     info( """
     Parameters for `TaylorN` and `HomogeneousPolynomial`:

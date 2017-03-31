@@ -1,12 +1,23 @@
 using Documenter, TaylorSeries
 
 makedocs(
-    modules = Module[TaylorSeries],
-    doctest = false,
+    modules = [TaylorSeries],
+    format = :html,
+    sitename = "TaylorSeries",
+    pages = [
+        "Home" => "index.md",
+        "Background" => "background.md",
+        "User guide" => "userguide.md",
+        "Examples" => "examples.md",
+        "API" => "api.md"
+    ]
 )
 
 deploydocs(
-    deps = Deps.pip("pygments", "mkdocs", "mkdocs-cinder", "python-markdown-math"),
     repo   = "github.com/JuliaDiff/TaylorSeries.jl.git",
-    osname = "linux"
+    target = "build",
+    julia = "0.5",
+    osname = "linux",
+    deps   = nothing,
+    make   = nothing
 )
