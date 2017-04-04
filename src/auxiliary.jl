@@ -71,10 +71,7 @@ Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order+1;
     return a[n+1])
 
-function getindex(a::Taylor1, n::Int)
-    (1 ≤ n ≤ length(a.coeffs)) && return a.coeffs[n]
-    return zero(a.coeffs[1])
-end
+getindex(a::Taylor1, n::Int) = a.coeffs[n]
 getindex(a::Taylor1, n::UnitRange) = view(a.coeffs, n)
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 setindex!{T<:Number}(a::Taylor1{T}, x::T, n::Int) = a.coeffs[n] = x
@@ -124,11 +121,7 @@ function get_coeff(a::TaylorN, v::Array{Int,1})
     get_coeff(a[order+1], v)
 end
 
-function getindex(a::TaylorN, n::Int)
-    1 ≤ n ≤ length(a.coeffs) && return a.coeffs[n]
-    n ≤ get_order()+1 && return zero_korder(a, n-1)
-    throw(BoundsError(a.coeffs,n))
-end
+getindex(a::TaylorN, n::Int) = a.coeffs[n]
 getindex(a::TaylorN, n::UnitRange) = view(a.coeffs, n)
 getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
 setindex!{T<:Number}(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) =
@@ -167,17 +160,20 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 
-"""
-    max_order(a)
+## fixorder ##
+for T in (:Taylor1, :TaylorN)
+    @eval begin
+        function fixorder(a::$T, b::$T)
+            a.order ≤ b.order && return $T(copy(a.coeffs), b.order), $T(copy(b.coeffs), b.order)
+            return $T(copy(a.coeffs), a.order), $T(copy(b.coeffs), a.order)
+        end
+    end
+end
 
-Returns the maximum order of a `Taylor1` or `TaylorN`.
-
-For `a::Taylor1` returns `a.order` while for `a::TaylorN` returns
-`get_order()`.
-"""
-max_order(a::Taylor1) = a.order
-
-max_order(::TaylorN) = get_order()
+function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+    @assert a.order == b.order
+    return a, b
+end
 
 
 """

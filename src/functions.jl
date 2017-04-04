@@ -11,7 +11,7 @@
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function exp(a::$T)
-            order = max_order(a)
+            order = a.order
             c = $T( exp( constant_term(a) ), order )
             for k = 1:order
                 exp!(c, a, k)
@@ -26,7 +26,7 @@ for T in (:Taylor1, :TaylorN)
                     in order to expand `log` around 0.
                     """))
 
-            order = max_order(a)
+            order = a.order
             c = $T( log( constant_term(a) ), order )
             for k = 1:order
                 log!(c, a, k)
@@ -37,7 +37,7 @@ for T in (:Taylor1, :TaylorN)
         sin(a::$T) = sincos(a)[1]
         cos(a::$T) = sincos(a)[2]
         function sincos(a::$T)
-            order = max_order(a)
+            order = a.order
             s = $T( sin(constant_term(a)), order )
             c = $T( cos(constant_term(a)), order )
             for k = 1:order
@@ -47,7 +47,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function tan(a::$T)
-            order = max_order(a)
+            order = a.order
             aux = tan(constant_term(a))
             c = $T(aux, order)
             c2 = $T(aux^2, order)
@@ -65,7 +65,7 @@ for T in (:Taylor1, :TaylorN)
                 in the denominator.
                 """))
 
-            order = max_order(a)
+            order = a.order
             c = $T( asin(a0), order )
             r = $T( sqrt(1 - a0^2), order )
             for k in 1:order
@@ -85,7 +85,7 @@ for T in (:Taylor1, :TaylorN)
             # The following exploits a trick that the series of
             # `acos(a)` is generated as the series of `asin(a)` except
             # for a sign and the constant term; see `acos!`.
-            order = max_order(a)
+            order = a.order
             c = $T( asin(a0), order )
             r = $T( sqrt(1 - a0^2), order )
             for k in 1:order
@@ -96,7 +96,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function atan(a::$T)
-            order = max_order(a)
+            order = a.order
             a0 = constant_term(a)
             c = $T( atan(a0), order)
             r = $T(1 + a0^2, order)
@@ -115,7 +115,7 @@ for T in (:Taylor1, :TaylorN)
         sinh(a::$T) = sinhcosh(a)[1]
         cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)
-            order = max_order(a)
+            order = a.order
             s = $T( sinh(constant_term(a)), order)
             c = $T( cosh(constant_term(a)), order)
             for k = 1:order
@@ -125,7 +125,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function tanh(a::$T)
-            order = max_order(a)
+            order = a.order
             aux = tanh( constant_term(a) )
             c = $T( aux, order)
             c2 = $T( aux^2, order)

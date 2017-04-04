@@ -18,12 +18,15 @@ for T in (:Taylor1, :TaylorN)
             la = a.order+1
             lb = b.order+1
             if a.order == b.order
-                return all( a.coeffs .== b.coeffs )
+                # return all( a.coeffs .== b.coeffs )
+                return a.coeffs == b.coeffs
             elseif a.order < b.order
-                res1 = all( a[1:la] .== b[1:la] )
+                # res1 = all( a[1:la] .== b[1:la] )
+                res1 = a[1:la] == b[1:la]
                 res2 = iszero(b[la+1:lb])
             else a.order > b.order
-                res1 = all( a[1:lb] .== b[1:lb] )
+                # res1 = all( a[1:lb] .== b[1:lb] )
+                res1 = a[1:lb] == b[1:lb]
                 res2 = iszero(a[lb+1:la])
             end
             return res1 && res2
@@ -98,13 +101,15 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             function $f{T<:Number}(a::$T{T}, b::$T{T})
                 la = a.order+1
                 lb = b.order+1
-                v = similar(a.coeffs, max(la,lb))
                 if a.order == b.order
+                    v = similar(a.coeffs)
                     @__dot__ v = $f(a.coeffs, b.coeffs)
                 elseif a.order < b.order
+                    v = similar(b.coeffs)
                     @inbounds @__dot__ v[1:la] = $f(a[1:la], b[1:la])
                     @inbounds @__dot__ v[la+1:lb] = $f(b[la+1:lb])
                 else
+                    v = similar(a.coeffs)
                     @inbounds @__dot__ v[1:lb] = $f(a[1:lb], b[1:lb])
                     @inbounds @__dot__ v[lb+1:la] = a[lb+1:la]
                 end
@@ -253,10 +258,9 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
     @eval *{T<:$W, S<:$W}(a::$T{T}, b::$T{S}) = *(promote(a,b)...)
 
     @eval function *{T<:$W}(a::$T{T}, b::$T{T})
-        a == b && return square(a)
-        corder = max(a.order, b.order)
-        c = zero(a, corder)
-        for ord = 0:corder
+        a, b = fixorder(a, b)
+        c = zero(a, a.order)
+        for ord = 0:c.order
             mul!(c, a, b, ord) # updates c[ord+1]
         end
         return c
@@ -268,7 +272,6 @@ end
     b::HomogeneousPolynomial{S}) = *(promote(a,b)...)
 
 function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T})
-    a == b && return square(a)
 
     order = a.order + b.order
 
@@ -394,13 +397,13 @@ end
 /{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = /(promote(a,b)...)
 
 function /{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
-    corder = max(a.order, b.order)
+    a, b = fixorder(a, b)
 
     # order and coefficient of first factorized term
     ordfact, cdivfact = divfactorization(a, b)
 
-    c = Taylor1([cdivfact], corder)
-    for ord = 1:corder-ordfact
+    c = Taylor1([cdivfact], a.order)
+    for ord = 1:a.order-ordfact
         div!(c, a, b, ord, ordfact) # updates c[ord+1]
     end
 
@@ -412,12 +415,13 @@ end
 
 function /{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
     @assert !iszero(constant_term(b))
-    corder = max(a.order, b.order)
+
+    a, b = fixorder(a, b)
 
     # first coefficient
     @inbounds cdivfact = a[1] / constant_term(b)
-    c = TaylorN(cdivfact, corder)
-    for ord in 1:corder
+    c = TaylorN(cdivfact, a.order)
+    for ord in 1:a.order
         div!(c, a, b, ord) # updates c[ord+1]
     end
 

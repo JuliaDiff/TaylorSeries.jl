@@ -144,7 +144,6 @@ Return `a^2`; see [TaylorSeries.sqr!](@ref).
 
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
-        # order = max_order(a)
         c = $T( constant_term(a)^2, a.order)
         for k = 1:a.order
             sqr!(c, a, k)
