@@ -61,7 +61,6 @@ using Base.Test
     @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
     @test Taylor1(Complex128,3)[2] == complex(1.0,0.0)
     @test getindex(Taylor1(3),2) == 1.0
-    @test t[30] == 0
     @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
     @test eltype(convert(Taylor1{Complex128},ot)) == Complex128
     @test eltype(convert(Taylor1{Complex128},1)) == Complex128
@@ -78,6 +77,8 @@ using Base.Test
     @test eltype(promote(1.0+im, zt)[1]) == Complex{Float64}
 
     @test length(Taylor1(10)) == 11
+    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
+    @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(zt) == -1
     @test iszero(zero(t))
@@ -85,7 +86,6 @@ using Base.Test
     @test isinf(Taylor1([typemax(1.0)]))
     @test isnan(Taylor1([typemax(1.0), NaN]))
 
-    @test t == Taylor1(ta(0),15)
     @test ot == 1
     @test 0.0 == zt
     @test get_coeff(tim,1) == complex(0,1)

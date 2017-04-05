@@ -10,9 +10,9 @@ function fateman1(degree::Int)
     s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
     s = s^degree
     # s is converted to order 2*ndeg
-    s = TaylorN(s, 2*degree)
+    s = TaylorN(s.coeffs, 2*degree)
 
-    s * ( s+TaylorN(oneH, 2*degree) )
+    s * ( s+1 )
 end
 
 function fateman2(degree::Int)
@@ -22,7 +22,7 @@ function fateman2(degree::Int)
     s = TaylorN( [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree )
     s = s^degree
     # s is converted to order 2*ndeg
-    s = TaylorN(s, 2*degree)
+    s = TaylorN(s.coeffs, 2*degree)
     return s^2 + s
 end
 

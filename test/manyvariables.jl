@@ -62,6 +62,8 @@ using Base.Test
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
     @test !isnan(uT)
+    @test TaylorSeries.fixorder(xH,yH) == (xH,yH)
+    @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
 
     @test get_order(zeroT) == 1
     @test xT[2][1] == 1
@@ -84,12 +86,12 @@ using Base.Test
     @test promote(xH, yT)[1] == xT
     @test promote(xT, [xH,yH])[2] == xT+yT
     @test typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}
+    # @test TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT
     @test iszero(zeroT.coeffs)
     @test iszero(zero(xH))
     @test !iszero(uT)
     @test iszero(zeroT)
 
-    @test HomogeneousPolynomial(xH,1) == HomogeneousPolynomial(xH)
     @test eltype(xH) == Int
     @test length(xH) == 2
     @test zero(xH) == 0*xH
@@ -103,7 +105,6 @@ using Base.Test
 
     @test xT == TaylorN([xH])
     @test one(xT) == TaylorN(1,5)
-    @test TaylorN(zeroT,5) == 0
     @test TaylorN(uT) == convert(TaylorN{Complex},1)
     @test get_numvars() == 2
     @test length(uT) == get_order()+1
