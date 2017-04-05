@@ -164,8 +164,13 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function fixorder(a::$T, b::$T)
-            a.order ≤ b.order && return $T(copy(a.coeffs), b.order), $T(copy(b.coeffs), b.order)
-            return $T(copy(a.coeffs), a.order), $T(copy(b.coeffs), a.order)
+            if a.order == b.order
+                return a, b
+            elseif a.order < b.order
+                return $T(copy(a.coeffs), b.order), $T(copy(b.coeffs), b.order)
+            else
+                return $T(copy(a.coeffs), a.order), $T(copy(b.coeffs), a.order)
+            end
         end
     end
 end
