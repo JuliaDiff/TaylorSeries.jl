@@ -31,15 +31,19 @@ immutable Taylor1{T<:Number} <: AbstractSeries{T}
     ## Inner constructor ##
     function (::Type{Taylor1{T}}){T}(coeffs::Array{T,1}, order::Int)
         resize_coeffs1!(coeffs, order)
-        return new{T}(coeffs, length(coeffs)-1)
+        return new{T}(coeffs, order)
     end
 end
 
 ## Outer constructors ##
 Taylor1{T<:Number}(x::Taylor1{T}) = x
 Taylor1{T<:Number}(coeffs::Array{T,1}, order::Int) = Taylor1{T}(coeffs, order)
-Taylor1{T<:Number}(coeffs::Array{T,1}) = Taylor1{T}(coeffs, length(coeffs)-1)
-Taylor1{T<:Number}(x::T, order::Int) = Taylor1{T}([x], order)
+Taylor1{T<:Number}(coeffs::Array{T,1}) = Taylor1(coeffs, length(coeffs)-1)
+function Taylor1{T<:Number}(x::T, order::Int)
+    v = zeros(T, order+1)
+    v[1] = x
+    return Taylor1(v, order)
+end
 
 # Shortcut to define Taylor1 independent variables
 doc"""

@@ -18,7 +18,8 @@ function resize_coeffs1!{T<:Number}(coeffs::Array{T,1}, order::Int)
     lencoef = length(coeffs)
     order ≤ lencoef-1 && return nothing
     resize!(coeffs, order+1)
-    coeffs[lencoef+1:end] .= zero(coeffs[1])
+    z = zero(coeffs[1])
+    @__dot__ coeffs[lencoef+1:order+1] = z
     return nothing
 end
 
@@ -35,7 +36,8 @@ function resize_coeffsHP!{T<:Number}(coeffs::Array{T,1}, order::Int)
     @assert order ≤ get_order() && lencoef ≤ num_coeffs
     num_coeffs == lencoef && return nothing
     resize!(coeffs, num_coeffs)
-    coeffs[lencoef+1:end] .= zero(coeffs[1])
+    z = zero(coeffs[1])
+    @__dot__ coeffs[lencoef+1:num_coeffs] = z
     return nothing
 end
 
@@ -164,13 +166,10 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function fixorder(a::$T, b::$T)
-            if a.order == b.order
-                return a, b
-            elseif a.order < b.order
-                return $T(copy(a.coeffs), b.order), $T(copy(b.coeffs), b.order)
-            else
-                return $T(copy(a.coeffs), a.order), $T(copy(b.coeffs), a.order)
-            end
+            a.order == b.order && return a, b
+            a.order < b.order && return $T(copy(a.coeffs), b.order),
+                $T(copy(b.coeffs), b.order)
+            return $T(copy(a.coeffs), a.order), $T(copy(b.coeffs), a.order)
         end
     end
 end

@@ -15,21 +15,10 @@ for T in (:Taylor1, :TaylorN)
         =={T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = ==(promote(a,b)...)
 
         function =={T<:Number}(a::$T{T}, b::$T{T})
-            la = a.order+1
-            lb = b.order+1
-            if a.order == b.order
-                # return all( a.coeffs .== b.coeffs )
-                return a.coeffs == b.coeffs
-            elseif a.order < b.order
-                # res1 = all( a[1:la] .== b[1:la] )
-                res1 = a[1:la] == b[1:la]
-                res2 = iszero(b[la+1:lb])
-            else a.order > b.order
-                # res1 = all( a[1:lb] .== b[1:lb] )
-                res1 = a[1:lb] == b[1:lb]
-                res2 = iszero(a[lb+1:la])
+            if a.order != b.order
+                a, b = fixorder(a, b)
             end
-            return res1 && res2
+            return a.coeffs == b.coeffs
         end
     end
 end
@@ -43,17 +32,11 @@ end
 
 ## zero and one ##
 for T in (:Taylor1, :TaylorN), f in (:zero, :one)
-    @eval begin
-        ($f)(a::$T) = $T([($f)(a[1])], a.order)
-
-        ($f)(a::$T, order) = $T([($f)(a[1])], order)
-    end
+    @eval ($f)(a::$T) = $T(($f)(a[1]), a.order)
 end
 
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial([zero(T)], 0)
-    v = Array{T}( size_table[a.order+1] )
-    @__dot__ v = zero(a.coeffs)
+    v = zeros(a.coeffs)
     return HomogeneousPolynomial(v, a.order)
 end
 
@@ -70,9 +53,7 @@ zeros{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
     zeros( HomogeneousPolynomial([zero(T)], 0), order)
 
 function one{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial([one(a[1])], 0)
-    v = Array{T}( size_table[a.order+1] )
-    @__dot__ v = one(a.coeffs)
+    v = ones(a.coeffs)
     return HomogeneousPolynomial{T}(v, a.order)
 end
 
@@ -99,21 +80,12 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             ($f){T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = $f(promote(a,b)...)
 
             function $f{T<:Number}(a::$T{T}, b::$T{T})
-                la = a.order+1
-                lb = b.order+1
-                if a.order == b.order
-                    v = similar(a.coeffs)
-                    @__dot__ v = $f(a.coeffs, b.coeffs)
-                elseif a.order < b.order
-                    v = similar(b.coeffs)
-                    @inbounds @__dot__ v[1:la] = $f(a[1:la], b[1:la])
-                    @inbounds @__dot__ v[la+1:lb] = $f(b[la+1:lb])
-                else
-                    v = similar(a.coeffs)
-                    @inbounds @__dot__ v[1:lb] = $f(a[1:lb], b[1:lb])
-                    @inbounds @__dot__ v[lb+1:la] = a[lb+1:la]
+                if a.order != b.order
+                    a, b = fixorder(a, b)
                 end
-                return $T(v)
+                v = similar(a.coeffs)
+                @__dot__ v = $f(a.coeffs, b.coeffs)
+                return $T(v, a.order)
             end
 
             function $f(a::$T)
@@ -125,8 +97,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             ($f){T<:Number,S<:Number}(a::$T{T}, b::S) = $f(promote(a,b)...)
 
             function $f{T<:Number}(a::$T{T}, b::T)
-                coeffs = similar(a.coeffs)
-                coeffs .= a.coeffs
+                coeffs = copy(a.coeffs)
                 @inbounds coeffs[1] = $f(a[1], b)
                 return $T(coeffs, a.order)
             end
@@ -258,8 +229,10 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
     @eval *{T<:$W, S<:$W}(a::$T{T}, b::$T{S}) = *(promote(a,b)...)
 
     @eval function *{T<:$W}(a::$T{T}, b::$T{T})
-        a, b = fixorder(a, b)
-        c = zero(a, a.order)
+        if a.order != b.order
+            a, b = fixorder(a, b)
+        end
+        c = $T(zero(a[1]), a.order)
         for ord = 0:c.order
             mul!(c, a, b, ord) # updates c[ord+1]
         end
@@ -287,6 +260,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function mul!(c::$T, a::$T, b::$T, k::Int)
 
+        # c[k+1] = zero( a[k+1] )
         @inbounds for i = 0:k
             if $T == Taylor1
                 c[k+1] += a[i+1] * b[k-i+1]
@@ -397,7 +371,9 @@ end
 /{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = /(promote(a,b)...)
 
 function /{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
-    a, b = fixorder(a, b)
+    if a.order != b.order
+        a, b = fixorder(a, b)
+    end
 
     # order and coefficient of first factorized term
     ordfact, cdivfact = divfactorization(a, b)
@@ -416,7 +392,9 @@ end
 function /{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
     @assert !iszero(constant_term(b))
 
-    a, b = fixorder(a, b)
+    if a.order != b.order
+        a, b = fixorder(a, b)
+    end
 
     # first coefficient
     @inbounds cdivfact = a[1] / constant_term(b)
