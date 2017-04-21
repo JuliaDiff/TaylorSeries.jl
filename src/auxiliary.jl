@@ -165,7 +165,7 @@ end
 ## fixorder ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        function fixorder(a::$T, b::$T)
+        @inline function fixorder(a::$T, b::$T)
             a.order == b.order && return a, b
             a.order < b.order && return $T(copy(a.coeffs), b.order),
                 $T(copy(b.coeffs), b.order)
