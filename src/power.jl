@@ -12,7 +12,7 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     n == 1 && return copy(a)
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
-    return Base.power_by_squaring(a, n)
+    return power_by_squaring(a, n)
 end
 
 for T in (:Taylor1, :TaylorN)
@@ -21,7 +21,7 @@ for T in (:Taylor1, :TaylorN)
         n == 1 && return copy(a)
         n == 2 && return square(a)
         n < 0 && return inv( a^(-n) )
-        return Base.power_by_squaring(a, n)
+        return power_by_squaring(a, n)
     end
 
     @eval function ^{T<:Integer}(a::$T{T}, n::Integer)
@@ -29,7 +29,7 @@ for T in (:Taylor1, :TaylorN)
         n == 1 && return copy(a)
         n == 2 && return square(a)
         n < 0 && throw(DomainError())
-        return Base.power_by_squaring(a, n)
+        return power_by_squaring(a, n)
     end
 
     @eval ^(a::$T, x::Rational) = a^(x.num/x.den)
@@ -39,6 +39,34 @@ for T in (:Taylor1, :TaylorN)
     @eval ^{T<:Complex}(a::$T, x::T) = exp( x*log(a) )
 end
 
+
+# power_by_squaring; slightly modified from base/intfuncs.jl
+# Licensed under MIT "Expat"
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    @eval function power_by_squaring(x::$T, p::Integer)
+        p == 1 && return copy(x)
+        p == 0 && return one(x)
+        p == 2 && return square(x)
+        t = trailing_zeros(p) + 1
+        p >>= t
+
+        while (t -= 1) > 0
+            x = square(x)
+        end
+
+        y = x
+        while p > 0
+            t = trailing_zeros(p) + 1
+            p >>= t
+            while (t -= 1) ≥ 0
+                x = square(x)
+            end
+            y *= x
+        end
+
+        return y
+    end
+end
 
 ## Real power ##
 function ^{S<:Real}(a::Taylor1, r::S)
@@ -102,7 +130,7 @@ For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient of `a`.
 
 """
-function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
+@inline function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
     if k == l0
         @inbounds c[1] = ( a[l0+1] )^r
         return nothing
@@ -118,7 +146,7 @@ function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
     return nothing
 end
 
-function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
+@inline function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
     if k == 0
         @inbounds c[1] = ( constant_term(a) )^r
         return nothing
@@ -183,31 +211,33 @@ c_k & = & 2 \\sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
 """ sqr!
 
 for T = (:Taylor1, :TaylorN)
-    @eval function sqr!(c::$T, a::$T, k::Int)
-        if k == 0
-            @inbounds c[1] = a[1]^2
+    @eval begin
+        @inline function sqr!(c::$T, a::$T, k::Int)
+            if k == 0
+                @inbounds c[1] = constant_term(a)^2
+                return nothing
+            end
+
+            kodd = k%2
+            kend = div(k - 2 + kodd, 2)
+            @inbounds for i = 0:kend
+                if $T == Taylor1
+                    c[k+1] += a[i+1] * a[k-i+1]
+                else
+                    mul!(c[k+1], a[i+1], a[k-i+1])
+                end
+            end
+            @inbounds c[k+1] = 2 * c[k+1]
+            kodd == 1 && return nothing
+
+            if $T == Taylor1
+                @inbounds c[k+1] += a[div(k,2)+1]^2
+            else
+                sqr!(c[k+1], a[div(k,2)+1])
+            end
+
             return nothing
         end
-
-        kodd = k%2
-        kend = div(k - 2 + kodd, 2)
-        @inbounds for i = 0:kend
-            if $T == Taylor1
-                c[k+1] += a[i+1] * a[k-i+1]
-            else
-                mul!(c[k+1], a[i+1], a[k-i+1])
-            end
-        end
-        @inbounds c[k+1] = 2 * c[k+1]
-        kodd == 1 && return nothing
-
-        if $T == Taylor1
-            @inbounds c[k+1] += a[div(k,2)+1]^2
-        else
-            sqr!(c[k+1], a[div(k,2)+1])
-        end
-
-        return nothing
     end
 end
 
@@ -218,7 +248,7 @@ end
 Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
 
 """
-function sqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
+@inline function sqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
     iszero(a) && return nothing
 
     T = eltype(c)
@@ -310,7 +340,7 @@ For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient, which must be even.
 
 """
-function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
+@inline function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
 
     if k == k0
         @inbounds c[k+1] = sqrt(a[2*k0+1])
@@ -331,7 +361,7 @@ function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
     return nothing
 end
 
-function sqrt!(c::TaylorN, a::TaylorN, k::Int)
+@inline function sqrt!(c::TaylorN, a::TaylorN, k::Int)
 
     if k == 0
         @inbounds c[1] = sqrt( constant_term(a) )
