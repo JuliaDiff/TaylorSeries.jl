@@ -15,18 +15,10 @@ for T in (:Taylor1, :TaylorN)
         =={T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = ==(promote(a,b)...)
 
         function =={T<:Number}(a::$T{T}, b::$T{T})
-            la = a.order+1
-            lb = b.order+1
-            if a.order == b.order
-                return all( a.coeffs .== b.coeffs )
-            elseif a.order < b.order
-                res1 = all( a[1:la] .== b[1:la] )
-                res2 = iszero(b[la+1:lb])
-            else a.order > b.order
-                res1 = all( a[1:lb] .== b[1:lb] )
-                res2 = iszero(a[lb+1:la])
+            if a.order != b.order
+                a, b = fixorder(a, b)
             end
-            return res1 && res2
+            return a.coeffs == b.coeffs
         end
     end
 end
@@ -40,17 +32,11 @@ end
 
 ## zero and one ##
 for T in (:Taylor1, :TaylorN), f in (:zero, :one)
-    @eval begin
-        ($f)(a::$T) = $T([($f)(a[1])], a.order)
-
-        ($f)(a::$T, order) = $T([($f)(a[1])], order)
-    end
+    @eval ($f)(a::$T) = $T(($f)(a[1]), a.order)
 end
 
 function zero{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial([zero(T)], 0)
-    v = Array{T}( size_table[a.order+1] )
-    @__dot__ v = zero(a.coeffs)
+    v = zeros(a.coeffs)
     return HomogeneousPolynomial(v, a.order)
 end
 
@@ -67,9 +53,7 @@ zeros{T<:Number}(::Type{HomogeneousPolynomial{T}}, order::Int) =
     zeros( HomogeneousPolynomial([zero(T)], 0), order)
 
 function one{T<:Number}(a::HomogeneousPolynomial{T})
-    a.order == 0 && return HomogeneousPolynomial([one(a[1])], 0)
-    v = Array{T}( size_table[a.order+1] )
-    @__dot__ v = one(a.coeffs)
+    v = ones(a.coeffs)
     return HomogeneousPolynomial{T}(v, a.order)
 end
 
@@ -96,19 +80,12 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             ($f){T<:Number,S<:Number}(a::$T{T}, b::$T{S}) = $f(promote(a,b)...)
 
             function $f{T<:Number}(a::$T{T}, b::$T{T})
-                la = a.order+1
-                lb = b.order+1
-                v = similar(a.coeffs, max(la,lb))
-                if a.order == b.order
-                    @__dot__ v = $f(a.coeffs, b.coeffs)
-                elseif a.order < b.order
-                    @inbounds @__dot__ v[1:la] = $f(a[1:la], b[1:la])
-                    @inbounds @__dot__ v[la+1:lb] = $f(b[la+1:lb])
-                else
-                    @inbounds @__dot__ v[1:lb] = $f(a[1:lb], b[1:lb])
-                    @inbounds @__dot__ v[lb+1:la] = a[lb+1:la]
+                if a.order != b.order
+                    a, b = fixorder(a, b)
                 end
-                return $T(v)
+                v = similar(a.coeffs)
+                @__dot__ v = $f(a.coeffs, b.coeffs)
+                return $T(v, a.order)
             end
 
             function $f(a::$T)
@@ -120,8 +97,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             ($f){T<:Number,S<:Number}(a::$T{T}, b::S) = $f(promote(a,b)...)
 
             function $f{T<:Number}(a::$T{T}, b::T)
-                coeffs = similar(a.coeffs)
-                coeffs .= a.coeffs
+                coeffs = copy(a.coeffs)
                 @inbounds coeffs[1] = $f(a[1], b)
                 return $T(coeffs, a.order)
             end
@@ -253,10 +229,11 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
     @eval *{T<:$W, S<:$W}(a::$T{T}, b::$T{S}) = *(promote(a,b)...)
 
     @eval function *{T<:$W}(a::$T{T}, b::$T{T})
-        a == b && return square(a)
-        corder = max(a.order, b.order)
-        c = zero(a, corder)
-        for ord = 0:corder
+        if a.order != b.order
+            a, b = fixorder(a, b)
+        end
+        c = $T(zero(a[1]), a.order)
+        for ord = 0:c.order
             mul!(c, a, b, ord) # updates c[ord+1]
         end
         return c
@@ -268,7 +245,6 @@ end
     b::HomogeneousPolynomial{S}) = *(promote(a,b)...)
 
 function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T})
-    a == b && return square(a)
 
     order = a.order + b.order
 
@@ -280,10 +256,11 @@ function *{T<:NumberNotSeriesN}(a::HomogeneousPolynomial{T}, b::HomogeneousPolyn
 end
 
 
-# Homogeneous coefficient for the multiplication
+# Internal multiplication functions
 for T in (:Taylor1, :TaylorN)
-    @eval function mul!(c::$T, a::$T, b::$T, k::Int)
+    @eval @inline function mul!(c::$T, a::$T, b::$T, k::Int)
 
+        # c[k+1] = zero( a[k+1] )
         @inbounds for i = 0:k
             if $T == Taylor1
                 c[k+1] += a[i+1] * b[k-i+1]
@@ -317,7 +294,7 @@ c_k = \sum_{j=0}^k a_j b_{k-j}.
 Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
 
 """
-function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
+@inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
 
     (iszero(b) || iszero(a)) && return nothing
@@ -394,13 +371,15 @@ end
 /{T<:Number,S<:Number}(a::Taylor1{T}, b::Taylor1{S}) = /(promote(a,b)...)
 
 function /{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
-    corder = max(a.order, b.order)
+    if a.order != b.order
+        a, b = fixorder(a, b)
+    end
 
     # order and coefficient of first factorized term
     ordfact, cdivfact = divfactorization(a, b)
 
-    c = Taylor1([cdivfact], corder)
-    for ord = 1:corder-ordfact
+    c = Taylor1(cdivfact, a.order)
+    for ord = 1:a.order-ordfact
         div!(c, a, b, ord, ordfact) # updates c[ord+1]
     end
 
@@ -412,12 +391,15 @@ end
 
 function /{T<:NumberNotSeriesN}(a::TaylorN{T}, b::TaylorN{T})
     @assert !iszero(constant_term(b))
-    corder = max(a.order, b.order)
+
+    if a.order != b.order
+        a, b = fixorder(a, b)
+    end
 
     # first coefficient
     @inbounds cdivfact = a[1] / constant_term(b)
-    c = TaylorN(cdivfact, corder)
-    for ord in 1:corder
+    c = TaylorN(cdivfact, a.order)
+    for ord in 1:a.order
         div!(c, a, b, ord) # updates c[ord+1]
     end
 
@@ -465,7 +447,7 @@ c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}).
 For `Taylor1` polynomials, `ordfact` is the order of the factorized
 term of the denominator.
 """
-function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
+@inline function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
     if k == 0
         @inbounds c[1] = a[ordfact+1] / b[ordfact+1]
         return nothing
@@ -478,7 +460,7 @@ function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
     return nothing
 end
 
-function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
+@inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0
         @inbounds c[1] = a[1] / constant_term(b)
         return nothing

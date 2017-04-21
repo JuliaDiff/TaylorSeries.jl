@@ -79,9 +79,11 @@ Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
 evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S}) =
     evaluate(promote(a,x)...)
 function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
-    maxord = max(a.order, x.order)
+    if a.order != x.order
+        a, x = fixorder(a, x)
+    end
     @inbounds suma = a[end]
-    @inbounds for k = maxord:-1:1
+    @inbounds for k = a.order:-1:1
         suma = suma*x + a[k]
     end
     suma

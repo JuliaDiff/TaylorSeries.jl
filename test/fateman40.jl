@@ -15,7 +15,7 @@ using Base.Test
             [oneH, HomogeneousPolynomial([one(T),one(T),one(T),one(T)],1)], degree)
         s = s^degree
         # s is converted to order 2*ndeg
-        s = TaylorN(s, 2*degree)
+        s = TaylorN(s.coeffs, 2*degree)
         return s^2 + s
     end
 

@@ -31,16 +31,19 @@ immutable Taylor1{T<:Number} <: AbstractSeries{T}
     ## Inner constructor ##
     function (::Type{Taylor1{T}}){T}(coeffs::Array{T,1}, order::Int)
         resize_coeffs1!(coeffs, order)
-        return new{T}(coeffs, length(coeffs)-1)
+        return new{T}(coeffs, order)
     end
 end
 
 ## Outer constructors ##
-Taylor1{T<:Number}(x::Taylor1{T}, order::Int) = Taylor1{T}(x.coeffs, order)
 Taylor1{T<:Number}(x::Taylor1{T}) = x
 Taylor1{T<:Number}(coeffs::Array{T,1}, order::Int) = Taylor1{T}(coeffs, order)
-Taylor1{T<:Number}(coeffs::Array{T,1}) = Taylor1{T}(coeffs, length(coeffs)-1)
-Taylor1{T<:Number}(x::T, order::Int) = Taylor1{T}([x], order)
+Taylor1{T<:Number}(coeffs::Array{T,1}) = Taylor1(coeffs, length(coeffs)-1)
+function Taylor1{T<:Number}(x::T, order::Int)
+    v = zeros(T, order+1)
+    v[1] = x
+    return Taylor1(v, order)
+end
 
 # Shortcut to define Taylor1 independent variables
 doc"""
@@ -85,8 +88,6 @@ immutable HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
     end
 end
 
-HomogeneousPolynomial{T<:Number}(x::HomogeneousPolynomial{T}, order::Int) =
-    HomogeneousPolynomial{T}(x.coeffs, order)
 HomogeneousPolynomial{T<:Number}(x::HomogeneousPolynomial{T}) = x
 HomogeneousPolynomial{T<:Number}(coeffs::Array{T,1}, order::Int) =
     HomogeneousPolynomial{T}(coeffs, order)
@@ -150,7 +151,6 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T}
     end
 end
 
-TaylorN{T<:Number}(x::TaylorN{T}, order::Int) = TaylorN{T}(x.coeffs, order)
 TaylorN{T<:Number}(x::TaylorN{T}) = x
 TaylorN{T<:Number}(x::Array{HomogeneousPolynomial{T},1}, order::Int) =
     TaylorN{T}(x, order)
