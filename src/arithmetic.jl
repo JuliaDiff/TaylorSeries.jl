@@ -378,7 +378,7 @@ function /{T<:Number}(a::Taylor1{T}, b::Taylor1{T})
     # order and coefficient of first factorized term
     ordfact, cdivfact = divfactorization(a, b)
 
-    c = Taylor1([cdivfact], a.order)
+    c = Taylor1(cdivfact, a.order)
     for ord = 1:a.order-ordfact
         div!(c, a, b, ord, ordfact) # updates c[ord+1]
     end
@@ -447,7 +447,7 @@ c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}).
 For `Taylor1` polynomials, `ordfact` is the order of the factorized
 term of the denominator.
 """
-function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
+@inline function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
     if k == 0
         @inbounds c[1] = a[ordfact+1] / b[ordfact+1]
         return nothing
