@@ -6,7 +6,12 @@
 # MIT Expat license
 #
 
-"Abstract type for Taylor1, HomogeneousPolynomial and TaylorN"
+"""
+    AbstractSeries{T<:Number} <: Number
+
+Parameterized abstract type for [`Taylor1`](@ref),
+[`HomogeneousPolynomial`](@ref) and [`TaylorN`](@ref).
+"""
 @compat abstract type AbstractSeries{T<:Number} <: Number end
 
 
@@ -60,7 +65,7 @@ julia> Taylor1(Rational{Int}, 4)
  1//1 t + 𝒪(t⁵)
 ```
 """
-Taylor1{T<:Number}(::Type{T}, order::Int=1) = Taylor1{T}( [zero(T), one(T)], order)
+Taylor1{T<:Number}(::Type{T}, order::Int64=1) = Taylor1{T}( [zero(T), one(T)], order)
 Taylor1(order::Int=1) = Taylor1(Float64, order)
 
 
@@ -171,7 +176,7 @@ whose default corresponds to `get_order()`. The default of type for
 ```julia
 julia> TaylorN(1)
  1.0 x₁ + 𝒪(‖x‖⁷)
- 
+
 julia> TaylorN(Rational{Int},2)
  1//1 x₂ + 𝒪(‖x‖⁷)
 ```

@@ -3,7 +3,7 @@ using Documenter, TaylorSeries
 makedocs(
     modules = [TaylorSeries],
     format = :html,
-    sitename = "TaylorSeries",
+    sitename = "TaylorSeries.jl",
     pages = [
         "Home" => "index.md",
         "Background" => "background.md",

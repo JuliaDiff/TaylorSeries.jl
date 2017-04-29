@@ -19,7 +19,7 @@ ParamsTaylorN
 ## Functions and methods
 
 ```@docs
-Taylor1{T<:Number}(::Type{T}, ::Int)
+Taylor1([::Type{Float64}], [order::Int64=1])
 HomogeneousPolynomial{T<:Number}(::Type{T}, ::Int)
 TaylorN{T<:Number}(::Type{T}, nv::Int; [order::Int=get_order()])
 set_variables
@@ -45,7 +45,6 @@ generate_index_vectors
 in_base
 make_inverse_dict
 order_posTb
-max_order
 resize_coeffs1!
 resize_coeffsHP!
 zero_korder
@@ -75,5 +74,5 @@ A_mul_B!
 ```@index
 Pages = ["api.md"]
 Module = ["TaylorSeries"]
-Order = []
+Order = [:type, :function]
 ```
