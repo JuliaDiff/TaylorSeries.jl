@@ -281,9 +281,9 @@ where all `c`, `a`, and `b` are either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
-\begin{equation*}
+```math
 c_k = \sum_{j=0}^k a_j b_{k-j}.
-\end{equation*}
+```
 
 """ mul!
 
@@ -440,9 +440,9 @@ where all `c`, `a` and `b` are either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
-\begin{equation*}
-c_k =  \frac{1}{b_0} (a_k - \sum_{j=0}^{k-1} c_j b_{k-j}).
-\end{equation*}
+```math
+c_k =  \frac{1}{b_0} \big(a_k - \sum_{j=0}^{k-1} c_j b_{k-j}\big).
+```
 
 For `Taylor1` polynomials, `ordfact` is the order of the factorized
 term of the denominator.

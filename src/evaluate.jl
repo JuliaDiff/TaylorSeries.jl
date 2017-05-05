@@ -52,7 +52,7 @@ doc"""
 
 Evaluates each element of `x::Array{Taylor1{T},1}`,
 representing the Taylor expansion for the dependent variables
-of an ODE at *time* δt. It updates the vector `x0` with the
+of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
 function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::Array{T,1})

@@ -6,10 +6,10 @@ A [Julia](http://julialang.org) package for Taylor expansions in one or more ind
 
 ### Authors
 
-- [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas,
-Universidad Nacional Autónoma de México (UNAM)
-- [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad de Ciencias,
-Universidad Nacional Autónoma de México (UNAM)
+- [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias
+    Físicas, Universidad Nacional Autónoma de México (UNAM).
+- [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad
+    de Ciencias, Universidad Nacional Autónoma de México (UNAM).
 
 
 ### License
@@ -29,20 +29,9 @@ julia> Pkg.add("TaylorSeries")
 
 ### Related packages
 
-- [Polynomials.jl](https://github.com/keno/Polynomials.jl): Polynomial
-manipulations
-- [PowerSeries.jl](https://github.com/jwmerrill/PowerSeries.jl): Truncated
-power series for Julia
-- [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) Sparse
-multivariate polynomials in Julia
-
-### References
-
-- W. Tucker, *Validated Numerics: A Short Introduction to Rigorous
-Computations*, Princeton University Press (2011).
--  A. Haro, *Automatic differentiation methods in computational dynamical
-systems: Invariant manifolds and normal forms of vector fields at fixed points*,
-[preprint](http://www.maia.ub.es/~alex/admcds/admcds.pdf).
+- [Polynomials.jl](https://github.com/keno/Polynomials.jl): Polynomial manipulations
+- [PowerSeries.jl](https://github.com/jwmerrill/PowerSeries.jl): Truncated power series for Julia
+- [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) Sparse multivariate polynomials in Julia
 
 ### Acknowledgments
 
@@ -52,5 +41,5 @@ We thank the participants of the course for putting up with the half-baked
 material and contributing energy and ideas.
 
 We acknowledge financial support from DGAPA-UNAM PAPIME grants PE-105911 and
-PE-107114, and PAPIIT grant IG-101113. LB acknowledges support through a
-*Cátedra Moshinsky* (2013).
+PE-107114, and PAPIIT grants IG-101113 and IG-100616. LB acknowledges
+support through a *Cátedra Marcos Moshinsky* (2013).

@@ -327,11 +327,14 @@ for `f::Taylor1` polynomial if the first coefficient of `f` is zero.
 Otherwise, an `ArgumentError` is thrown.
 
 The algorithm implements Lagrange inversion at $t=0$ if $f(0)=0$:
+```math
 \begin{equation*}
 f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
     \frac{{\rm d}^{n-1}}{{\rm d} z^{n-1}}\left(\frac{z}{f(z)}\right)^n
     \right\vert_{z=0}.
 \end{equation*}
+```
+
 """
 function inverse{T<:Number}(f::Taylor1{T})
     if f[1] != zero(T)
@@ -366,9 +369,11 @@ for both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
+```math
 \begin{equation*}
 c_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j.
 \end{equation*}
+```
 
 """ exp!
 
@@ -381,9 +386,11 @@ for both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
+```math
 \begin{equation*}
-c_k = \frac{1}{a_0} (a_k - \frac{1}{k} \sum_{j=0}^{k-1} j a_{k-j} c_j ).
+c_k = \frac{1}{a_0} \big(a_k - \frac{1}{k} \sum_{j=0}^{k-1} j a_{k-j} c_j \big).
 \end{equation*}
+```
 
 """ log!
 
@@ -397,10 +404,12 @@ either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
-\\begin{eqnarray*}
-s_k &=&  \\frac{1}{k}\\sum_{j=0}^{k-1} (k-j) a_{k-j} c_j ,\\\\
-c_k &=& -\\frac{1}{k}\\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
-\\end{eqnarray*}
+```math
+\begin{eqnarray*}
+s_k &=&  \frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} c_j ,\\
+c_k &=& -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
+\end{eqnarray*}
+```
 
 """ sincos!
 
@@ -414,9 +423,11 @@ is passed as an argument for efficiency.
 
 The coefficients are given by
 
+```math
 \begin{equation*}
 c_k = a_k + \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j.
 \end{equation*}
+```
 
 """ tan!
 
@@ -428,10 +439,12 @@ Update the `k-th` expansion coefficients `c[k+1]` of `c = asin(a)`,
 for `c` and `a` either `Taylor1` or `TaylorN`; `r = sqrt(1-c^2)` and
 is passed as an argument for efficiency.
 
+```math
 \begin{equation*}
 c_k = \frac{1}{ \sqrt{r_0} }
     \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big).
 \end{equation*}
+```
 
 """ asin!
 
@@ -443,11 +456,12 @@ Update the `k-th` expansion coefficients `c[k+1]` of `c = acos(a)`,
 for `c` and `a` either `Taylor1` or `TaylorN`; `r = sqrt(1-c^2)` and
 is passed as an argument for efficiency.
 
-
+```math
 \begin{equation*}
 c_k = - \frac{1}{ r_0 }
     \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big).
 \end{equation*}
+```
 
 """ acos!
 
@@ -459,9 +473,11 @@ Update the `k-th` expansion coefficients `c[k+1]` of `c = atan(a)`,
 for `c` and `a` either `Taylor1` or `TaylorN`; `r = 1+a^2` and
 is passed as an argument for efficiency.
 
+```math
 \begin{equation*}
-c_k = \frac{1}{r_0}(a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j).
+c_k = \frac{1}{r_0}\big(a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j\big).
 \end{equation*}
+```
 
 """ atan!
 
@@ -475,10 +491,12 @@ either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
-\\begin{eqnarray*}
-s_k &=& \\frac{1}{k} \\sum_{j=0}^{k-1} (k-j) a_{k-j} c_j, \\\\
-c_k &=& \\frac{1}{k} \\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
-\\end{eqnarray*}
+```math
+\begin{eqnarray*}
+s_k &=& \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j, \\
+c_k &=& \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
+\end{eqnarray*}
+```
 
 """ sinhcosh!
 
@@ -490,8 +508,10 @@ Update the `k-th` expansion coefficients `c[k+1]` of `c = tanh(a)`,
 for `c` and `a` either `Taylor1` or `TaylorN`; `p = a^2` and
 is passed as an argument for efficiency.
 
+```math
 \begin{equation*}
 c_k = a_k - \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j.
 \end{equation*}
+```
 
 """ tanh!
