@@ -8,10 +8,13 @@
 __precompile__(true)
 
 """
-TaylorSeries
+    TaylorSeries
 
-Main module for `TaylorSeries.jl` -- a package for Taylor expansions in one
-or more independent variables.
+A Julia package for Taylor expansions in one or more independent variables.
+
+The basic constructors are [`Taylor1`](@ref) and [`TaylorN`](@ref);
+see also [`HomogeneousPolynomial`](@ref).
+
 """
 module TaylorSeries
 
@@ -32,7 +35,7 @@ import Base: zero, one, zeros, ones, isinf, isnan,
     rem, mod, mod2pi, abs, gradient,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
-    A_mul_B!, power_by_squaring, 
+    A_mul_B!, power_by_squaring,
     getindex, setindex!, endof
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries

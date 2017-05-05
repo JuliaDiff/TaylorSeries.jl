@@ -6,6 +6,10 @@
 CurrentModule = TaylorSeries
 ```
 
+```@docs
+TaylorSeries
+```
+
 ## Types
 
 ```@docs
