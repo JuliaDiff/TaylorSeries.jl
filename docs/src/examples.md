@@ -122,3 +122,18 @@ set_variables("x", numvars=2, order=6) # hide
 These examples show that
 `fateman2` is nearly twice as fast as `fateman1`, and that the series has 135751
 monomials in 4 variables.
+
+
+### Bechmarks
+
+The functions described above have been compared against Mathematica v11.1.
+The relevant files used for benchmarking can be found [here](../../perf/).
+Running on a MacPro with Intel-Xeon processors 2.7GHz, we obtain that
+Mathematica requires on average (5 runs) 3.075957 seconds for the computation,
+while for `fateman1` and `fateman2` above we obtain 2.811391 and 1.490256,
+respectively.
+
+Then, with the current version of `TaylorSeries.jl`, our implementation of
+`fateman1` is about 10% faster, and `fateman2` is about a factor
+2 faster. (The original test by Fateman corresponds to `fateman1` above, which
+avoids some optimizations related to squaring.)
