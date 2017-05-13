@@ -288,7 +288,7 @@ jacobian([p,q], [2,1])
 hessian(r, [1.0,1.0])
 ```
 
-Other specific applications are described in the next [section](examples).
+Other specific applications are described in the next [section](Examples).
 
 ## Mixtures
 
