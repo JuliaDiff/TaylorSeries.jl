@@ -417,11 +417,9 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
     cdivfact = a1[ordfact+1] / b1[ordfact+1]
 
     # Is the polynomial factorizable?
-    if iszero(cdivfact)
-        throw(ArgumentError(
+    iszero(b1[ordfact+1]) && throw( ArgumentError(
         """Division does not define a Taylor1 polynomial;
-        order k=$(ordfact) => coeff[$(ordfact+1)]=$(cdivfact)."""))
-    end
+        order k=$(ordfact) => coeff[$(ordfact+1)]=$(cdivfact).""") )
 
     return ordfact, cdivfact
 end
