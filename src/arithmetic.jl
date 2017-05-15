@@ -417,11 +417,10 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
     cdivfact = a1[ordfact+1] / b1[ordfact+1]
 
     # Is the polynomial factorizable?
-    if isinf(cdivfact) || isnan(cdivfact)
+    if iszero(cdivfact)
         throw(ArgumentError(
-        """Division does not define a Taylor1 polynomial
-        or its first non-zero coefficient is Inf/NaN.
-        Order k=$(ordfact) => coeff[$(ordfact+1)]=$(cdivfact)."""))
+        """Division does not define a Taylor1 polynomial;
+        order k=$(ordfact) => coeff[$(ordfact+1)]=$(cdivfact)."""))
     end
 
     return ordfact, cdivfact
