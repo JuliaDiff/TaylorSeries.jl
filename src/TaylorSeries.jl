@@ -20,7 +20,7 @@ module TaylorSeries
 
 using Compat
 
-if VERSION ≤ v"0.6.0-dev"
+if !isdefined(Base, :iszero)
     import Compat: iszero
     export iszero
 else
