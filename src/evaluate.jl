@@ -15,15 +15,14 @@ ommitted, its value is considered as zero. Note that a `Taylor1` polynomial `a`
 may also be evaluated by calling it as a function; that is, the syntax `a(dx)`
 is equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
-function evaluate{T<:Number}(a::Taylor1{T}, dx::T)
+function evaluate(a::Taylor1{T}, dx::T) where T<:Number
     @inbounds suma = a[end]
     @inbounds for k = a.order:-1:1
         suma = suma*dx + a[k]
     end
     suma
 end
-
-function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
+function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     R = promote_type(T,S)
     @inbounds suma = convert(R, a[end])
     @inbounds for k = a.order:-1:1
@@ -31,8 +30,7 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     end
     suma
 end
-
-evaluate{T<:Number}(a::Taylor1{T}) = a[1]
+evaluate(a::Taylor1{T}) where T<:Number = a[1]
 
 doc"""
     evaluate(x, δt)
@@ -43,17 +41,16 @@ the dependent variables of an ODE, at *time* δt. Note that an array `x` of
 that is, the syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
 is equivalent to `evaluate(x)`.
 """
-function evaluate{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S)
+function evaluate(x::Array{Taylor1{T},1}, δt::S) where {T<:Number, S<:Number}
     R = promote_type(T,S)
     return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
 end
-
-function evaluate{T<:Number}(x::Array{Taylor1{T},1}, δt::T)
+function evaluate(x::Array{Taylor1{T},1}, δt::T) where T<:Number
     xnew = Array{T}( length(x) )
     evaluate!(x, δt, xnew)
     return xnew
 end
-evaluate{T<:Number}(a::Array{Taylor1{T},1}) = evaluate.(a)
+evaluate(a::Array{Taylor1{T},1}) where T<:Number = evaluate(a, zero(T))
 
 doc"""
     evaluate!(x, δt, x0)
@@ -63,15 +60,18 @@ representing the Taylor expansion for the dependent variables
 of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
-function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::Union{Array{T,1},SubArray{T,1}})
+function evaluate!(x::Array{Taylor1{T},1}, δt::T,
+        x0::Union{Array{T,1},SubArray{T,1}}) where T<:Number
+
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δt )
     end
     nothing
 end
+function evaluate!(x::Array{Taylor1{T},1}, δt::S,
+        x0::Union{Array{T,1},SubArray{T,1}}) where {T<:Number, S<:Number}
 
-function evaluate!{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S, x0::Union{Array{T,1},SubArray{T,1}})
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δt )
@@ -85,9 +85,10 @@ doc"""
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
 Note that the syntax `a(x)` is equivalent to `evaluate(a, x)`.
 """
-evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S}) =
+evaluate(a::Taylor1{T}, x::Taylor1{S}) where {T<:Number, S<:Number} =
     evaluate(promote(a,x)...)
-function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
+
+function evaluate(a::Taylor1{T}, x::Taylor1{T}) where T<:Number
     if a.order != x.order
         a, x = fixorder(a, x)
     end
@@ -98,7 +99,7 @@ function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
     suma
 end
 
-function evaluate{T<:Number}(a::Taylor1{Taylor1{T}}, x::Taylor1{T})
+function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where T<:Number
     @inbounds suma = a[end]
     @inbounds for k = a.order:-1:1
         suma = suma*x + a[k]
@@ -106,7 +107,8 @@ function evaluate{T<:Number}(a::Taylor1{Taylor1{T}}, x::Taylor1{T})
     suma
 end
 
-evaluate{T<:Number,S<:Number}(p::Taylor1{T},x::Array{S}) = evaluate.(p,x)
+evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
+    evaluate.(p, x)
 
 #function-like behavior for Taylor1
 (p::Taylor1)(x) = evaluate(p, x)
@@ -114,13 +116,14 @@ evaluate{T<:Number,S<:Number}(p::Taylor1{T},x::Array{S}) = evaluate.(p,x)
 (p::Taylor1)() = evaluate(p)
 
 #function-like behavior for Array{Taylor1,1}
-(p::Array{Taylor1{T},1}){T<:Number}(x) = evaluate(p, x)
+(p::Array{Taylor1{T},1})(x) where T<:Number = evaluate(p, x)
 
-(p::Array{Taylor1{T},1}){T<:Number}() = evaluate.(p)
+(p::Array{Taylor1{T},1})() where T<:Number = evaluate.(p)
 
 ## Evaluation of multivariable
-function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
-        x0::Array{T,1})
+function evaluate!(x::Array{TaylorN{T},1}, δx::Array{T,1},
+        x0::Array{T,1}) where T<:Number
+
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δx )
@@ -128,8 +131,9 @@ function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
     nothing
 end
 
-function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
-        x0::Array{Taylor1{T},1})
+function evaluate!(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
+        x0::Array{Taylor1{T},1}) where T<:NumberNotSeriesN
+
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δx )
@@ -137,8 +141,9 @@ function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylo
     nothing
 end
 
-function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1},
-        x0::Array{TaylorN{T},1})
+function evaluate!(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1},
+        x0::Array{TaylorN{T},1}) where T<:NumberNotSeriesN
+
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δx )
@@ -146,8 +151,9 @@ function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylo
     nothing
 end
 
-function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
-        x0::Array{TaylorN{T},1})
+function evaluate!(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
+        x0::Array{TaylorN{T},1}) where T<:Number
+
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δt )
@@ -162,8 +168,9 @@ Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
 it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
 `evaluate(a, vals)`; and `a()` is equivalent to `evaluate(a)`.
 """
-function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
-        vals::Array{S,1} )
+function evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
+        {T<:Number, S<:NumberNotSeriesN}
+
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
@@ -197,8 +204,9 @@ If `vals` is ommitted, it's evaluated at zero.
 Note that the syntax `a(vals)` is equivalent to `evaluate(a, vals)`; and `a()`
 is equivalent to `evaluate(a)`.
 """
-function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
-        vals::Array{S,1})
+function evaluate(a::TaylorN{T}, vals::Array{S,1}) where
+        {T<:Number,S<:NumberNotSeriesN}
+
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
@@ -219,9 +227,9 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
 
     return sum( sort!(suma, by=abs2) )
 end
+function evaluate(a::TaylorN{T}, vals::Array{Taylor1{S},1}) where
+        {T<:Number, S<:NumberNotSeries}
 
-function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
-        vals::Array{Taylor1{S},1})
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
@@ -243,8 +251,9 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     return suma
 end
 
-function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
-        vals::Array{Taylor1{T},1})
+function evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
+        {T<:NumberNotSeries}
+
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
@@ -265,8 +274,9 @@ function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
     return suma
 end
 
-function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
-        vals::Array{TaylorN{S},1})
+function evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
+        {T<:Number, S<:NumberNotSeries}
+
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
@@ -289,27 +299,31 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
 end
 
 
-evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
+evaluate(a::TaylorN{T}) where {T<:Number} = a[1][1]
 
-function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
+function evaluate(x::Array{TaylorN{T},1}, δx::Array{T,1}) where {T<:Number}
     x0 = Array{T}( length(x) )
     evaluate!( x, δx, x0 )
     return x0
 end
 
-function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1})
+function evaluate(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1}) where
+        {T<:NumberNotSeriesN}
+
     x0 = Array{Taylor1{T}}( length(x) )
     evaluate!( x, δx, x0 )
     return x0
 end
 
-function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1})
+function evaluate(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1}) where
+        {T<:NumberNotSeriesN}
+
     x0 = Array{TaylorN{T}}( length(x) )
     evaluate!( x, δx, x0 )
     return x0
 end
 
-evaluate{T<:Number}(x::Array{TaylorN{T},1}) = evaluate.(x)
+evaluate(x::Array{TaylorN{T},1}) where {T<:Number} = evaluate.(x)
 
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)

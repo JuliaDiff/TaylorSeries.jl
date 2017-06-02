@@ -7,80 +7,85 @@
 #
 
 ## Conversion
-convert{T<:Number}(::Type{Taylor1{T}}, a::Taylor1) =
+convert(::Type{Taylor1{T}}, a::Taylor1) where T<:Number =
     Taylor1(convert(Array{T,1}, a.coeffs), a.order)
 
-function convert{T<:Integer, S<:AbstractFloat}(::Type{Taylor1{Rational{T}}},
-    a::Taylor1{S})
+function convert(::Type{Taylor1{Rational{T}}}, a::Taylor1{S}) where
+        {T<:Integer, S<:AbstractFloat}
+
     la = length(a.coeffs)
     v = Array{Rational{T}}(la)
     v .= rationalize.(a[1:la])
     return Taylor1(v)
 end
 
-convert{T<:Number}(::Type{Taylor1{T}}, b::Array{T,1}) = Taylor1(b, length(b)-1)
+convert(::Type{Taylor1{T}}, b::Array{T,1}) where T<:Number =
+    Taylor1(b, length(b)-1)
 
-convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::Array{S,1}) =
+convert(::Type{Taylor1{T}}, b::Array{S,1}) where {T<:Number, S<:Number} =
     Taylor1(convert(Array{T,1},b))
 
-convert{T<:Number, S<:Number}(::Type{Taylor1{T}}, b::S) = Taylor1([convert(T,b)], 0)
+convert(::Type{Taylor1{T}}, b::S)  where {T<:Number, S<:Number} =
+    Taylor1([convert(T,b)], 0)
 
-convert{T<:Number}(::Type{Taylor1{T}}, b::T) = Taylor1([b], 0)
+convert(::Type{Taylor1{T}}, b::T)  where T<:Number = Taylor1([b], 0)
 
 convert(::Type{Taylor1}, a::Number) = Taylor1(a, 0)
 
 
-convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) =
-    HomogeneousPolynomial{T}(convert(Array{T,1}, a.coeffs), a.order)
+convert(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) where T<:Number =
+    HomogeneousPolynomial(convert(Array{T,1}, a.coeffs), a.order)
 
-function convert{T<:Integer, S<:AbstractFloat}(
-    ::Type{HomogeneousPolynomial{Rational{T}}}, a::HomogeneousPolynomial{S})
+function convert(::Type{HomogeneousPolynomial{Rational{T}}},
+        a::HomogeneousPolynomial{S}) where {T<:Integer, S<:AbstractFloat}
+
     la = length(a.coeffs)
     v = Array{Rational{T}}(la)
     v .= rationalize.(a[1:la], tol=eps(one(S)))
     return HomogeneousPolynomial(v, a.order)
 end
-convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) =
-    HomogeneousPolynomial{T}(convert(Array{T,1}, b), orderH(b))
 
-convert{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}}, b::S) =
-    HomogeneousPolynomial{T}([convert(T,b)], 0)
+convert(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) where {T<:Number, S<:Number} =
+    HomogeneousPolynomial(convert(Array{T,1}, b), orderH(b))
 
-convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::Array{T,1}) =
-    HomogeneousPolynomial{T}(b, orderH(b))
+convert(::Type{HomogeneousPolynomial{T}}, b::S) where {T<:Number, S<:Number}=
+    HomogeneousPolynomial([convert(T,b)], 0)
 
-convert{T<:Number}(::Type{HomogeneousPolynomial{T}}, b::T) =
-    HomogeneousPolynomial{T}([b], 0)
+convert(::Type{HomogeneousPolynomial{T}}, b::Array{T,1}) where T<:Number =
+    HomogeneousPolynomial(b, orderH(b))
+
+convert(::Type{HomogeneousPolynomial{T}}, b::T) where T<:Number =
+    HomogeneousPolynomial([b], 0)
 
 convert(::Type{HomogeneousPolynomial}, a::Number) = HomogeneousPolynomial([a],0)
 
 
-convert{T<:Number}(::Type{TaylorN{T}}, a::TaylorN) =
-    TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), a.order)
+convert(::Type{TaylorN{T}}, a::TaylorN) where T<:Number =
+    TaylorN( convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), a.order)
 
-convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{S}) =
-    TaylorN{T}( [convert(HomogeneousPolynomial{T}, b)], b.order)
+convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{S}) where {T<:Number, S<:Number} =
+    TaylorN( [convert(HomogeneousPolynomial{T}, b)], b.order)
 
-convert{T<:Number, S<:Number}(::Type{TaylorN{T}},
-    b::Array{HomogeneousPolynomial{S},1}) =
-    TaylorN{T}( convert(Array{HomogeneousPolynomial{T},1}, b), length(b)-1)
+convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) where {T<:Number, S<:Number} =
+    TaylorN( convert(Array{HomogeneousPolynomial{T},1}, b), length(b)-1)
 
-convert{T<:Number, S<:Number}(::Type{TaylorN{T}}, b::S) =
+convert(::Type{TaylorN{T}}, b::S)  where {T<:Number, S<:Number} =
     TaylorN( [HomogeneousPolynomial([convert(T, b)], 0)], 0)
 
-convert{T<:Number}(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) =
-    TaylorN{T}( [b], b.order)
+convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) where T<:Number =
+    TaylorN( [b], b.order)
 
-convert{T<:Number}(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) =
-    TaylorN{T}( b, length(b)-1)
+convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) where T<:Number =
+    TaylorN( b, length(b)-1)
 
-convert{T<:Number}(::Type{TaylorN{T}}, b::T) =
+convert(::Type{TaylorN{T}}, b::T) where T<:Number =
     TaylorN( [HomogeneousPolynomial([b], 0)], 0)
 
 convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 0)
 
 
-function convert{T<:Number}(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}})
+function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where T<:Number
+
     orderN = get_order()
     r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
 
@@ -98,7 +103,8 @@ function convert{T<:Number}(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}})
     return TaylorN(r)
 end
 
-function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}})
+function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where T<:Number
+
     ordert = 0
     for ordHP in eachindex(s.coeffs)
         ordert = max(ordert, s[ordHP][1].order)
@@ -122,8 +128,9 @@ function convert{T<:Number}(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}})
     return Taylor1(vT)
 end
 
-function convert{T<:Number,N}(::Type{Array{TaylorN{Taylor1{T}},N}},
-        s::Array{Taylor1{TaylorN{T}},N})
+function convert(::Type{Array{TaylorN{Taylor1{T}},N}},
+        s::Array{Taylor1{TaylorN{T}},N}) where {T<:Number, N}
+
     v = Array{TaylorN{Taylor1{T}}}(size(s))
     for ind in eachindex(s)
         v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
@@ -131,8 +138,9 @@ function convert{T<:Number,N}(::Type{Array{TaylorN{Taylor1{T}},N}},
     return v
 end
 
-function convert{T<:Number,N}(::Type{Array{Taylor1{TaylorN{T}},N}},
-        s::Array{TaylorN{Taylor1{T}},N})
+function convert(::Type{Array{Taylor1{TaylorN{T}},N}},
+        s::Array{TaylorN{Taylor1{T}},N}) where {T<:Number, N}
+
     v = Array{Taylor1{TaylorN{T}}}(size(s))
     for ind in eachindex(s)
         v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
@@ -143,40 +151,41 @@ end
 
 
 # Promotion
-promote_rule{T<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{T}}) = Taylor1{T}
+promote_rule(::Type{Taylor1{T}}, ::Type{Taylor1{T}}) where T<:Number = Taylor1{T}
 
-promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) =
-    Taylor1{promote_type(T, S)}
+promote_rule(::Type{Taylor1{T}}, ::Type{Taylor1{S}}) where {T<:Number, S<:Number} =
+    Taylor1{promote_type(T,S)}
 
-promote_rule{T<:Number}(::Type{Taylor1{T}}, ::Type{Array{T,1}}) = Taylor1{T}
+promote_rule(::Type{Taylor1{T}}, ::Type{Array{T,1}}) where T<:Number = Taylor1{T}
 
-promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{Array{S,1}}) =
-    Taylor1{promote_type(T, S)}
+promote_rule(::Type{Taylor1{T}}, ::Type{Array{S,1}}) where {T<:Number, S<:Number} =
+    Taylor1{promote_type(T,S)}
 
-promote_rule{T<:Number}(::Type{Taylor1{T}}, ::Type{T}) = Taylor1{T}
+promote_rule(::Type{Taylor1{T}}, ::Type{T}) where T<:Number = Taylor1{T}
 
-promote_rule{T<:Number, S<:Number}(::Type{Taylor1{T}}, ::Type{S}) =
-    Taylor1{promote_type(T, S)}
-
-
-promote_rule{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}},
-    ::Type{HomogeneousPolynomial{S}}) = HomogeneousPolynomial{promote_type(T,S)}
-
-promote_rule{T<:Number, S<:Number}(::Type{HomogeneousPolynomial{T}},
-    ::Type{Array{S,1}}) = HomogeneousPolynomial{promote_type(T, S)}
-
-promote_rule{T<:Number,S<:Union{Real,Complex}}(::Type{HomogeneousPolynomial{T}},
-    ::Type{S}) = HomogeneousPolynomial{promote_type(T,S)}
+promote_rule(::Type{Taylor1{T}}, ::Type{S}) where {T<:Number, S<:Number} =
+    Taylor1{promote_type(T,S)}
 
 
-promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) =
-    TaylorN{promote_type(T, S)}
+promote_rule(::Type{HomogeneousPolynomial{T}},
+    ::Type{HomogeneousPolynomial{S}}) where {T<:Number, S<:Number} =
+        HomogeneousPolynomial{promote_type(T,S)}
 
-promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}},
-    ::Type{HomogeneousPolynomial{S}}) = TaylorN{promote_type(T, S)}
+promote_rule(::Type{HomogeneousPolynomial{T}},
+    ::Type{Array{S,1}}) where {T<:Number, S<:Number} = HomogeneousPolynomial{promote_type(T,S)}
 
-promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}},
-    ::Type{Array{HomogeneousPolynomial{S},1}}) = TaylorN{promote_type(T, S)}
+promote_rule(::Type{HomogeneousPolynomial{T}}, ::Type{S}) where
+    {T<:Number, S<:NumberNotSeries} = HomogeneousPolynomial{promote_type(T,S)}
 
-promote_rule{T<:Number, S<:Number}(::Type{TaylorN{T}}, ::Type{S}) =
-    TaylorN{promote_type(T, S)}
+
+promote_rule(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) where {T<:Number, S<:Number}=
+    TaylorN{promote_type(T,S)}
+
+promote_rule(::Type{TaylorN{T}}, ::Type{HomogeneousPolynomial{S}}) where
+    {T<:Number, S<:Number} = TaylorN{promote_type(T,S)}
+
+promote_rule(::Type{TaylorN{T}}, ::Type{Array{HomogeneousPolynomial{S},1}}) where
+    {T<:Number, S<:Number} = TaylorN{promote_type(T,S)}
+
+promote_rule(::Type{TaylorN{T}}, ::Type{S}) where {T<:Number, S<:Number} =
+    TaylorN{promote_type(T,S)}

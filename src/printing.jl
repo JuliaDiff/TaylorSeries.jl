@@ -19,7 +19,7 @@ function superscriptify(n::Int)
 end
 
 
-function pretty_print{T<:Number}(a::Taylor1{T})
+function pretty_print(a::Taylor1{T}) where T<:Number
     z = zero(a[1])
     space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
@@ -38,7 +38,8 @@ function pretty_print{T<:Number}(a::Taylor1{T})
     strout = strout * bigO
     strout
 end
-function pretty_print{T<:Number}(a::Taylor1{HomogeneousPolynomial{T}})
+
+function pretty_print(a::Taylor1{HomogeneousPolynomial{T}}) where T<:Number
     z = zero(a[1])
     space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
@@ -59,7 +60,8 @@ function pretty_print{T<:Number}(a::Taylor1{HomogeneousPolynomial{T}})
     strout = strout * bigO
     strout
 end
-function pretty_print{T<:Number}(a::Taylor1{TaylorN{T}})
+
+function pretty_print(a::Taylor1{TaylorN{T}}) where T<:Number
     z = zero(a[1])
     space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
@@ -80,14 +82,16 @@ function pretty_print{T<:Number}(a::Taylor1{TaylorN{T}})
     strout = strout * bigO
     strout
 end
-function pretty_print{T<:Number}(a::HomogeneousPolynomial{T})
+
+function pretty_print(a::HomogeneousPolynomial{T}) where T<:Number
     z = zero(a[1])
     space = string(" ")
     a == zero(a) && return string(space, z)
     strout::String = homogPol2str(a)
     strout
 end
-function pretty_print{T<:Number}(a::TaylorN{T})
+
+function pretty_print(a::TaylorN{T}) where T<:Number
     z = zero(a[1])
     space = string("")
     bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
@@ -107,7 +111,7 @@ function pretty_print{T<:Number}(a::TaylorN{T})
     strout
 end
 
-function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
+function homogPol2str(a::HomogeneousPolynomial{T}) where T<:Number
     numVars = get_numvars()
     order = a.order
     z = zero(T)
@@ -134,7 +138,8 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
     end
     return strout[1:prevind(strout, end)]
 end
-function homogPol2str{T<:Number}(a::HomogeneousPolynomial{Taylor1{T}})
+
+function homogPol2str(a::HomogeneousPolynomial{Taylor1{T}}) where T<:Number
     numVars = get_numvars()
     order = a.order
     z = zero(a[1])
@@ -170,13 +175,16 @@ function numbr2str(zz, ifirst::Bool=false)
     plusmin = ifelse( ifirst, string(""), string("+ ") )
     return string(plusmin, zz)
 end
-function numbr2str{T<:Union{AbstractFloat,Integer,Rational}}(zz::T, ifirst::Bool=false)
+
+function numbr2str(zz::T, ifirst::Bool=false) where
+        {T<:Union{AbstractFloat,Integer,Rational}}
     zz == zero(T) && return string( zz )
     plusmin = ifelse( zz < zero(T), string("- "),
                 ifelse( ifirst, string(""), string("+ ")) )
     return string(plusmin, abs(zz))
 end
-function numbr2str{T<:Complex}(zz::T, ifirst::Bool=false)
+
+function numbr2str(zz::T, ifirst::Bool=false) where T<:Complex
     zT = zero(zz.re)
     zz == zero(zz) && return string(zT)
     zre, zim = reim(zz)
@@ -220,8 +228,10 @@ end
 name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
 
 # summary
-summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
-function summary{T<:Number}(a::Union{HomogeneousPolynomial{T}, TaylorN{T}})
+summary(a::Taylor1{T}) where T<:Number =
+    string(a.order, "-order ", typeof(a), ":")
+
+function summary(a::Union{HomogeneousPolynomial{T}, TaylorN{T}}) where T<:Number
     string(a.order, "-order ", typeof(a), " in ", get_numvars(), " variables:")
 end
 

@@ -13,7 +13,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @eval ($f)(a::$T) = $T(($f).(a.coeffs), a.order)
     end
 
-    @eval real{T<:Number}(x::Type{$T{T}}) = typeof(real(zero(x)))
+    # @eval real(x::Type{$T{T}}) where {T<:Number} = typeof(real(zero(x)))
 
     @eval ctranspose(a::$T) = conj.(a)
 
@@ -28,13 +28,13 @@ end
 for op in (:mod, :rem)
     for T in (:Taylor1, :TaylorN)
         @eval begin
-            function ($op){T<:Real}(a::$T{T}, x::T)
+            function ($op)(a::$T{T}, x::T) where T<:Real
                 coeffs = copy(a.coeffs)
                 @inbounds coeffs[1] = ($op)(constant_term(a), x)
                 return $T(coeffs, a.order)
             end
 
-            function ($op){T<:Real, S<:Real}(a::$T{T}, x::S)
+            function ($op)(a::$T{T}, x::S) where {T<:Real, S<:Real}
                 R = promote_type(T, S)
                 a = convert($T{R}, a)
                 return ($op)(a, convert(R,x))
@@ -43,25 +43,25 @@ for op in (:mod, :rem)
     end
 
     @eval begin
-        function ($op){T<:Real}(a::TaylorN{Taylor1{T}}, x::T)
+        function ($op)(a::TaylorN{Taylor1{T}}, x::T) where T<:Real
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(constant_term(a), x)
             return TaylorN( coeffs, a.order )
         end
 
-        function ($op){T<:Real,S<:Real}(a::TaylorN{Taylor1{T}}, x::S)
+        function ($op)(a::TaylorN{Taylor1{T}}, x::S) where {T<:Real, S<:Real}
             R = promote_type(T,S)
             a = convert(TaylorN{Taylor1{R}}, a)
             return ($op)(a, convert(R,x))
         end
 
-        function ($op){T<:Real}(a::Taylor1{TaylorN{T}}, x::T)
+        function ($op)(a::Taylor1{TaylorN{T}}, x::T) where T<:Real
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(constant_term(a), x)
             return Taylor1( coeffs, a.order )
         end
 
-        @inbounds function ($op){T<:Real,S<:Real}(a::Taylor1{TaylorN{T}}, x::S)
+        @inbounds function ($op)(a::Taylor1{TaylorN{T}}, x::S) where {T<:Real, S<:Real}
             R = promote_type(T,S)
             a = convert(Taylor1{TaylorN{R}}, a)
             return ($op)(a, convert(R,x))
@@ -73,13 +73,13 @@ end
 ## mod2pi and abs ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        function mod2pi{T<:Real}(a::$T{T})
+        function mod2pi(a::$T{T}) where T<:Real
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = mod2pi( constant_term(a) )
             return $T( coeffs, a.order)
         end
 
-        function abs{T<:Real}(a::$T{T})
+        function abs(a::$T{T}) where T<:Real
             if constant_term(a) > zero(T)
                 return a
             elseif constant_term(a) < zero(T)
@@ -93,20 +93,19 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-
-function mod2pi{T<:Real}(a::TaylorN{Taylor1{T}})
+function mod2pi(a::TaylorN{Taylor1{T}}) where T<:Real
     coeffs = copy(a.coeffs)
     @inbounds coeffs[1] = mod2pi( constant_term(a) )
     return TaylorN( coeffs, a.order )
 end
 
-function mod2pi{T<:Real}(a::Taylor1{TaylorN{T}})
+function mod2pi(a::Taylor1{TaylorN{T}}) where T<:Real
     coeffs = copy(a.coeffs)
     @inbounds coeffs[1] = mod2pi( constant_term(a) )
     return Taylor1( coeffs, a.order )
 end
 
-function abs{T<:Real}(a::TaylorN{Taylor1{T}})
+function abs(a::TaylorN{Taylor1{T}}) where T<:Real
     if constant_term(a)[1] > zero(T)
         return a
     elseif constant_term(a)[1] < zero(T)
@@ -118,7 +117,7 @@ function abs{T<:Real}(a::TaylorN{Taylor1{T}})
     end
 end
 
-function abs{T<:Real}(a::Taylor1{TaylorN{T}})
+function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
     if constant_term(a[1]) > zero(T)
         return a
     elseif constant_term(a[1]) < zero(T)
@@ -144,7 +143,8 @@ Notice that `typeof(abs(a)) <: AbstractSeries`.
 doc"""
     norm(x::AbstractSeries,p::Real)
 
-Computes the p-norm of an `AbstractSeries` defined by ``P(\vec{x}) = \sum_k a_k \vec{x}^k`` as
+Computes the p-norm of an `AbstractSeries` defined by
+``P(\vec{x}) = \sum_k a_k \vec{x}^k`` as
 
 ```math
 ||P||_p =  \left( \sum_k ||a_k||_p^p \right)^{\frac{1}{p}}
@@ -153,11 +153,12 @@ which returns a non-negative number.
 
 """
 norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
-norm{T<:NumberNotSeries}(x::Union{Taylor1{T}, HomogeneousPolynomial{T}}, p::Real=2) = norm(x.coeffs, p)
+norm(x::Union{Taylor1{T},HomogeneousPolynomial{T}}, p::Real=2) where
+    {T<:NumberNotSeries} = norm(x.coeffs, p)
 
 # rtoldefault
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval rtoldefault{T<:Number}(::Type{$T{T}}) = rtoldefault(T)
+    @eval rtoldefault(::Type{$T{T}}) where {T<:Number} = rtoldefault(T)
 end
 
 # isfinite
@@ -170,14 +171,19 @@ isfinite(x::AbstractSeries) = !isnan(x) && !isinf(x)
 
 # isapprox; modified from Julia's Base.isapprox
 doc"""
-    isapprox(x::AbstractSeries, y::AbstractSeries; [rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false])
+`isapprox(x::AbstractSeries, y::AbstractSeries;
+    [rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false])`
 
 Inexact equality comparison between polynomials: returns `true` if
 `norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are
 polynomials. For more details, see [`Base.isapprox`](@ref).
 """
-function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0, nans::Bool=false)
-    x == y || (isfinite(x) && isfinite(y) && norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) || (nans && isnan(x) && isnan(y))
+function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0,
+        nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
+
+    x == y || (isfinite(x) && isfinite(y) &&
+        norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) ||
+        (nans && isnan(x) && isnan(y))
 end
 
 
@@ -185,23 +191,27 @@ end
 doc"""
     taylor_expand(f ,x0 ;order)
 
-Makes a Taylor expansion of the function `f` around the point `x0`. If x0 is a scalar,
-a `Taylor1` expansion will be done. If `x0` is a vector, a `TaylorN` expansion will be
-computed. If the dimension of x0 (`length(x0)`) is different from the variables set for
-`TaylorN` (`get_numvars()`), an `AssertionError` will be thrown.
+Makes a Taylor expansion of the function `f` around the point `x0`.
+
+If x0 is a scalar, a `Taylor1` expansion will be done. If `x0` is a vector, a
+`TaylorN` expansion will be computed. If the dimension of x0 (`length(x0)`)
+is different from the variables set for `TaylorN` (`get_numvars()`), an
+`AssertionError` will be thrown.
 """
 function taylor_expand(f::Function; order::Int64=15)
    a = Taylor1(order)
    return f(a)
 end
 
-function taylor_expand{T<:Number}(f::Function, x0::T; order::Int64=15)
+function taylor_expand(f::Function, x0::T; order::Int64=15) where {T<:Number}
    a = Taylor1([x0, one(T)], order)
    return f(a)
 end
 
 #taylor_expand function for TaylorN
-function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_order()) #a Taylor expansion around x0
+function taylor_expand(f::Function, x0::Vector{T};
+        order::Int64=get_order()) where {T<:Number}
+
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
     X = Array{TaylorN{T}}(ll)
@@ -213,7 +223,7 @@ function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_o
     return f( X )
 end
 
-function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor expansion around x0
+function taylor_expand(f::Function, x0...; order::Int64=get_order())
     x0 = promote(x0...)
     T = eltype(x0[1])
     ll = length(x0)
@@ -233,13 +243,13 @@ doc"""
 
 Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
 """
-function update!{T<:Number}(a::Taylor1, x0::T)
+function update!(a::Taylor1, x0::T) where {T<:Number}
     a.coeffs .= evaluate(a, Taylor1([x0,one(x0)], a.order) ).coeffs
     nothing
 end
 
 #update! function for TaylorN
-function update!{T<:Number}(a::TaylorN,vals::Vector{T})
+function update!(a::TaylorN,vals::Vector{T}) where {T<:Number}
     a.coeffs .= evaluate(a,get_variables().+vals).coeffs
     nothing
 end
