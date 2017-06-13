@@ -104,9 +104,9 @@ function mod2pi{T<:Real}(a::Taylor1{TaylorN{T}})
 end
 
 function abs{T<:Real}(a::TaylorN{Taylor1{T}})
-    if a[1][1] > zero(T)
+    if constant_term(a[1]) > zero(T)
         return a
-    elseif constant_term(a) < zero(T)
+    elseif constant_term(a[1]) < zero(T)
         return -a
     else
         throw(ArgumentError(
@@ -116,9 +116,9 @@ function abs{T<:Real}(a::TaylorN{Taylor1{T}})
 end
 
 function abs{T<:Real}(a::Taylor1{TaylorN{T}})
-    if a[1][1] > zero(T)
+    if constant_term(a[1]) > zero(T)
         return a
-    elseif constant_term(a) < zero(T)
+    elseif constant_term(a[1]) < zero(T)
         return -a
     else
         throw(ArgumentError(
