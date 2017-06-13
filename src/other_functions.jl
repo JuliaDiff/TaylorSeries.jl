@@ -102,3 +102,27 @@ function mod2pi{T<:Real}(a::Taylor1{TaylorN{T}})
     @inbounds coeffs[1] = mod2pi( constant_term(a) )
     return Taylor1( coeffs, a.order )
 end
+
+function abs{T<:Real}(a::TaylorN{Taylor1{T}})
+    if a[1][1] > zero(T)
+        return a
+    elseif constant_term(a) < zero(T)
+        return -a
+    else
+        throw(ArgumentError(
+        """The 0th order TaylorN{Taylor1{T}} coefficient must be non-zero
+        (abs(x) is not differentiable at x=0)."""))
+    end
+end
+
+function abs{T<:Real}(a::Taylor1{TaylorN{T}})
+    if a[1][1] > zero(T)
+        return a
+    elseif constant_term(a) < zero(T)
+        return -a
+    else
+        throw(ArgumentError(
+        """The 0th order Taylor1{TaylorN{T}} coefficient must be non-zero
+        (abs(x) is not differentiable at x=0)."""))
+    end
+end
