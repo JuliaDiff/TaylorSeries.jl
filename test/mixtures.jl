@@ -84,6 +84,11 @@ using Base.Test
     @test mod2pi(-3pi+t1N)[1][1][1] ≈ pi
     @test mod2pi(0.125+2pi+t1N)[1][1][1] ≈ 0.125
 
+    @test abs(tN1+1) == 1+tN1
+    @test abs(tN1-1) == 1-tN1
+    @test_throws ArgumentError abs(tN1)
+    @test_throws ArgumentError abs(t1N)
+
     @test convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) == [t1N, t1N]
     @test convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) == [t1N t1N]
     @test convert(Array{TaylorN{Taylor1{Float64}},1}, [t1N, t1N]) == [tN1, tN1]
