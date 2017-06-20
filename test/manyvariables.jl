@@ -235,7 +235,7 @@ using Base.Test
     @test imag((exp(yT))^(-1im)') == sin(yT)
     exy = exp( xT+yT )
     @test evaluate(exy) == 1
-    @test evaluate(exy,[0.1im,0.01im]) == exp(0.11im)
+    @test isapprox(evaluate(exy,[0.1im,0.01im]), exp(0.11im))
     @test isapprox(evaluate(exy, [1,1]), e^2)
     txy = tan(xT+yT)
     @test get_coeff(txy,[8,7]) == 929569/99225
