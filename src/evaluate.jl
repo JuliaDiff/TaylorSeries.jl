@@ -114,12 +114,12 @@ end
 
 Evaluate a `HomogeneousPolynomial` polynomial at `vals`.
 """
-function evaluate{T<:Number,S<:TaylorSeries.NumberNotSeriesN}(a::HomogeneousPolynomial{T},
+function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
         vals::Array{S,1} )
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = TaylorSeries.coeff_table[a.order+1]
+    ct = coeff_table[a.order+1]
     R = promote_type(T,S)
     suma = zero(R)
 
@@ -142,12 +142,12 @@ evaluate(a::HomogeneousPolynomial) = zero(a[1])
 Evaluate the `TaylorN` polynomial `a` at `vals`.
 If `vals` is ommitted, it's evaluated at zero.
 """
-function evaluate{T<:Number,S<:TaylorSeries.NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
+function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
         vals::Array{S,1})
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = TaylorSeries.coeff_table
+    ct = coeff_table
     R = promote_type(T,S)
     suma = zero(R)
     for homPol in 1:length(a)
