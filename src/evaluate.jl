@@ -149,17 +149,24 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
     num_vars = get_numvars()
     ct = coeff_table
     R = promote_type(T,S)
-    suma = zero(R)
+    a_length = length(a)
+    suma = zeros(R,a_length)
+    #suma = zero(R)
     for homPol in 1:length(a)
+        sun = zero(R)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(ct[homPol][i][1])
             for n in 2:num_vars
                 tmp *= vals[n]^(ct[homPol][i][n])
             end
-            suma += a_coeff * tmp
+            sun += a_coeff * tmp
+            #println(a_coeff * tmp)
+            #suma += a_coeff * tmp
         end
+        suma[homPol] = sun
     end
 
-    return suma
+    #here it only works with <:Real numbers...
+    return sum(sort(suma))
 end
 evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
