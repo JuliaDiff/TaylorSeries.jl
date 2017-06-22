@@ -166,7 +166,41 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
         suma[homPol] = sun
     end
 
-    #here it only works with <:Real numbers...
-    return sum(sort(suma))
+    return sort_n_sum(suma)
 end
 evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
+
+## auxiliary function for a precise evaluation of evaluate
+"""
+    sort_n_sum(a)
+
+Auxiliary function for an accurate evaluation of `evaluate`.
+"""
+function sort_n_sum{T<:NumberNotSeriesN}(a::Array{T,1})
+
+    if T <: Real
+        suma = sum(sort(a,by=abs))
+
+    elseif T <: Complex
+        suma = sum(sort(real(a),by=abs) + sort(imag(a),by=abs)*im)
+
+    elseif T <: Taylor1
+        ord = a[1].order+1
+        T_type = eltype(a[1])
+        a_length = length(a)
+
+        tmp1 = Array(T_type,ord)
+        tmp2 = Array(T_type,a_length)
+
+        for o in 1:ord
+
+            for i in 1:a_length
+                tmp2[i] = a[i][o]
+            end
+
+            tmp1[o] = sum(sort(tmp2,by=abs))
+        end
+        suma = Taylor1(tmp1,ord)
+    end
+    return suma
+end
