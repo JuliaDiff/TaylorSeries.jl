@@ -91,49 +91,7 @@ end
 
 
 
-## Evaluation
-"""
-    evaluate(a, vals)
-
-Evaluate a `HomogeneousPolynomial` polynomial using Horner's rule (hand coded)
-at `vals`.
-"""
-function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
-        vals::Array{S,1} )
-    @assert length(vals) == get_numvars()
-    R = promote_type(T,S)
-    numVars = get_numvars()
-    suma = convert(TaylorN{R}, a)
-
-    @inbounds for nv = 1:numVars
-        suma = horner(suma, (nv, vals[nv]))
-    end
-
-    return suma[1][1]
-end
-evaluate(a::HomogeneousPolynomial) = zero(a[1])
-
-"""
-    evaluate(a, [vals])
-
-Evaluate the `TaylorN` polynomial `a` using Horner's rule (hand coded) at `vals`.
-If `vals` is ommitted, it is evaluated at zero.
-"""
-function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorN{T}, vals::Array{S,1} )
-    @assert length(vals) == get_numvars()
-    numVars = get_numvars()
-    R = promote_type(T,S)
-    suma = convert(TaylorN{R}, a)
-
-    @inbounds for nv = 1:numVars
-        suma = horner(suma, (nv, vals[nv]))
-    end
-
-    return suma[1][1]
-end
-
-evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
-
+## Evaluation of multivariable
 function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
         x0::Array{T,1})
     @assert length(x) == length(x0)
@@ -151,52 +109,98 @@ function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
     nothing
 end
 
-## Evaluates HomogeneousPolynomials and TaylorN on a val of the nv variable
-## using Horner's rule on the nv variable
-function horner{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
-        b::Tuple{Int,S} )
-    nv, val = b
-    numVars = get_numvars()
-    @assert 1 <= nv <= numVars
-    R = promote_type(T,S)
-    @inbounds indTb = coeff_table[a.order+1]
-    suma = TaylorN(zero(R), a.order)
+"""
+    evaluate(a, vals)
 
-    # Horner's rule on the nv variable
-    for ord = a.order : -1 : 0
-        suma_ord = TaylorN(zero(R), a.order)
-        posOrd = order_posTb(a.order, nv, ord)
-        neworder = a.order-ord
-        for pos in posOrd
-            c = a[pos]
-            iIndices = copy(indTb[pos])
-            iIndices[nv] = 0
-            kdic = in_base(get_order(), iIndices)
-            newpos = pos_table[neworder+1][kdic]
-            zhp = HomogeneousPolynomial([zero(R)], neworder)
-            zhp[newpos] = a[pos]
-            suma_ord += TaylorN(zhp, a.order)
+Evaluate a `HomogeneousPolynomial` polynomial at `vals`.
+"""
+function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
+        vals::Array{S,1} )
+    @assert length(vals) == get_numvars()
+
+    num_vars = get_numvars()
+    ct = coeff_table[a.order+1]
+    R = promote_type(T,S)
+    suma = zero(R)
+
+    for (i,a_coeffs) in enumerate(a.coeffs)
+        tmp = vals[1]^(ct[i][1])
+        for n in 2:num_vars
+            tmp *= vals[n]^(ct[i][n])
         end
-        if ord == a.order
-            suma += suma_ord
-        else
-            suma = suma*val + suma_ord
-        end
+        suma += a_coeffs * tmp
     end
 
     return suma
 end
+evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
-function horner{T<:Number,S<:NumberNotSeriesN}(a::TaylorN{T}, b::Tuple{Int,S} )
 
-    nv, val = b
-    @assert 1 <= nv <= get_numvars()
+"""
+    evaluate(a, [vals])
+
+Evaluate the `TaylorN` polynomial `a` at `vals`.
+If `vals` is ommitted, it's evaluated at zero.
+"""
+function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
+        vals::Array{S,1})
+    @assert length(vals) == get_numvars()
+
+    num_vars = get_numvars()
+    ct = coeff_table
     R = promote_type(T,S)
-
-    suma = TaylorN(zero(R), a.order)
-    for ord = a.order:-1:0
-        @inbounds polH = a[ord+1]
-        suma += horner( polH, b)
+    a_length = length(a)
+    suma = zeros(R,a_length)
+    #suma = zero(R)
+    for homPol in 1:length(a)
+        sun = zero(R)
+        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            tmp = vals[1]^(ct[homPol][i][1])
+            for n in 2:num_vars
+                tmp *= vals[n]^(ct[homPol][i][n])
+            end
+            sun += a_coeff * tmp
+            #println(a_coeff * tmp)
+            #suma += a_coeff * tmp
+        end
+        suma[homPol] = sun
     end
-    suma
+
+    return sort_n_sum(suma)
+end
+evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
+
+## auxiliary function for a precise evaluation of evaluate
+"""
+    sort_n_sum(a)
+
+Auxiliary function for an accurate evaluation of `evaluate`.
+"""
+function sort_n_sum{T<:NumberNotSeriesN}(a::Array{T,1})
+
+    if T <: Real
+        suma = sum(sort(a,by=abs))
+
+    elseif T <: Complex
+        suma = sum(sort(real(a),by=abs) + sort(imag(a),by=abs)*im)
+
+    elseif T <: Taylor1
+        ord = a[1].order+1
+        T_type = eltype(a[1])
+        a_length = length(a)
+
+        tmp1 = Array(T_type,ord)
+        tmp2 = Array(T_type,a_length)
+
+        for o in 1:ord
+
+            for i in 1:a_length
+                tmp2[i] = a[i][o]
+            end
+
+            tmp1[o] = sum(sort(tmp2,by=abs))
+        end
+        suma = Taylor1(tmp1,ord)
+    end
+    return suma
 end
