@@ -309,7 +309,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "TaylorSeries.evaluate",
     "category": "Function",
-    "text": "evaluate(a, [dx])\n\nEvaluate a Taylor1 polynomial using Horner's rule (hand coded). If dx is ommitted, its value is considered as zero.\n\n\n\nevaluate(x, δt)\n\nEvaluates each element of x::Array{Taylor1{T},1}, representing the dependent variables of an ODE, at time δt.\n\n\n\nevaluate(a, x)\n\nSubstitute x::Taylor1 as independent variable in a a::Taylor1 polynomial.\n\n\n\nevaluate(a, vals)\n\nEvaluate a HomogeneousPolynomial polynomial using Horner's rule (hand coded) at vals.\n\n\n\nevaluate(a, [vals])\n\nEvaluate the TaylorN polynomial a using Horner's rule (hand coded) at vals. If vals is ommitted, it is evaluated at zero.\n\n\n\n"
+    "text": "evaluate(a, [dx])\n\nEvaluate a Taylor1 polynomial using Horner's rule (hand coded). If dx is ommitted, its value is considered as zero.\n\n\n\nevaluate(x, δt)\n\nEvaluates each element of x::Array{Taylor1{T},1}, representing the dependent variables of an ODE, at time δt.\n\n\n\nevaluate(a, x)\n\nSubstitute x::Taylor1 as independent variable in a a::Taylor1 polynomial.\n\n\n\nevaluate(a, vals)\n\nEvaluate a HomogeneousPolynomial polynomial at vals.\n\n\n\nevaluate(a, [vals])\n\nEvaluate the TaylorN polynomial a at vals. If vals is ommitted, it's evaluated at zero.\n\n\n\n"
 },
 
 {
