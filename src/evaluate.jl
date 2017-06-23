@@ -55,7 +55,7 @@ representing the Taylor expansion for the dependent variables
 of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
-function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::Array{T,1})
+function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::AbstractArray{T,1})
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δt )
@@ -189,4 +189,11 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
 
     return suma
 end
+
 evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
+
+function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
+    x0 = Array{T}( length(x) )
+    evaluate!( x, δx, x0 )
+    return x0
+end
