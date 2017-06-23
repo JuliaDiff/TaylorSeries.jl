@@ -142,7 +142,7 @@ evaluate(a::HomogeneousPolynomial) = zero(a[1])
 Evaluate the `TaylorN` polynomial `a` at `vals`.
 If `vals` is ommitted, it's evaluated at zero.
 """
-function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
+function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
         vals::Array{S,1})
     @assert length(vals) == get_numvars()
 
@@ -151,7 +151,6 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
     R = promote_type(T,S)
     a_length = length(a)
     suma = zeros(R,a_length)
-    #suma = zero(R)
     for homPol in 1:length(a)
         sun = zero(R)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
@@ -160,47 +159,34 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::TaylorSeries.TaylorN{T},
                 tmp *= vals[n]^(ct[homPol][i][n])
             end
             sun += a_coeff * tmp
-            #println(a_coeff * tmp)
-            #suma += a_coeff * tmp
         end
         suma[homPol] = sun
     end
 
-    return sort_n_sum(suma)
+    return sum( sort!(suma, by=abs2) )
 end
-evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
+function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
+        vals::Array{Taylor1{S},1})
+    @assert length(vals) == get_numvars()
 
-## auxiliary function for a precise evaluation of evaluate
-"""
-    sort_n_sum(a)
+    num_vars = get_numvars()
+    ct = coeff_table
+    R = promote_type(T,S)
+    a_length = length(a)
+    ord = maximum( get_order.(vals) )
+    suma = Taylor1(zeros(R, ord))
 
-Auxiliary function for an accurate evaluation of `evaluate`.
-"""
-function sort_n_sum{T<:NumberNotSeriesN}(a::Array{T,1})
-
-    if T <: Real
-        suma = sum(sort(a,by=abs))
-
-    elseif T <: Complex
-        suma = sum(sort(real(a),by=abs) + sort(imag(a),by=abs)*im)
-
-    elseif T <: Taylor1
-        ord = a[1].order+1
-        T_type = eltype(a[1])
-        a_length = length(a)
-
-        tmp1 = Array(T_type,ord)
-        tmp2 = Array(T_type,a_length)
-
-        for o in 1:ord
-
-            for i in 1:a_length
-                tmp2[i] = a[i][o]
+    for homPol in 1:length(a)
+        sun = zero(R)
+        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            tmp = vals[1]^(ct[homPol][i][1])
+            for n in 2:num_vars
+                tmp *= vals[n]^(ct[homPol][i][n])
             end
-
-            tmp1[o] = sum(sort(tmp2,by=abs))
+            suma += a_coeff * tmp
         end
-        suma = Taylor1(tmp1,ord)
     end
+
     return suma
 end
+evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
