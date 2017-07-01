@@ -55,14 +55,14 @@ representing the Taylor expansion for the dependent variables
 of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
-function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::AbstractArray{T,1})
+function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::Union{Array{T,1},SubArray{T,1}})
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δt )
     end
     nothing
 end
-function evaluate!{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S, x0::Array{T,1})
+function evaluate!{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S, x0::Union{Array{T,1},SubArray{T,1}})
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δt )
