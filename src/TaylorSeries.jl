@@ -51,6 +51,7 @@ include("functions.jl")
 include("other_functions.jl")
 include("evaluate.jl")
 include("calculus.jl")
+include("internalmutfunct.jl")
 include("printing.jl")
 
 end # module
