@@ -82,16 +82,12 @@ for T in (:Taylor1, :TaylorN)
                 in the denominator.
                 """))
 
-            # The following exploits a trick that the series of
-            # `acos(a)` is generated as the series of `asin(a)` except
-            # for a sign and the constant term; see `acos!`.
             order = a.order
-            c = $T( asin(a0), order )
+            c = $T( acos(a0), order )
             r = $T( sqrt(1 - a0^2), order )
             for k in 1:order
                 acos!(c, a, r, k)
             end
-            @inbounds c[1] = acos(a0)
             return c
         end
 
@@ -249,7 +245,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            asin!(c, -a, r, k)
+            @inbounds for i in 1:k-1
+                if $T == Taylor1
+                    c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                else
+                    mul!(c[k+1], (k-i) * r[i+1], c[k-i+1])
+                end
+            end
+            sqrt!(r, 1-a^2, k)
+            @inbounds c[k+1] = -(a[k+1] + c[k+1]/k) / constant_term(r)
             return nothing
         end
 
