@@ -11,8 +11,6 @@ struct _InternalMutFuncs
     auxbool  :: Bool     # Needs auxiliary Taylor object?
 	auxpos   :: Int      # Position in the arg list of the aux Taylor object
     auxdef   :: Expr     # Definition of the aux Taylor object
-    # compbool :: Bool     # Component of the result?
-    # indx     :: Int      # Actual component
 end
 
 # Constructors
@@ -41,34 +39,38 @@ and, in case when the corresponding `_InternalMutFuncs` object
 has either `auxbool` or `compbool` `true`, the remaining
 arguments to define the `_InternalMutFuncs` object.
 """
-const _dict_internalmutfuncs = Dict(
+const _dict_binary_ops = Dict(
     :+ => [:add!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 + _arg2)],
     :- => [:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)],
     :* => [:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)],
     :/ => [:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)],
-    :^ => [:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ _arg2)],
+    :^ => [:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ _arg2)],)
+
+const _dict_unary_ops = Dict(
+    :+ => [:add!,   (:_res, :_arg1, :_k), :(_res = + _arg1)],
+    :- => [:subst!, (:_res, :_arg1, :_k), :(_res = - _arg1)],
     :sqr =>  [:sqr!, (:_res, :_arg1, :_k), :(_res = sqr(_arg1))],
     :sqrt => [:sqrt!, (:_res, :_arg1, :_k), :(_res = sqrt(_arg1))],
     :exp =>  [:exp!, (:_res, :_arg1, :_k), :(_res = exp(_arg1))],
     :log =>  [:log!, (:_res, :_arg1, :_k), :(_res = log(_arg1))],
     :sin =>  [:sincos!, (:_res, :_aux, :_arg1, :_k), :(_res = sin(_arg1)),
         (true, 2, :(_aux = cos(constant_term(:_arg1))))],
-    # :cos => [:sincos!, (:_aux, :_res, :_arg1, :_k), :(_res = cos(_arg1)),
-    #     (true, 1, :(_aux = sin(constant_term(_arg1))), true, 2)],
-    # :tan => [:tan!, (:_res, :_arg1, :_aux, :_k), :(_res = tan(_arg1)),
-    #     (true, 3, :(_aux = tan(constant_term(_arg1))^2), false, 1)],
-    # :asin => [:asin!, (:_res, :_arg1, :_aux, :_k), :(_res = asin(_arg1)),
-    #     (true, 3, :(_aux = sqrt(1 - constant_term(_arg1)^2)), false, 1)],
-    # :acos => [:acos!, (:_res, :_arg1, :_aux, :_k), :(_res = acos(_arg1)),
-    #     (true, 3, :(_aux = sqrt(1 - constant_term(_arg1)^2)), false, 1)],
-    # :atan => [:atan!, (:_res, :_arg1, :_aux, :_k), :(_res = atan(_arg1)),
-    #     (true, 3, :(_aux = 1 + constant_term(_arg1)^2), false, 1)],
-    # :sinh => [:sincosh!, (:_res, :_aux, :_arg1, :_k), :(_res = sinh(_arg1)),
-    #     (true, 2, :(_aux = cosh(constant_term(_arg1))), true, 1)],
-    # :cosh => [:sincosh!, (:_aux, :_res, :_arg1, :_k), :(_res = cosh(_arg1)),
-    #     (true, 1, :(_aux = sinh(constant_term(_arg1))), true, 2)],
-    # :tanh => [:tanh!, (:_res, :_arg1, :_aux, :_k), :(_res = tanh(_arg1)),
-    #     (true, 3, :(_aux = tanh( constant_term(_arg1) )^2), true, 2)],
+    :cos => [:sincos!, (:_aux, :_res, :_arg1, :_k), :(_res = cos(_arg1)),
+        (true, 1, :(_aux = sin(constant_term(_arg1))))],
+    :tan => [:tan!, (:_res, :_arg1, :_aux, :_k), :(_res = tan(_arg1)),
+        (true, 3, :(_aux = tan(constant_term(_arg1))^2))],
+    :asin => [:asin!, (:_res, :_arg1, :_aux, :_k), :(_res = asin(_arg1)),
+        (true, 3, :(_aux = sqrt(1 - constant_term(_arg1)^2)))],
+    :acos => [:acos!, (:_res, :_arg1, :_aux, :_k), :(_res = acos(_arg1)),
+        (true, 3, :(_aux = sqrt(1 - constant_term(_arg1)^2)))],
+    :atan => [:atan!, (:_res, :_arg1, :_aux, :_k), :(_res = atan(_arg1)),
+        (true, 3, :(_aux = 1 + constant_term(_arg1)^2))],
+    :sinh => [:sinhcosh!, (:_res, :_aux, :_arg1, :_k), :(_res = sinh(_arg1)),
+        (true, 2, :(_aux = cosh(constant_term(_arg1))))],
+    :cosh => [:sinhcosh!, (:_aux, :_res, :_arg1, :_k), :(_res = cosh(_arg1)),
+        (true, 1, :(_aux = sinh(constant_term(_arg1))))],
+    :tanh => [:tanh!, (:_res, :_arg1, :_aux, :_k), :(_res = tanh(_arg1)),
+        (true, 3, :(_aux = tanh( constant_term(_arg1) )^2))],
 );
 
 
@@ -84,9 +86,6 @@ This is used to construct
 [`_dict_internalcalls`](@ref).
 """
 function _internalmutfunc_call( fn :: _InternalMutFuncs )
-    # ex = ifelse(~fn.compbool,
-    #     Expr( :call, fn.namef, fn.argsf... ),
-	# 	Expr( :ref, Expr(:call, fn.namef, fn.argsf... ), fn.indx ) )
 
     ex = Expr( :call, fn.namef, fn.argsf... )
 	fn.auxbool && @assert(fn.auxdef.args[1] == fn.argsf[fn.auxpos])
@@ -98,21 +97,42 @@ end
 
 
 """
-`_dict_internalcalls::Dict{Symbol, NTuple{2,Expr}}`
+`_dict_unary_calls::Dict{Symbol, NTuple{2,Expr}}`
 
 Dictionary with the expressions that define the
-internal functions and the auxiliary functions, whenever
-they exist. The keys correspond to those functions, passed
-as symbols, with defined internal mutating functions.
+internal unary functions and the auxiliary functions,
+whenever they exist. The keys correspond to those
+functions, passed as symbols, with defined
+internal mutating functions.
 
 Evaluating
 the entries generates symbols that represent the
 actual call to the internal mutating functions.
 """
-_dict_internalcalls = Dict{Symbol, NTuple{2,Expr}}()
+_dict_unary_calls = Dict{Symbol, NTuple{2,Expr}}()
 
 #Populates the constant vector `_dict_internalcalls`.
-for kk in keys(_dict_internalmutfuncs)
-    res = _internalmutfunc_call( _InternalMutFuncs(_dict_internalmutfuncs[kk]) )
-    push!(_dict_internalcalls, kk => res )
+for kk in keys(_dict_unary_ops)
+    res = _internalmutfunc_call( _InternalMutFuncs(_dict_unary_ops[kk]) )
+    push!(_dict_unary_calls, kk => res )
+end
+
+"""
+`_dict_binary_calls::Dict{Symbol, NTuple{2,Expr}}`
+
+Dictionary with the expressions that define the
+internal binary functions and the auxiliary functions,
+whenever they exist. The keys correspond to those
+functions, passed as symbols, with defined
+internal mutating functions.
+
+Evaluating
+the entries generates symbols that represent the
+actual call to the internal mutating functions.
+"""
+_dict_binary_calls = Dict{Symbol, NTuple{2,Expr}}()
+#Populates the constant vector `_dict_binary_calls`.
+for kk in keys(_dict_binary_ops)
+    res = _internalmutfunc_call( _InternalMutFuncs(_dict_binary_ops[kk]) )
+    push!(_dict_binary_calls, kk => res )
 end
