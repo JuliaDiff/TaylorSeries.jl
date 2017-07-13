@@ -24,10 +24,32 @@ end
 
 
 """
-`__dict_internalmutfuncs`
+`_dict_binary_ops`
 
 `Dict{Symbol, Array{Any,1}}` with the information to
-construct the different `_InternalMutFuncs` related to binary
+construct the `_InternalMutFuncs` related to binary
+operations.
+
+The keys correspond to the function symbols.
+
+The arguments of the array are the internal call (function
+name and arguments) for the internal mutating function defined
+and an expression with the calling pattern related of the
+function.
+"""
+const _dict_binary_ops = Dict(
+    :+ => [:add!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 + _arg2)],
+    :- => [:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)],
+    :* => [:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)],
+    :/ => [:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)],
+    :^ => [:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ _arg2)],
+);
+
+"""
+`_dict_binary_ops`
+
+`Dict{Symbol, Array{Any,1}}` with the information to
+construct the `_InternalMutFuncs` related to unary
 operations.
 
 The keys correspond to the function symbols.
@@ -36,16 +58,9 @@ The arguments of the array are the internal call (function
 name and arguments) for the internal mutating function defined,
 an expression with the calling pattern related of the function
 and, in case when the corresponding `_InternalMutFuncs` object
-has either `auxbool` or `compbool` `true`, the remaining
-arguments to define the `_InternalMutFuncs` object.
+has `auxbool` equal to `true`, the arguments to define
+the `_InternalMutFuncs` object.
 """
-const _dict_binary_ops = Dict(
-    :+ => [:add!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 + _arg2)],
-    :- => [:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)],
-    :* => [:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)],
-    :/ => [:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)],
-    :^ => [:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ _arg2)],)
-
 const _dict_unary_ops = Dict(
     :+ => [:add!,   (:_res, :_arg1, :_k), :(_res = + _arg1)],
     :- => [:subst!, (:_res, :_arg1, :_k), :(_res = - _arg1)],
@@ -53,6 +68,7 @@ const _dict_unary_ops = Dict(
     :sqrt => [:sqrt!, (:_res, :_arg1, :_k), :(_res = sqrt(_arg1))],
     :exp =>  [:exp!, (:_res, :_arg1, :_k), :(_res = exp(_arg1))],
     :log =>  [:log!, (:_res, :_arg1, :_k), :(_res = log(_arg1))],
+    #
     :sin =>  [:sincos!, (:_res, :_aux, :_arg1, :_k), :(_res = sin(_arg1)),
         (true, 2, :(_aux = cos(constant_term(:_arg1))))],
     :cos => [:sincos!, (:_aux, :_res, :_arg1, :_k), :(_res = cos(_arg1)),
@@ -105,9 +121,8 @@ whenever they exist. The keys correspond to those
 functions, passed as symbols, with defined
 internal mutating functions.
 
-Evaluating
-the entries generates symbols that represent the
-actual call to the internal mutating functions.
+Evaluating the entries generates expressions that represent
+the actual calls to the internal mutating functions.
 """
 _dict_unary_calls = Dict{Symbol, NTuple{2,Expr}}()
 
@@ -126,9 +141,8 @@ whenever they exist. The keys correspond to those
 functions, passed as symbols, with defined
 internal mutating functions.
 
-Evaluating
-the entries generates symbols that represent the
-actual call to the internal mutating functions.
+Evaluating the entries generates symbols that represent
+the actual calls to the internal mutating functions.
 """
 _dict_binary_calls = Dict{Symbol, NTuple{2,Expr}}()
 #Populates the constant vector `_dict_binary_calls`.
