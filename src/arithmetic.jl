@@ -115,8 +115,20 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             end
 
             ## add! and subst! ##
+            function ($fc)(v::$T, a::$T, k::Int)
+                @inbounds v[k+1] = ($f)(a[k+1])
+                return nothing
+            end
             function ($fc)(v::$T, a::$T, b::$T, k::Int)
                 @inbounds v[k+1] = ($f)(a[k+1], b[k+1])
+                return nothing
+            end
+            function ($fc)(v::$T, a::$T, b::NumberNotSeries, k::Int)
+                @inbounds v[k+1] = k==0 ? ($f)(a[1], b) : a[k+1]
+                return nothing
+            end
+            function ($fc)(v::$T, a::NumberNotSeries, b::$T, k::Int)
+                @inbounds v[k+1] = k==0 ? ($f)(a, b[1]) : ($f)(b[k+1])
                 return nothing
             end
         end
