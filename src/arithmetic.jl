@@ -291,6 +291,15 @@ for T in (:Taylor1, :TaylorN)
 
         return nothing
     end
+
+    @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+        @inbounds v[k+1] = a[k+1] * b
+        return nothing
+    end
+    @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
+        @inbounds v[k+1] = a * b[k+1]
+        return nothing
+    end
 end
 
 doc"""
@@ -476,6 +485,14 @@ term of the denominator.
     @inbounds c[k+1] = (a[k+ordfact+1]-c[k+1]) / b[ordfact+1]
     return nothing
 end
+
+@inline function div!(v::Taylor1, a::Taylor1, b::NumberNotSeries, k::Int)
+    @inbounds v[k+1] = a[k+1] / b
+    return nothing
+end
+
+div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
+    div!(v::Taylor1, Taylor1(b, a.order), a, k)
 
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0
