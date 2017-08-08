@@ -6,19 +6,18 @@ programatic construction for calling the internal mutating
 functions.
 """
 struct _InternalMutFuncs
-    namef    :: Symbol     # internal name of the function
+    namef    :: Symbol   # internal name of the function
     argsf    :: NTuple   # arguments
-    auxbool  :: Bool     # Needs auxiliary Taylor object?
-	auxpos   :: Int      # Position in the arg list of the aux Taylor object
-    auxdef   :: Expr     # Definition of the aux Taylor object
+    defexpr  :: Expr     # defining expr
+    auxexpr  :: Expr     # auxiliary expr
 end
 
 # Constructors
 function _InternalMutFuncs( namef::Vector )
     if length(namef) == 3
-    	return _InternalMutFuncs( namef[1], namef[2], false, 0, Expr(:nothing) )
+    	return _InternalMutFuncs( namef[1], namef[2], namef[3], Expr(:nothing) )
     else
-        return _InternalMutFuncs( namef[1], namef[2], namef[end]...)
+        return _InternalMutFuncs( namef...)
     end
 end
 
@@ -70,23 +69,23 @@ const _dict_unary_ops = Dict(
     :log =>  [:log!, (:_res, :_arg1, :_k), :(_res = log(_arg1))],
     #
     :sin =>  [:sincos!, (:_res, :_aux, :_arg1, :_k), :(_res = sin(_arg1)),
-        (true, 2, :(_aux = cos(constant_term(:_arg1))))],
+        :(_aux = cos(_arg1))],
     :cos => [:sincos!, (:_aux, :_res, :_arg1, :_k), :(_res = cos(_arg1)),
-        (true, 1, :(_aux = sin(constant_term(_arg1))))],
+        :(_aux = sin(_arg1))],
     :tan => [:tan!, (:_res, :_arg1, :_aux, :_k), :(_res = tan(_arg1)),
-        (true, 3, :(_aux = tan(constant_term(_arg1))^2))],
+        :(_aux = tan(_arg1)^2)],
     :asin => [:asin!, (:_res, :_arg1, :_aux, :_k), :(_res = asin(_arg1)),
-        (true, 3, :(_aux = sqrt(1 - constant_term(_arg1)^2)))],
+        :(_aux = sqrt(1 - _arg1^2))],
     :acos => [:acos!, (:_res, :_arg1, :_aux, :_k), :(_res = acos(_arg1)),
-        (true, 3, :(_aux = sqrt(1 - constant_term(_arg1)^2)))],
+        :(_aux = sqrt(1 - _arg1^2))],
     :atan => [:atan!, (:_res, :_arg1, :_aux, :_k), :(_res = atan(_arg1)),
-        (true, 3, :(_aux = 1 + constant_term(_arg1)^2))],
+        :(_aux = 1 + _arg1^2)],
     :sinh => [:sinhcosh!, (:_res, :_aux, :_arg1, :_k), :(_res = sinh(_arg1)),
-        (true, 2, :(_aux = cosh(constant_term(_arg1))))],
+        :(_aux = cosh(_arg1))],
     :cosh => [:sinhcosh!, (:_aux, :_res, :_arg1, :_k), :(_res = cosh(_arg1)),
-        (true, 1, :(_aux = sinh(constant_term(_arg1))))],
+        :(_aux = sinh(_arg1))],
     :tanh => [:tanh!, (:_res, :_arg1, :_aux, :_k), :(_res = tanh(_arg1)),
-        (true, 3, :(_aux = tanh( constant_term(_arg1) )^2))],
+        :(_aux = tanh(_arg1)^2)],
 );
 
 
@@ -101,14 +100,8 @@ function defined by the `_InternalMutFuncs` object.
 This is used to construct
 [`_dict_internalcalls`](@ref).
 """
-function _internalmutfunc_call( fn :: _InternalMutFuncs )
-
-    ex = Expr( :call, fn.namef, fn.argsf... )
-	fn.auxbool && @assert(fn.auxdef.args[1] == fn.argsf[fn.auxpos])
-	exaux = fn.auxdef
-
-	return ex, exaux
-end
+_internalmutfunc_call( fn :: _InternalMutFuncs ) =
+	return Expr( :call, fn.namef, fn.argsf... ), fn.defexpr, fn.auxexpr
 
 
 
@@ -124,7 +117,7 @@ internal mutating functions.
 Evaluating the entries generates expressions that represent
 the actual calls to the internal mutating functions.
 """
-_dict_unary_calls = Dict{Symbol, NTuple{2,Expr}}()
+const _dict_unary_calls = Dict{Symbol, NTuple{3,Expr}}()
 
 #Populates the constant vector `_dict_internalcalls`.
 for kk in keys(_dict_unary_ops)
@@ -144,7 +137,7 @@ internal mutating functions.
 Evaluating the entries generates symbols that represent
 the actual calls to the internal mutating functions.
 """
-_dict_binary_calls = Dict{Symbol, NTuple{2,Expr}}()
+const _dict_binary_calls = Dict{Symbol, NTuple{3,Expr}}()
 #Populates the constant vector `_dict_binary_calls`.
 for kk in keys(_dict_binary_ops)
     res = _internalmutfunc_call( _InternalMutFuncs(_dict_binary_ops[kk]) )

@@ -45,7 +45,8 @@ export get_coeff, derivative, integrate,
     show_params_TaylorN,
     get_order, get_numvars,
     set_variables, get_variables,
-    ∇, jacobian, jacobian!, hessian, hessian!
+    ∇, jacobian, jacobian!, hessian, hessian!,
+    constant_term
 
 include("parameters.jl")
 include("hash_tables.jl")
@@ -58,7 +59,7 @@ include("functions.jl")
 include("other_functions.jl")
 include("evaluate.jl")
 include("calculus.jl")
-include("internalmutfunct.jl")
+include("dictmutfunct.jl")
 include("printing.jl")
 
 end # module

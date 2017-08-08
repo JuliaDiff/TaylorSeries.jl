@@ -223,3 +223,5 @@ and `TaylorN`.
 constant_term(a::Taylor1) = a[1]
 
 constant_term(a::TaylorN) = a[1][1]
+
+constant_term(a::Number) = a
