@@ -67,6 +67,7 @@ const _dict_unary_ops = Dict(
     :sqrt => [:sqrt!, (:_res, :_arg1, :_k), :(_res = sqrt(_arg1))],
     :exp =>  [:exp!, (:_res, :_arg1, :_k), :(_res = exp(_arg1))],
     :log =>  [:log!, (:_res, :_arg1, :_k), :(_res = log(_arg1))],
+    :identity => [:identity!, (:_res, :_arg1, :_k), :(_res = identity(_arg1))],
     #
     :sin =>  [:sincos!, (:_res, :_aux, :_arg1, :_k), :(_res = sin(_arg1)),
         :(_aux = cos(_arg1))],

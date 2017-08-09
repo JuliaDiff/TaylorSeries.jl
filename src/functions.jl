@@ -137,6 +137,11 @@ end
 # Recursive functions (homogeneous coefficients)
 for T in (:Taylor1, :TaylorN)
     @eval begin
+        @inline function identity!(c::$T, a::$T, k::Int)
+            @inbounds c[k+1] = identity(a[k+1])
+            return nothing
+        end
+
         @inline function exp!(c::$T, a::$T, k::Int)
             if k == 0
                 @inbounds c[1] = exp(constant_term(a))
