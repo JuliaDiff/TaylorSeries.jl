@@ -12,7 +12,7 @@ struct _InternalMutFuncs
     auxexpr  :: Expr     # auxiliary expr
 end
 
-# Constructors
+# Constructor
 function _InternalMutFuncs( namef::Vector )
     if length(namef) == 3
     	return _InternalMutFuncs( namef[1], namef[2], namef[3], Expr(:nothing) )
@@ -103,8 +103,8 @@ function defined by the `_InternalMutFuncs` object.
 This is used to construct
 [`_dict_internalcalls`](@ref).
 """
-_internalmutfunc_call( fn :: _InternalMutFuncs ) =
-	return Expr( :call, fn.namef, fn.argsf... ), fn.defexpr, fn.auxexpr
+_internalmutfunc_call( fn :: _InternalMutFuncs ) = (
+    Expr( :call, parse("TaylorSeries.$(fn.namef)"), fn.argsf... ), fn.defexpr, fn.auxexpr )
 
 
 
