@@ -1,3 +1,19 @@
+# This file is part of the TaylorSeries.jl Julia package, MIT license
+#
+# Luis Benet & David P. Sanders
+# UNAM
+#
+# MIT Expat license
+#
+
+#=
+This file contains some dictionary and functions to build
+the dictionaries `_dict_unary_calls` and `_dict_binary_calls`
+which allow to call the internal mutating functions. This
+may be used to improve memory usage, e.g., to construct the
+jet-coefficients used to integrate ODEs.
+=#
+
 """
 `_InternalMutFuncs`
 
@@ -31,10 +47,13 @@ operations.
 
 The keys correspond to the function symbols.
 
-The arguments of the array are the internal call (function
-name and arguments) for the internal mutating function defined
-and an expression with the calling pattern related of the
-function.
+The arguments of the array are the function name (e.g. `add!`), a tuple
+with the function arguments, and an `Expr` with the calling pattern. The
+convention for the arguments of the functions and the calling pattern
+is to use `:_res` for the (mutated) result, `:_arg1` and `_arg2`
+for the required arguments, and `:_k` for the computed order
+of `:_res`.
+
 """
 const _dict_binary_ops = Dict(
     :+ => [:add!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 + _arg2)],
@@ -53,12 +72,15 @@ operations.
 
 The keys correspond to the function symbols.
 
-The arguments of the array are the internal call (function
-name and arguments) for the internal mutating function defined,
-an expression with the calling pattern related of the function
-and, in case when the corresponding `_InternalMutFuncs` object
-has `auxbool` equal to `true`, the arguments to define
-the `_InternalMutFuncs` object.
+The arguments of the array are the function name (e.g. `add!`), a tuple
+with the function arguments, and an `Expr` with the calling pattern. The
+convention for the arguments of the functions and the calling pattern
+is to use `:_res` for the (mutated) result, `:_arg1`, for the required
+argument, possibly `:_aux` when there is an auxiliary expression
+needed, and `:_k` for the computed order of `:_res`. When an auxiliary
+expression is required, and `Expr` defining its calling pattern is
+added as the last entry of the vector.
+
 """
 const _dict_unary_ops = Dict(
     :+ => [:add!,   (:_res, :_arg1, :_k), :(_res = + _arg1)],
@@ -100,8 +122,8 @@ _internalmutfunc_call( fn :: _InternalMutFuncs )
 
 Creates the appropriate call to the internal mutating
 function defined by the `_InternalMutFuncs` object.
-This is used to construct
-[`_dict_internalcalls`](@ref).
+This is used to construct [`_dict_internalcalls`](@ref).
+The call contains the prefix `TaylorSeries.`.
 """
 _internalmutfunc_call( fn :: _InternalMutFuncs ) = (
     Expr( :call, parse("TaylorSeries.$(fn.namef)"), fn.argsf... ), fn.defexpr, fn.auxexpr )
@@ -114,7 +136,7 @@ _internalmutfunc_call( fn :: _InternalMutFuncs ) = (
 Dictionary with the expressions that define the
 internal unary functions and the auxiliary functions,
 whenever they exist. The keys correspond to those
-functions, passed as symbols, with defined
+functions, passed as symbols, with the defined
 internal mutating functions.
 
 Evaluating the entries generates expressions that represent
@@ -134,7 +156,7 @@ end
 Dictionary with the expressions that define the
 internal binary functions and the auxiliary functions,
 whenever they exist. The keys correspond to those
-functions, passed as symbols, with defined
+functions, passed as symbols, with the defined
 internal mutating functions.
 
 Evaluating the entries generates symbols that represent
