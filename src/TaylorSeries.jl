@@ -18,18 +18,9 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
-using Compat
-
-if !isdefined(Base, :iszero)
-    import Compat: iszero
-    export iszero
-else
-    import Base: iszero
-end
-
 import Base: ==, +, -, *, /, ^
 
-import Base: zero, one, zeros, ones, isinf, isnan,
+import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
     rem, mod, mod2pi, abs, gradient,
