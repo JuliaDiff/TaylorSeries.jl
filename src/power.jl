@@ -131,6 +131,16 @@ coefficient of `a`.
 
 """
 @inline function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
+    if r == 0
+        return one!(c, a, k)
+    elseif r == 1
+        return identity!(c, a, k)
+    elseif r == 2
+        return sqr!(c, a, k)
+    elseif r == 0.5
+        return sqrt!(c, a, k)
+    end
+
     if k == l0
         @inbounds c[1] = ( a[l0+1] )^r
         return nothing
@@ -147,6 +157,16 @@ coefficient of `a`.
 end
 
 @inline function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
+    if r == 0
+        return one!(c, a, k)
+    elseif r == 1
+        return identity!(c, a, k)
+    elseif r == 2
+        return sqr!(c, a, k)
+    elseif r == 0.5
+        return sqrt!(c, a, k)
+    end
+
     if k == 0
         @inbounds c[1] = ( constant_term(a) )^r
         return nothing
