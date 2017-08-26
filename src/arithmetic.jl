@@ -116,6 +116,10 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 @inbounds v[k+1] = ($f)(a[k+1])
                 return nothing
             end
+            function ($fc)(v::$T, a::NumberNotSeries, k::Int)
+                @inbounds v[k+1] = k==0 ? ($f)(a) : zero(v[k+1])
+                return nothing
+            end
             function ($fc)(v::$T, a::$T, b::$T, k::Int)
                 @inbounds v[k+1] = ($f)(a[k+1], b[k+1])
                 return nothing
