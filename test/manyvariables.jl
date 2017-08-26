@@ -263,8 +263,16 @@ using Base.Test
     xx = 1.0*zeroT
     TaylorSeries.add!(xx, 1.0*xT, 2yT, 1)
     @test xx[2] == HomogeneousPolynomial([1,2])
+    TaylorSeries.add!(xx, 5.0, 0)
+    @test xx[1] == HomogeneousPolynomial([5.0])
+    TaylorSeries.add!(xx, -5.0, 1)
+    @test xx[2] == zero(xx[2])
     TaylorSeries.subst!(xx, 1.0*xT, yT, 1)
     @test xx[2] == HomogeneousPolynomial([1,-1])
+    TaylorSeries.subst!(xx, 5.0, 0)
+    @test xx[1] == HomogeneousPolynomial([-5.0])
+    TaylorSeries.subst!(xx, -5.0, 1)
+    @test xx[2] == zero(xx[2])
     TaylorSeries.div!(xx, 1.0+xT, 1.0+xT, 0)
     @test xx[1] == 1.0
     TaylorSeries.pow!(xx, 1.0+xT, 1.5, 0)
