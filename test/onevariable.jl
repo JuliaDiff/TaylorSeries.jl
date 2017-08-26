@@ -242,7 +242,15 @@ end
     tt = zero(ut)
     TaylorSeries.add!(tt, ut, ut, 1)
     @test tt[2] == 2.0
+    TaylorSeries.add!(tt, -3.0, 0)
+    @test tt[1] == -3.0
+    TaylorSeries.add!(tt, -3.0, 1)
+    @test tt[2] == 0.0
     TaylorSeries.subst!(tt, ut, ut, 1)
+    @test tt[2] == 0.0
+    TaylorSeries.subst!(tt, -3.0, 0)
+    @test tt[1] == 3.0
+    TaylorSeries.subst!(tt, -2.5, 1)
     @test tt[2] == 0.0
     iind, cind = TaylorSeries.divfactorization(ut, ut)
     @test iind == 1
