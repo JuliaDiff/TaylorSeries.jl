@@ -145,6 +145,7 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
 
     return suma
 end
+
 evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
 """
@@ -210,12 +211,19 @@ function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
     return x0
 end
 
+function evaluate{T<:NumberNotSeries,S<:NumberNotSeries}(x::Array{TaylorN{T},1}, δx::Array{S,1})
+    R = promote_type(T,S)
+    x0 = Array{R}( length(x) )
+    evaluate!( x, δx, x0 )
+    return x0
+end
+
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)
 
 (p::TaylorN)() = evaluate(p)
 
 #function-like behavior for Array{TaylorN,1}
-(p::Array{TaylorN{T},1}){T<:Number}(x) = evaluate.(p, x)
+(p::Array{TaylorN{T},1}){T<:Number}(x) = evaluate(p, x)
 
 (p::Array{TaylorN{T},1}){T<:Number}() = evaluate.(p)
