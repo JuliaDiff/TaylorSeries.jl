@@ -164,6 +164,28 @@ using Base.Test
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
+    #Test function-like behavior for Taylor1s
+    t17 = Taylor1([0,1],17)
+    myexpfun = exp(t17)
+    @test myexpfun(1.0) == 1.0*e
+    @test myexpfun() == 1.0
+    @test myexpfun(t17^2) == exp(t17^2)
+    @test exp(t17^2)(t17) == exp(t17^2)
+    p = cos(t17)
+    q = sin(t17)
+    @test cos(-im*t)(1)+im*sin(-im*t)(1) == exp(-im*t)(im)
+    @test p(-im*t17)(1)+im*q(-im*t17)(1) == exp(-im*t17)(im)
+    cossin1 = x->p(q(x))
+    @test evaluate(p, evaluate(q, pi/4)) == cossin1(pi/4)
+    cossin2 = p(q)
+    @test evaluate(evaluate(p,q), pi/4) == cossin2(pi/4)
+    @test evaluate(p, q) == cossin2
+    @test p(q)() == evaluate(evaluate(p, q))
+    @test evaluate(p, q) == p(q)
+    @test evaluate(q, p) == q(p)
+    a = [p,q]
+    @test a(0.1) == evaluate.([p,q],0.1)
+    @test a.(0.1) == a(0.1)
 
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare
