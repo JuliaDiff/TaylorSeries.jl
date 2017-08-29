@@ -186,6 +186,8 @@ using Base.Test
     a = [p,q]
     @test a(0.1) == evaluate.([p,q],0.1)
     @test a.(0.1) == a(0.1)
+    @test a.() == a()
+    @test a.() == [p(), q()]
 
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare
