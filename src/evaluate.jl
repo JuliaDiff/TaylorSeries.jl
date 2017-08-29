@@ -28,6 +28,10 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     end
     suma
 end
+
+(p::Taylor1)(x) = evaluate(p, x)
+(p::Taylor1)() = evaluate(p)
+
 evaluate{T<:Number}(a::Taylor1{T}) = a[1]
 
 doc"""
@@ -40,12 +44,16 @@ function evaluate{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S)
     R = promote_type(T,S)
     return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
 end
+
 function evaluate{T<:Number}(x::Array{Taylor1{T},1}, δt::T)
     xnew = Array{T}( length(x) )
     evaluate!(x, δt, xnew)
     return xnew
 end
 evaluate{T<:Number}(a::Array{Taylor1{T},1}) = evaluate(a, zero(T))
+
+(p::Array{Taylor1{T},1}){T<:Number}(x) = evaluate.(p, x)
+(p::Array{Taylor1{T},1}){T<:Number}() = evaluate.(p)
 
 doc"""
     evaluate!(x, δt, x0)
