@@ -92,6 +92,7 @@ const _dict_unary_ops = Dict(
     :identity => [:identity!, (:_res, :_arg1, :_k), :(_res = identity(_arg1))],
     :zero => [:zero!, (:_res, :_arg1, :_k), :(_res = zero(_arg1))],
     :one => [:one!, (:_res, :_arg1, :_k), :(_res = one(_arg1))],
+    :abs => [:abs!, (:_res, :_arg1, :_k), :(_res = abs(_arg1))],
     #
     :sin =>  [:sincos!, (:_res, :_aux, :_arg1, :_k), :(_res = sin(_arg1)),
         :(_aux = cos(_arg1))],

@@ -156,6 +156,20 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
+        @inline function abs!(c::$T, a::$T, k::Int)
+            z = zero(constant_term(a))
+            if constant_term(a) > z
+                return add!(c, a, k)
+            elseif constant_term(a) < z
+                return subst!(c, a, k)
+            else
+                throw(ArgumentError(
+                """The 0th order coefficient must be non-zero
+                (abs(x) is not differentiable at x=0)."""))
+            end
+            return nothing
+        end
+
         @inline function exp!(c::$T, a::$T, k::Int)
             if k == 0
                 @inbounds c[1] = exp(constant_term(a))
