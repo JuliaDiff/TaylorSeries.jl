@@ -20,6 +20,7 @@ function evaluate{T<:Number}(a::Taylor1{T}, dx::T)
     end
     suma
 end
+
 function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     R = promote_type(T,S)
     @inbounds suma = convert(R, a[end])
@@ -28,9 +29,6 @@ function evaluate{T<:Number,S<:Number}(a::Taylor1{T}, dx::S)
     end
     suma
 end
-
-(p::Taylor1)(x) = evaluate(p, x)
-(p::Taylor1)() = evaluate(p)
 
 evaluate{T<:Number}(a::Taylor1{T}) = a[1]
 
@@ -52,9 +50,6 @@ function evaluate{T<:Number}(x::Array{Taylor1{T},1}, δt::T)
 end
 evaluate{T<:Number}(a::Array{Taylor1{T},1}) = evaluate(a, zero(T))
 
-(p::Array{Taylor1{T},1}){T<:Number}(x) = evaluate.(p, x)
-(p::Array{Taylor1{T},1}){T<:Number}() = evaluate.(p)
-
 doc"""
     evaluate!(x, δt, x0)
 
@@ -70,6 +65,7 @@ function evaluate!{T<:Number}(x::Array{Taylor1{T},1}, δt::T, x0::Union{Array{T,
     end
     nothing
 end
+
 function evaluate!{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S, x0::Union{Array{T,1},SubArray{T,1}})
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
@@ -77,7 +73,6 @@ function evaluate!{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S, x0::Uni
     end
     nothing
 end
-
 
 """
     evaluate(a, x)
@@ -97,7 +92,15 @@ function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
     suma
 end
 
+#function-like behavior for Taylor1
+(p::Taylor1)(x) = evaluate(p, x)
 
+(p::Taylor1)() = evaluate(p)
+
+#function-like behavior for Array{Taylor1,1}
+(p::Array{Taylor1{T},1}){T<:Number}(x) = evaluate.(p, x)
+
+(p::Array{Taylor1{T},1}){T<:Number}() = evaluate.(p)
 
 ## Evaluation of multivariable
 function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
@@ -108,6 +111,7 @@ function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
     end
     nothing
 end
+
 function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
         x0::Array{TaylorN{T},1})
     @assert length(x) == length(x0)
@@ -143,7 +147,6 @@ function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
 end
 evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
-
 """
     evaluate(a, [vals])
 
@@ -173,6 +176,7 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
 
     return sum( sort!(suma, by=abs2) )
 end
+
 function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
         vals::Array{Taylor1{S},1})
     @assert length(vals) == get_numvars()
