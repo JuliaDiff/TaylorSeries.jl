@@ -170,6 +170,8 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
+        @inline abs2!(c::$T, a::$T, k::Int) = pow!(c, a, 2, k)
+
         @inline function exp!(c::$T, a::$T, k::Int)
             if k == 0
                 @inbounds c[1] = exp(constant_term(a))
