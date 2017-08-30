@@ -218,6 +218,8 @@ function evaluate{T<:NumberNotSeries,S<:NumberNotSeries}(x::Array{TaylorN{T},1},
     return x0
 end
 
+evaluate{T<:Number}(x::Array{TaylorN{T},1}) = evaluate.(x)
+
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)
 
@@ -226,4 +228,4 @@ end
 #function-like behavior for Array{TaylorN,1}
 (p::Array{TaylorN{T},1}){T<:Number}(x) = evaluate(p, x)
 
-(p::Array{TaylorN{T},1}){T<:Number}() = evaluate.(p)
+(p::Array{TaylorN{T},1}){T<:Number}() = evaluate(p)
