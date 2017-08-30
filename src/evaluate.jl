@@ -148,6 +148,11 @@ end
 
 evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
+#function-like behavior for HomogeneousPolynomial
+(p::HomogeneousPolynomial)(x) = evaluate(p, x)
+
+(p::HomogeneousPolynomial)() = evaluate(p)
+
 """
     evaluate(a, [vals])
 

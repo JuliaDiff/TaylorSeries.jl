@@ -131,6 +131,7 @@ using Base.Test
     @test (xH/complex(0,BigInt(3)))' ==
         im*HomogeneousPolynomial([BigInt(1),0])/3
     @test evaluate(xH) == zero(eltype(xH))
+    @test xH() == zero(eltype(xH))
 
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
