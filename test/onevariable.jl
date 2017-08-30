@@ -183,6 +183,9 @@ using Base.Test
     @test p(q)() == evaluate(evaluate(p, q))
     @test evaluate(p, q) == p(q)
     @test evaluate(q, p) == q(p)
+    cs = x->cos(sin(x))
+    csdiff = (cs(t)-cossin2(t)).(-2:0.1:2)
+    @test norm(csdiff, 1) < 5e-15
     a = [p,q]
     @test a(0.1) == evaluate.([p,q],0.1)
     @test a.(0.1) == a(0.1)
