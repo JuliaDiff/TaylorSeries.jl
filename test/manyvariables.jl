@@ -132,6 +132,11 @@ using Base.Test
         im*HomogeneousPolynomial([BigInt(1),0])/3
     @test evaluate(xH) == zero(eltype(xH))
     @test xH() == zero(eltype(xH))
+    @test xH([1,1]) == evaluate(xH, [1,1])
+    hp = -5.4xH+6.89yH
+    @test hp([1,1]) == evaluate(hp, [1,1])
+    vr = rand(2)
+    @test hp(vr) == evaluate(hp, vr)
 
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
