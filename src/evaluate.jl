@@ -92,6 +92,8 @@ function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
     suma
 end
 
+evaluate{T<:Number,S<:Number}(p::Taylor1{T},x::Array{S}) = evaluate.(p,x)
+
 #function-like behavior for Taylor1
 (p::Taylor1)(x) = evaluate(p, x)
 
@@ -234,3 +236,4 @@ evaluate{T<:Number}(x::Array{TaylorN{T},1}) = evaluate.(x)
 (p::Array{TaylorN{T},1}){T<:Number}(x) = evaluate(p, x)
 
 (p::Array{TaylorN{T},1}){T<:Number}() = evaluate(p)
+

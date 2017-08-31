@@ -192,6 +192,16 @@ using Base.Test
     @test a.() == evaluate.([p, q])
     @test a.() == [p(), q()]
     @test a.() == a()
+    vr = rand(2)
+    @test p.(vr) == evaluate.(p, vr)
+    Mr = rand(3,3,3)
+    @test p.(Mr) == evaluate.(p, Mr)
+    mytaylor1 = Taylor1(rand(20))
+    vr = rand(5)
+    @test p(vr) == p.(vr)
+    @test p(vr) == evaluate.(p,vr)
+    @test p(Mr) == p.(Mr)
+    @test p(Mr) == evaluate.(p,Mr)
 
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare
