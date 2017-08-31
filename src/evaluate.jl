@@ -48,7 +48,7 @@ function evaluate{T<:Number}(x::Array{Taylor1{T},1}, δt::T)
     evaluate!(x, δt, xnew)
     return xnew
 end
-evaluate{T<:Number}(a::Array{Taylor1{T},1}) = evaluate(a, zero(T))
+evaluate{T<:Number}(a::Array{Taylor1{T},1}) = evaluate.(a)
 
 doc"""
     evaluate!(x, δt, x0)
@@ -112,6 +112,15 @@ function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
         x0[i] = evaluate( x[i], δx )
     end
     nothing
+end
+
+function evaluate!{T<:NumberNotSeries}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
+    x0::Array{Taylor1{T},1})
+@assert length(x) == length(x0)
+@inbounds for i in eachindex(x)
+    x0[i] = evaluate( x[i], δx )
+end
+nothing
 end
 
 function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
@@ -218,7 +227,7 @@ function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
     return x0
 end
 
-function evaluate{T<:NumberNotSeries,S<:NumberNotSeries}(x::Array{TaylorN{T},1}, δx::Array{S,1})
+function evaluate{T<:NumberNotSeries,S<:Number}(x::Array{TaylorN{T},1}, δx::Array{S,1})
     R = promote_type(T,S)
     x0 = Array{R}( length(x) )
     evaluate!( x, δx, x0 )

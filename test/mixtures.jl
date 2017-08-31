@@ -134,4 +134,30 @@ using Base.Test
     @test xx*δx + Taylor1(typeof(δx),5) == δx + δx^2 + Taylor1(typeof(δx),5)
     @test xx/(1+δx) == one(xx)
     @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
+
+    #testing evaluate and function-like behavior of Taylor1, TaylorN for mixtures:
+    t = Taylor1([0,1],25)
+    p = cos(t)
+    q = sin(t)
+    a = [p,q]
+    dx = set_variables("x", numvars=4, order=10)
+    P = sin.(dx)
+    v = [1.0,2,3,4]
+    F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
+    Q = F(v+dx)
+    diff_evals = cos(sin(dx[1]))-p(P[1])
+    @test norm( norm.(map(x->x.coeffs, diff_evals.coeffs),Inf) , Inf) < 1e-15
+    #evaluate a Taylor1 at a TaylorN
+    @test p(P) == evaluate(p, P)
+    @test q(Q) == evaluate(q, Q)
+    #evaluate an array of Taylor1s at a TaylorN
+    @test aT1(Q[4]) == evaluate(aT1, Q[4])
+    @test (aT1.^2)(Q[3]) == evaluate(aT1.^2, Q[3])
+    aT1 = [p,q,p^2,log(1+q)] #an array of Taylor1s
+    #evaluate a TaylorN at an array of Taylor1s
+    @test P[1](aT1) == evaluate(P[1], aT1)
+    @test Q[2](aT1) == evaluate(Q[2], aT1)
+    #evaluate an array of TaylorNs at an array of Taylor1s
+    @test P(aT1) == evaluate(P, aT1)
+
 end
