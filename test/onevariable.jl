@@ -146,6 +146,12 @@ using Base.Test
     @test abs(ta(1)) == ta(1)
     @test abs(ta(-1.0)) == -ta(-1.0)
 
+
+    @test taylor_expand(x->2x,order=10) == 2*Taylor1(10)
+    @test taylor_expand(x->x^2+1) == Taylor1(15)*Taylor1(15) + 1
+    @test evaluate(taylor_expand(cos,0.)) == cos(0.)
+    @test evaluate(taylor_expand(tan,pi/4)) == tan(pi/4)
+
     @test log(exp(tsquare)) == tsquare
     @test exp(log(1-tsquare)) == 1-tsquare
     @test log((1-t)^2) == 2*log(1-t)
