@@ -151,13 +151,14 @@ using Base.Test
     @test p(P) == evaluate(p, P)
     @test q(Q) == evaluate(q, Q)
     #evaluate an array of Taylor1s at a TaylorN
+    aT1 = [p,q,p^2,log(1+q)] #an array of Taylor1s
     @test aT1(Q[4]) == evaluate(aT1, Q[4])
     @test (aT1.^2)(Q[3]) == evaluate(aT1.^2, Q[3])
-    aT1 = [p,q,p^2,log(1+q)] #an array of Taylor1s
     #evaluate a TaylorN at an array of Taylor1s
     @test P[1](aT1) == evaluate(P[1], aT1)
     @test Q[2](aT1) == evaluate(Q[2], aT1)
     #evaluate an array of TaylorNs at an array of Taylor1s
     @test P(aT1) == evaluate(P, aT1)
+    @test Q(aT1) == evaluate(Q, aT1)
 
 end

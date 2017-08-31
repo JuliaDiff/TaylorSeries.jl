@@ -100,7 +100,7 @@ evaluate{T<:Number,S<:Number}(p::Taylor1{T},x::Array{S}) = evaluate.(p,x)
 (p::Taylor1)() = evaluate(p)
 
 #function-like behavior for Array{Taylor1,1}
-(p::Array{Taylor1{T},1}){T<:Number}(x) = evaluate.(p, x)
+(p::Array{Taylor1{T},1}){T<:Number}(x) = evaluate(p, x)
 
 (p::Array{Taylor1{T},1}){T<:Number}() = evaluate.(p)
 
