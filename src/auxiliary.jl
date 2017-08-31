@@ -16,10 +16,11 @@ If the length of `coeffs` is smaller than `order+1`, it resizes
 """
 function resize_coeffs1!{T<:Number}(coeffs::Array{T,1}, order::Int)
     lencoef = length(coeffs)
-    order ≤ lencoef-1 && return nothing
     resize!(coeffs, order+1)
-    z = zero(coeffs[1])
-    @__dot__ coeffs[lencoef+1:order+1] = z
+    if order > lencoef-1
+        z = zero(coeffs[1])
+        @__dot__ coeffs[lencoef+1:order+1] = z
+    end
     return nothing
 end
 

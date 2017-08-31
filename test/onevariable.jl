@@ -15,16 +15,18 @@ using Base.Test
     @test Taylor1 <: AbstractSeries
     @test Taylor1{Float64} <: AbstractSeries{Float64}
 
-    @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3,4,5])
+    @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3])
+    @test get_order(Taylor1([1,2,3,4,5], 2)) == 2
 
     v = [1,2]
     @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Void
     @test v == [1,2,0,0]
     TaylorSeries.resize_coeffs1!(v,0)
-    @test v == [1,2,0,0]
+    @test v == [1]
+    TaylorSeries.resize_coeffs1!(v,3)
     setindex!(Taylor1(v),3,3)
-    @test v == [1,2,3,0]
-    @test Taylor1(v)[:] == [1,2,3,0]
+    @test v == [1,0,3,0]
+    @test Taylor1(v)[:] == [1,0,3,0]
     @test Taylor1(v)[:] == Taylor1(v).coeffs[:]
     setindex!(Taylor1(v),0,1:3)
     @test v == zero(v)
@@ -259,7 +261,7 @@ using Base.Test
     @test string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
     @test TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"
-    @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3,4,5]))
+    @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
 end
 
 @testset "Matrix multiplication for Taylor1" begin
