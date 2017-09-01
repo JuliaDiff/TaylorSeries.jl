@@ -35,7 +35,7 @@ immutable Taylor1{T<:Number} <: AbstractSeries{T}
 
     ## Inner constructor ##
     function (::Type{Taylor1{T}}){T}(coeffs::Array{T,1}, order::Int)
-        resize_coeffs1!(coeffs, order)
+        (order != length(coeffs)-1) && resize_coeffs1!(coeffs, order)
         return new{T}(coeffs, order)
     end
 end
