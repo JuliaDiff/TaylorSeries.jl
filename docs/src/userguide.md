@@ -11,10 +11,11 @@ is a basic polynomial algebraic manipulator in one or more
 variables; these two cases are treated separately.  Three new types are defined,
 [`Taylor1`](@ref), [`HomogeneousPolynomial`](@ref) and [`TaylorN`](@ref),
 which correspond to
-expansions in one independent variable, homogeneous polynomials of various variables,
-and the polynomial
+expansions in one independent variable, homogeneous polynomials of various
+variables, and the polynomial
 series in many independent variables, respectively. These types are subtypes
-of `AbstractSeries`, which in turn is a subtype of `Number`, and are defined parametrically.
+of `AbstractSeries`, which in turn is a subtype of `Number`, and are defined
+parametrically.
 
 The package is loaded as usual:
 
@@ -24,27 +25,28 @@ using TaylorSeries
 
 ## One independent variable
 
-Taylor expansions in one variable are represented by the [`Taylor1`](@ref) type, which
-consists of a vector of coefficients (fieldname `coeffs`) and the maximum
+Taylor expansions in one variable are represented by the [`Taylor1`](@ref) type,
+which consists of a vector of coefficients (fieldname `coeffs`) and the maximum
 order considered for the expansion (fieldname `order`). The
 coefficients are arranged in ascending order with respect to the degree of the
 monomial, so that
 `coeffs[1]` is the constant term, `coeffs[2]` gives the first order term (`t^1`),
 etc. This is a dense representation of the polynomial.
 The order of the polynomial can be
-omitted in the constructor, which is then fixed from the length of the
-vector of coefficients; otherwise, the maximum
-of the length of the vector of coefficients and the given integer is taken.
+omitted in the constructor, which is then fixed by the length of the
+vector of coefficients; otherwise, it defines the maximum
+degree of the polynomial, and may be used to truncate it.
 
 ```@repl userguide
 Taylor1([1, 2, 3],4) # Polynomial of order 4 with coefficients 1, 2, 3
 Taylor1([0.0, 1im]) # Also works with complex numbers
+Taylor1(ones(8), 2) # Polynomial of order 2
 shift_taylor(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial of order 5
 t = shift_taylor(0.0) # Independent variable `t`
 ```
 
 Note that the information about the maximum order considered is displayed
-using a big-O notation.
+using a big-𝒪 notation.
 
 The definition of `shift_taylor(a)` uses the method
 [`Taylor1([::Type{Float64}], [order::Int64=1])`](@ref), which is a
@@ -53,9 +55,9 @@ of given type and order (defaults are `Float64` and `order=1`).
 This is one of the easiest ways to work with the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
-extended to work with the [`Taylor1`](@ref) type, including promotions that involve
-`Number`s. The operations return a valid Taylor expansion of
-maximum order.This is apparent in the last example below, where
+extended to work with the [`Taylor1`](@ref) type, including promotions that
+involve `Number`s. The operations return a valid Taylor expansion of
+maximum order. This is apparent in the last example below, where
 the answer is beyond the order of the expansion.
 
 ```@repl userguide
@@ -74,6 +76,7 @@ when a derivative is not defined (or simply diverges):
 ```@repl userguide
 1/t
 t^3.2
+abs(t)
 ```
 
 Several elementary functions have been implemented; their coefficients
@@ -84,7 +87,9 @@ are `exp`, `log`, `sqrt`, the trigonometric functions
 more will be added in the future. Note that this way of obtaining the
 Taylor coefficients is not the *laziest* way, in particular for many independent
 variables. Yet, it is quite efficient, especially for the integration of
-ordinary differential equations, which is among the applications we have in mind.
+ordinary differential equations, which is among the applications we have in
+mind (see also
+[TaylorIntegration.jl](https://github.com/PerezHz/TaylorIntegration.jl)).
 
 ```@repl userguide
 exp(t)
@@ -121,9 +126,10 @@ derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
 derivative(5, exp(shift_taylor(1.0))) == exp(1.0) # Fifth derivative of `exp(1+t)`
 ```
 
-To evaluate a Taylor series at a given point, Horner's rule is used via the function
-`evaluate(a, dt)`. Here, `dt` is the increment from
-the point ``t_0`` around which the Taylor expansion of `a` is calculated, i.e., the series
+To evaluate a Taylor series at a given point, Horner's rule is used via the
+function `evaluate(a, dt)`. Here, `dt` is the increment from
+the point ``t_0`` around which the Taylor expansion of `a` is calculated,
+i.e., the series
 is evaluated at ``t = t_0 + dt``. Omitting `dt` corresponds to ``dt = 0``;
 see [`evaluate`](@ref).
 
@@ -142,7 +148,7 @@ A polynomial in ``N>1`` variables can be represented in (at least) two ways:
 As a vector whose coefficients are homogeneous polynomials of fixed degree, or
 as a vector whose coefficients are polynomials in ``N-1`` variables. The
 current implementation of `TaylorSeries.jl` corresponds to the first option,
-though some infraestructure has been built that permits to develop the second
+though some infrastructure has been built that permits to develop the second
 one. An elegant (lazy) implementation of the second representation
 was discussed  [here](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ).
 
@@ -178,6 +184,10 @@ set_variables("α", numvars=3)
 The function [`show_params_TaylorN`](@ref) displays the current values of the
 parameters, in an info block.
 
+```@repl userguide
+show_params_TaylorN()
+```
+
     julia> show_params_TaylorN()
     INFO: Parameters for `TaylorN` and `HomogeneousPolynomial`:
     Maximum order       = 10
@@ -189,8 +199,8 @@ redefines the hash-tables that
 translate the index of the coefficients of a [`HomogeneousPolynomial`](@ref)
 of given order into the corresponding
 multi-variable monomials, or the other way around.
-Fixing these values from the start is imperative; the initial (default) values are
-`order = 6` and `num_vars=2`.
+Fixing these values from the start is imperative; the initial (default) values
+are `order = 6` and `num_vars=2`.
 
 The easiest way to construct a [`TaylorN`](@ref) object is by defining
 the independent variables. This can be done using `set_variables` as above,
@@ -215,12 +225,14 @@ HomogeneousPolynomial([1,-1])
 TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
 ```
 
-The Taylor expansions are implemented around 0 for all variables; if the expansion
+The Taylor expansions are implemented around 0 for all variables; if the
+expansion
 is needed around a different value, the trick is a simple translation of
 the corresponding independent variable, i.e. ``x \to x+a``.
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
-have been extended to work with [`TaylorN`](@ref) objects, including the appropriate
+have been extended to work with [`TaylorN`](@ref) objects, including the
+appropriate
 promotions to deal with numbers. (Some of the arithmetic operations have
 been extended for
 [`HomogeneousPolynomial`](@ref), whenever the result is a
@@ -235,8 +247,8 @@ exy = exp(x+y)
 ```
 
 The function [`get_coeff`](@ref)
-gives the normalized coefficient of the polynomial that corresponds to the monomial
-specified by a vector containing the powers `v`. For instance, for
+gives the normalized coefficient of the polynomial that corresponds to the
+monomial specified by a vector `v` containing the powers. For instance, for
 the polynomial `exy` above, the coefficient of the monomial ``x^3 y^5`` is
 
 ```@repl userguide
@@ -264,8 +276,8 @@ derivative( q, 3 )   # error, since we are dealing with 2 variables
 
 [`evaluate`](@ref) can also be used for [`TaylorN`](@ref) objects, using
 it on vectors of
-numbers (`Real` or `Complex`); the length of the vector must coincide with the number
-of independent variables.
+numbers (`Real` or `Complex`); the length of the vector must coincide with the
+number of independent variables.
 
 ```@repl userguide
 evaluate(exy, [.1,.02]) == e^0.12
@@ -292,8 +304,8 @@ Other specific applications are described in the next [section](examples).
 
 ## Mixtures
 
-As mentioned above, `Taylor1{T}`, `HomogeneousPolynomial{T}` and `TaylorN{T}` are
-parameterized structures structures such that `T<:AbstractSeries`, the latter
+As mentioned above, `Taylor1{T}`, `HomogeneousPolynomial{T}` and `TaylorN{T}`
+are parameterized structures structures such that `T<:AbstractSeries`, the latter
 is a subtype of `Number`. Then, we may actually define Taylor expansions in
 ``N+1`` variables, where one of the variables (the `Taylor1` variable) is
 somewhat special.

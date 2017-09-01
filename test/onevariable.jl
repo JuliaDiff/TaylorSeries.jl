@@ -247,6 +247,7 @@ using Base.Test
     cfs = [(-n)^(n-1)/gamma(n+1) for n = 1:15]
     @test norm(inverse(t*exp(t))[2:end]./cfs-1) < 4tol1
 
+    @test_throws ArgumentError Taylor1([1,2,3], -2)
     @test_throws ArgumentError abs(ta(big(0)))
     @test_throws ArgumentError 1/t
     @test_throws ArgumentError zt/zt
