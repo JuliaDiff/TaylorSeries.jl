@@ -157,8 +157,32 @@ using Base.Test
     #evaluate a TaylorN at an array of Taylor1s
     @test P[1](aT1) == evaluate(P[1], aT1)
     @test Q[2](aT1) == evaluate(Q[2], aT1)
-    #evaluate an array of TaylorNs at an array of Taylor1s
+    #evaluate an array of TaylorN{Float64} at an array of Taylor1{Float64}
     @test P(aT1) == evaluate(P, aT1)
     @test Q(aT1) == evaluate(Q, aT1)
-
+    #test evaluation of an Array{TaylorN{Taylor1}} at an Array{Taylor1}
+    aH1 = [
+        HomogeneousPolynomial([Taylor1(rand(2))]), 
+        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2))])
+        ]
+    bH1 = [
+        HomogeneousPolynomial([Taylor1(rand(2))]), 
+        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2))])
+        ]
+    aTN1 = TaylorN(aH1); bTN1 = TaylorN(bH1)
+    x = [aTN1, bTN1]
+    δx = [Taylor1(rand(3)) for i in 1:4]
+    @test typeof(x) == Array{TaylorN{Taylor1{Float64}},1}
+    @test typeof(δx) == Array{Taylor1{Float64},1}
+    x0 = Array{Taylor1{Float64}}(length(x))
+    eval_x_δx = evaluate(x,δx)
+    @test x(δx) == evaluate(x,δx)
+    evaluate!(x,δx,x0)
+    @test x0 == eval_x_δx
+    @test typeof(evaluate(x[1],δx)) == Taylor1{Float64}
+    @test x() == map(y->y[1][1], x)
+    for i in eachindex(x)
+        @test evaluate(x[i],δx) == eval_x_δx[i]
+        @test x[i](δx) == eval_x_δx[i]
+    end
 end

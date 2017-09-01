@@ -202,6 +202,10 @@ using Base.Test
     @test p(vr) == evaluate.(p,vr)
     @test p(Mr) == p.(Mr)
     @test p(Mr) == evaluate.(p,Mr)
+    taylor_a = Taylor1(Int64,10)
+    taylor_x = exp(Taylor1(Float64,13))
+    @which evaluate(taylor_x, taylor_a)
+    @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
 
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare

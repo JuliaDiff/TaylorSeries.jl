@@ -115,6 +115,15 @@ function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
 end
 
 function evaluate!{T<:NumberNotSeries}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
+        x0::Array{Taylor1{T},1})
+    @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x)
+        x0[i] = evaluate( x[i], δx )
+    end
+    nothing
+end
+
+function evaluate!{T<:NumberNotSeries}(x::Array{TaylorN{Taylor1{T}},1}, δx::Array{Taylor1{T},1},
     x0::Array{Taylor1{T},1})
 @assert length(x) == length(x0)
 @inbounds for i in eachindex(x)
@@ -219,6 +228,30 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     return suma
 end
 
+function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
+        vals::Array{Taylor1{T},1})
+    @assert length(vals) == get_numvars()
+
+    num_vars = get_numvars()
+    ct = coeff_table
+    a_length = length(a)
+    ord = maximum( get_order.(vals) )
+    suma = Taylor1(zeros(T, ord))
+
+    for homPol in 1:length(a)
+        sun = zero(Taylor1{T})
+        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            tmp = vals[1]^(ct[homPol][i][1])
+            for n in 2:num_vars
+                tmp *= vals[n]^(ct[homPol][i][n])
+            end
+            suma += a_coeff * tmp
+        end
+    end
+
+    return suma
+end
+
 evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
 
 function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
@@ -227,9 +260,14 @@ function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
     return x0
 end
 
-function evaluate{T<:NumberNotSeries,S<:Number}(x::Array{TaylorN{T},1}, δx::Array{S,1})
-    R = promote_type(T,S)
-    x0 = Array{R}( length(x) )
+function evaluate{T<:NumberNotSeries}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1})
+    x0 = Array{Taylor1{T}}( length(x) )
+    evaluate!( x, δx, x0 )
+    return x0
+end
+
+function evaluate{T<:NumberNotSeries}(x::Array{TaylorN{Taylor1{T}},1}, δx::Array{Taylor1{T},1})
+    x0 = Array{Taylor1{T}}( length(x) )
     evaluate!( x, δx, x0 )
     return x0
 end
