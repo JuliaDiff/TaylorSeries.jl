@@ -343,6 +343,9 @@ using Base.Test
     @test_throws BoundsError xT[20]
 
     #obs: taylor_expand uses set_variables internally.
-    @test taylor_expand(exp,[0,0.]) == exp.(set_variables("x",numvars=2))
+    f1(x,y) = (x+y)^x - cos(x*y)*y
+    f2(x) = (x[1] + x[2])^x[1] - cos(x[1]*x[2])*x[2]
+    @test taylor_expand(f1,1.,2.) == taylor_expand(f2,[1,2.])
+    @test taylor_expand(exp,[0,0.]) == exp(get_variables())
     @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
 end
