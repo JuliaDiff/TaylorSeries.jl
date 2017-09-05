@@ -192,35 +192,21 @@ function taylor_expand{T<:Number}(f::Function, x0::T; order::Int64=15)
 end
 
 #taylor_expand function for TaylorN
-function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_order())
+function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_order()) #a Taylor expansion around x0
     ll = length(x0)
-    X = set_variables("x",order=order,numvars=ll)
-
+    ll == get_numvars() ? X = get_variables() : begin
+        X = set_variables("x",order=order,numvars=ll)
+        warn("Changed number of TaylorN variables to $ll.")
+        end
     return f(X.+x0)
 end
 
-#taylor_expand macro for Taylor1
-macro taylor_expand(f, order::Int64=get_order())
-    @eval begin
-       a = Taylor1($order)
-       return $f(a)
-    end
-end
+function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor expansion around x0
+    ll = length(x0)
+    ll == get_numvars() ? X = get_variables() : begin
+        X = set_variables("x",order=order,numvars=ll)
+        warn("Changed number of TaylorN variables to $ll.")
+        end
 
-macro taylor_expand(f, x0, order::Int64=get_order())
-    @eval begin
-       a = Taylor1([$x0, one($x0)], $order)
-       return $f(a)
-    end
-end
-
-#taylor_expandN macro for TaylorN
-macro taylor_expandN(f, x0, order::Int64=get_order())#a Taylor expansion around x0
-    @eval begin
-    ll = length($x0)
-    X = set_variables("x",order=$order,numvars=ll)
-
-    return $f(X.+ $x0)
-    end
-
+    return f(x0 .+ X...)
 end
