@@ -341,4 +341,8 @@ using Base.Test
     @test_throws AssertionError cos(x)/sin(y)
     @test_throws BoundsError xH[20]
     @test_throws BoundsError xT[20]
+
+    #obs: taylor_expand uses set_variables internally.
+    @test taylor_expand(exp,[0,0.]) == exp.(set_variables("x",numvars=2))
+    @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
 end

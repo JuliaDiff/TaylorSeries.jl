@@ -126,3 +126,22 @@ function abs{T<:Real}(a::Taylor1{TaylorN{T}})
         (abs(x) is not differentiable at x=0)."""))
     end
 end
+
+#taylor_expand function for Taylor1
+function taylor_expand(f::Function; order::Int64=15)
+   a = Taylor1(order)
+   return f(a)
+end
+
+function taylor_expand{T<:Number}(f::Function, x0::T; order::Int64=15)
+   a = Taylor1([x0, one(T)], order)
+   return f(a)
+end
+
+#taylor_expand function for TaylorN
+function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_order())
+    ll = length(x0)
+    X = set_variables("x",order=order,numvars=ll)
+
+    return f(X.+x0)
+end
