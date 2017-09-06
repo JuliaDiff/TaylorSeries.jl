@@ -136,7 +136,7 @@ using Base.Test
     @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
 
     #testing evaluate and function-like behavior of Taylor1, TaylorN for mixtures:
-    t = Taylor1([0,1],25)
+    t = Taylor1(25)
     p = cos(t)
     q = sin(t)
     a = [p,q]
@@ -185,4 +185,12 @@ using Base.Test
         @test evaluate(x[i],δx) == eval_x_δx[i]
         @test x[i](δx) == eval_x_δx[i]
     end
+    p11 = Taylor1([sin(t),cos(t)])
+    @which evaluate(p11,t)
+    @test evaluate(p11,t) == sin(t)+t*cos(t)
+    @test p11(t) == sin(t)+t*cos(t)
+    a11 = Taylor1([t,t^2,exp(-t),sin(t),cos(t)])
+    b11 = t+t*(t^2)+(t^2)*(exp(-t))+(t^3)*sin(t)+(t^4)*cos(t)
+    diff_a11b11 = a11(t)-b11
+    @test norm(diff_a11b11.coeffs,Inf) < 1E-19
 end

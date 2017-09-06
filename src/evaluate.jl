@@ -91,6 +91,16 @@ function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
     end
     suma
 end
+function evaluate{T<:NumberNotSeries}(a::Taylor1{Taylor1{T}}, x::Taylor1{T})
+    if a.order != x.order
+        a, x = fixorder(a, x)
+    end
+    @inbounds suma = a[end]
+    @inbounds for k = a.order:-1:1
+        suma = suma*x + a[k]
+    end
+    suma
+end
 
 evaluate{T<:Number,S<:Number}(p::Taylor1{T},x::Array{S}) = evaluate.(p,x)
 
