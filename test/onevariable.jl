@@ -159,6 +159,9 @@ end
     @test taylor_expand(x->x^2+1) == Taylor1(15)*Taylor1(15) + 1
     @test evaluate(taylor_expand(cos,0.)) == cos(0.)
     @test evaluate(taylor_expand(tan,pi/4)) == tan(pi/4)
+    tsq = t^2
+    taylor_expand!(tsq,2.0)
+    @test tsq == (t+2.0)^2
 
     @test log(exp(tsquare)) == tsquare
     @test exp(log(1-tsquare)) == 1-tsquare
