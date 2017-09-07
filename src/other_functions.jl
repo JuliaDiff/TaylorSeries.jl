@@ -157,3 +157,17 @@ function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor e
 
     return f(x0 .+ X...)
 end
+
+#taylor_expand! function for Taylor1
+function taylor_expand!(t::Taylor1)
+    #shifting around zero shouldn't change anything...
+    nothing
+end
+
+function taylor_expand{T<:Number}!(t::Taylor1, x0::T)
+    tsq.coeffs .= evaluate(t, Taylor1([x0,one(x0)], t.order) ).coeffs
+    nothing
+end
+
+#ToDo
+#taylor_expand! function for TaylorN  (evaluate(TaylorN,Vector{TaylorN}) is required...)
