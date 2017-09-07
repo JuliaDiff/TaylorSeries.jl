@@ -346,6 +346,6 @@ using Base.Test
     f1(x,y) = (x+y)^x - cos(x*y)*y
     f2(x) = (x[1] + x[2])^x[1] - cos(x[1]*x[2])*x[2]
     @test taylor_expand(f1,1.,2.) == taylor_expand(f2,[1,2.])
-    @test taylor_expand(exp,[0,0.]) == exp(get_variables())
+    @test taylor_expand(exp,[0,0.]) == [exp(get_variables()[1]),exp(get_variables()[2])]
     @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
 end
