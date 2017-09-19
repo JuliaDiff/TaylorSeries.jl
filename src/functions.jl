@@ -158,9 +158,9 @@ for T in (:Taylor1, :TaylorN)
 
         @inline function abs!(c::$T, a::$T, k::Int)
             z = zero(constant_term(a))
-            if constant_term(a) > z
+            if constant_term(constant_term(a)) > constant_term(z)
                 return add!(c, a, k)
-            elseif constant_term(a) < z
+            elseif constant_term(constant_term(a)) < constant_term(z)
                 return subst!(c, a, k)
             else
                 throw(ArgumentError(
