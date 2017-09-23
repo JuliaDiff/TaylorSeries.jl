@@ -53,7 +53,8 @@ export getcoeff, derivative, integrate,
     set_variables, get_variables,
     get_variable_names, get_variable_symbols,
     ∇, jacobian, jacobian!, hessian, hessian!,
-    taylor_expand, update!, constant_term
+    taylor_expand, update!, constant_term,
+    get_nested_numvars, set_nested_variables
 
 include("parameters.jl")
 include("hash_tables.jl")
@@ -68,5 +69,6 @@ include("evaluate.jl")
 include("calculus.jl")
 include("dictmutfunct.jl")
 include("printing.jl")
+include("nested_taylor.jl")
 
 end # module
