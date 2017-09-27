@@ -11,7 +11,9 @@
     evaluate(a, [dx])
 
 Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
-ommitted, its value is considered as zero.
+ommitted, its value is considered as zero. Note that a `Taylor1` polynomial `a`
+may also be evaluated by calling it as a function; that is, the syntax `a(dx)`
+is equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate{T<:Number}(a::Taylor1{T}, dx::T)
     @inbounds suma = a[end]
@@ -36,7 +38,10 @@ doc"""
     evaluate(x, δt)
 
 Evaluates each element of `x::Array{Taylor1{T},1}`, representing
-the dependent variables of an ODE, at *time* δt.
+the dependent variables of an ODE, at *time* δt. Note that an array `x` of
+`Taylor1` polynomials may also be evaluated by calling it as a function;
+that is, the syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
+is equivalent to `evaluate(x)`.
 """
 function evaluate{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S)
     R = promote_type(T,S)
@@ -78,6 +83,7 @@ end
     evaluate(a, x)
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
+Note that the syntax `a(x)` is equivalent to `evaluate(a, x)`.
 """
 evaluate{T<:Number,S<:Number}(a::Taylor1{T}, x::Taylor1{S}) =
     evaluate(promote(a,x)...)
@@ -149,9 +155,11 @@ function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
 end
 
 """
-    evaluate(a, vals)
+    evaluate(a, [vals])
 
-Evaluate a `HomogeneousPolynomial` polynomial at `vals`.
+Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
+it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
+`evaluate(a, vals)`; and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate{T<:Number,S<:NumberNotSeriesN}(a::HomogeneousPolynomial{T},
         vals::Array{S,1} )
@@ -185,6 +193,8 @@ evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.
 If `vals` is ommitted, it's evaluated at zero.
+Note that the syntax `a(vals)` is equivalent to `evaluate(a, vals)`; and `a()`
+is equivalent to `evaluate(a)`.
 """
 function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
         vals::Array{S,1})
