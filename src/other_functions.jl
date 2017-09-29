@@ -126,3 +126,7 @@ function abs{T<:Real}(a::Taylor1{TaylorN{T}})
         (abs(x) is not differentiable at x=0)."""))
     end
 end
+
+#norm
+norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
+norm{T<:NumberNotSeries}(x::Taylor1{T}, p::Real=2) = norm(x.coeffs, p)
