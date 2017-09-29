@@ -142,6 +142,23 @@ eBig = evaluate( exp(tBig), one(BigFloat) )
 e - eBig
 ```
 
+Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it were a function:
+
+```@repl userguide
+t = Taylor1(15)
+p = sin(t)
+evaluate(p, pi/2) #get value of p at pi/2 using `evaluate`
+p(pi/2) #get value of p at pi/2 by calling p as a function
+p(pi/2) == evaluate(p, pi/2)
+p(0.0) #get value of `p` at 0.0 by calling p as a function
+evaluate(p) #get p 0-th order coefficient using `evaluate`
+p() #a shortcut to get 0-th order coefficient of `p`
+p() == evaluate(p)
+p() == p(0.0)
+```
+
+Note that the syntax `p(x)` is equivalent to `evaluate(p,x)`, whereas `p()` is equivalent to `evaluate(p)`. For more details about function-like behavior for a given type in Julia, see the [Function-like objects](https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1) section of the Julia manual.
+
 ## Many variables
 
 A polynomial in ``N>1`` variables can be represented in (at least) two ways:
@@ -283,6 +300,15 @@ number of independent variables.
 evaluate(exy, [.1,.02]) == e^0.12
 ```
 
+Analogously to `Taylor1`, another way to obtain the value of a `TaylorN` polynomial `p` at a given point `x`, is to call `p` as if it were a function:
+
+```@repl userguide
+exy([.1,.02])
+exy([.1,.02]) == e^0.12
+```
+
+Again, note that the syntax `p(x)` for `p::TaylorN` is equivalent to `evaluate(p,x)`, whereas `p()` is equivalent to `evaluate(p)`. For more details about function-like behavior for a given type in Julia, see the [Function-like objects](https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1) section of the Julia manual.
+
 Functions to compute the gradient, Jacobian and
 Hessian have also been implemented. Using the
 polynomials ``p = x^3 + 2x^2 y - 7 x + 2`` and ``q = y-x^4`` defined above,
@@ -305,7 +331,7 @@ Other specific applications are described in the next [section](examples).
 ## Mixtures
 
 As mentioned above, `Taylor1{T}`, `HomogeneousPolynomial{T}` and `TaylorN{T}`
-are parameterized structures structures such that `T<:AbstractSeries`, the latter
+are parameterized structures such that `T<:AbstractSeries`, the latter
 is a subtype of `Number`. Then, we may actually define Taylor expansions in
 ``N+1`` variables, where one of the variables (the `Taylor1` variable) is
 somewhat special.

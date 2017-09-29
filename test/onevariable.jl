@@ -173,6 +173,48 @@ using Base.Test
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
+    #Test function-like behavior for Taylor1s
+    t17 = Taylor1([0,1],17)
+    myexpfun = exp(t17)
+    @test myexpfun(1.0) == 1.0*e
+    @test myexpfun() == 1.0
+    @test myexpfun(t17^2) == exp(t17^2)
+    @test exp(t17^2)(t17) == exp(t17^2)
+    p = cos(t17)
+    q = sin(t17)
+    @test cos(-im*t)(1)+im*sin(-im*t)(1) == exp(-im*t)(im)
+    @test p(-im*t17)(1)+im*q(-im*t17)(1) == exp(-im*t17)(im)
+    cossin1 = x->p(q(x))
+    @test evaluate(p, evaluate(q, pi/4)) == cossin1(pi/4)
+    cossin2 = p(q)
+    @test evaluate(evaluate(p,q), pi/4) == cossin2(pi/4)
+    @test evaluate(p, q) == cossin2
+    @test p(q)() == evaluate(evaluate(p, q))
+    @test evaluate(p, q) == p(q)
+    @test evaluate(q, p) == q(p)
+    cs = x->cos(sin(x))
+    csdiff = (cs(t17)-cossin2(t17)).(-2:0.1:2)
+    @test norm(csdiff, 1) < 5e-15
+    a = [p,q]
+    @test a(0.1) == evaluate.([p,q],0.1)
+    @test a.(0.1) == a(0.1)
+    @test a.() == evaluate.([p, q])
+    @test a.() == [p(), q()]
+    @test a.() == a()
+    vr = rand(2)
+    @test p.(vr) == evaluate.(p, vr)
+    Mr = rand(3,3,3)
+    @test p.(Mr) == evaluate.(p, Mr)
+    mytaylor1 = Taylor1(rand(20))
+    vr = rand(5)
+    @test p(vr) == p.(vr)
+    @test p(vr) == evaluate.(p,vr)
+    @test p(Mr) == p.(Mr)
+    @test p(Mr) == evaluate.(p,Mr)
+    taylor_a = Taylor1(Int64,10)
+    taylor_x = exp(Taylor1(Float64,13))
+    @which evaluate(taylor_x, taylor_a)
+    @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
 
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare
