@@ -263,6 +263,17 @@ using Base.Test
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
     @test TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"
     @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
+
+    t_C = Taylor1(3.+4im,5)
+    a = collect(1:12)
+    t_a = Taylor1(a,15)
+    rnd = rand(10)
+    @test typeof( norm(Taylor1(rnd)) ) == Float64
+    @test norm(Taylor1(rnd)) > 0
+    @test norm(t_a) == norm(a)
+    @test norm(Taylor1(a,15),3) == sum((a.^3))^(1/3)
+    @test norm(t_a,Inf) == 12
+    @test norm(t_C) == abs(3.+4im)
 end
 
 @testset "Matrix multiplication for Taylor1" begin

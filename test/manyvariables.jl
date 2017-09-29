@@ -327,6 +327,15 @@ using Base.Test
     hessian!(hes2,g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes2
 
+    a = 3x + 4y +6x^2 + 8x*y
+    @test typeof( norm(x) ) == Float64
+    @test norm(x) > 0
+    @test norm(a) == norm([3,4,6,8.0])
+    @test norm(a,4) == sum([3,4,6,8.0].^4)^(1/4.)
+    @test norm(a,Inf) == 8.
+    @test norm((3.+4im)*x) == abs(3.+4im)
+
+
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"
     @test string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"

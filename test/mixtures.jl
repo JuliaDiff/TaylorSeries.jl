@@ -133,4 +133,10 @@ using Base.Test
     @test xx*δx + Taylor1(typeof(δx),5) == δx + δx^2 + Taylor1(typeof(δx),5)
     @test xx/(1+δx) == one(xx)
     @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
+
+    X, Y = set_variables(Taylor1{Float64}, "x y")
+    @test typeof( norm(X) ) == Float64
+    @test norm(X) > 0
+    @test norm(X+Y) == sqrt(2)
+    @test norm(-10X+4Y,Inf) == 10.
 end
