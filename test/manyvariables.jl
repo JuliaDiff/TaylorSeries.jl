@@ -131,6 +131,12 @@ using Base.Test
     @test (xH/complex(0,BigInt(3)))' ==
         im*HomogeneousPolynomial([BigInt(1),0])/3
     @test evaluate(xH) == zero(eltype(xH))
+    @test xH() == zero(eltype(xH))
+    @test xH([1,1]) == evaluate(xH, [1,1])
+    hp = -5.4xH+6.89yH
+    @test hp([1,1]) == evaluate(hp, [1,1])
+    vr = rand(2)
+    @test hp(vr) == evaluate(hp, vr)
 
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
@@ -341,4 +347,34 @@ using Base.Test
     @test_throws AssertionError cos(x)/sin(y)
     @test_throws BoundsError xH[20]
     @test_throws BoundsError xT[20]
+
+    #test function-like behavior for TaylorN
+    @test exy() == 1
+    @test exy([0.1im,0.01im]) == exp(0.11im)
+    @test isapprox(exy([1,1]), e^2)
+    @test sin(asin(xT+yT))([1.0,0.5]) == 1.5
+    @test asin(sin(xT+yT))([1.0,0.5]) == 1.5
+    @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(rand(2)) == 1
+    @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(zeros(2)) == 1
+    dx = set_variables("x", numvars=4, order=10)
+    P = sin.(dx)
+    v = [1.0,2,3,4]
+    for i in 1:4
+        @test P[i](v) == evaluate(P[i], v)
+    end
+    @test P.(fill(v, 4)) == fill(P(v), 4)
+    F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
+    Q = F(v+dx)
+    @test Q.( fill(v, 4) ) == fill(Q(v), 4)
+    vr = map(x->rand(4), 1:4)
+    @test Q.(vr) == map(x->Q(x), vr)
+    for i in 1:4
+        @test P[i]() == evaluate(P[i])
+        @test Q[i]() == evaluate(Q[i])
+    end
+    @test P() == evaluate.(P)
+    @test P() == evaluate(P)
+    @test Q() == evaluate.(Q)
+    @test Q() == evaluate(Q)
+    @test Q[1:3]() == evaluate(Q[1:3])
 end
