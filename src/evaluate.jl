@@ -97,7 +97,8 @@ function evaluate{T<:Number}(a::Taylor1{T}, x::Taylor1{T})
     end
     suma
 end
-function evaluate{T<:NumberNotSeries}(a::Taylor1{Taylor1{T}}, x::Taylor1{T})
+
+function evaluate{T<:Number}(a::Taylor1{Taylor1{T}}, x::Taylor1{T})
     @inbounds suma = a[end]
     @inbounds for k = a.order:-1:1
         suma = suma*x + a[k]
@@ -127,22 +128,13 @@ function evaluate!{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1},
     nothing
 end
 
-function evaluate!{T<:NumberNotSeries}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
+function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
         x0::Array{Taylor1{T},1})
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
         x0[i] = evaluate( x[i], δx )
     end
     nothing
-end
-
-function evaluate!{T<:NumberNotSeries}(x::Array{TaylorN{Taylor1{T}},1}, δx::Array{Taylor1{T},1},
-    x0::Array{Taylor1{T},1})
-@assert length(x) == length(x0)
-@inbounds for i in eachindex(x)
-    x0[i] = evaluate( x[i], δx )
-end
-nothing
 end
 
 function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
@@ -277,13 +269,7 @@ function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
     return x0
 end
 
-function evaluate{T<:NumberNotSeries}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1})
-    x0 = Array{Taylor1{T}}( length(x) )
-    evaluate!( x, δx, x0 )
-    return x0
-end
-
-function evaluate{T<:NumberNotSeries}(x::Array{TaylorN{Taylor1{T}},1}, δx::Array{Taylor1{T},1})
+function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1})
     x0 = Array{Taylor1{T}}( length(x) )
     evaluate!( x, δx, x0 )
     return x0
