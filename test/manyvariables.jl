@@ -335,6 +335,26 @@ using Base.Test
     @test norm(a,Inf) == 8.
     @test norm((3.+4im)*x) == abs(3.+4im)
 
+    @test TaylorSeries.rtoldefault(TaylorN{Int64}) == 0
+    @test TaylorSeries.rtoldefault(TaylorN{Float64}) == sqrt(eps(Float64))
+    @test TaylorSeries.rtoldefault(TaylorN{BigFloat}) == sqrt(eps(BigFloat))
+    @test TaylorSeries.real(TaylorN{Float64}) == TaylorN{Float64}
+    @test TaylorSeries.real(TaylorN{Complex{Float64}}) == TaylorN{Float64}
+    @test isfinite(a)
+    @test a[1] ≈ a[1]
+    @test a[2] ≈ a[2]
+    @test a[3] ≈ a[3]
+    @test a ≈ a
+    b = deepcopy(a)
+    b[3][3] = Inf
+    @show b
+    @test !isfinite(b)
+    b[3][3] = a[3][3]+eps()
+    @test a[3] ≈ b[3]
+    @test a ≈ b
+    b[2][2] = a[2][2]+sqrt(eps())
+    @test a[2] ≈ b[2]
+    @test a ≈ b
 
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"
