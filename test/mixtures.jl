@@ -200,10 +200,55 @@ using Base.Test
     @test norm(X+Y) == sqrt(2)
     @test norm(-10X+4Y,Inf) == 10.
 
+
     X,Y = convert(Taylor1{TaylorN{Float64}},X), convert(Taylor1{TaylorN{Float64}},Y)
     @test typeof( norm(X) ) == Float64
     @test norm(X) > 0
     @test norm(X+Y) == sqrt(2)
     @test norm(-10X+4Y,Inf) == 10.
+
+
+    @test TaylorSeries.rtoldefault(TaylorN{Taylor1{Int64}}) == 0
+    @test TaylorSeries.rtoldefault(Taylor1{TaylorN{Int64}}) == 0
+    for T in (Float64, BigFloat)
+        @test TaylorSeries.rtoldefault(TaylorN{Taylor1{T}}) == sqrt(eps(T))
+        @test TaylorSeries.rtoldefault(Taylor1{TaylorN{T}}) == sqrt(eps(T))
+        @test TaylorSeries.real(TaylorN{Taylor1{T}}) == TaylorN{Taylor1{T}}
+        @test TaylorSeries.real(Taylor1{TaylorN{T}}) == Taylor1{TaylorN{T}}
+        @test TaylorSeries.real(TaylorN{Taylor1{Complex{T}}}) == TaylorN{Taylor1{T}}
+        @test TaylorSeries.real(Taylor1{TaylorN{Complex{T}}}) == Taylor1{TaylorN{T}}
+    end
+
+    rndT1(ord1) = Taylor1(-1+2rand(ord1+1)) # generates a random Taylor1 with order `ord`
+    nmonod(s, d) = binomial(d+s-1, d) #number of monomials in s variables with exact degree d
+    #rndHP generates a random `ordHP`-th order homog. pol. of Taylor1s, each with order `ord1`
+    rndHP(ordHP, ord1) = HomogeneousPolynomial( [rndT1(ord1) for i in 1:nmonod(get_numvars(), ordHP)] )
+    #rndTN generates a random `ordHP`-th order TaylorN of of Taylor1s, each with order `ord1`
+    rndTN(ordN, ord1) = TaylorN([rndHP(i, ord1) for i in 0:ordN])
+
+    P = rndTN(get_order(), 3)
+    @test P ≈ P
+    Q = deepcopy(P)
+    Q[2][2] = Taylor1([NaN, Inf])
+    @test isnan(Q)
+    @test isinf(Q)
+    @test !isfinite(Q)
+    Q[2][2] = P[2][2]+sqrt(eps())/2
+    @test isapprox(P, Q, rtol=1.0)
+    Q[2][2] = P[2][2]+10sqrt(eps())
+    @test !isapprox(P, Q, atol=sqrt(eps()), rtol=0)
+    @test P ≉ Q^2
+    Q[2][2] = P[2][2]+eps()/2
+    @test isapprox(Q, Q, atol=eps(), rtol=0)
+    @test isapprox(Q, P, atol=eps(), rtol=0)
+    Q[2][1] = P[2][1]-10eps()
+    @test !isapprox(Q, P, atol=eps(), rtol=0)
+    @test P ≉ Q^2
+
+    X, Y = set_variables(BigFloat, "x y", numvars=2, order=6)
+    p1N = Taylor1([X^2,X*Y,Y+X,Y^2])
+    q1N = Taylor1([X^2,(1.0+sqrt(eps(BigFloat)))*X*Y,Y+X,Y^2])
+    @test p1N ≈ p1N
+    @test p1N ≈ q1N
 
 end
