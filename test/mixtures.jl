@@ -169,12 +169,14 @@ using Base.Test
     @test isapprox(P, Q, rtol=1.0)
     Q[2][2] = P[2][2]+10sqrt(eps())
     @test !isapprox(P, Q, atol=sqrt(eps()), rtol=0)
+    @test P ≉ Q^2
     Q[2][2] = P[2][2]+eps()/2
     @test isapprox(Q, Q, atol=eps(), rtol=0)
     @test isapprox(Q, P, atol=eps(), rtol=0)
     Q[2][1] = P[2][1]-10eps()
     @test !isapprox(Q, P, atol=eps(), rtol=0)
-
+    @test P ≉ Q^2
+    
     X, Y = set_variables(BigFloat, "x y", numvars=2, order=6)
     p1N = Taylor1([X^2,X*Y,Y+X,Y^2])
     q1N = Taylor1([X^2,(1.0+sqrt(eps(BigFloat)))*X*Y,Y+X,Y^2])
