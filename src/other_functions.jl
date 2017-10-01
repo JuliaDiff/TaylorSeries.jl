@@ -139,9 +139,21 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 # isfinite
+"""
+    isfinite(x::AbstractSeries) -> Bool
+
+Test whether the coefficients of the polynomial `x` are finite.
+"""
 isfinite(x::AbstractSeries) = !isnan(x) && !isinf(x)
 
 # isapprox; modified from Julia's Base.isapprox
+"""
+    isapprox(x::AbstractSeries, y::AbstractSeries; [rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false])
+
+Inexact equality comparison between polynomials: returns `true` if 
+`norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are 
+polynomials. For more details, see [`Base.isapprox`](@ref).
+"""
 function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0, nans::Bool=false)
     x == y || (isfinite(x) && isfinite(y) && norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) || (nans && isnan(x) && isnan(y))
 end
