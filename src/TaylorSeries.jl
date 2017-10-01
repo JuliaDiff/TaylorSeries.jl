@@ -36,7 +36,8 @@ import Base: zero, one, zeros, ones, isinf, isnan,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
     A_mul_B!, power_by_squaring,
-    getindex, setindex!, endof, norm
+    getindex, setindex!, endof, norm,
+    rtoldefault, isfinite, isapprox
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 

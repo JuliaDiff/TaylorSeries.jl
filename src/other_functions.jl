@@ -13,6 +13,9 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @eval ($f)(a::$T) = $T(($f).(a.coeffs), a.order)
     end
 
+    @eval real{T<:NumberNotSeries}(x::Type{$T{T}}) = typeof(real(zero(x)))
+    @eval real{T<:AbstractSeries}(x::Type{$T{T}}) = real(T)
+
     @eval ctranspose(a::$T) = conj.(a)
 
     ## isinf and isnan ##
@@ -129,4 +132,17 @@ end
 
 #norm
 norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
-norm{T<:NumberNotSeries}(x::Taylor1{T}, p::Real=2) = norm(x.coeffs, p)
+norm{T<:NumberNotSeries}(x::Union{Taylor1{T}, HomogeneousPolynomial{T}}, p::Real=2) = norm(x.coeffs, p)
+
+# rtoldefault
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    @eval rtoldefault{T<:Number}(::Type{$T{T}}) = rtoldefault(T)
+end
+
+# isfinite
+isfinite(x::AbstractSeries) = !isinf(x)
+
+# isapprox; modified from Julia's Base.isapprox
+function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0, nans::Bool=false)
+    x == y || (isfinite(x) && isfinite(y) && norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) || (nans && isnan(x) && isnan(y))
+end
