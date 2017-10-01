@@ -274,6 +274,34 @@ using Base.Test
     @test norm(Taylor1(a,15),3) == sum((a.^3))^(1/3)
     @test norm(t_a,Inf) == 12
     @test norm(t_C) == abs(3.+4im)
+
+    @test TaylorSeries.rtoldefault(Taylor1{Int64}) == 0
+    @test TaylorSeries.rtoldefault(Taylor1{Float64}) == sqrt(eps(Float64))
+    @test TaylorSeries.rtoldefault(Taylor1{BigFloat}) == sqrt(eps(BigFloat))
+    @test TaylorSeries.real(Taylor1{Float64}) == Taylor1{Float64}
+    @test TaylorSeries.real(Taylor1{Complex{Float64}}) == Taylor1{Float64}
+    @test isfinite(t_C)
+    @test isfinite(t_a)
+    s = Taylor1([Inf, Inf, 0])
+    @test !isfinite(s)
+    b = convert(Vector{Float64}, a)
+    b[3] += eps(10.0)
+    b[5] -= eps(10.0)
+    t_b = Taylor1(b,15)
+    t_C2 = Taylor1(3.+4im+eps(100.0),5)
+    t_C3 = Taylor1(3.+4im+eps(100.0)*im,5)
+    @test isapprox(t_C, t_C)
+    @test t_a ≈ t_a
+    @test t_a ≈ t_b
+    @test t_C ≈ t_C2
+    @test t_C ≈ t_C3
+    @test t_C3 ≈ t_C2
+    t = Taylor1(25)
+    p = sin(t)
+    q = sin(t+eps())
+    @test t ≈ t
+    @test t ≈ t+sqrt(eps())
+    @test isapprox(p, q, atol=eps())
 end
 
 @testset "Matrix multiplication for Taylor1" begin
