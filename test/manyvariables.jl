@@ -351,7 +351,7 @@ using Base.Test
     b[3][3] = NaN
     @test !isfinite(b)
     b[3][3] = a[3][3]+eps()
-    @test a[3] ≈ b[3]
+    @test isapprox(a[3], b[3], rtol=eps())
     @test a ≈ b
     b[2][2] = a[2][2]+sqrt(eps())
     @test a[2] ≈ b[2]
