@@ -175,6 +175,7 @@ using Base.Test
     Q[2][1] = P[2][1]-10eps()
     @test !isapprox(Q, P, atol=eps(), rtol=0)
 
+    X, Y = set_variables("x y", numvars=2, order=6)
     p1N = Taylor1([X^2,X*Y,Y+X,Y^2])
     q1N = Taylor1([X^2,(1.0+sqrt(eps()))*X*Y,Y+X,Y^2])
     @test p1N ≈ p1N
