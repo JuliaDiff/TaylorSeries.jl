@@ -140,7 +140,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 # isfinite
-isfinite(x::AbstractSeries) = !isinf(x)
+isfinite(x::AbstractSeries) = !isnan(x) && !isinf(x)
 
 # isapprox; modified from Julia's Base.isapprox
 function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0, nans::Bool=false)

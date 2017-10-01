@@ -282,8 +282,8 @@ using Base.Test
     @test TaylorSeries.real(Taylor1{Complex{Float64}}) == Taylor1{Float64}
     @test isfinite(t_C)
     @test isfinite(t_a)
-    s = Taylor1([Inf, Inf, 0])
-    @test !isfinite(s)
+    @test !isfinite( Taylor1([0, Inf]) )
+    @test !isfinite( Taylor1([NaN, 0]) )
     b = convert(Vector{Float64}, a)
     b[3] += eps(10.0)
     b[5] -= eps(10.0)
