@@ -347,7 +347,8 @@ using Base.Test
     @test a ≈ a
     b = deepcopy(a)
     b[3][3] = Inf
-    @show b
+    @test !isfinite(b)
+    b[3][3] = NaN
     @test !isfinite(b)
     b[3][3] = a[3][3]+eps()
     @test a[3] ≈ b[3]
