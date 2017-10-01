@@ -200,4 +200,10 @@ using Base.Test
     @test norm(X+Y) == sqrt(2)
     @test norm(-10X+4Y,Inf) == 10.
 
+    X,Y = convert(Taylor1{TaylorN{Float64}},X), convert(Taylor1{TaylorN{Float64}},Y)
+    @test typeof( norm(X) ) == Float64
+    @test norm(X) > 0
+    @test norm(X+Y) == sqrt(2)
+    @test norm(-10X+4Y,Inf) == 10.
+
 end
