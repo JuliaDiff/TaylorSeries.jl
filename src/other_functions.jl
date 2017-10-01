@@ -13,8 +13,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @eval ($f)(a::$T) = $T(($f).(a.coeffs), a.order)
     end
 
-    @eval real{T<:NumberNotSeries}(x::Type{$T{T}}) = typeof(real(zero(x)))
-    @eval real{T<:AbstractSeries}(x::Type{$T{T}}) = real(T)
+    @eval real{T<:Number}(x::Type{$T{T}}) = typeof(real(zero(x)))
 
     @eval ctranspose(a::$T) = conj.(a)
 
