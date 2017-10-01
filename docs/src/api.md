@@ -39,6 +39,8 @@ jacobian!
 hessian
 hessian!
 inverse
+abs
+norm
 ```
 
 ## Internals

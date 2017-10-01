@@ -71,6 +71,12 @@ end
 
 
 ## mod2pi and abs ##
+"""
+    abs(a::Union{Taylor1,TaylorN})
+
+Returns `a` if `constant_term(a) > 0` and `-a` if `constant_term(a) < 0`.
+Notice that `typeof(a) <: AbstractSeries`.
+"""
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function mod2pi{T<:Real}(a::$T{T})
@@ -130,6 +136,16 @@ function abs{T<:Real}(a::Taylor1{TaylorN{T}})
 end
 
 #norm
+"""
+    norm(x::AbstractSeries,p::Real)
+
+Computes the p-norm of an `AbstractSeries` defined by $P(\vec{x}) = \sum_k a_k \vec{x}^k$ as
+
+```math
+||P||_p =  \left( \sum_k\ ||a_k||_p^p \right)^{\frac{1}{p}}
+```
+which returns a non-negative number.
+"""
 norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
 norm{T<:NumberNotSeries}(x::Union{Taylor1{T}, HomogeneousPolynomial{T}}, p::Real=2) = norm(x.coeffs, p)
 
@@ -150,8 +166,8 @@ isfinite(x::AbstractSeries) = !isnan(x) && !isinf(x)
 """
     isapprox(x::AbstractSeries, y::AbstractSeries; [rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false])
 
-Inexact equality comparison between polynomials: returns `true` if 
-`norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are 
+Inexact equality comparison between polynomials: returns `true` if
+`norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are
 polynomials. For more details, see [`Base.isapprox`](@ref).
 """
 function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0, nans::Bool=false)
