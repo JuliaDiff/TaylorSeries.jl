@@ -94,6 +94,7 @@ using Base.Test
     @test convert(Array{TaylorN{Taylor1{Float64}},1}, [t1N, t1N]) == [tN1, tN1]
     @test convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) == [tN1 tN1]
 
+    @test evaluate(t1N, 0.0) == TaylorN(xH, 2)
     @test string(evaluate(t1N, 0.0)) == " 1.0 x₁ + 𝒪(‖x‖³)"
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = zeros(TaylorN{Float64},2)
@@ -134,9 +135,69 @@ using Base.Test
     @test xx/(1+δx) == one(xx)
     @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
 
+    #testing evaluate and function-like behavior of Taylor1, TaylorN for mixtures:
+    t = Taylor1(25)
+    p = cos(t)
+    q = sin(t)
+    a = [p,q]
+    dx = set_variables("x", numvars=4, order=10)
+    P = sin.(dx)
+    v = [1.0,2,3,4]
+    F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
+    Q = F(v+dx)
+    diff_evals = cos(sin(dx[1]))-p(P[1])
+    @test norm( norm.(map(x->x.coeffs, diff_evals.coeffs),Inf) , Inf) < 1e-15
+    #evaluate a Taylor1 at a TaylorN
+    @test p(P) == evaluate(p, P)
+    @test q(Q) == evaluate(q, Q)
+    #evaluate an array of Taylor1s at a TaylorN
+    aT1 = [p,q,p^2,log(1+q)] #an array of Taylor1s
+    @test aT1(Q[4]) == evaluate(aT1, Q[4])
+    @test (aT1.^2)(Q[3]) == evaluate(aT1.^2, Q[3])
+    #evaluate a TaylorN at an array of Taylor1s
+    @test P[1](aT1) == evaluate(P[1], aT1)
+    @test Q[2](aT1) == evaluate(Q[2], aT1)
+    #evaluate an array of TaylorN{Float64} at an array of Taylor1{Float64}
+    @test P(aT1) == evaluate(P, aT1)
+    @test Q(aT1) == evaluate(Q, aT1)
+    #test evaluation of an Array{TaylorN{Taylor1}} at an Array{Taylor1}
+    aH1 = [
+        HomogeneousPolynomial([Taylor1(rand(2))]),
+        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2))])
+        ]
+    bH1 = [
+        HomogeneousPolynomial([Taylor1(rand(2))]),
+        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2))])
+        ]
+    aTN1 = TaylorN(aH1); bTN1 = TaylorN(bH1)
+    x = [aTN1, bTN1]
+    δx = [Taylor1(rand(3)) for i in 1:4]
+    @test typeof(x) == Array{TaylorN{Taylor1{Float64}},1}
+    @test typeof(δx) == Array{Taylor1{Float64},1}
+    x0 = Array{Taylor1{Float64}}(length(x))
+    eval_x_δx = evaluate(x,δx)
+    @test x(δx) == evaluate(x,δx)
+    evaluate!(x,δx,x0)
+    @test x0 == eval_x_δx
+    @test typeof(evaluate(x[1],δx)) == Taylor1{Float64}
+    @test x() == map(y->y[1][1], x)
+    for i in eachindex(x)
+        @test evaluate(x[i],δx) == eval_x_δx[i]
+        @test x[i](δx) == eval_x_δx[i]
+    end
+    p11 = Taylor1([sin(t),cos(t)])
+    @which evaluate(p11,t)
+    @test evaluate(p11,t) == sin(t)+t*cos(t)
+    @test p11(t) == sin(t)+t*cos(t)
+    a11 = Taylor1([t,t^2,exp(-t),sin(t),cos(t)])
+    b11 = t+t*(t^2)+(t^2)*(exp(-t))+(t^3)*sin(t)+(t^4)*cos(t)
+    diff_a11b11 = a11(t)-b11
+    @test norm(diff_a11b11.coeffs,Inf) < 1E-19
+
     X, Y = set_variables(Taylor1{Float64}, "x y")
     @test typeof( norm(X) ) == Float64
     @test norm(X) > 0
     @test norm(X+Y) == sqrt(2)
     @test norm(-10X+4Y,Inf) == 10.
+
 end

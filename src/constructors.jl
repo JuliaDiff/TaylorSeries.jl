@@ -28,6 +28,9 @@ DataType for polynomial expansions in one independent variable.
 - `coeffs :: Array{T,1}` Expansion coefficients; the $i$-th
     component is the coefficient of degree $i-1$ of the expansion.
 - `order  :: Int64` Maximum order (degree) of the polynomial.
+
+Note that `Taylor1` variables are callable. For more information, see
+[`evaluate`](@ref).
 """
 immutable Taylor1{T<:Number} <: AbstractSeries{T}
     coeffs :: Array{T,1}
@@ -81,6 +84,9 @@ DataType for homogenous polynomials in many (>1) independent variables.
 polynomial; the $i$-th component is related to a monomial, where the degrees
 of the independent variables are specified by `coeff_table[order+1][i]`.
 - `order   :: Int` order (degree) of the homogenous polynomial.
+
+Note that `HomogeneousPolynomial` variables are callable. For more information,
+see [`evaluate`](@ref).
 """
 immutable HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{T,1}
@@ -137,6 +143,9 @@ DataType for polynomial expansions in many (>1) independent variables.
 `HomogeneousPolynomial` entries. The $i$-th component corresponds to the
 homogeneous polynomial of degree $i-1$.
 - `order   :: Int`  maximum order of the polynomial expansion.
+
+Note that `TaylorN` variables are callable. For more information, see
+[`evaluate`](@ref).
 """
 immutable TaylorN{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{HomogeneousPolynomial{T},1}
