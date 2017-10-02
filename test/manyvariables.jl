@@ -348,7 +348,6 @@ using Base.Test
     @test_throws BoundsError xH[20]
     @test_throws BoundsError xT[20]
 
-
     #obs: taylor_expand uses set_variables internally.
     f1(a,b) = (a+b)^a - cos(a*b)*b
     f2(a) = (a[1] + a[2])^a[1] - cos(a[1]*a[2])*a[2]

@@ -268,6 +268,7 @@ function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
     return suma
 end
 
+
 function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
         vals::Array{TaylorN{S},1})
     @assert length(vals) == get_numvars()
@@ -292,7 +293,6 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     return suma
 end
 
-
 evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
 
 function evaluate{T<:Number}(x::Array{TaylorN{T},1}, δx::Array{T,1})
@@ -306,6 +306,7 @@ function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylor
     evaluate!( x, δx, x0 )
     return x0
 end
+
 
 function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1})
     x0 = Array{TaylorN{T}}( length(x) )
