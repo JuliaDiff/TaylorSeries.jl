@@ -71,12 +71,6 @@ end
 
 
 ## mod2pi and abs ##
-"""
-    abs(a::Union{Taylor1,TaylorN})
-
-Returns `a` if `constant_term(a) > 0` and `-a` if `constant_term(a) < 0`.
-Notice that `typeof(a) <: AbstractSeries`.
-"""
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function mod2pi{T<:Real}(a::$T{T})
@@ -98,6 +92,7 @@ for T in (:Taylor1, :TaylorN)
         end
     end
 end
+
 
 function mod2pi{T<:Real}(a::TaylorN{Taylor1{T}})
     coeffs = copy(a.coeffs)
@@ -134,17 +129,27 @@ function abs{T<:Real}(a::Taylor1{TaylorN{T}})
         (abs(x) is not differentiable at x=0)."""))
     end
 end
+doc"""
+    abs(a)
+
+Returns `a` if `constant_term(a) > 0` and `-a` if `constant_term(a) < 0` for
+`a <:Union{Taylor1,TaylorN}`.
+Notice that `typeof(abs(a)) <: AbstractSeries`.
+
+""" abs
+
 
 #norm
-"""
+doc"""
     norm(x::AbstractSeries,p::Real)
 
-Computes the p-norm of an `AbstractSeries` defined by $P(\vec{x}) = \sum_k a_k \vec{x}^k$ as
+Computes the p-norm of an `AbstractSeries` defined by ``P(\vec{x}) = \sum_k a_k \vec{x}^k`` as
 
 ```math
-||P||_p =  \left( \sum_k\ ||a_k||_p^p \right)^{\frac{1}{p}}
+||P||_p =  \left( \sum_k ||a_k||_p^p \right)^{\frac{1}{p}}
 ```
 which returns a non-negative number.
+
 """
 norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
 norm{T<:NumberNotSeries}(x::Union{Taylor1{T}, HomogeneousPolynomial{T}}, p::Real=2) = norm(x.coeffs, p)
@@ -155,7 +160,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 # isfinite
-"""
+doc"""
     isfinite(x::AbstractSeries) -> Bool
 
 Test whether the coefficients of the polynomial `x` are finite.
@@ -163,7 +168,7 @@ Test whether the coefficients of the polynomial `x` are finite.
 isfinite(x::AbstractSeries) = !isnan(x) && !isinf(x)
 
 # isapprox; modified from Julia's Base.isapprox
-"""
+doc"""
     isapprox(x::AbstractSeries, y::AbstractSeries; [rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false])
 
 Inexact equality comparison between polynomials: returns `true` if
