@@ -158,6 +158,8 @@ using Base.Test
     tsq = t^2
     taylor_expand!(tsq,2.0)
     @test tsq == (t+2.0)^2
+    taylor_expand!(tsq,-2.0)
+    @test tsq == t^2
 
     @test log(exp(tsquare)) == tsquare
     @test exp(log(1-tsquare)) == 1-tsquare

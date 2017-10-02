@@ -350,11 +350,16 @@ using Base.Test
 
 
     #obs: taylor_expand uses set_variables internally.
-    f1(x,y) = (x+y)^x - cos(x*y)*y
-    f2(x) = (x[1] + x[2])^x[1] - cos(x[1]*x[2])*x[2]
+    f1(a,b) = (a+b)^a - cos(a*b)*b
+    f2(a) = (a[1] + a[2])^a[1] - cos(a[1]*a[2])*a[2]
     @test taylor_expand(f1,1.,2.) == taylor_expand(f2,[1,2.])
-    @test taylor_expand(exp,[0,0.]) == [exp(get_variables()[1]),exp(get_variables()[2])]
     @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
+    x,y = get_variables()
+    xysq = x^2 + y^2
+    taylor_expand!(xysq,[1.0,-2.0])
+    @test xysq == (x+1.0)^2 + (y-2.0)^2
+    taylor_expand!(xysq,[-1.0,2.0])
+    @test xysq == x^2 + y^2
 
     #test function-like behavior for TaylorN
     @test exy() == 1
