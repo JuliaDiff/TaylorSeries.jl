@@ -181,6 +181,14 @@ function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rt
 
 
 #taylor_expand function for Taylor1
+"""
+    taylor_expand(f,x0;order)
+
+Makes a Taylor expansion of the function `f` around the point `x0`. If x0 is a scalar,
+a `Taylor1` expansion will be done. If `x0` is a vector, a `TaylorN` expansion will be
+computed, changing the number of `TaylorN` variables
+according to the dimension of `f`.
+"""
 function taylor_expand(f::Function; order::Int64=15)
    a = Taylor1(order)
    return f(a)
@@ -212,6 +220,11 @@ function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor e
 end
 
 #taylor_expand! function for Taylor1
+"""
+    taylor_expand!(a,x0;order)
+
+Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
+"""
 function taylor_expand!(a::Taylor1)
     #shifting around zero shouldn't change anything...
     nothing
