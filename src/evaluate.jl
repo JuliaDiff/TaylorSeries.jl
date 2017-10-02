@@ -137,6 +137,15 @@ function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylo
     nothing
 end
 
+function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1},
+        x0::Array{TaylorN{T},1})
+    @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x)
+        x0[i] = evaluate( x[i], δx )
+    end
+    nothing
+end
+
 function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
         x0::Array{TaylorN{T},1})
     @assert length(x) == length(x0)
@@ -224,7 +233,6 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     suma = Taylor1(zeros(R, ord))
 
     for homPol in 1:length(a)
-        sun = zero(R)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(ct[homPol][i][1])
             for n in 2:num_vars
@@ -248,7 +256,6 @@ function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
     suma = Taylor1(zeros(T, ord))
 
     for homPol in 1:length(a)
-        sun = zero(Taylor1{T})
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(ct[homPol][i][1])
             for n in 2:num_vars
@@ -260,6 +267,31 @@ function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
 
     return suma
 end
+
+function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
+        vals::Array{TaylorN{S},1})
+    @assert length(vals) == get_numvars()
+
+    num_vars = get_numvars()
+    ct = coeff_table
+    R = promote_type(T,eltype(S))
+    a_length = length(a)
+    ord = maximum( get_order.(vals) )
+    suma = zero(TaylorN{R})
+
+    for homPol in 1:length(a)
+        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            tmp = vals[1]^(ct[homPol][i][1])
+            for n in 2:num_vars
+                tmp *= vals[n]^(ct[homPol][i][n])
+            end
+            suma += a_coeff * tmp
+        end
+    end
+
+    return suma
+end
+
 
 evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
 
@@ -275,6 +307,12 @@ function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylor
     return x0
 end
 
+function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1})
+    x0 = Array{TaylorN{T}}( length(x) )
+    evaluate!( x, δx, x0 )
+    return x0
+end
+
 evaluate{T<:Number}(x::Array{TaylorN{T},1}) = evaluate.(x)
 
 #function-like behavior for TaylorN
@@ -286,4 +324,3 @@ evaluate{T<:Number}(x::Array{TaylorN{T},1}) = evaluate.(x)
 (p::Array{TaylorN{T},1}){T<:Number}(x) = evaluate(p, x)
 
 (p::Array{TaylorN{T},1}){T<:Number}() = evaluate(p)
-
