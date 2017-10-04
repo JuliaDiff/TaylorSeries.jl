@@ -2,7 +2,11 @@
 #
 
 using TaylorSeries
-using Base.Test
+if VERSION < v"0.7.0-DEV.2004"
+    using Base.Test
+else
+    using Test
+end
 
 @testset "Testing an identity proved by Euler (8 variables)" begin
     make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))

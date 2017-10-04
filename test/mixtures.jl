@@ -2,7 +2,11 @@
 #
 
 using TaylorSeries
-using Base.Test
+if VERSION < v"0.7.0-DEV.2004"
+    using Base.Test
+else
+    using Test
+end
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
     @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
