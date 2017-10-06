@@ -385,11 +385,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api.html#Base.abs",
+    "page": "API",
+    "title": "Base.abs",
+    "category": "Function",
+    "text": "abs(a)\n\nReturns a if constant_term(a) > 0 and -a if constant_term(a) < 0 for a <:Union{Taylor1,TaylorN}. Notice that typeof(abs(a)) <: AbstractSeries.\n\n\n\n"
+},
+
+{
+    "location": "api.html#Base.LinAlg.norm",
+    "page": "API",
+    "title": "Base.LinAlg.norm",
+    "category": "Function",
+    "text": "norm(x::AbstractSeries,p::Real)\n\nComputes the p-norm of an AbstractSeries defined by P(vecx) = sum_k a_k vecx^k as\n\nP_p =  left( sum_k a_k_p^p right)^frac1p\n\nwhich returns a non-negative number.\n\n\n\n"
+},
+
+{
     "location": "api.html#Functions-and-methods-1",
     "page": "API",
     "title": "Functions and methods",
     "category": "section",
-    "text": "Taylor1([::Type{Float64}], [order::Int64=1])\nHomogeneousPolynomial{T<:Number}(::Type{T}, ::Int)\nTaylorN{T<:Number}(::Type{T}, nv::Int; [order::Int=get_order()])\nset_variables\nshow_params_TaylorN\nget_coeff\nevaluate\nevaluate!\nderivative\nintegrate\ngradient\njacobian\njacobian!\nhessian\nhessian!\ninverse"
+    "text": "Taylor1([::Type{Float64}], [order::Int64=1])\nHomogeneousPolynomial{T<:Number}(::Type{T}, ::Int)\nTaylorN{T<:Number}(::Type{T}, nv::Int; [order::Int=get_order()])\nset_variables\nshow_params_TaylorN\nget_coeff\nevaluate\nevaluate!\nderivative\nintegrate\ngradient\njacobian\njacobian!\nhessian\nhessian!\ninverse\nabs\nnorm"
 },
 
 {
