@@ -162,7 +162,7 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{Taylor1{T}})
         strout = string(strout, ccad, monom, space)
         ifirst = false
     end
-    return strout[1:end-1]
+    return strout[1:prevind(strout, end)]
 end
 
 function numbr2str(zz, ifirst::Bool=false)
