@@ -183,12 +183,12 @@ end
 
 #taylor_expand function for Taylor1
 doc"""
-    taylor_expand(f,x0;order)
+    taylor_expand(f ,x0 ;order)
 
 Makes a Taylor expansion of the function `f` around the point `x0`. If x0 is a scalar,
 a `Taylor1` expansion will be done. If `x0` is a vector, a `TaylorN` expansion will be
-computed, changing the number of `TaylorN` variables
-according to the dimension of `f`.
+computed. If the dimension of x0 (`length(x0)`) is different from the variables set for
+`TaylorN` (`get_numvars()`), an `AssertionError` will be thrown.
 """
 function taylor_expand(f::Function; order::Int64=15)
    a = Taylor1(order)

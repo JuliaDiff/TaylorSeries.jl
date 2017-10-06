@@ -79,7 +79,7 @@ function evaluate!{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S, x0::Uni
     nothing
 end
 
-"""
+doc"""
     evaluate(a, x)
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
@@ -155,7 +155,7 @@ function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
     nothing
 end
 
-"""
+doc"""
     evaluate(a, [vals])
 
 Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
@@ -189,7 +189,7 @@ evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
 (p::HomogeneousPolynomial)() = evaluate(p)
 
-"""
+doc"""
     evaluate(a, [vals])
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.
