@@ -2,7 +2,11 @@
 #
 
 using TaylorSeries
-using Base.Test
+if VERSION < v"0.7.0-DEV.2004"
+    using Base.Test
+else
+    using Test
+end
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
     @test HomogeneousPolynomial <: AbstractSeries
@@ -332,6 +336,36 @@ using Base.Test
     hessian!(hes1,f1-f2,[1,-1])
     hessian!(hes2,g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes2
+
+    a = 3x + 4y +6x^2 + 8x*y
+    @test typeof( norm(x) ) == Float64
+    @test norm(x) > 0
+    @test norm(a) == norm([3,4,6,8.0])
+    @test norm(a,4) == sum([3,4,6,8.0].^4)^(1/4.)
+    @test norm(a,Inf) == 8.
+    @test norm((3.0 + 4im)*x) == abs(3.0 + 4im)
+
+    @test TaylorSeries.rtoldefault(TaylorN{Int64}) == 0
+    @test TaylorSeries.rtoldefault(TaylorN{Float64}) == sqrt(eps(Float64))
+    @test TaylorSeries.rtoldefault(TaylorN{BigFloat}) == sqrt(eps(BigFloat))
+    @test TaylorSeries.real(TaylorN{Float64}) == TaylorN{Float64}
+    @test TaylorSeries.real(TaylorN{Complex{Float64}}) == TaylorN{Float64}
+    @test isfinite(a)
+    @test a[1] ≈ a[1]
+    @test a[2] ≈ a[2]
+    @test a[3] ≈ a[3]
+    @test a ≈ a
+    b = deepcopy(a)
+    b[3][3] = Inf
+    @test !isfinite(b)
+    b[3][3] = NaN
+    @test !isfinite(b)
+    b[3][3] = a[3][3]+eps()
+    @test isapprox(a[3], b[3], rtol=eps())
+    @test a ≈ b
+    b[2][2] = a[2][2]+sqrt(eps())
+    @test a[2] ≈ b[2]
+    @test a ≈ b
 
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"

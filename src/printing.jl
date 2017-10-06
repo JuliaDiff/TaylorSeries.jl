@@ -132,7 +132,7 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{T})
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
-    return strout[1:end-1]
+    return strout[1:prevind(strout, end)]
 end
 function homogPol2str{T<:Number}(a::HomogeneousPolynomial{Taylor1{T}})
     numVars = get_numvars()
@@ -162,7 +162,7 @@ function homogPol2str{T<:Number}(a::HomogeneousPolynomial{Taylor1{T}})
         strout = string(strout, ccad, monom, space)
         ifirst = false
     end
-    return strout[1:end-1]
+    return strout[1:prevind(strout, end)]
 end
 
 function numbr2str(zz, ifirst::Bool=false)
@@ -218,7 +218,6 @@ function numbr2str{T<:Complex}(zz::T, ifirst::Bool=false)
 end
 
 name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
-
 
 # summary
 summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")

@@ -2,7 +2,11 @@
 #
 
 using TaylorSeries
-using Base.Test
+if VERSION < v"0.7.0-DEV.2004"
+    using Base.Test
+else
+    using Test
+end
 
 @testset "Tests for Taylor1 expansions" begin
     ta(a) = Taylor1([a,one(a)],15)
@@ -305,6 +309,46 @@ using Base.Test
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
     @test TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"
     @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
+
+
+    a = collect(1:12)
+    t_a = Taylor1(a,15)
+    t_C = complex(3.0,4.0) * t_a
+    rnd = rand(10)
+    @test typeof( norm(Taylor1(rnd)) ) == Float64
+    @test norm(Taylor1(rnd)) > 0
+    @test norm(t_a) == norm(a)
+    @test norm(Taylor1(a,15),3) == sum((a.^3))^(1/3)
+    @test norm(t_a,Inf) == 12
+    @test norm(t_C) == norm(complex(3.0,4.0)*a)
+
+    @test TaylorSeries.rtoldefault(Taylor1{Int64}) == 0
+    @test TaylorSeries.rtoldefault(Taylor1{Float64}) == sqrt(eps(Float64))
+    @test TaylorSeries.rtoldefault(Taylor1{BigFloat}) == sqrt(eps(BigFloat))
+    @test TaylorSeries.real(Taylor1{Float64}) == Taylor1{Float64}
+    @test TaylorSeries.real(Taylor1{Complex{Float64}}) == Taylor1{Float64}
+    @test isfinite(t_C)
+    @test isfinite(t_a)
+    @test !isfinite( Taylor1([0, Inf]) )
+    @test !isfinite( Taylor1([NaN, 0]) )
+    b = convert(Vector{Float64}, a)
+    b[3] += eps(10.0)
+    b[5] -= eps(10.0)
+    t_b = Taylor1(b,15)
+    t_C2 = t_C+eps(100.0)
+    t_C3 = t_C+eps(100.0)*im
+    @test isapprox(t_C, t_C)
+    @test t_a ≈ t_a
+    @test t_a ≈ t_b
+    @test t_C ≈ t_C2
+    @test t_C ≈ t_C3
+    @test t_C3 ≈ t_C2
+    t = Taylor1(25)
+    p = sin(t)
+    q = sin(t+eps())
+    @test t ≈ t
+    @test t ≈ t+sqrt(eps())
+    @test isapprox(p, q, atol=eps())
 end
 
 @testset "Matrix multiplication for Taylor1" begin
