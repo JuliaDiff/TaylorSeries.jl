@@ -178,10 +178,11 @@ polynomials. For more details, see [`Base.isapprox`](@ref).
 """
 function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0, nans::Bool=false)
     x == y || (isfinite(x) && isfinite(y) && norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) || (nans && isnan(x) && isnan(y))
+end
 
 
 #taylor_expand function for Taylor1
-"""
+doc"""
     taylor_expand(f,x0;order)
 
 Makes a Taylor expansion of the function `f` around the point `x0`. If x0 is a scalar,
@@ -220,7 +221,7 @@ function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor e
 end
 
 #taylor_expand! function for Taylor1
-"""
+doc"""
     taylor_expand!(a,x0;order)
 
 Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
