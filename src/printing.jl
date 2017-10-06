@@ -219,7 +219,6 @@ end
 
 name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
 
-
 # summary
 summary{T<:Number}(a::Taylor1{T}) = string(a.order, "-order ", typeof(a), ":")
 function summary{T<:Number}(a::Union{HomogeneousPolynomial{T}, TaylorN{T}})
