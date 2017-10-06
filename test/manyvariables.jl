@@ -382,6 +382,18 @@ end
     @test_throws BoundsError xH[20]
     @test_throws BoundsError xT[20]
 
+    #obs: taylor_expand uses set_variables internally.
+    f1(a,b) = (a+b)^a - cos(a*b)*b
+    f2(a) = (a[1] + a[2])^a[1] - cos(a[1]*a[2])*a[2]
+    @test taylor_expand(f1,1.,2.) == taylor_expand(f2,[1,2.])
+    @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
+    x,y = get_variables()
+    xysq = x^2 + y^2
+    taylor_expand!(xysq,[1.0,-2.0])
+    @test xysq == (x+1.0)^2 + (y-2.0)^2
+    taylor_expand!(xysq,[-1.0,2.0])
+    @test xysq == x^2 + y^2
+
     #test function-like behavior for TaylorN
     @test exy() == 1
     @test exy([0.1im,0.01im]) == exp(0.11im)
