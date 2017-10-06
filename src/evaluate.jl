@@ -202,16 +202,15 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = coeff_table
     R = promote_type(T,S)
     a_length = length(a)
     suma = zeros(R,a_length)
     for homPol in 1:length(a)
         sun = zero(R)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            tmp = vals[1]^(ct[homPol][i][1])
+            tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
-                tmp *= vals[n]^(ct[homPol][i][n])
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             sun += a_coeff * tmp
         end
@@ -226,7 +225,6 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = coeff_table
     R = promote_type(T,S)
     a_length = length(a)
     ord = maximum( get_order.(vals) )
@@ -234,9 +232,9 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
 
     for homPol in 1:length(a)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            tmp = vals[1]^(ct[homPol][i][1])
+            tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
-                tmp *= vals[n]^(ct[homPol][i][n])
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             suma += a_coeff * tmp
         end
@@ -250,16 +248,15 @@ function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = coeff_table
     a_length = length(a)
     ord = maximum( get_order.(vals) )
     suma = Taylor1(zeros(T, ord))
 
     for homPol in 1:length(a)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            tmp = vals[1]^(ct[homPol][i][1])
+            tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
-                tmp *= vals[n]^(ct[homPol][i][n])
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             suma += a_coeff * tmp
         end
@@ -273,7 +270,6 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = coeff_table
     R = promote_type(T,eltype(S))
     a_length = length(a)
     ord = maximum( get_order.(vals) )
@@ -281,9 +277,9 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
 
     for homPol in 1:length(a)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            tmp = vals[1]^(ct[homPol][i][1])
+            tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
-                tmp *= vals[n]^(ct[homPol][i][n])
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             suma += a_coeff * tmp
         end
