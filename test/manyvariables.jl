@@ -343,7 +343,7 @@ end
     @test norm(a) == norm([3,4,6,8.0])
     @test norm(a,4) == sum([3,4,6,8.0].^4)^(1/4.)
     @test norm(a,Inf) == 8.
-    @test norm((3.+4im)*x) == abs(3.+4im)
+    @test norm((3.0 + 4im)*x) == abs(3.0 + 4im)
 
     @test TaylorSeries.rtoldefault(TaylorN{Int64}) == 0
     @test TaylorSeries.rtoldefault(TaylorN{Float64}) == sqrt(eps(Float64))
