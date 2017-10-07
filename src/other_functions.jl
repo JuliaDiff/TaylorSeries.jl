@@ -226,29 +226,24 @@ function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor e
     return f(x0 .+ X...)
 end
 
-#taylor_expand! function for Taylor1
+#update! function for Taylor1
 doc"""
-    taylor_expand!(a,x0;order)
+    update!(a,x0;order)
 
 Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
 """
-function taylor_expand!(a::Taylor1)
-    #shifting around zero shouldn't change anything...
-    nothing
-end
-
-function taylor_expand!{T<:Number}(a::Taylor1, x0::T)
+function update!{T<:Number}(a::Taylor1, x0::T)
     a.coeffs .= evaluate(a, Taylor1([x0,one(x0)], a.order) ).coeffs
     nothing
 end
 
-#taylor_expand! function for TaylorN
-function taylor_expand!{T<:Number}(a::TaylorN,vals::Vector{T})
+#update! function for TaylorN
+function update!{T<:Number}(a::TaylorN,vals::Vector{T})
     a.coeffs .= evaluate(a,get_variables().+vals).coeffs
     nothing
 end
 
-function taylor_expand!(a::TaylorN)
+function update!(a::Union{Taylor1,TaylorN})
     #shifting around zero shouldn't change anything...
     nothing
 end

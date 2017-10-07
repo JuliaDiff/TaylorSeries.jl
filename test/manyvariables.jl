@@ -386,11 +386,13 @@ end
     f22(a) = (a[1] + a[2])^a[1] - cos(a[1]*a[2])*a[2]
     @test taylor_expand(f11,1.,2.) == taylor_expand(f22,[1,2.])
     @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
+    f33(x,y) = 3x+y
+    @test eltype(taylor_expand(f33,1,1)) == eltype(1)
     x,y = get_variables()
     xysq = x^2 + y^2
-    taylor_expand!(xysq,[1.0,-2.0])
+    update!(xysq,[1.0,-2.0])
     @test xysq == (x+1.0)^2 + (y-2.0)^2
-    taylor_expand!(xysq,[-1.0,2.0])
+    update!(xysq,[-1.0,2.0])
     @test xysq == x^2 + y^2
 
     #test function-like behavior for TaylorN
