@@ -352,36 +352,6 @@ end
     @test_throws BoundsError xH[20]
     @test_throws BoundsError xT[20]
 
-    #test function-like behavior for TaylorN
-    @test exy() == 1
-    @test exy([0.1im,0.01im]) == exp(0.11im)
-    @test isapprox(exy([1,1]), e^2)
-    @test sin(asin(xT+yT))([1.0,0.5]) == 1.5
-    @test asin(sin(xT+yT))([1.0,0.5]) == 1.5
-    @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(rand(2)) == 1
-    @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(zeros(2)) == 1
-    dx = set_variables("x", numvars=4, order=10)
-    P = sin.(dx)
-    v = [1.0,2,3,4]
-    for i in 1:4
-        @test P[i](v) == evaluate(P[i], v)
-    end
-    @test P.(fill(v, 4)) == fill(P(v), 4)
-    F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
-    Q = F(v+dx)
-    @test Q.( fill(v, 4) ) == fill(Q(v), 4)
-    vr = map(x->rand(4), 1:4)
-    @test Q.(vr) == map(x->Q(x), vr)
-    for i in 1:4
-        @test P[i]() == evaluate(P[i])
-        @test Q[i]() == evaluate(Q[i])
-    end
-    @test P() == evaluate.(P)
-    @test P() == evaluate(P)
-    @test Q() == evaluate.(Q)
-    @test Q() == evaluate(Q)
-    @test Q[1:3]() == evaluate(Q[1:3])
-
     a = 3x + 4y +6x^2 + 8x*y
     @test typeof( norm(x) ) == Float64
     @test norm(x) > 0
@@ -412,10 +382,9 @@ end
     @test a[2] ≈ b[2]
     @test a ≈ b
 
-    #obs: taylor_expand uses set_variables internally.
-    f1(a,b) = (a+b)^a - cos(a*b)*b
-    f2(a) = (a[1] + a[2])^a[1] - cos(a[1]*a[2])*a[2]
-    @test taylor_expand(f1,1.,2.) == taylor_expand(f2,[1,2.])
+    f11(a,b) = (a+b)^a - cos(a*b)*b
+    f22(a) = (a[1] + a[2])^a[1] - cos(a[1]*a[2])*a[2]
+    @test taylor_expand(f11,1.,2.) == taylor_expand(f22,[1,2.])
     @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
     x,y = get_variables()
     xysq = x^2 + y^2
@@ -423,4 +392,35 @@ end
     @test xysq == (x+1.0)^2 + (y-2.0)^2
     taylor_expand!(xysq,[-1.0,2.0])
     @test xysq == x^2 + y^2
+
+    #test function-like behavior for TaylorN
+    @test exy() == 1
+    @test exy([0.1im,0.01im]) == exp(0.11im)
+    @test isapprox(exy([1,1]), e^2)
+    @test sin(asin(xT+yT))([1.0,0.5]) == 1.5
+    @test asin(sin(xT+yT))([1.0,0.5]) == 1.5
+    @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(rand(2)) == 1
+    @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(zeros(2)) == 1
+    #number of variables changed to 4...
+    dx = set_variables("x", numvars=4, order=10)
+    P = sin.(dx)
+    v = [1.0,2,3,4]
+    for i in 1:4
+        @test P[i](v) == evaluate(P[i], v)
+    end
+    @test P.(fill(v, 4)) == fill(P(v), 4)
+    F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
+    Q = F(v+dx)
+    @test Q.( fill(v, 4) ) == fill(Q(v), 4)
+    vr = map(x->rand(4), 1:4)
+    @test Q.(vr) == map(x->Q(x), vr)
+    for i in 1:4
+        @test P[i]() == evaluate(P[i])
+        @test Q[i]() == evaluate(Q[i])
+    end
+    @test P() == evaluate.(P)
+    @test P() == evaluate(P)
+    @test Q() == evaluate.(Q)
+    @test Q() == evaluate(Q)
+    @test Q[1:3]() == evaluate(Q[1:3])
 end

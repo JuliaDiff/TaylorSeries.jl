@@ -203,19 +203,25 @@ end
 #taylor_expand function for TaylorN
 function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_order()) #a Taylor expansion around x0
     ll = length(x0)
-    ll == get_numvars() ? X = get_variables() : begin
-        X = set_variables("x",order=order,numvars=ll)
-        warn("Changed number of TaylorN variables to $ll.")
-        end
-    return f(X.+x0)
+    @assert ll == get_numvars() && order <= get_order()
+    X = Array{TaylorN{T}}(ll)
+
+    for i in eachindex(X)
+        X[i] = TaylorN(T, i, order=order)
+    end
+
+    return f(X .+ x0)
 end
 
 function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor expansion around x0
+    T = eltype(x0[1])
     ll = length(x0)
-    ll == get_numvars() ? X = get_variables() : begin
-        X = set_variables("x",order=order,numvars=ll)
-        warn("Changed number of TaylorN variables to $ll.")
-        end
+    @assert ll == get_numvars() && order <= get_order()
+    X = Array{TaylorN{T}}(ll)
+
+    for i in eachindex(X)
+        X[i] = TaylorN(T, i, order=order)
+    end
 
     return f(x0 .+ X...)
 end
