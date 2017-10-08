@@ -207,23 +207,24 @@ function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_o
     X = Array{TaylorN{T}}(ll)
 
     for i in eachindex(X)
-        X[i] = TaylorN(T, i, order=order)
+        X[i] = x0[i] + TaylorN(T, i, order=order)
     end
 
-    return f(X .+ x0)
+    return f( X )
 end
 
 function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor expansion around x0
+    x0 = promote(x0...)
     T = eltype(x0[1])
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
     X = Array{TaylorN{T}}(ll)
 
     for i in eachindex(X)
-        X[i] = TaylorN(T, i, order=order)
+        X[i] = x0[i] + TaylorN(T, i, order=order)
     end
 
-    return f(x0 .+ X...)
+    return f( X... )
 end
 
 #update! function for Taylor1
