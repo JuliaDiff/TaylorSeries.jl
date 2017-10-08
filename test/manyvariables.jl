@@ -337,6 +337,21 @@ end
     hessian!(hes2,g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes2
 
+    @test string(-xH) == " - 1 x₁"
+    @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"
+    @test string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
+    @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
+
+    @test_throws ArgumentError abs(xT)
+    @test_throws AssertionError 1/x
+    @test_throws AssertionError zero(x)/zero(x)
+    @test_throws ArgumentError sqrt(x)
+    @test_throws AssertionError x^(-2)
+    @test_throws ArgumentError log(x)
+    @test_throws AssertionError cos(x)/sin(y)
+    @test_throws BoundsError xH[20]
+    @test_throws BoundsError xT[20]
+
     a = 3x + 4y +6x^2 + 8x*y
     @test typeof( norm(x) ) == Float64
     @test norm(x) > 0
@@ -367,20 +382,18 @@ end
     @test a[2] ≈ b[2]
     @test a ≈ b
 
-    @test string(-xH) == " - 1 x₁"
-    @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"
-    @test string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
-    @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
-
-    @test_throws ArgumentError abs(xT)
-    @test_throws AssertionError 1/x
-    @test_throws AssertionError zero(x)/zero(x)
-    @test_throws ArgumentError sqrt(x)
-    @test_throws AssertionError x^(-2)
-    @test_throws ArgumentError log(x)
-    @test_throws AssertionError cos(x)/sin(y)
-    @test_throws BoundsError xH[20]
-    @test_throws BoundsError xT[20]
+    f11(a,b) = (a+b)^a - cos(a*b)*b
+    f22(a) = (a[1] + a[2])^a[1] - cos(a[1]*a[2])*a[2]
+    @test taylor_expand(f11,1.,2.) == taylor_expand(f22,[1,2.])
+    @test evaluate(taylor_expand(x->x[1] + x[2],[1,2])) == 3.0
+    f33(x,y) = 3x+y
+    @test eltype(taylor_expand(f33,1,1)) == eltype(1)
+    x,y = get_variables()
+    xysq = x^2 + y^2
+    update!(xysq,[1.0,-2.0])
+    @test xysq == (x+1.0)^2 + (y-2.0)^2
+    update!(xysq,[-1.0,2.0])
+    @test xysq == x^2 + y^2
 
     #test function-like behavior for TaylorN
     @test exy() == 1
@@ -390,6 +403,7 @@ end
     @test asin(sin(xT+yT))([1.0,0.5]) == 1.5
     @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(rand(2)) == 1
     @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(zeros(2)) == 1
+    #number of variables changed to 4...
     dx = set_variables("x", numvars=4, order=10)
     P = sin.(dx)
     v = [1.0,2,3,4]

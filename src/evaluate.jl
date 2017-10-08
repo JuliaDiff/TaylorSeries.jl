@@ -79,7 +79,7 @@ function evaluate!{T<:Number, S<:Number}(x::Array{Taylor1{T},1}, δt::S, x0::Uni
     nothing
 end
 
-"""
+doc"""
     evaluate(a, x)
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
@@ -137,6 +137,15 @@ function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylo
     nothing
 end
 
+function evaluate!{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1},
+        x0::Array{TaylorN{T},1})
+    @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x)
+        x0[i] = evaluate( x[i], δx )
+    end
+    nothing
+end
+
 function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
         x0::Array{TaylorN{T},1})
     @assert length(x) == length(x0)
@@ -146,7 +155,7 @@ function evaluate!{T<:Number}(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
     nothing
 end
 
-"""
+doc"""
     evaluate(a, [vals])
 
 Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
@@ -180,7 +189,7 @@ evaluate(a::HomogeneousPolynomial) = zero(a[1])
 
 (p::HomogeneousPolynomial)() = evaluate(p)
 
-"""
+doc"""
     evaluate(a, [vals])
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.
@@ -193,16 +202,15 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = coeff_table
     R = promote_type(T,S)
     a_length = length(a)
     suma = zeros(R,a_length)
     for homPol in 1:length(a)
         sun = zero(R)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            tmp = vals[1]^(ct[homPol][i][1])
+            tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
-                tmp *= vals[n]^(ct[homPol][i][n])
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             sun += a_coeff * tmp
         end
@@ -217,18 +225,16 @@ function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = coeff_table
     R = promote_type(T,S)
     a_length = length(a)
     ord = maximum( get_order.(vals) )
     suma = Taylor1(zeros(R, ord))
 
     for homPol in 1:length(a)
-        sun = zero(R)
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            tmp = vals[1]^(ct[homPol][i][1])
+            tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
-                tmp *= vals[n]^(ct[homPol][i][n])
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             suma += a_coeff * tmp
         end
@@ -242,17 +248,15 @@ function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
     @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
-    ct = coeff_table
     a_length = length(a)
     ord = maximum( get_order.(vals) )
     suma = Taylor1(zeros(T, ord))
 
     for homPol in 1:length(a)
-        sun = zero(Taylor1{T})
         for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            tmp = vals[1]^(ct[homPol][i][1])
+            tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
-                tmp *= vals[n]^(ct[homPol][i][n])
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             suma += a_coeff * tmp
         end
@@ -260,6 +264,30 @@ function evaluate{T<:NumberNotSeries}(a::TaylorN{Taylor1{T}},
 
     return suma
 end
+
+function evaluate{T<:Number,S<:NumberNotSeries}(a::TaylorN{T},
+        vals::Array{TaylorN{S},1})
+    @assert length(vals) == get_numvars()
+
+    num_vars = get_numvars()
+    R = promote_type(T,eltype(S))
+    a_length = length(a)
+    ord = maximum( get_order.(vals) )
+    suma = zero(TaylorN{R})
+
+    for homPol in 1:length(a)
+        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            tmp = vals[1]^(coeff_table[homPol][i][1])
+            for n in 2:num_vars
+                tmp *= vals[n]^(coeff_table[homPol][i][n])
+            end
+            suma += a_coeff * tmp
+        end
+    end
+
+    return suma
+end
+
 
 evaluate{T<:Number}(a::TaylorN{T}) = a[1][1]
 
@@ -275,6 +303,12 @@ function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{Taylor
     return x0
 end
 
+function evaluate{T<:NumberNotSeriesN}(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1})
+    x0 = Array{TaylorN{T}}( length(x) )
+    evaluate!( x, δx, x0 )
+    return x0
+end
+
 evaluate{T<:Number}(x::Array{TaylorN{T},1}) = evaluate.(x)
 
 #function-like behavior for TaylorN
@@ -286,4 +320,3 @@ evaluate{T<:Number}(x::Array{TaylorN{T},1}) = evaluate.(x)
 (p::Array{TaylorN{T},1}){T<:Number}(x) = evaluate(p, x)
 
 (p::Array{TaylorN{T},1}){T<:Number}() = evaluate(p)
-

@@ -129,6 +129,7 @@ function abs{T<:Real}(a::Taylor1{TaylorN{T}})
         (abs(x) is not differentiable at x=0)."""))
     end
 end
+
 doc"""
     abs(a)
 
@@ -177,4 +178,73 @@ polynomials. For more details, see [`Base.isapprox`](@ref).
 """
 function isapprox{T<:AbstractSeries,S<:AbstractSeries}(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0, nans::Bool=false)
     x == y || (isfinite(x) && isfinite(y) && norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) || (nans && isnan(x) && isnan(y))
+end
+
+
+#taylor_expand function for Taylor1
+doc"""
+    taylor_expand(f ,x0 ;order)
+
+Makes a Taylor expansion of the function `f` around the point `x0`. If x0 is a scalar,
+a `Taylor1` expansion will be done. If `x0` is a vector, a `TaylorN` expansion will be
+computed. If the dimension of x0 (`length(x0)`) is different from the variables set for
+`TaylorN` (`get_numvars()`), an `AssertionError` will be thrown.
+"""
+function taylor_expand(f::Function; order::Int64=15)
+   a = Taylor1(order)
+   return f(a)
+end
+
+function taylor_expand{T<:Number}(f::Function, x0::T; order::Int64=15)
+   a = Taylor1([x0, one(T)], order)
+   return f(a)
+end
+
+#taylor_expand function for TaylorN
+function taylor_expand{T<:Number}(f::Function, x0::Vector{T}; order::Int64=get_order()) #a Taylor expansion around x0
+    ll = length(x0)
+    @assert ll == get_numvars() && order <= get_order()
+    X = Array{TaylorN{T}}(ll)
+
+    for i in eachindex(X)
+        X[i] = x0[i] + TaylorN(T, i, order=order)
+    end
+
+    return f( X )
+end
+
+function taylor_expand(f::Function, x0...; order::Int64=get_order()) #a Taylor expansion around x0
+    x0 = promote(x0...)
+    T = eltype(x0[1])
+    ll = length(x0)
+    @assert ll == get_numvars() && order <= get_order()
+    X = Array{TaylorN{T}}(ll)
+
+    for i in eachindex(X)
+        X[i] = x0[i] + TaylorN(T, i, order=order)
+    end
+
+    return f( X... )
+end
+
+#update! function for Taylor1
+doc"""
+    update!(a,x0;order)
+
+Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
+"""
+function update!{T<:Number}(a::Taylor1, x0::T)
+    a.coeffs .= evaluate(a, Taylor1([x0,one(x0)], a.order) ).coeffs
+    nothing
+end
+
+#update! function for TaylorN
+function update!{T<:Number}(a::TaylorN,vals::Vector{T})
+    a.coeffs .= evaluate(a,get_variables().+vals).coeffs
+    nothing
+end
+
+function update!(a::Union{Taylor1,TaylorN})
+    #shifting around zero shouldn't change anything...
+    nothing
 end
