@@ -13,8 +13,6 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @eval ($f)(a::$T) = $T(($f).(a.coeffs), a.order)
     end
 
-    # @eval real(x::Type{$T{T}}) where {T<:Number} = typeof(real(zero(x)))
-
     @eval ctranspose(a::$T) = conj.(a)
 
     ## isinf and isnan ##
@@ -28,7 +26,7 @@ end
 for op in (:mod, :rem)
     for T in (:Taylor1, :TaylorN)
         @eval begin
-            function ($op)(a::$T{T}, x::T) where T<:Real
+            function ($op)(a::$T{T}, x::T) where {T<:Real}
                 coeffs = copy(a.coeffs)
                 @inbounds coeffs[1] = ($op)(constant_term(a), x)
                 return $T(coeffs, a.order)
@@ -43,7 +41,7 @@ for op in (:mod, :rem)
     end
 
     @eval begin
-        function ($op)(a::TaylorN{Taylor1{T}}, x::T) where T<:Real
+        function ($op)(a::TaylorN{Taylor1{T}}, x::T) where {T<:Real}
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(constant_term(a), x)
             return TaylorN( coeffs, a.order )
@@ -55,13 +53,15 @@ for op in (:mod, :rem)
             return ($op)(a, convert(R,x))
         end
 
-        function ($op)(a::Taylor1{TaylorN{T}}, x::T) where T<:Real
+        function ($op)(a::Taylor1{TaylorN{T}}, x::T) where {T<:Real}
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(constant_term(a), x)
             return Taylor1( coeffs, a.order )
         end
 
-        @inbounds function ($op)(a::Taylor1{TaylorN{T}}, x::S) where {T<:Real, S<:Real}
+        @inbounds function ($op)(a::Taylor1{TaylorN{T}}, x::S) where
+                {T<:Real, S<:Real}
+
             R = promote_type(T,S)
             a = convert(Taylor1{TaylorN{R}}, a)
             return ($op)(a, convert(R,x))
@@ -73,13 +73,13 @@ end
 ## mod2pi and abs ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        function mod2pi(a::$T{T}) where T<:Real
+        function mod2pi(a::$T{T}) where {T<:Real}
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = mod2pi( constant_term(a) )
             return $T( coeffs, a.order)
         end
 
-        function abs(a::$T{T}) where T<:Real
+        function abs(a::$T{T}) where {T<:Real}
             if constant_term(a) > zero(T)
                 return a
             elseif constant_term(a) < zero(T)
@@ -93,19 +93,19 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-function mod2pi(a::TaylorN{Taylor1{T}}) where T<:Real
+function mod2pi(a::TaylorN{Taylor1{T}}) where {T<:Real}
     coeffs = copy(a.coeffs)
     @inbounds coeffs[1] = mod2pi( constant_term(a) )
     return TaylorN( coeffs, a.order )
 end
 
-function mod2pi(a::Taylor1{TaylorN{T}}) where T<:Real
+function mod2pi(a::Taylor1{TaylorN{T}}) where {T<:Real}
     coeffs = copy(a.coeffs)
     @inbounds coeffs[1] = mod2pi( constant_term(a) )
     return Taylor1( coeffs, a.order )
 end
 
-function abs(a::TaylorN{Taylor1{T}}) where T<:Real
+function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
     if constant_term(a)[1] > zero(T)
         return a
     elseif constant_term(a)[1] < zero(T)

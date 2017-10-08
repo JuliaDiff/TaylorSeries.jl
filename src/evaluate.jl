@@ -15,7 +15,7 @@ ommitted, its value is considered as zero. Note that a `Taylor1` polynomial `a`
 may also be evaluated by calling it as a function; that is, the syntax `a(dx)`
 is equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
-function evaluate(a::Taylor1{T}, dx::T) where T<:Number
+function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     @inbounds suma = a[end]
     @inbounds for k = a.order:-1:1
         suma = suma*dx + a[k]
@@ -30,7 +30,7 @@ function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     end
     suma
 end
-evaluate(a::Taylor1{T}) where T<:Number = a[1]
+evaluate(a::Taylor1{T}) where {T<:Number} = a[1]
 
 doc"""
     evaluate(x, δt)
@@ -45,12 +45,12 @@ function evaluate(x::Array{Taylor1{T},1}, δt::S) where {T<:Number, S<:Number}
     R = promote_type(T,S)
     return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
 end
-function evaluate(x::Array{Taylor1{T},1}, δt::T) where T<:Number
+function evaluate(x::Array{Taylor1{T},1}, δt::T) where {T<:Number}
     xnew = Array{T}( length(x) )
     evaluate!(x, δt, xnew)
     return xnew
 end
-evaluate(a::Array{Taylor1{T},1}) where T<:Number = evaluate(a, zero(T))
+evaluate(a::Array{Taylor1{T},1}) where {T<:Number} = evaluate(a, zero(T))
 
 doc"""
     evaluate!(x, δt, x0)
@@ -61,7 +61,7 @@ of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
 function evaluate!(x::Array{Taylor1{T},1}, δt::T,
-        x0::Union{Array{T,1},SubArray{T,1}}) where T<:Number
+        x0::Union{Array{T,1},SubArray{T,1}}) where {T<:Number}
 
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
@@ -88,7 +88,7 @@ Note that the syntax `a(x)` is equivalent to `evaluate(a, x)`.
 evaluate(a::Taylor1{T}, x::Taylor1{S}) where {T<:Number, S<:Number} =
     evaluate(promote(a,x)...)
 
-function evaluate(a::Taylor1{T}, x::Taylor1{T}) where T<:Number
+function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
     if a.order != x.order
         a, x = fixorder(a, x)
     end
@@ -99,7 +99,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where T<:Number
     suma
 end
 
-function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where T<:Number
+function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:Number}
     @inbounds suma = a[end]
     @inbounds for k = a.order:-1:1
         suma = suma*x + a[k]
@@ -116,13 +116,13 @@ evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
 (p::Taylor1)() = evaluate(p)
 
 #function-like behavior for Array{Taylor1,1}
-(p::Array{Taylor1{T},1})(x) where T<:Number = evaluate(p, x)
+(p::Array{Taylor1{T},1})(x) where {T<:Number} = evaluate(p, x)
 
-(p::Array{Taylor1{T},1})() where T<:Number = evaluate.(p)
+(p::Array{Taylor1{T},1})() where {T<:Number} = evaluate.(p)
 
 ## Evaluation of multivariable
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{T,1},
-        x0::Array{T,1}) where T<:Number
+        x0::Array{T,1}) where {T<:Number}
 
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
@@ -132,7 +132,7 @@ function evaluate!(x::Array{TaylorN{T},1}, δx::Array{T,1},
 end
 
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
-        x0::Array{Taylor1{T},1}) where T<:NumberNotSeriesN
+        x0::Array{Taylor1{T},1}) where {T<:NumberNotSeriesN}
 
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
@@ -142,7 +142,7 @@ function evaluate!(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
 end
 
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1},
-        x0::Array{TaylorN{T},1}) where T<:NumberNotSeriesN
+        x0::Array{TaylorN{T},1}) where {T<:NumberNotSeriesN}
 
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)
@@ -152,7 +152,7 @@ function evaluate!(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1},
 end
 
 function evaluate!(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
-        x0::Array{TaylorN{T},1}) where T<:Number
+        x0::Array{TaylorN{T},1}) where {T<:Number}
 
     @assert length(x) == length(x0)
     @inbounds for i in eachindex(x)

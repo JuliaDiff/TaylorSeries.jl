@@ -36,7 +36,7 @@ for T in (:Taylor1, :TaylorN)
 
     @eval ^(a::$T, b::$T) = exp( b*log(a) )
 
-    @eval ^(a::$T, x::T) where T<:Complex = exp( x*log(a) )
+    @eval ^(a::$T, x::T) where {T<:Complex} = exp( x*log(a) )
 end
 
 
@@ -69,7 +69,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 ## Real power ##
-function ^(a::Taylor1, r::S) where S<:Real
+function ^(a::Taylor1, r::S) where {S<:Real}
     r == zero(r) && return one(a)
     r == one(r)/2 && return sqrt(a)
     isinteger(r) && return a^round(Int,r)
@@ -96,7 +96,7 @@ function ^(a::Taylor1, r::S) where S<:Real
 end
 
 ## Real power ##
-function ^(a::TaylorN, r::S) where S<:Real
+function ^(a::TaylorN, r::S) where {S<:Real}
     r == zero(r) && return TaylorN( one(eltype(a)), 0 )
     r == one(r)/2 && return sqrt(a)
     isinteger(r) && return a^round(Int,r)
@@ -148,7 +148,7 @@ coefficient of `a`.
     return nothing
 end
 
-@inline function pow!(c::TaylorN, a::TaylorN, r::S, k::Int) where S<:Real
+@inline function pow!(c::TaylorN, a::TaylorN, r::S, k::Int) where {S<:Real}
     if k == 0
         @inbounds c[1] = ( constant_term(a) )^r
         return nothing
