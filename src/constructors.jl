@@ -37,7 +37,7 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
     order :: Int
 
     ## Inner constructor ##
-    function Taylor1{T}(coeffs::Array{T,1}, order::Int) where {T<:Number}
+    function Taylor1{T}(coeffs::Array{T,1}, order::Int) where T<:Number
         resize_coeffs1!(coeffs, order)
         return new{T}(coeffs, order)
     end
@@ -92,7 +92,7 @@ immutable HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{T,1}
     order   :: Int
 
-    function HomogeneousPolynomial{T}(coeffs::Array{T,1}, order::Int) where {T<:Number}
+    function HomogeneousPolynomial{T}(coeffs::Array{T,1}, order::Int) where T<:Number
         resize_coeffsHP!(coeffs, order)
         return new{T}(coeffs, order)
     end
@@ -151,7 +151,7 @@ immutable TaylorN{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{HomogeneousPolynomial{T},1}
     order   :: Int
 
-    function TaylorN{T}(v::Array{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number}
+    function TaylorN{T}(v::Array{HomogeneousPolynomial{T},1}, order::Int) where T<:Number
         m = maxorderH(v)
         order = max( m, order )
         coeffs = zeros(HomogeneousPolynomial{T}, order)

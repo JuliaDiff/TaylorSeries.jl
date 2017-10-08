@@ -111,7 +111,7 @@ function pretty_print(a::TaylorN{T}) where {T<:Number}
     strout
 end
 
-function homogPol2str(a::HomogeneousPolynomial{T}) where {{T<:Number}}
+function homogPol2str(a::HomogeneousPolynomial{T}) where {T<:Number}
     numVars = get_numvars()
     order = a.order
     z = zero(T)
