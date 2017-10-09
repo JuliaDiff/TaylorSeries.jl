@@ -16,7 +16,7 @@ function ^(a::HomogeneousPolynomial, n::Integer)
 end
 
 for T in (:Taylor1, :TaylorN)
-    @eval function ^{T<:Number}(a::$T{T}, n::Integer)
+    @eval function ^(a::$T{T}, n::Integer) where {T<:Number}
         n == 0 && return one(a)
         n == 1 && return copy(a)
         n == 2 && return square(a)
@@ -24,7 +24,7 @@ for T in (:Taylor1, :TaylorN)
         return power_by_squaring(a, n)
     end
 
-    @eval function ^{T<:Integer}(a::$T{T}, n::Integer)
+    @eval function ^(a::$T{T}, n::Integer) where {T<:Integer}
         n == 0 && return one(a)
         n == 1 && return copy(a)
         n == 2 && return square(a)
@@ -36,7 +36,7 @@ for T in (:Taylor1, :TaylorN)
 
     @eval ^(a::$T, b::$T) = exp( b*log(a) )
 
-    @eval ^{T<:Complex}(a::$T, x::T) = exp( x*log(a) )
+    @eval ^(a::$T, x::T) where {T<:Complex} = exp( x*log(a) )
 end
 
 
@@ -69,7 +69,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 ## Real power ##
-function ^{S<:Real}(a::Taylor1, r::S)
+function ^(a::Taylor1, r::S) where {S<:Real}
     r == zero(r) && return one(a)
     r == one(r)/2 && return sqrt(a)
     isinteger(r) && return a^round(Int,r)
@@ -96,7 +96,7 @@ function ^{S<:Real}(a::Taylor1, r::S)
 end
 
 ## Real power ##
-function ^{S<:Real}(a::TaylorN, r::S)
+function ^(a::TaylorN, r::S) where {S<:Real}
     r == zero(r) && return TaylorN( one(eltype(a)), 0 )
     r == one(r)/2 && return sqrt(a)
     isinteger(r) && return a^round(Int,r)
@@ -130,7 +130,9 @@ For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient of `a`.
 
 """
-@inline function pow!{S<:Real}(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0)
+@inline function pow!(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0) where
+        S<:Real
+
     if k == l0
         @inbounds c[1] = ( a[l0+1] )^r
         return nothing
@@ -146,7 +148,7 @@ coefficient of `a`.
     return nothing
 end
 
-@inline function pow!{S<:Real}(c::TaylorN, a::TaylorN, r::S, k::Int)
+@inline function pow!(c::TaylorN, a::TaylorN, r::S, k::Int) where {S<:Real}
     if k == 0
         @inbounds c[1] = ( constant_term(a) )^r
         return nothing

@@ -17,7 +17,7 @@ DataType holding the current parameters for `TaylorN` and
 
 These parameters can be changed using `set_params_TaylorN(order, numVars)`.
 """
-type ParamsTaylorN
+mutable struct ParamsTaylorN
     order          :: Int
     num_vars       :: Int
     variable_names :: Array{String,1}
@@ -31,7 +31,8 @@ get_order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 
-set_variable_names{T<:AbstractString}(names::Vector{T}) = _params_TaylorN_.variable_names = names
+set_variable_names(names::Vector{T}) where {T<:AbstractString} =
+    _params_TaylorN_.variable_names = names
 
 get_variables() = [TaylorN(i) for i in 1:get_numvars()]
 
@@ -66,7 +67,9 @@ julia> set_variables("x", order=6, numvars=2)
   1.0 x₂ + 𝒪(‖x‖⁷)
 ```
 """
-function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=get_order())
+function set_variables(R::Type, names::Vector{T}; order=get_order()) where
+        {T<:AbstractString}
+
     order ≥ 1 || error("Order must be at least 1")
 
     num_vars = length(names)
@@ -85,7 +88,8 @@ function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=get_o
         resize!(size_table,order+1)
         resize!(pos_table,order+1)
 
-        coeff_table[:], index_table[:], size_table[:], pos_table[:] = generate_tables(num_vars, order)
+        coeff_table[:], index_table[:], size_table[:], pos_table[:] =
+            generate_tables(num_vars, order)
         gc();
     end
 
@@ -93,10 +97,12 @@ function set_variables{T<:AbstractString}(R::Type, names::Vector{T}; order=get_o
     TaylorN{R}[TaylorN(R,i) for i in 1:get_numvars()]
 end
 
-set_variables{T}(names::Vector{T}; order=get_order()) =
+set_variables(names::Vector{T}; order=get_order()) where {T} =
     set_variables(Float64, names, order=order)
 
-function set_variables{T<:AbstractString}(R::Type, names::T; order=get_order(), numvars=-1)
+function set_variables(R::Type, names::T; order=get_order(), numvars=-1) where
+        {T<:AbstractString}
+
     variable_names = split(names)
 
     if length(variable_names) == 1 && numvars ≥ 1
@@ -107,7 +113,7 @@ function set_variables{T<:AbstractString}(R::Type, names::T; order=get_order(), 
     set_variables(R, variable_names, order=order)
 end
 
-set_variables{T<:AbstractString}(names::T; order=get_order(), numvars=-1) =
+set_variables(names::T; order=get_order(), numvars=-1) where {T<:AbstractString} =
     set_variables(Float64, names, order=order, numvars=numvars)
 
 

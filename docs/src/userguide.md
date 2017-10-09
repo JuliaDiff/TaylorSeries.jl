@@ -34,13 +34,13 @@ monomial, so that
 etc. This is a dense representation of the polynomial.
 The order of the polynomial can be
 omitted in the constructor, which is then fixed by the length of the
-vector of coefficients; otherwise, it defines the maximum
-degree of the polynomial, and may be used to truncate it.
+vector of coefficients. If the length of the vector does not correspond with
+the `order`, `order` is used, which effectively truncates polynomial to degree `order`.
 
 ```@repl userguide
 Taylor1([1, 2, 3],4) # Polynomial of order 4 with coefficients 1, 2, 3
 Taylor1([0.0, 1im]) # Also works with complex numbers
-Taylor1(ones(8), 2) # Polynomial of order 2
+Taylor1(ones(8), 2) # Polynomial truncated to order 2
 shift_taylor(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial of order 5
 t = shift_taylor(0.0) # Independent variable `t`
 ```
@@ -67,7 +67,7 @@ t*(t^2-4)/(t+2)
 tI = im*t
 (1-t)^3.2
 (1+t)^t
-t^6  # order is 5
+t^6  # t is of order 5
 ```
 
 If no valid Taylor expansion can be computed, an error is thrown, for instance
@@ -123,7 +123,7 @@ integrate(exp(t))
 integrate( exp(t), 1.0)
 integrate( derivative( exp(-t)), 1.0 ) == exp(-t)
 derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
-derivative(5, exp(shift_taylor(1.0))) == exp(1.0) # Fifth derivative of `exp(1+t)`
+derivative(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
 ```
 
 To evaluate a Taylor series at a given point, Horner's rule is used via the
@@ -142,22 +142,34 @@ eBig = evaluate( exp(tBig), one(BigFloat) )
 e - eBig
 ```
 
-Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it were a function:
+Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it were a function, i.e., `p(x)`:
 
 ```@repl userguide
 t = Taylor1(15)
 p = sin(t)
-evaluate(p, pi/2) #get value of p at pi/2 using `evaluate`
-p(pi/2) #get value of p at pi/2 by calling p as a function
+evaluate(p, pi/2) # value of p at pi/2 using `evaluate`
+p(pi/2) # value of p at pi/2 by evaluating p as a function
 p(pi/2) == evaluate(p, pi/2)
-p(0.0) #get value of `p` at 0.0 by calling p as a function
-evaluate(p) #get p 0-th order coefficient using `evaluate`
-p() #a shortcut to get 0-th order coefficient of `p`
-p() == evaluate(p)
-p() == p(0.0)
+p(0.0)
+p() == p(0.0) # p() is a shortcut to obtain the 0-th order coefficient of `p`
 ```
 
-Note that the syntax `p(x)` is equivalent to `evaluate(p,x)`, whereas `p()` is equivalent to `evaluate(p)`. For more details about function-like behavior for a given type in Julia, see the [Function-like objects](https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1) section of the Julia manual.
+Note that the syntax `p(x)` is equivalent to `evaluate(p, x)`, whereas `p()` is
+equivalent to `evaluate(p)`. For more details about function-like behavior for a
+given type in Julia, see the [Function-like objects](https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1)
+section of the Julia manual.
+
+Useful shortcuts are `taylor_expand` are `update!`. The former returns
+the expansion of a function around a given value `t0`. In turn, `update!`
+provides an in-place update of a given Taylor polynomial, that is, it shifts
+it further by the provided amount.
+
+```@repl userguide
+p = taylor_expand( x -> sin(x), pi/2, order=16) # 16-th order expansion of sin(t) around pi/2
+update!(p, 0.025) # updates the expansion given by p, by shifting it further by 0.025
+p
+```
+
 
 ## Many variables
 
@@ -172,10 +184,10 @@ was discussed  [here](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST
 The structure [`TaylorN`](@ref) is constructed as a vector of parameterized
 homogeneous polynomials
 defined by the type [`HomogeneousPolynomial`](@ref), which in turn is a vector of
-coefficients of given order (degree). This implementation imposes that the user
-has to specify the (maximum) order considered and the number of independent
-variables, which is done using the [`set_variables`](@ref) function.
-A vector of the resulting Taylor variables is returned:
+coefficients of given order (degree). This implementation imposes the user
+to specify the (maximum) order considered and the number of independent
+variables at the beginning, which can be conveniently done using
+[`set_variables`](@ref). A vector of the resulting Taylor variables is returned:
 
 ```@repl userguide
 x, y = set_variables("x y")
@@ -185,13 +197,14 @@ x.coeffs
 ```
 
 As shown, the resulting objects are of `TaylorN{Float64}` type.
-There is an optional `order` keyword argument in [`set_variables`](@ref):
+There is an optional `order` keyword argument in [`set_variables`](@ref),
+used to specify the maximum order of the `TaylorN` polynomials.
 
 ```@repl userguide
 set_variables("x y", order=10)
 ```
 
-Numbered variables are also available by specifying a single
+Similarly, numbered variables are also available by specifying a single
 variable name and the optional keyword argument `numvars`:
 
 ```@repl userguide
@@ -204,12 +217,6 @@ parameters, in an info block.
 ```@repl userguide
 show_params_TaylorN()
 ```
-
-    julia> show_params_TaylorN()
-    INFO: Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = 10
-    Number of variables = 3
-    Variable names      = UTF8String["α₁","α₂","α₃"]
 
 Internally, changing the parameters (maximum order and number of variables)
 redefines the hash-tables that
@@ -307,7 +314,18 @@ exy([.1,.02])
 exy([.1,.02]) == e^0.12
 ```
 
-Again, note that the syntax `p(x)` for `p::TaylorN` is equivalent to `evaluate(p,x)`, whereas `p()` is equivalent to `evaluate(p)`. For more details about function-like behavior for a given type in Julia, see the [Function-like objects](https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1) section of the Julia manual.
+Again, the syntax `p(x)` for `p::TaylorN` is equivalent to `evaluate(p,x)`, and
+`p()` is equivalent to `evaluate(p)`.
+
+The functions `taylor_expand` and `update!` work as well for `TaylorN`.
+
+```@repl userguide
+xysq = x^2 + y^2
+update!(xysq, [1.0, -2.0]) # expand around (1,-2)
+xysq
+update!(xysq, [-1.0, 2.0]) # shift-back
+xysq == x^2 + y^2
+```
 
 Functions to compute the gradient, Jacobian and
 Hessian have also been implemented. Using the
@@ -326,7 +344,8 @@ jacobian([p,q], [2,1])
 hessian(r, [1.0,1.0])
 ```
 
-Other specific applications are described in the next [section](examples).
+Other specific applications are described in the
+[Examples](@ref).
 
 ## Mixtures
 
@@ -338,7 +357,7 @@ somewhat special.
 
 ```@repl userguide
 x, y = set_variables("x y", order=3)
-t = Taylor1([zero(x), one(x)], 5)   
+t1N = Taylor1([zero(x), one(x)], 5)
 ```
 
 The last line defines a `Taylor1{TaylorN{Float64}}` variable, which is of order
@@ -346,7 +365,7 @@ The last line defines a `Taylor1{TaylorN{Float64}}` variable, which is of order
 such polynomials:
 
 ```@repl userguide
-cos(2.1+x+t)
+cos(2.1+x+t1N)
 ```
 
 This kind of expansions are of interest when studying the dependence of
@@ -355,3 +374,7 @@ the dependence of the solution of a differential equation on the initial conditi
 around a given solution. In this case, `x` and `y` represent small variations
 around a given value of the parameters, or around some specific initial condition.
 Such constructions are exploited in the package [`TaylorIntegration.jl`](https://github.com/PerezHz/TaylorIntegration.jl).
+
+```@meta
+CurrentModule = nothing
+```

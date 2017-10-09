@@ -20,7 +20,7 @@ The first example shows that the four-square identity holds:
 \end{eqnarray}
 ```
 which was originally proved by Euler. The code can also be found in
-[this test](../../test/identities_Euler.jl) of the package.
+[this test](https://github.com/JuliaDiff/TaylorSeries.jl/blob/master/test/identities_Euler.jl) of the package.
 
 First, we reset the maximum degree of the polynomial to 4, since the RHS
 of the equation has *a priori* terms of fourth order, and define the 8
@@ -127,7 +127,8 @@ monomials in 4 variables.
 ### Bechmarks
 
 The functions described above have been compared against Mathematica v11.1.
-The relevant files used for benchmarking can be found [here](../../perf/).
+The relevant files used for benchmarking can be found
+[here](https://github.com/JuliaDiff/TaylorSeries.jl/tree/master/perf).
 Running on a MacPro with Intel-Xeon processors 2.7GHz, we obtain that
 Mathematica requires on average (5 runs) 3.075957 seconds for the computation,
 while for `fateman1` and `fateman2` above we obtain 2.811391 and 1.490256,

@@ -336,7 +336,7 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
 ```
 
 """
-function inverse{T<:Number}(f::Taylor1{T})
+function inverse(f::Taylor1{T}) where {T<:Number}
     if f[1] != zero(T)
         throw(ArgumentError(
         """

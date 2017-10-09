@@ -31,6 +31,8 @@ show_params_TaylorN
 get_coeff
 evaluate
 evaluate!
+taylor_expand
+update!
 derivative
 integrate
 gradient
@@ -41,6 +43,8 @@ hessian!
 inverse
 abs
 norm
+isapprox
+isfinite
 ```
 
 ## Internals
