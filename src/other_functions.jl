@@ -141,13 +141,15 @@ Notice that `typeof(abs(a)) <: AbstractSeries`.
 
 #norm
 doc"""
-    norm(x::AbstractSeries,p::Real)
 
-Computes the p-norm of an `AbstractSeries` defined by
-``P(\vec{x}) = \sum_k a_k \vec{x}^k`` as
+    norm(x::AbstractSeries, p::Real)
+
+Returns the p-norm of an `x::AbstractSeries`, defined by
 
 ```math
-||P||_p =  \left( \sum_k ||a_k||_p^p \right)^{\frac{1}{p}}
+\begin{equation*}
+\left\Vert x \right\Vert_p =  \left( \sum_k | x_k |^p \right)^{\frac{1}{p}},
+\end{equation*}
 ```
 which returns a non-negative number.
 
@@ -171,8 +173,8 @@ isfinite(x::AbstractSeries) = !isnan(x) && !isinf(x)
 
 # isapprox; modified from Julia's Base.isapprox
 doc"""
-`isapprox(x::AbstractSeries, y::AbstractSeries;
-    [rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false])`
+    isapprox(x::AbstractSeries, y::AbstractSeries;
+        rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false)
 
 Inexact equality comparison between polynomials: returns `true` if
 `norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are
@@ -189,12 +191,12 @@ end
 
 #taylor_expand function for Taylor1
 doc"""
-    taylor_expand(f ,x0 ;order)
+    taylor_expand(f, x0; order)
 
-Makes a Taylor expansion of the function `f` around the point `x0`.
+Computes the Taylor expansion of the function `f` around the point `x0`.
 
-If x0 is a scalar, a `Taylor1` expansion will be done. If `x0` is a vector, a
-`TaylorN` expansion will be computed. If the dimension of x0 (`length(x0)`)
+If `x0` is a scalar, a `Taylor1` expansion will be returned. If `x0` is a vector,
+a `TaylorN` expansion will be computed. If the dimension of x0 (`length(x0)`)
 is different from the variables set for `TaylorN` (`get_numvars()`), an
 `AssertionError` will be thrown.
 """
@@ -239,18 +241,18 @@ end
 
 #update! function for Taylor1
 doc"""
-    update!(a,x0;order)
+    update!(a, x0)
 
 Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
 """
 function update!(a::Taylor1, x0::T) where {T<:Number}
-    a.coeffs .= evaluate(a, Taylor1([x0,one(x0)], a.order) ).coeffs
+    a.coeffs .= evaluate(a, Taylor1([x0, one(x0)], a.order) ).coeffs
     nothing
 end
 
 #update! function for TaylorN
-function update!(a::TaylorN,vals::Vector{T}) where {T<:Number}
-    a.coeffs .= evaluate(a,get_variables().+vals).coeffs
+function update!(a::TaylorN, vals::Vector{T}) where {T<:Number}
+    a.coeffs .= evaluate(a, get_variables() .+ vals).coeffs
     nothing
 end
 

@@ -20,7 +20,7 @@ The first example shows that the four-square identity holds:
 \end{eqnarray}
 ```
 which was originally proved by Euler. The code can also be found in
-[this test](../../test/identities_Euler.jl) of the package.
+[this test](https://github.com/JuliaDiff/TaylorSeries.jl/blob/master/test/identities_Euler.jl) of the package.
 
 First, we reset the maximum degree of the polynomial to 4, since the RHS
 of the equation has *a priori* terms of fourth order, and define the 8

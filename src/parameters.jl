@@ -100,7 +100,7 @@ end
 set_variables(names::Vector{T}; order=get_order()) where {T} =
     set_variables(Float64, names, order=order)
 
-function set_variables(R::Type, names::T; order=get_order(), numvars=-1) where 
+function set_variables(R::Type, names::T; order=get_order(), numvars=-1) where
         {T<:AbstractString}
 
     variable_names = split(names)
