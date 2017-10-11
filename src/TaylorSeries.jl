@@ -23,7 +23,7 @@ import Base: ==, +, -, *, /, ^
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
-    rem, mod, mod2pi, abs, gradient,
+    rem, mod, mod2pi, abs, abs2, gradient,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
     A_mul_B!, power_by_squaring,
