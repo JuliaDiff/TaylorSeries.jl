@@ -331,6 +331,6 @@ evaluate(x::Array{TaylorN{T},1}) where {T<:Number} = evaluate.(x)
 (p::TaylorN)() = evaluate(p)
 
 #function-like behavior for Array{TaylorN,1}
-(p::Array{TaylorN{T},1}){T<:Number}(x) = evaluate(p, x)
+(p::Array{TaylorN{T},1})(x) where {T<:Number} = evaluate(p, x)
 
-(p::Array{TaylorN{T},1}){T<:Number}() = evaluate(p)
+(p::Array{TaylorN{T},1})() where {T<:Number} = evaluate(p)

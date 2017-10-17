@@ -225,6 +225,6 @@ constant_term(a::Taylor1) = a[1]
 
 constant_term(a::TaylorN) = a[1][1]
 
-constant_term{T<:Number}(a::Vector{T}) = a[1]
+constant_term(a::Vector{T}) where {T<:Number}= a[1]
 
 constant_term(a::Number) = a
