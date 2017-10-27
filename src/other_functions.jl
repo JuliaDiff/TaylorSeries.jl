@@ -90,6 +90,8 @@ for T in (:Taylor1, :TaylorN)
                 (abs(x) is not differentiable at x=0)."""))
             end
         end
+
+        abs2(a::$T) = a^2            
     end
 end
 

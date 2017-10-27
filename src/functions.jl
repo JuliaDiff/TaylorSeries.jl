@@ -82,16 +82,12 @@ for T in (:Taylor1, :TaylorN)
                 in the denominator.
                 """))
 
-            # The following exploits a trick that the series of
-            # `acos(a)` is generated as the series of `asin(a)` except
-            # for a sign and the constant term; see `acos!`.
             order = a.order
-            c = $T( asin(a0), order )
+            c = $T( acos(a0), order )
             r = $T( sqrt(1 - a0^2), order )
             for k in 1:order
                 acos!(c, a, r, k)
             end
-            @inbounds c[1] = acos(a0)
             return c
         end
 
@@ -141,6 +137,41 @@ end
 # Recursive functions (homogeneous coefficients)
 for T in (:Taylor1, :TaylorN)
     @eval begin
+        @inline function identity!(c::$T, a::$T, k::Int)
+            @inbounds c[k+1] = identity(a[k+1])
+            return nothing
+        end
+
+        @inline function zero!(c::$T, a::$T, k::Int)
+            @inbounds c[k+1] = zero(a[k+1])
+            return nothing
+        end
+
+        @inline function one!(c::$T, a::$T, k::Int)
+            if k == 0
+                @inbounds c[1] = one(a[1])
+            else
+                @inbounds c[k+1] = zero(a[k+1])
+            end
+            return nothing
+        end
+
+        @inline function abs!(c::$T, a::$T, k::Int)
+            z = zero(constant_term(a))
+            if constant_term(constant_term(a)) > constant_term(z)
+                return add!(c, a, k)
+            elseif constant_term(constant_term(a)) < constant_term(z)
+                return subst!(c, a, k)
+            else
+                throw(ArgumentError(
+                """The 0th order coefficient must be non-zero
+                (abs(x) is not differentiable at x=0)."""))
+            end
+            return nothing
+        end
+
+        @inline abs2!(c::$T, a::$T, k::Int) = pow!(c, a, 2, k)
+
         @inline function exp!(c::$T, a::$T, k::Int)
             if k == 0
                 @inbounds c[1] = exp(constant_term(a))
@@ -249,7 +280,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            asin!(c, -a, r, k)
+            @inbounds for i in 1:k-1
+                if $T == Taylor1
+                    c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                else
+                    mul!(c[k+1], (k-i) * r[i+1], c[k-i+1])
+                end
+            end
+            sqrt!(r, 1-a^2, k)
+            @inbounds c[k+1] = -(a[k+1] + c[k+1]/k) / constant_term(r)
             return nothing
         end
 

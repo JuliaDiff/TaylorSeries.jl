@@ -23,7 +23,7 @@ import Base: ==, +, -, *, /, ^
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
-    rem, mod, mod2pi, abs, gradient,
+    rem, mod, mod2pi, abs, abs2, gradient,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
     A_mul_B!, power_by_squaring,
@@ -38,7 +38,7 @@ export get_coeff, derivative, integrate,
     get_order, get_numvars,
     set_variables, get_variables,
     ∇, jacobian, jacobian!, hessian, hessian!,
-    taylor_expand, update!
+    taylor_expand, update!, constant_term
 
 include("parameters.jl")
 include("hash_tables.jl")
@@ -51,6 +51,7 @@ include("functions.jl")
 include("other_functions.jl")
 include("evaluate.jl")
 include("calculus.jl")
+include("dictmutfunct.jl")
 include("printing.jl")
 
 end # module

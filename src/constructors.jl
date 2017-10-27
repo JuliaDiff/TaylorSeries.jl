@@ -88,7 +88,7 @@ of the independent variables are specified by `coeff_table[order+1][i]`.
 Note that `HomogeneousPolynomial` variables are callable. For more information,
 see [`evaluate`](@ref).
 """
-immutable HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
+struct HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{T,1}
     order   :: Int
 
@@ -147,7 +147,7 @@ homogeneous polynomial of degree $i-1$.
 Note that `TaylorN` variables are callable. For more information, see
 [`evaluate`](@ref).
 """
-immutable TaylorN{T<:Number} <: AbstractSeries{T}
+struct TaylorN{T<:Number} <: AbstractSeries{T}
     coeffs  :: Array{HomogeneousPolynomial{T},1}
     order   :: Int
 

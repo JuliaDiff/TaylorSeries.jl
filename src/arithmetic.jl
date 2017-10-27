@@ -115,8 +115,24 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             end
 
             ## add! and subst! ##
+            function ($fc)(v::$T, a::$T, k::Int)
+                @inbounds v[k+1] = ($f)(a[k+1])
+                return nothing
+            end
+            function ($fc)(v::$T, a::NumberNotSeries, k::Int)
+                @inbounds v[k+1] = k==0 ? ($f)(a) : zero(v[k+1])
+                return nothing
+            end
             function ($fc)(v::$T, a::$T, b::$T, k::Int)
                 @inbounds v[k+1] = ($f)(a[k+1], b[k+1])
+                return nothing
+            end
+            function ($fc)(v::$T, a::$T, b::NumberNotSeries, k::Int)
+                @inbounds v[k+1] = k==0 ? ($f)(a[1], b) : a[k+1]
+                return nothing
+            end
+            function ($fc)(v::$T, a::NumberNotSeries, b::$T, k::Int)
+                @inbounds v[k+1] = k==0 ? ($f)(a, b[1]) : ($f)(b[k+1])
                 return nothing
             end
         end
@@ -277,6 +293,15 @@ for T in (:Taylor1, :TaylorN)
             end
         end
 
+        return nothing
+    end
+
+    @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+        @inbounds v[k+1] = a[k+1] * b
+        return nothing
+    end
+    @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
+        @inbounds v[k+1] = a * b[k+1]
         return nothing
     end
 end
@@ -464,6 +489,14 @@ term of the denominator.
     @inbounds c[k+1] = (a[k+ordfact+1]-c[k+1]) / b[ordfact+1]
     return nothing
 end
+
+@inline function div!(v::Taylor1, a::Taylor1, b::NumberNotSeries, k::Int)
+    @inbounds v[k+1] = a[k+1] / b
+    return nothing
+end
+
+div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
+    div!(v::Taylor1, Taylor1(b, a.order), a, k)
 
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0

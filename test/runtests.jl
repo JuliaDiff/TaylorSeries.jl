@@ -6,6 +6,7 @@ testfiles = (
     "onevariable.jl",
     "manyvariables.jl",
     "mixtures.jl",
+    "mutatingfuncts.jl",
     "identities_Euler.jl",
     "fateman40.jl"
     )
