@@ -27,6 +27,7 @@ Taylor1([::Type{Float64}], [order::Int64=1])
 HomogeneousPolynomial{T<:Number}(::Type{T}, ::Int)
 TaylorN{T<:Number}(::Type{T}, nv::Int; [order::Int=get_order()])
 set_variables
+get_variables
 show_params_TaylorN
 get_coeff
 evaluate

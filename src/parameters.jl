@@ -34,6 +34,15 @@ get_variable_names() = _params_TaylorN_.variable_names
 set_variable_names(names::Vector{T}) where {T<:AbstractString} =
     _params_TaylorN_.variable_names = names
 
+"""
+    get_variables(;order=get_order())
+
+Return a `TaylorN` vector with each entry representing an
+independent variable. It takes the default `_params_TaylorN_` values
+if `set_variables` hasn't been changed with the exception that `order`
+can be explicitely established by the user without changing internal values
+for `num_vars` or `variable_names`.
+"""
 get_variables(;order::Integer=get_order()) = [TaylorN(i,order=order) for i in 1:get_numvars()]
 
 """
