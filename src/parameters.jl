@@ -35,6 +35,7 @@ set_variable_names(names::Vector{T}) where {T<:AbstractString} =
     _params_TaylorN_.variable_names = names
 
 get_variables() = [TaylorN(i) for i in 1:get_numvars()]
+get_variables(order) = [TaylorN(i,order=order) for i in 1:get_numvars()]
 
 """
     set_variables([T::Type], names::String; [order=get_order(), numvars=-1])
