@@ -15,9 +15,9 @@ The last coefficient is set to zero.
 """
 function derivative(a::Taylor1)
     coeffs = zero(a.coeffs)
-    @inbounds coeffs[1] = a[2]
+    @inbounds coeffs[1] = a[1]
     @inbounds for i = 1:a.order
-        coeffs[i] = i*a[i+1]
+        coeffs[i] = i*a[i]
     end
     return Taylor1(coeffs, a.order)
 end
@@ -29,7 +29,7 @@ Return the value of the `n`-th derivative of the polynomial `a`.
 """
 function derivative(n::Int, a::Taylor1{T}) where {T<:Number}
     @assert a.order ≥ n ≥ 0
-    factorial( widen(n) ) * a[n+1] :: T
+    factorial( widen(n) ) * a[n] :: T
 end
 
 ## Integrating ##
@@ -40,10 +40,10 @@ Return the integral of `a::Taylor1`. The constant of integration
 (0-th order coefficient) is set to `x`, which is zero if ommitted.
 """
 function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
-    R = promote_type(T, typeof(a[1] / 1), S)
+    R = promote_type(T, typeof(a[0] / 1), S)
     coeffs = zeros(R, a.order+1)
     @inbounds for i = 1:a.order
-        coeffs[i+1] = a[i] / i
+        coeffs[i+1] = a[i-1] / i
     end
     @inbounds coeffs[1] = convert(R, x)
     return Taylor1(coeffs, a.order)

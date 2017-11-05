@@ -15,7 +15,7 @@ function convert(::Type{Taylor1{Rational{T}}}, a::Taylor1{S}) where
 
     la = length(a.coeffs)
     v = Array{Rational{T}}(la)
-    v .= rationalize.(a[1:la])
+    v .= rationalize.(a[0:la-1])
     return Taylor1(v)
 end
 
@@ -41,7 +41,7 @@ function convert(::Type{HomogeneousPolynomial{Rational{T}}},
 
     la = length(a.coeffs)
     v = Array{Rational{T}}(la)
-    v .= rationalize.(a[1:la], tol=eps(one(S)))
+    v .= rationalize.(a[0:la-1], tol=eps(one(S)))
     return HomogeneousPolynomial(v, a.order)
 end
 

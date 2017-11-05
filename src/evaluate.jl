@@ -17,7 +17,7 @@ is equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     @inbounds suma = a[end]
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*dx + a[k]
     end
     suma
@@ -25,12 +25,12 @@ end
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     R = promote_type(T,S)
     @inbounds suma = convert(R, a[end])
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*dx + a[k]
     end
     suma
 end
-evaluate(a::Taylor1{T}) where {T<:Number} = a[1]
+evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
 doc"""
     evaluate(x, δt)
@@ -93,7 +93,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
         a, x = fixorder(a, x)
     end
     @inbounds suma = a[end]
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*x + a[k]
     end
     suma
@@ -101,7 +101,7 @@ end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:Number}
     @inbounds suma = a[end]
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*x + a[k]
     end
     suma

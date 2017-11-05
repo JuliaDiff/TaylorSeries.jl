@@ -71,15 +71,27 @@ end
 
 Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 """
-get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order+1;
-    return a[n+1])
+get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
-getindex(a::Taylor1, n::Int) = a.coeffs[n]
-getindex(a::Taylor1, n::UnitRange) = view(a.coeffs, n)
+function getindex(a::Taylor1, n::Int)
+    @assert 0 ≤ n ≤ length(a.coeffs)
+    nn = n == length(a.coeffs) ? n : n+1
+    return a.coeffs[nn]
+end
+function getindex(a::Taylor1, u::UnitRange)
+    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    view(a.coeffs, (1+u.start):u_stop )
+end
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
-setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n] = x
-setindex!(a::Taylor1{T}, x::T, n::UnitRange) where {T<:Number} = a.coeffs[n] = x
-setindex!(a::Taylor1{T}, x::Array{T,1}, n::UnitRange) where {T<:Number} = a.coeffs[n] = x
+setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
+function setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number}
+    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    a.coeffs[(u.start+1):u_stop] = x
+end
+function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
+    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    a.coeffs[(u.start+1):u_stop] .= x
+end
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] = x
 setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] = x
 
@@ -221,7 +233,7 @@ end
 Return the constant value (zero order coefficient) for `Taylor1`
 and `TaylorN`.
 """
-constant_term(a::Taylor1) = a[1]
+constant_term(a::Taylor1) = a[0]
 
 constant_term(a::TaylorN) = a[1][1]
 
