@@ -160,21 +160,24 @@ setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
 #     u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
 #     a.coeffs[(u.start+1):u_stop] = x
 # end
-setindex!(a::TaylorN{T}, x::T, u::UnitRange) where {T<:Number} = a[u] .= x
-# function setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1},
-#         u::UnitRange) where {T<:Number}
-#     u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-#     a.coeffs[(u.start+1):u_stop] .= x
-# end
-setindex!(a::TaylorN{T}, x::Array{T,1}, u::UnitRange) where {T<:Number} = a[u] .= x
-setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
-setindex!(a::TaylorN{T}, x::T, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
-setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
-setindex!(a::TaylorN{T}, x::Array{T,1}, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
+function setindex!(a::TaylorN{T}, x::T, u::UnitRange) where {T<:Number}
+    for ind in u
+        a[ind] = x
+    end
+    a[u]
+end
+setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1},
+    u::UnitRange) where {T<:Number} = a[u[:]] .= x[:]
+setindex!(a::TaylorN{T}, x::Array{T,1}, u::UnitRange) where {T<:Number} =
+    a[u] .= x
+# setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, c::Colon) where {T<:Number} =
+#     a.coeffs[c] = x
+setindex!(a::TaylorN{T}, x::T, ::Colon) where {T<:Number} =
+    (a[0:end] = x; a[:])
+setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, ::Colon) where
+    {T<:Number} = (a[0:end] = x; a[:])
+setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
+    (a[0:end] = x; a[:])
 
 
 ## eltype, length, endof, get_order ##
@@ -189,9 +192,13 @@ for T in (:Taylor1, :TaylorN)
         get_order(a::$T) = a.order
     end
 end
+
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
+
 length(a::HomogeneousPolynomial) = length(a.coeffs)
+
 endof(a::HomogeneousPolynomial) = length(a.coeffs)
+
 get_order(a::HomogeneousPolynomial) = a.order
 
 

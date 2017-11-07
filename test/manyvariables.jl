@@ -191,6 +191,7 @@ end
     pol = sin(xT+yT*xT)+yT^2-(1-xT)^3
     q = deepcopy(pol)
     q[:] = 0.0
+    @test get_order.(q[:]) == collect(0:q.order)
     @test q[:] == zero(q[:])
     q[:] = pol.coeffs
     @test q == pol
@@ -199,15 +200,17 @@ end
     @test q[2:end-1] == zero.(q[2:end-1])
     @test q[1] == pol[1]
     @test q[end] == pol[end]
+    # q[:] = pol.coeffs
+    # zH0 = zero(HomogeneousPolynomial{Float64})
+    q[:] = 1.0
+    @test q[1] == HomogeneousPolynomial([1,0])
+    @test q[2] == HomogeneousPolynomial([1,0,0])
     q[:] = pol.coeffs
-    zH0 = zero(HomogeneousPolynomial{Float64})
-    q[:] = zH0
-    @test q[:] == zero(q[:])
-    q[:] = pol.coeffs
-    # q[2:end-1] = zH0
-    # @test q[2:end-1] == zero(q[2:end-1])
-    # @test q[1] == pol[1]
-    # @test q[end] == pol[end]
+    q[2:end-1] = one.(q[2:end-1])
+    @test q[2:end-1] == one.(q[2:end-1])
+    @test q[2] == HomogeneousPolynomial([1,1,1])
+    @test q[1] == pol[1]
+    @test q[end] == pol[end]
     q[:] = pol.coeffs
     zHall = zeros(HomogeneousPolynomial{Float64}, q.order)
     q[:] = zHall
@@ -223,7 +226,6 @@ end
     q[1:end-1] = zeros(q.order+1)[2:end-1]
     @test q != pol
     @test q[:] != pol[:]
-###
     @test q[1:end-1] == zeros(q.order+1)[2:end-1]
     @test q[0] == pol[0]
     @test q[end] == pol[end]
