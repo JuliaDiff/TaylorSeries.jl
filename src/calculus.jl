@@ -92,9 +92,8 @@ function derivative(a::TaylorN, r=1::Int)
     T = eltype(a)
     coeffs = Array{HomogeneousPolynomial{T}}(a.order)
 
-    @inbounds for ord in eachindex(coeffs)
-        ord == a.order+1 && continue
-        coeffs[ord] = derivative( a[ord+1], r)
+    @inbounds for ord = 0:a.order
+        coeffs[ord+1] = derivative( a[ord], r)
     end
     return TaylorN{T}( coeffs, a.order )
 end
@@ -135,13 +134,13 @@ function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
     jac = Array{T}(numVars,numVars)
 
     @inbounds for comp = 1:numVars
-        jac[:,comp] = vf[comp][2][1:end]
+        jac[:,comp] = vf[comp][1][1:end]
     end
 
     return transpose(jac)
 end
-function jacobian(vf::Array{TaylorN{T},1},vals::Array{S,1}) where
-        {T<:Number,S<:Number}
+function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where
+        {T<:Number, S<:Number}
 
     R = promote_type(T,S)
     numVars = get_numvars()
@@ -170,7 +169,8 @@ end
 ```
 
 Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials
-evaluated at the vector `vals`, and write results to `jac`. If `vals` is ommited, it is evaluated at zero.
+evaluated at the vector `vals`, and write results to `jac`. If `vals` is ommited,
+it is evaluated at zero.
 """
 function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
@@ -178,7 +178,7 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
     @assert (numVars, numVars) == size(jac)
     for comp2 = 1:numVars
         for comp1 = 1:numVars
-            @inbounds jac[comp1,comp2] = vf[comp1][2][comp2]
+            @inbounds jac[comp1,comp2] = vf[comp1][1][comp2]
         end
     end
     nothing

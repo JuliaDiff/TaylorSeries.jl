@@ -91,7 +91,7 @@ for T in (:Taylor1, :TaylorN)
             end
         end
 
-        abs2(a::$T) = a^2            
+        abs2(a::$T) = a^2
     end
 end
 
@@ -108,9 +108,9 @@ function mod2pi(a::Taylor1{TaylorN{T}}) where {T<:Real}
 end
 
 function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
-    if constant_term(a)[1] > zero(T)
+    if constant_term(a)[0] > zero(T)
         return a
-    elseif constant_term(a)[1] < zero(T)
+    elseif constant_term(a)[0] < zero(T)
         return -a
     else
         throw(ArgumentError(
@@ -120,9 +120,9 @@ function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
 end
 
 function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
-    if constant_term(a[1]) > zero(T)
+    if constant_term(a[0]) > zero(T)
         return a
-    elseif constant_term(a[1]) < zero(T)
+    elseif constant_term(a[0]) < zero(T)
         return -a
     else
         throw(ArgumentError(
@@ -163,6 +163,7 @@ norm(x::Union{Taylor1{T},HomogeneousPolynomial{T}}, p::Real=2) where
 # rtoldefault
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval rtoldefault(::Type{$T{T}}) where {T<:Number} = rtoldefault(T)
+    @eval rtoldefault(::$T{T}) where {T<:Number} = rtoldefault(T)
 end
 
 # isfinite
@@ -182,7 +183,7 @@ Inexact equality comparison between polynomials: returns `true` if
 `norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are
 polynomials. For more details, see [`Base.isapprox`](@ref).
 """
-function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0,
+function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0.0,
         nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
 
     x == y || (isfinite(x) && isfinite(y) &&

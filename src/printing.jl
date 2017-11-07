@@ -49,7 +49,7 @@ function pretty_print(a::Taylor1{HomogeneousPolynomial{T}}) where {T<:Number}
     for i in eachindex(a.coeffs)
         monom::String = i==1 ? string("") : i==2 ? string(" t") :
             string(" t", superscriptify(i-1))
-        @inbounds c = a[i]
+        @inbounds c = a[i-1]
         c == z && continue
         cadena = numbr2str(c, ifirst)
         ccad::String = i==1 ? cadena : ifirst ? string("(", cadena, ")") :
@@ -62,7 +62,7 @@ function pretty_print(a::Taylor1{HomogeneousPolynomial{T}}) where {T<:Number}
 end
 
 function pretty_print(a::Taylor1{TaylorN{T}}) where {T<:Number}
-    z = zero(a[1])
+    z = zero(a[0])
     space = string(" ")
     bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, space, bigO)
@@ -71,7 +71,7 @@ function pretty_print(a::Taylor1{TaylorN{T}}) where {T<:Number}
     for i in eachindex(a.coeffs)
         monom::String = i==1 ? string("") : i==2 ? string(" t") :
             string(" t", superscriptify(i-1))
-        @inbounds c = a[i]
+        @inbounds c = a[i-1]
         c == z && continue
         cadena = numbr2str(c, ifirst)
         ccad::String = i==1 ? cadena : ifirst ? string("(", cadena, ")") :
@@ -92,15 +92,15 @@ function pretty_print(a::HomogeneousPolynomial{T}) where {T<:Number}
 end
 
 function pretty_print(a::TaylorN{T}) where {T<:Number}
-    z = zero(a[1])
+    z = zero(a[0])
     space = string("")
     bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
     a == zero(a) && return string(space, z, bigO)
     strout::String = space#string("")
     ifirst = true
     for ord in eachindex(a.coeffs)
-        pol = a[ord]
-        pol == zero(a[ord]) && continue
+        pol = a[ord-1]
+        pol == zero(pol) && continue
         cadena::String = homogPol2str( pol )
         strsgn = (ifirst || ord == 1 || cadena[2] == '-') ?
             string("") : string(" +")

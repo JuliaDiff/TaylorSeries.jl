@@ -120,7 +120,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return nothing
             end
             function ($fc)(v::$T, a::NumberNotSeries, k::Int)
-                @inbounds v[k] = k==0 ? ($f)(a) : zero(v[k])
+                @inbounds v[k] = k==0 ? ($f)(zero(v[0]),a) : zero(v[k])
                 return nothing
             end
             function ($fc)(v::$T, a::$T, b::$T, k::Int)
@@ -158,7 +158,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::Taylor1{S}) where
                 {T<:NumberNotSeries,S<:NumberNotSeries}
-            @inbounds aux = $f(a[1][1], b)
+            @inbounds aux = $f(a[0][1], b)
             R = eltype(aux)
             coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(a.order+1)
             coeffs .= a.coeffs
@@ -168,7 +168,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(b::Taylor1{S}, a::TaylorN{Taylor1{T}}) where
                 {T<:NumberNotSeries,S<:NumberNotSeries}
-            @inbounds aux = $f(b, a[1][1])
+            @inbounds aux = $f(b, a[0][1])
             R = eltype(aux)
             coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(a.order+1)
             @__dot__ coeffs = $f(a.coeffs)
@@ -178,7 +178,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(a::Taylor1{TaylorN{T}}, b::TaylorN{S}) where
                 {T<:NumberNotSeries,S<:NumberNotSeries}
-            @inbounds aux = $f(a[1], b)
+            @inbounds aux = $f(a[0], b)
             R = eltype(aux)
             coeffs = Array{TaylorN{R}}(a.order+1)
             coeffs .= a.coeffs
@@ -188,7 +188,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(b::TaylorN{S}, a::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries,S<:NumberNotSeries}
-            @inbounds aux = $f(b, a[1])
+            @inbounds aux = $f(b, a[0])
             R = eltype(aux)
             coeffs = Array{TaylorN{R}}(a.order+1)
             @__dot__ coeffs = $f(a.coeffs)
@@ -225,7 +225,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         function *(a::Taylor1{T}, b::$T{Taylor1{S}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
 
-            @inbounds aux = a * b[0]
+            @inbounds aux = a * b.coeffs[1]
             R = typeof(aux)
             coeffs = Array{R}(length(b.coeffs))
             @__dot__ coeffs = a * b.coeffs
@@ -382,7 +382,7 @@ end
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function /(b::$T{Taylor1{S}}, a::Taylor1{T}) where
             {T<:NumberNotSeries,S<:NumberNotSeries}
-        @inbounds aux = b[0] / a
+        @inbounds aux = b.coeffs[1] / a
         R = typeof(aux)
         coeffs = Array{R}(length(b.coeffs))
         @__dot__ coeffs = b.coeffs / a
