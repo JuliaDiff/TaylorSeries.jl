@@ -29,6 +29,7 @@ TaylorN{T<:Number}(::Type{T}, nv::Int; [order::Int=get_order()])
 set_variables
 get_variables
 show_params_TaylorN
+show_monomials
 get_coeff
 evaluate
 evaluate!

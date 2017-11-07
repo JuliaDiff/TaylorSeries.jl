@@ -301,15 +301,18 @@ get_coeff(exy, [3,5])
 rationalize(ans)
 ```
 
-Similar to `Taylor1`, using vector notation can be used to request specific
-coefficients of `HomogeneousPolynomial` or `TaylorN` objects. In the case
-of `HomogeneousPolynomial` the index refers to the position of the hash
-table, and therefore, the counting starts at 1. For `TaylorN` objects it
-refers to the degree of the `HomogeneousPolynomial`.
+Similar to `Taylor1`, vector notation can be used to request specific
+coefficients of `HomogeneousPolynomial` or `TaylorN` objects. For `TaylorN`
+objects, the index refers to the degree of the `HomogeneousPolynomial`.
+In the case of `HomogeneousPolynomial` the index refers to the position
+of the hash table. The function [`show_monomials`](@ref) can be used to
+obtain the coefficient a specific monomial, given the degree of the
+`HomogeneousPolynomial`.
 
 ```@repl userguide
-exy[2] # get the 2th order term
-exy[2][1] # get the 1st coeff of the 2th order term
+exy[8] # get the 8th order term
+show_monomials(8)
+exy[8][6] # get the 1st coeff of the 2th order term
 ```
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,
