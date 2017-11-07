@@ -31,7 +31,8 @@ order considered for the expansion (fieldname `order`). The
 coefficients are arranged in ascending order with respect to the degree of the
 monomial, so that
 `coeffs[1]` is the constant term, `coeffs[2]` gives the first order term (`t^1`),
-etc. This is a dense representation of the polynomial.
+etc. Yet, it is possible to have the natural ordering with respecto
+to the degree; see below. This is a dense representation of the polynomial.
 The order of the polynomial can be
 omitted in the constructor, which is then fixed by the length of the
 vector of coefficients. If the length of the vector does not correspond with
@@ -105,6 +106,16 @@ Again, errors are thrown whenever it is necessary.
 ```@repl userguide
 sqrt(t)
 log(t)
+```
+
+To obtain a specific coefficient, [`get_coeff`](@ref) can be used. Another
+alternative is to request the specific degree using the vector notation,
+where the index corresponds to the degree of the term.
+
+```@repl userguide
+expon = exp(t)
+get_coeff(expon, 0) == expon[0]
+rationalize(expon[3])
 ```
 
 Differentiating and integrating is straightforward for polynomial expansions in
@@ -288,6 +299,17 @@ the polynomial `exy` above, the coefficient of the monomial ``x^3 y^5`` is
 ```@repl userguide
 get_coeff(exy, [3,5])
 rationalize(ans)
+```
+
+Similar to `Taylor1`, using vector notation can be used to request specific
+coefficients of `HomogeneousPolynomial` or `TaylorN` objects. In the case
+of `HomogeneousPolynomial` the index refers to the position of the hash
+table, and therefore, the counting starts at 1. For `TaylorN` objects it
+refers to the degree of the `HomogeneousPolynomial`.
+
+```@repl userguide
+exy[2] # get the 2th order term
+exy[2][1] # get the 1st coeff of the 2th order term
 ```
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,
