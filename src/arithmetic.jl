@@ -157,7 +157,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::Taylor1{S}) where
-                {T<:NumberNotSeries,S<:NumberNotSeries}
+                {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(a[0][1], b)
             R = eltype(aux)
             coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(a.order+1)

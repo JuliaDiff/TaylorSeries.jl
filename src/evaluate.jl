@@ -257,7 +257,7 @@ end
 function evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
         {T<:NumberNotSeries}
 
-    @assert length(vals) == get_numvars()
+    # @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
     a_length = length(a)
