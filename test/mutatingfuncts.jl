@@ -35,58 +35,59 @@ end
     t1 = Taylor1(5)
     t2 = zero(t1)
     TaylorSeries.pow!(t2, t1, 2, 2)
-    @test t2[3] == 1.0
+    @test t2[2] == 1.0
     #
     res = zero(t1)
     TaylorSeries.add!(res, t1, t2, 3)
-    @test res[4] == 0.0
+    @test res[3] == 0.0
     TaylorSeries.add!(res, 1, t2, 3)
-    @test res[4] == 0.0
+    @test res[3] == 0.0
     TaylorSeries.add!(res, t2, 3, 0)
-    @test res[1] == 3.0
+    @test res[0] == 3.0
     TaylorSeries.subst!(res, t1, t2, 2)
-    @test res[3] == -1.0
+    @test res[2] == -1.0
     TaylorSeries.subst!(res, t1, 1, 0)
-    @test res[3] == -1.0
+    @test res[0] == -1.0
+    @test res[2] == -1.0
     TaylorSeries.subst!(res, 1, t2, 2)
-    @test res[3] == -1.0
+    @test res[2] == -1.0
 
     res = zero(t1)
     TaylorSeries.mul!(res, t1, t2, 3)
-    @test res[4] == 1.0
+    @test res[3] == 1.0
     TaylorSeries.mul!(res, res, 2, 3)
-    @test res[4] == 2.0
+    @test res[3] == 2.0
     TaylorSeries.mul!(res, 0.5, res, 3)
-    @test res[4] == 1.0
+    @test res[3] == 1.0
 
     res = zero(t1)
     TaylorSeries.div!(res, t2-1, 1+t1, 0)
     TaylorSeries.div!(res, t2-1, 1+t1, 1)
     @test res == t1-1
     TaylorSeries.div!(res, res, 2, 0)
-    @test res[1] == -0.5
+    @test res[0] == -0.5
 
     res = zero(t1)
     TaylorSeries.identity!(res, t1, 0)
-    @test res[1] == t1[1]
+    @test res[0] == t1[0]
     TaylorSeries.zero!(res, t1, 0)
     TaylorSeries.zero!(res, t1, 1)
+    @test res[0] == zero(t1[0])
     @test res[1] == zero(t1[1])
-    @test res[2] == zero(t1[2])
     TaylorSeries.one!(res, t1, 0)
     TaylorSeries.one!(res, t1, 0)
-    @test res[1] == one(t1[1])
-    @test res[2] == zero(t1[2])
+    @test res[0] == one(t1[0])
+    @test res[1] == zero(t1[1])
 
     res = zero(t1)
     TaylorSeries.abs!(res, -1-t2, 2)
-    @test res[3] == 1.0
+    @test res[2] == 1.0
     @test_throws ArgumentError TaylorSeries.abs!(res, t2, 2)
 
     res = zero(t1)
     TaylorSeries.abs2!(res, 1-t1, 1)
-    @test res[2] == -2.0
+    @test res[1] == -2.0
     TaylorSeries.abs2!(res, t1, 2)
-    @test res[3] == 1.0
+    @test res[2] == 1.0
 
 end
