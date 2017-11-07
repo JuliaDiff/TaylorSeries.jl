@@ -27,6 +27,10 @@ end
     @test get_order() == 6
     @test get_numvars() == 2
 
+    @test get_variables()[1].order == get_order()
+    @test get_variables(order=2)[1].order == 2
+    @test get_variables(order=3)[1] == TaylorN(1,order=3)
+
     x, y = set_variables("x y", order=6)
     @test x.order == 6
     @test TaylorSeries.set_variable_names(["x","y"]) == ["x", "y"]
