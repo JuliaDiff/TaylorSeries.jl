@@ -31,7 +31,7 @@ order considered for the expansion (fieldname `order`). The
 coefficients are arranged in ascending order with respect to the degree of the
 monomial, so that
 `coeffs[1]` is the constant term, `coeffs[2]` gives the first order term (`t^1`),
-etc. Yet, it is possible to have the natural ordering with respecto
+etc. Yet, it is possible to have the natural ordering with respect
 to the degree; see below. This is a dense representation of the polynomial.
 The order of the polynomial can be
 omitted in the constructor, which is then fixed by the length of the
