@@ -84,7 +84,10 @@ function getindex(a::Taylor1, u::UnitRange)
 end
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 
-setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
+function setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number}
+    @assert 0 ≤ n ≤ a.order
+    a.coeffs[n+1] = x
+end
 function setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number}
     u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
     a.coeffs[(u.start+1):u_stop] = x
@@ -184,22 +187,24 @@ setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
 for T in (:Taylor1, :TaylorN)
     @eval begin
         eltype(::$T{S}) where {S<:Number} = S
-
         length(a::$T) = length(a.coeffs)
-
-        endof(a::$T) = length(a.coeffs)-1
-
+        endof(a::$T) = a.order
         get_order(a::$T) = a.order
+
+        start(a::$T) = start(a.coeffs)-1
+        next(a::$T, ord) = ($T(a[ord], ord+1), ord+1)
+        done(a::$T, ord) = ord > a.order
     end
 end
 
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
-
 length(a::HomogeneousPolynomial) = length(a.coeffs)
-
 endof(a::HomogeneousPolynomial) = length(a.coeffs)
-
 get_order(a::HomogeneousPolynomial) = a.order
+
+start(a::HomogeneousPolynomial) = start(a.coeffs)
+next(a::HomogeneousPolynomial, ord) = (HomogeneousPolynomial(a[ord]), ord+1)
+done(a::HomogeneousPolynomial, ord) = ord > length(a.coeffs)
 
 
 ## fixorder ##
