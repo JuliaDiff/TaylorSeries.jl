@@ -18,7 +18,7 @@ end
     @test eltype(set_variables(BigInt, "x y", order=6)) == TaylorN{BigInt}
     @test eltype(set_variables("x y", order=6)) == TaylorN{Float64}
     @test typeof(show_params_TaylorN()) == Void
-    @test typeof(show_monomials()) == Void
+    @test typeof(show_monomials(2)) == Void
 
     @test TaylorSeries.coeff_table[2][1] == [1,0]
     @test TaylorSeries.index_table[2][1] == 7

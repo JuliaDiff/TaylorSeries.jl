@@ -92,8 +92,8 @@ function derivative(a::TaylorN, r=1::Int)
     T = eltype(a)
     coeffs = Array{HomogeneousPolynomial{T}}(a.order)
 
-    @inbounds for ord = 0:a.order
-        coeffs[ord+1] = derivative( a[ord], r)
+    @inbounds for ord = 1:a.order
+        coeffs[ord] = derivative( a[ord], r)
     end
     return TaylorN{T}( coeffs, a.order )
 end

@@ -117,7 +117,7 @@ end
 doc"""
     pow!(c, a, r::Real, k::Int, k0::Int=0)
 
-Update the `k-th` expansion coefficient `c[k+1]` of `c = a^r`, for
+Update the `k-th` expansion coefficient `c[k]` of `c = a^r`, for
 both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
@@ -219,7 +219,7 @@ end
 doc"""
     sqr!(c, a, k::Int) --> nothing
 
-Update the `k-th` expansion coefficient `c[k+1]` of `c = a^2`, for
+Update the `k-th` expansion coefficient `c[k]` of `c = a^2`, for
 both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
@@ -320,7 +320,7 @@ function sqrt(a::Taylor1)
     @inbounds aux = sqrt( a[l0nz] )
     T = typeof(aux)
 
-    c = Taylor1( zeros(T, a.order) )
+    c = Taylor1( zero(T), a.order )
     @inbounds c[lnull] = aux
     for k = lnull+1:a.order-l0nz
         sqrt!(c, a, k, lnull)
@@ -349,7 +349,7 @@ end
 doc"""
     sqrt!(c, a, k::Int, k0::Int=0)
 
-Compute the `k-th` expansion coefficient `c[k+1]` of `c = sqrt(a)`
+Compute the `k-th` expansion coefficient `c[k]` of `c = sqrt(a)`
 for both`c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
@@ -358,8 +358,8 @@ The coefficients are given by
 \begin{eqnarray*}
 c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j\big),
     \text{ if $k$ is odd,} \\
-c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j\big)
-    - (c_{k/2})^2, \text{ if $k$ is even.}
+c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j
+    - (c_{k/2})^2\big), \text{ if $k$ is even.}
 \end{eqnarray*}
 ```
 
