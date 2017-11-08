@@ -356,9 +356,9 @@ The coefficients are given by
 
 ```math
 \begin{eqnarray*}
-c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j\big),
+c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-1)/2} c_{k-j}c_j\big),
     \text{ if $k$ is odd,} \\
-c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j
+c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-2)/2} c_{k-j}c_j
     - (c_{k/2})^2\big), \text{ if $k$ is even.}
 \end{eqnarray*}
 ```
