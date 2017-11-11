@@ -147,6 +147,17 @@ end
     vr = rand(2)
     @test hp(vr) == evaluate(hp, vr)
 
+    p = (xT-yT)^6
+    @test integrate(derivative(p, 1), 1, yT^6) == p
+    @test derivative(integrate(p, 2), 2) == p
+    @test derivative(TaylorN(1.0)) == 0.0
+    @test integrate(TaylorN(6.0), 1) == 6xT
+    @test integrate(TaylorN(0.0), 2) == 0.0
+    @test integrate(TaylorN(0.0), 2, xT) == xT
+    @test integrate(xT^17, 2) == 0.0
+    @test integrate(xT^17, 1, yT) == yT
+    @test_throws AssertionError integrate(xT, 1, xT)
+
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
