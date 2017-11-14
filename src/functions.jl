@@ -138,20 +138,20 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         @inline function identity!(c::$T, a::$T, k::Int)
-            @inbounds c[k+1] = identity(a[k+1])
+            @inbounds c[k] = identity(a[k])
             return nothing
         end
 
         @inline function zero!(c::$T, a::$T, k::Int)
-            @inbounds c[k+1] = zero(a[k+1])
+            @inbounds c[k] = zero(a[k])
             return nothing
         end
 
         @inline function one!(c::$T, a::$T, k::Int)
             if k == 0
-                @inbounds c[1] = one(a[1])
+                @inbounds c[0] = one(a[0])
             else
-                @inbounds c[k+1] = zero(a[k+1])
+                @inbounds c[k] = zero(a[k])
             end
             return nothing
         end
@@ -174,36 +174,36 @@ for T in (:Taylor1, :TaylorN)
 
         @inline function exp!(c::$T, a::$T, k::Int)
             if k == 0
-                @inbounds c[1] = exp(constant_term(a))
+                @inbounds c[0] = exp(constant_term(a))
                 return nothing
             end
 
             @inbounds for i = 0:k-1
                 if $T == Taylor1
-                    c[k+1] += (k-i) * a[k-i+1] * c[i+1]
+                    c[k] += (k-i) * a[k-i] * c[i]
                 else
-                    mul!(c[k+1], (k-i) * a[k-i+1], c[i+1])
+                    mul!(c[k], (k-i) * a[k-i], c[i])
                 end
             end
-            @inbounds c[k+1] = c[k+1] / k
+            @inbounds c[k] = c[k] / k
 
             return nothing
         end
 
         @inline function log!(c::$T, a::$T, k::Int)
             if k == 0
-                @inbounds c[1] = log(constant_term(a))
+                @inbounds c[0] = log(constant_term(a))
                 return nothing
             end
 
             @inbounds for i = 1:k-1
                 if $T == Taylor1
-                    c[k+1] += (k-i) * a[i+1] * c[k-i+1]
+                    c[k] += (k-i) * a[i] * c[k-i]
                 else
-                    mul!(c[k+1], (k-i)*a[i+1], c[k-i+1])
+                    mul!(c[k], (k-i)*a[i], c[k-i])
                 end
             end
-            @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(a)
+            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
 
             return nothing
         end
@@ -211,42 +211,42 @@ for T in (:Taylor1, :TaylorN)
         @inline function sincos!(s::$T, c::$T, a::$T, k::Int)
             if k == 0
                 a0 = constant_term(a)
-                @inbounds s[1], c[1] = sin( a0 ), cos( a0 )
+                @inbounds s[0], c[0] = sin( a0 ), cos( a0 )
                 return nothing
             end
 
             @inbounds for i = 1:k
-                x = i * a[i+1]
+                x = i * a[i]
                 if $T == Taylor1
-                    s[k+1] += x * c[k-i+1]
-                    c[k+1] -= x * s[k-i+1]
+                    s[k] += x * c[k-i]
+                    c[k] -= x * s[k-i]
                 else
-                    mul!(s[k+1], x, c[k-i+1])
-                    mul!(c[k+1], -x, s[k-i+1])
+                    mul!(s[k], x, c[k-i])
+                    mul!(c[k], -x, s[k-i])
                 end
             end
 
-            @inbounds s[k+1] = s[k+1] / k
-            @inbounds c[k+1] = c[k+1] / k
+            @inbounds s[k] = s[k] / k
+            @inbounds c[k] = c[k] / k
             return nothing
         end
 
         @inline function tan!(c::$T, a::$T, c2::$T, k::Int)
             if k == 0
                 @inbounds aux = tan( constant_term(a) )
-                @inbounds c[1] = aux
-                @inbounds c2[1] = aux^2
+                @inbounds c[0] = aux
+                @inbounds c2[0] = aux^2
                 return nothing
             end
 
             @inbounds for i = 0:k-1
                 if $T == Taylor1
-                    c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
+                    c[k] += (k-i) * a[k-i] * c2[i]
                 else
-                    mul!(c[k+1], (k-i) * a[k-i+1], c2[i+1])
+                    mul!(c[k], (k-i) * a[k-i], c2[i])
                 end
             end
-            @inbounds c[k+1] = a[k+1] + c[k+1]/k
+            @inbounds c[k] = a[k] + c[k]/k
             sqr!(c2, c, k)
 
             return nothing
@@ -255,101 +255,101 @@ for T in (:Taylor1, :TaylorN)
         @inline function asin!(c::$T, a::$T, r::$T, k::Int)
             if k == 0
                 a0 = constant_term(a)
-                @inbounds c[1] = asin( a0 )
-                @inbounds r[1] = sqrt( 1 - a0^2)
+                @inbounds c[0] = asin( a0 )
+                @inbounds r[0] = sqrt( 1 - a0^2)
                 return nothing
             end
 
             @inbounds for i in 1:k-1
                 if $T == Taylor1
-                    c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                    c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k+1], (k-i) * r[i+1], c[k-i+1])
+                    mul!(c[k], (k-i) * r[i], c[k-i])
                 end
             end
             sqrt!(r, 1-a^2, k)
-            @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(r)
+            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
             return nothing
         end
 
         @inline function acos!(c::$T, a::$T, r::$T, k::Int)
             if k == 0
                 a0 = constant_term(a)
-                @inbounds c[1] = acos( a0 )
-                @inbounds r[1] = sqrt( 1 - a0^2)
+                @inbounds c[0] = acos( a0 )
+                @inbounds r[0] = sqrt( 1 - a0^2)
                 return nothing
             end
 
             @inbounds for i in 1:k-1
                 if $T == Taylor1
-                    c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                    c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k+1], (k-i) * r[i+1], c[k-i+1])
+                    mul!(c[k], (k-i) * r[i], c[k-i])
                 end
             end
             sqrt!(r, 1-a^2, k)
-            @inbounds c[k+1] = -(a[k+1] + c[k+1]/k) / constant_term(r)
+            @inbounds c[k] = -(a[k] + c[k]/k) / constant_term(r)
             return nothing
         end
 
         @inline function atan!(c::$T, a::$T, r::$T, k::Int)
             if k == 0
                 a0 = constant_term(a)
-                @inbounds c[1] = atan( a0 )
-                @inbounds r[1] = 1 + a0^2
+                @inbounds c[0] = atan( a0 )
+                @inbounds r[0] = 1 + a0^2
                 return nothing
             end
 
             @inbounds for i in 1:k-1
                 if $T == Taylor1
-                    c[k+1] += (k-i) * r[i+1] * c[k-i+1]
+                    c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k+1], (k-i) * r[i+1], c[k-i+1])
+                    mul!(c[k], (k-i) * r[i], c[k-i])
                 end
             end
             @inbounds sqr!(r, a, k)
-            @inbounds c[k+1] = (a[k+1] - c[k+1]/k) / constant_term(r)
+            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
             return nothing
         end
 
         @inline function sinhcosh!(s::$T, c::$T, a::$T, k::Int)
             if k == 0
-                @inbounds s[1] = sinh( constant_term(a) )
-                @inbounds c[1] = cosh( constant_term(a) )
+                @inbounds s[0] = sinh( constant_term(a) )
+                @inbounds c[0] = cosh( constant_term(a) )
                 return nothing
             end
 
             @inbounds for i = 1:k
-                x = i * a[i+1]
+                x = i * a[i]
                 if $T == Taylor1
-                    s[k+1] += x * c[k-i+1]
-                    c[k+1] += x * s[k-i+1]
+                    s[k] += x * c[k-i]
+                    c[k] += x * s[k-i]
                 else
-                    mul!(s[k+1], x, c[k-i+1])
-                    mul!(c[k+1], x, s[k-i+1])
+                    mul!(s[k], x, c[k-i])
+                    mul!(c[k], x, s[k-i])
                 end
             end
-            s[k+1] = s[k+1] / k
-            c[k+1] = c[k+1] / k
+            s[k] = s[k] / k
+            c[k] = c[k] / k
             return nothing
         end
 
         @inline function tanh!(c::$T, a::$T, c2::$T, k::Int)
             if k == 0
                 @inbounds aux = tanh( constant_term(a) )
-                @inbounds c[1] = aux
-                @inbounds c2[1] = aux^2
+                @inbounds c[0] = aux
+                @inbounds c2[0] = aux^2
                 return nothing
             end
 
             @inbounds for i = 0:k-1
                 if $T == Taylor1
-                    c[k+1] += (k-i) * a[k-i+1] * c2[i+1]
+                    c[k] += (k-i) * a[k-i] * c2[i]
                 else
-                    mul!(c[k+1], (k-i) * a[k-i+1], c2[i+1])
+                    mul!(c[k], (k-i) * a[k-i], c2[i])
                 end
             end
-            @inbounds c[k+1] = a[k+1] - c[k+1]/k
+            @inbounds c[k] = a[k] - c[k]/k
             sqr!(c2, c, k)
 
             return nothing
@@ -376,7 +376,7 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
 
 """
 function inverse(f::Taylor1{T}) where {T<:Number}
-    if f[1] != zero(T)
+    if f[0] != zero(T)
         throw(ArgumentError(
         """
         Evaluation of Taylor1 series at 0 is non-zero. For high accuracy, revert
@@ -391,7 +391,7 @@ function inverse(f::Taylor1{T}) where {T<:Number}
 
     coeffs[1] = zero(S)
     @inbounds for n = 1:f.order
-        coeffs[n+1] = zdivfpown[n]/n
+        coeffs[n+1] = zdivfpown[n-1]/n
         zdivfpown *= zdivf
     end
     Taylor1(coeffs, f.order)

@@ -31,7 +31,8 @@ order considered for the expansion (fieldname `order`). The
 coefficients are arranged in ascending order with respect to the degree of the
 monomial, so that
 `coeffs[1]` is the constant term, `coeffs[2]` gives the first order term (`t^1`),
-etc. This is a dense representation of the polynomial.
+etc. Yet, it is possible to have the natural ordering with respect
+to the degree; see below. This is a dense representation of the polynomial.
 The order of the polynomial can be
 omitted in the constructor, which is then fixed by the length of the
 vector of coefficients. If the length of the vector does not correspond with
@@ -105,6 +106,16 @@ Again, errors are thrown whenever it is necessary.
 ```@repl userguide
 sqrt(t)
 log(t)
+```
+
+To obtain a specific coefficient, [`getcoeff`](@ref) can be used. Another
+alternative is to request the specific degree using the vector notation,
+where the index corresponds to the degree of the term.
+
+```@repl userguide
+expon = exp(t)
+getcoeff(expon, 0) == expon[0]
+rationalize(expon[3])
 ```
 
 Differentiating and integrating is straightforward for polynomial expansions in
@@ -280,14 +291,28 @@ x, y = set_variables("x y", order=10);
 exy = exp(x+y)
 ```
 
-The function [`get_coeff`](@ref)
+The function [`getcoeff`](@ref)
 gives the normalized coefficient of the polynomial that corresponds to the
 monomial specified by a vector `v` containing the powers. For instance, for
 the polynomial `exy` above, the coefficient of the monomial ``x^3 y^5`` is
 
 ```@repl userguide
-get_coeff(exy, [3,5])
+getcoeff(exy, [3,5])
 rationalize(ans)
+```
+
+Similar to `Taylor1`, vector notation can be used to request specific
+coefficients of `HomogeneousPolynomial` or `TaylorN` objects. For `TaylorN`
+objects, the index refers to the degree of the `HomogeneousPolynomial`.
+In the case of `HomogeneousPolynomial` the index refers to the position
+of the hash table. The function [`show_monomials`](@ref) can be used to
+obtain the coefficient a specific monomial, given the degree of the
+`HomogeneousPolynomial`.
+
+```@repl userguide
+exy[8] # get the 8th order term
+show_monomials(8)
+exy[8][6] # get the 6th coeff of the 8th order term
 ```
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,

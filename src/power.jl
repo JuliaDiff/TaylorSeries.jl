@@ -84,10 +84,10 @@ function ^(a::Taylor1, r::S) where {S<:Real}
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0nz )
 
-    @inbounds aux = ( a[l0nz+1] )^r
+    @inbounds aux = ( a[l0nz] )^r
     k0 = lnull+l0nz
     c = Taylor1( zero(aux), a.order)
-    @inbounds c[lnull+1] = aux
+    @inbounds c[lnull] = aux
     for k = k0+1:a.order
         pow!(c, a, r, k, l0nz)
     end
@@ -117,7 +117,7 @@ end
 doc"""
     pow!(c, a, r::Real, k::Int, k0::Int=0)
 
-Update the `k-th` expansion coefficient `c[k+1]` of `c = a^r`, for
+Update the `k-th` expansion coefficient `c[k]` of `c = a^r`, for
 both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
@@ -144,16 +144,16 @@ coefficient of `a`.
     end
 
     if k == l0
-        @inbounds c[1] = ( a[l0+1] )^r
+        @inbounds c[0] = ( a[l0] )^r
         return nothing
     end
 
     for i = 0:k-l0-1
         aux = r*(k-i) - i
-        @inbounds c[k-l0+1] += aux * a[k-i+1] * c[i+1]
+        @inbounds c[k-l0] += aux * a[k-i] * c[i]
     end
     aux = k - l0*(r+1)
-    @inbounds c[k-l0+1] = c[k-l0+1] / (aux * a[l0+1])
+    @inbounds c[k-l0] = c[k-l0] / (aux * a[l0])
 
     return nothing
 end
@@ -171,15 +171,15 @@ end
     end
 
     if k == 0
-        @inbounds c[1] = ( constant_term(a) )^r
+        @inbounds c[0] = ( constant_term(a) )^r
         return nothing
     end
 
     for i = 0:k-1
         aux = r*(k-i) - i
-        mul!(c[k+1], aux*a[k-i+1], c[i+1])
+        mul!(c[k], aux*a[k-i], c[i])
     end
-    @inbounds c[k+1] = c[k+1] / (k * constant_term(a))
+    @inbounds c[k] = c[k] / (k * constant_term(a))
 
     return nothing
 end
@@ -219,7 +219,7 @@ end
 doc"""
     sqr!(c, a, k::Int) --> nothing
 
-Update the `k-th` expansion coefficient `c[k+1]` of `c = a^2`, for
+Update the `k-th` expansion coefficient `c[k]` of `c = a^2`, for
 both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
@@ -239,7 +239,7 @@ for T = (:Taylor1, :TaylorN)
     @eval begin
         @inline function sqr!(c::$T, a::$T, k::Int)
             if k == 0
-                @inbounds c[1] = constant_term(a)^2
+                @inbounds c[0] = constant_term(a)^2
                 return nothing
             end
 
@@ -247,18 +247,18 @@ for T = (:Taylor1, :TaylorN)
             kend = div(k - 2 + kodd, 2)
             @inbounds for i = 0:kend
                 if $T == Taylor1
-                    c[k+1] += a[i+1] * a[k-i+1]
+                    c[k] += a[i] * a[k-i]
                 else
-                    mul!(c[k+1], a[i+1], a[k-i+1])
+                    mul!(c[k], a[i], a[k-i])
                 end
             end
-            @inbounds c[k+1] = 2 * c[k+1]
+            @inbounds c[k] = 2 * c[k]
             kodd == 1 && return nothing
 
             if $T == Taylor1
-                @inbounds c[k+1] += a[div(k,2)+1]^2
+                @inbounds c[k] += a[div(k,2)]^2
             else
-                sqr!(c[k+1], a[div(k,2)+1])
+                sqr!(c[k], a[div(k,2)])
             end
 
             return nothing
@@ -317,11 +317,11 @@ function sqrt(a::Taylor1)
 
     # The last l0nz coefficients are set to zero.
     lnull = div(l0nz, 2)
-    @inbounds aux = sqrt( a[l0nz+1] )
+    @inbounds aux = sqrt( a[l0nz] )
     T = typeof(aux)
 
-    c = Taylor1( zeros(T, a.order+1) )
-    @inbounds c[lnull+1] = aux
+    c = Taylor1( zero(T), a.order )
+    @inbounds c[lnull] = aux
     for k = lnull+1:a.order-l0nz
         sqrt!(c, a, k, lnull)
     end
@@ -349,17 +349,17 @@ end
 doc"""
     sqrt!(c, a, k::Int, k0::Int=0)
 
-Compute the `k-th` expansion coefficient `c[k+1]` of `c = sqrt(a)`
+Compute the `k-th` expansion coefficient `c[k]` of `c = sqrt(a)`
 for both`c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
 ```math
 \begin{eqnarray*}
-c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-1)/2} c_{k-j}c_j\big),
+c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-1)/2} c_{k-j}c_j\big),
     \text{ if $k$ is odd,} \\
-c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=0}^{(k-2)/2} c_{k-j}c_j\big)
-    - (c_{k/2})^2, \text{ if $k$ is even.}
+c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-2)/2} c_{k-j}c_j
+    - (c_{k/2})^2\big), \text{ if $k$ is even.}
 \end{eqnarray*}
 ```
 
@@ -370,20 +370,20 @@ coefficient, which must be even.
 @inline function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
 
     if k == k0
-        @inbounds c[k+1] = sqrt(a[2*k0+1])
+        @inbounds c[k] = sqrt(a[2*k0])
         return nothing
     end
 
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
     @inbounds for i = k0+1:k0+kend
-        c[k+1] += c[i+1] * c[k+k0-i+1]
+        c[k] += c[i] * c[k+k0-i]
     end
-    @inbounds aux = a[k+k0+1] - 2*c[k+1]
+    @inbounds aux = a[k+k0] - 2*c[k]
     if kodd == 0
-        @inbounds aux = aux - (c[kend+k0+2])^2
+        @inbounds aux = aux - (c[kend+k0+1])^2
     end
-    @inbounds c[k+1] = aux / (2*c[k0+1])
+    @inbounds c[k] = aux / (2*c[k0])
 
     return nothing
 end
@@ -391,20 +391,20 @@ end
 @inline function sqrt!(c::TaylorN, a::TaylorN, k::Int)
 
     if k == 0
-        @inbounds c[1] = sqrt( constant_term(a) )
+        @inbounds c[0] = sqrt( constant_term(a) )
         return nothing
     end
 
     kodd = k%2
     kend = div(k - 2 + kodd, 2)
     @inbounds for i = 1:kend
-        mul!(c[k+1], c[i+1], c[k-i+1])
+        mul!(c[k], c[i], c[k-i])
     end
-    @inbounds aux = a[k+1] - 2*c[k+1]
+    @inbounds aux = a[k] - 2*c[k]
     if kodd == 0
-        @inbounds aux = aux - (c[kend+2])^2
+        @inbounds aux = aux - (c[kend+1])^2
     end
-    @inbounds c[k+1] = aux / (2*constant_term(c))
+    @inbounds c[k] = aux / (2*constant_term(c))
 
     return nothing
 end

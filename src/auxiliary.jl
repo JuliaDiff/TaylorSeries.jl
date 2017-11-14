@@ -65,32 +65,48 @@ end
 
 
 
-## get_coeff ##
+## getcoeff ##
 """
-    get_coeff(a, n)
+    getcoeff(a, n)
 
 Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 """
-get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order+1;
-    return a[n+1])
+getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
-getindex(a::Taylor1, n::Int) = a.coeffs[n]
-getindex(a::Taylor1, n::UnitRange) = view(a.coeffs, n)
+function getindex(a::Taylor1, n::Int)
+    @assert 0 ≤ n ≤ length(a.coeffs)
+    nn = n == length(a.coeffs) ? n : n+1
+    return a.coeffs[nn]
+end
+function getindex(a::Taylor1, u::UnitRange)
+    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    view(a.coeffs, (1+u.start):u_stop )
+end
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
-setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n] = x
-setindex!(a::Taylor1{T}, x::T, n::UnitRange) where {T<:Number} = a.coeffs[n] = x
-setindex!(a::Taylor1{T}, x::Array{T,1}, n::UnitRange) where {T<:Number} = a.coeffs[n] = x
+
+function setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number}
+    @assert 0 ≤ n ≤ a.order
+    a.coeffs[n+1] = x
+end
+function setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number}
+    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    a.coeffs[(u.start+1):u_stop] = x
+end
+function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
+    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    a.coeffs[(u.start+1):u_stop] .= x
+end
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] = x
 setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] = x
 
 
 """
-    get_coeff(a, v)
+    getcoeff(a, v)
 
 Return the coefficient of `a::HomogeneousPolynomial`, specified by
 `v::Array{Int,1}` which has the indices of the specific monomial.
 """
-function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
+function getcoeff(a::HomogeneousPolynomial, v::Array{Int,1})
     @assert length(v) == get_numvars()
     kdic = in_base(get_order(),v)
     @inbounds n = pos_table[a.order+1][kdic]
@@ -100,6 +116,7 @@ end
 getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
 getindex(a::HomogeneousPolynomial, n::UnitRange) = view(a.coeffs, n)
 getindex(a::HomogeneousPolynomial, c::Colon) = view(a.coeffs, c)
+
 setindex!(a::HomogeneousPolynomial{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n] = x
 setindex!(a::HomogeneousPolynomial{T}, x::T, n::UnitRange) where {T<:Number} =
@@ -113,54 +130,81 @@ setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, c::Colon) where {T<:Number
 
 
 """
-    get_coeff(a, v)
+    getcoeff(a, v)
 
 Return the coefficient of `a::TaylorN`, specified by
 `v::Array{Int,1}` which has the indices of the specific monomial.
 """
-function get_coeff(a::TaylorN, v::Array{Int,1})
+function getcoeff(a::TaylorN, v::Array{Int,1})
     order = sum(v)
     @assert order ≤ a.order
-    get_coeff(a[order+1], v)
+    getcoeff(a[order], v)
 end
 
-getindex(a::TaylorN, n::Int) = a.coeffs[n]
-getindex(a::TaylorN, n::UnitRange) = view(a.coeffs, n)
+function getindex(a::TaylorN, n::Int)
+    # @assert 0 ≤ n ≤ length(a.coeffs)
+    nn = n == length(a.coeffs) ? n : n+1
+    return a.coeffs[nn]
+end
+function getindex(a::TaylorN, u::UnitRange)
+    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    view(a.coeffs, (1+u.start):u_stop )
+end
 getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
-setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where {T<:Number} =
-    a.coeffs[n] = x
+
+function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
+        {T<:Number}
+    @assert x.order == n
+    a.coeffs[n+1] = x
+end
 setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
-    a.coeffs[n] = HomogeneousPolynomial(x, n-1)
-setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::UnitRange) where {T<:Number} =
-    a.coeffs[n] = x
-setindex!(a::TaylorN{T}, x::T, n::UnitRange) where {T<:Number} =
-    a.coeffs[n] = x
-setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, n::UnitRange) where {T<:Number} =
-    a.coeffs[n] = x
-setindex!(a::TaylorN{T}, x::Array{T,1}, n::UnitRange) where {T<:Number} =
-    a.coeffs[n] = x
-setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
-setindex!(a::TaylorN{T}, x::T, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
-setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
-setindex!(a::TaylorN{T}, x::Array{T,1}, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
+    a.coeffs[n+1] = HomogeneousPolynomial(x, n)
+# function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, u::UnitRange) where {T<:Number}
+#     u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+#     a.coeffs[(u.start+1):u_stop] = x
+# end
+function setindex!(a::TaylorN{T}, x::T, u::UnitRange) where {T<:Number}
+    for ind in u
+        a[ind] = x
+    end
+    a[u]
+end
+setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1},
+    u::UnitRange) where {T<:Number} = a[u[:]] .= x[:]
+setindex!(a::TaylorN{T}, x::Array{T,1}, u::UnitRange) where {T<:Number} =
+    a[u] .= x
+# setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, c::Colon) where {T<:Number} =
+#     a.coeffs[c] = x
+setindex!(a::TaylorN{T}, x::T, ::Colon) where {T<:Number} =
+    (a[0:end] = x; a[:])
+setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, ::Colon) where
+    {T<:Number} = (a[0:end] = x; a[:])
+setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
+    (a[0:end] = x; a[:])
 
 
 ## eltype, length, endof, get_order ##
-for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+for T in (:Taylor1, :TaylorN)
     @eval begin
         eltype(::$T{S}) where {S<:Number} = S
-
         length(a::$T) = length(a.coeffs)
-
-        endof(a::$T) = length(a.coeffs)
-
+        endof(a::$T) = a.order
         get_order(a::$T) = a.order
+
+        start(a::$T) = start(a.coeffs)-1
+        next(a::$T, ord) = ($T(a[ord], ord+1), ord+1)
+        done(a::$T, ord) = ord > a.order
     end
 end
+
+eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
+length(a::HomogeneousPolynomial) = length(a.coeffs)
+endof(a::HomogeneousPolynomial) = length(a.coeffs)
+get_order(a::HomogeneousPolynomial) = a.order
+
+start(a::HomogeneousPolynomial) = start(a.coeffs)
+next(a::HomogeneousPolynomial, ord) = (HomogeneousPolynomial(a[ord]), ord+1)
+done(a::HomogeneousPolynomial, ord) = ord > length(a.coeffs)
 
 
 ## fixorder ##
@@ -168,8 +212,8 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         @inline function fixorder(a::$T, b::$T)
             a.order == b.order && return a, b
-            a.order < b.order && return $T(copy(a.coeffs), b.order),
-                $T(copy(b.coeffs), b.order)
+            a.order < b.order &&
+                return $T(copy(a.coeffs), b.order), $T(copy(b.coeffs), b.order)
             return $T(copy(a.coeffs), a.order), $T(copy(b.coeffs), a.order)
         end
     end
@@ -187,9 +231,9 @@ end
 For `a::Taylor1` returns `zero(a[1])` while for `a::TaylorN` returns
 a zero of a k-th order `HomogeneousPolynomial` of proper type.
 """
-zero_korder(a::Taylor1, ::Int) = zero(a[1])
+zero_korder(a::Taylor1, ::Int) = zero(a[0])
 
-zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(a[1][1]), k)
+zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(constant_term(a)), k)
 
 
 # Finds the first non zero entry; extended to Taylor1
@@ -221,9 +265,9 @@ end
 Return the constant value (zero order coefficient) for `Taylor1`
 and `TaylorN`.
 """
-constant_term(a::Taylor1) = a[1]
+constant_term(a::Taylor1) = a[0]
 
-constant_term(a::TaylorN) = a[1][1]
+constant_term(a::TaylorN) = a[0][1]
 
 constant_term(a::Vector{T}) where {T<:Number}= a[1]
 

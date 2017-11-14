@@ -23,18 +23,18 @@ import Base: ==, +, -, *, /, ^
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
-    rem, mod, mod2pi, abs, abs2, gradient,
+    rem, mod, mod2pi, abs, abs2, norm, gradient,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
     A_mul_B!, power_by_squaring,
-    getindex, setindex!, endof, norm,
+    getindex, setindex!, endof, start, next, done,
     rtoldefault, isfinite, isapprox
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
-export get_coeff, derivative, integrate,
+export getcoeff, derivative, integrate,
     evaluate, evaluate!, inverse,
-    show_params_TaylorN,
+    show_params_TaylorN, show_monomials,
     get_order, get_numvars,
     set_variables, get_variables,
     ∇, jacobian, jacobian!, hessian, hessian!,

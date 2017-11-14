@@ -17,7 +17,7 @@ is equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     @inbounds suma = a[end]
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*dx + a[k]
     end
     suma
@@ -25,12 +25,12 @@ end
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     R = promote_type(T,S)
     @inbounds suma = convert(R, a[end])
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*dx + a[k]
     end
     suma
 end
-evaluate(a::Taylor1{T}) where {T<:Number} = a[1]
+evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
 doc"""
     evaluate(x, δt)
@@ -93,7 +93,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
         a, x = fixorder(a, x)
     end
     @inbounds suma = a[end]
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*x + a[k]
     end
     suma
@@ -101,7 +101,7 @@ end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:Number}
     @inbounds suma = a[end]
-    @inbounds for k = a.order:-1:1
+    @inbounds for k = a.order-1:-1:0
         suma = suma*x + a[k]
     end
     suma
@@ -189,7 +189,10 @@ function evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
     return suma
 end
 
-evaluate(a::HomogeneousPolynomial) = zero(a[1])
+function evaluate(a::HomogeneousPolynomial)
+    a.order == 0 && return a[1]
+    zero(a[1])
+end
 
 #function-like behavior for HomogeneousPolynomial
 (p::HomogeneousPolynomial)(x) = evaluate(p, x)
@@ -212,10 +215,10 @@ function evaluate(a::TaylorN{T}, vals::Array{S,1}) where
     num_vars = get_numvars()
     R = promote_type(T,S)
     a_length = length(a)
-    suma = zeros(R,a_length)
+    suma = zeros(R, a_length)
     for homPol in 1:length(a)
         sun = zero(R)
-        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+        for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -239,7 +242,7 @@ function evaluate(a::TaylorN{T}, vals::Array{Taylor1{S},1}) where
     suma = Taylor1(zeros(R, ord))
 
     for homPol in 1:length(a)
-        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+        for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -254,7 +257,7 @@ end
 function evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
         {T<:NumberNotSeries}
 
-    @assert length(vals) == get_numvars()
+    # @assert length(vals) == get_numvars()
 
     num_vars = get_numvars()
     a_length = length(a)
@@ -262,7 +265,7 @@ function evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
     suma = Taylor1(zeros(T, ord))
 
     for homPol in 1:length(a)
-        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+        for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -286,7 +289,7 @@ function evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
     suma = zero(TaylorN{R})
 
     for homPol in 1:length(a)
-        for (i,a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+        for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -299,7 +302,7 @@ function evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
 end
 
 
-evaluate(a::TaylorN{T}) where {T<:Number} = a[1][1]
+evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
 
 function evaluate(x::Array{TaylorN{T},1}, δx::Array{T,1}) where {T<:Number}
     x0 = Array{T}( length(x) )

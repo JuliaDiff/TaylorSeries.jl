@@ -15,7 +15,7 @@ function convert(::Type{Taylor1{Rational{T}}}, a::Taylor1{S}) where
 
     la = length(a.coeffs)
     v = Array{Rational{T}}(la)
-    v .= rationalize.(a[1:la])
+    v .= rationalize.(a[0:la-1])
     return Taylor1(v)
 end
 
@@ -90,15 +90,15 @@ function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:
     r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
 
     v = zeros(T, s.order+1)
-    @inbounds for ordT in 1:s.order+1
-        v[ordT] = one(T)
-        @inbounds for ordHP in eachindex(s[ordT].coeffs)
+    @inbounds for ordT in 0:s.order
+        v[ordT+1] = one(T)
+        @inbounds for ordHP in 0:s[ordT].order
             @inbounds for ic in eachindex(s[ordT][ordHP].coeffs)
                 coef = s[ordT][ordHP][ic]
-                r[ordHP][ic] += Taylor1(coef*v)
+                r[ordHP+1][ic] += Taylor1( coef.*v )
             end
         end
-        v[ordT] = zero(T)
+        v[ordT+1] = zero(T)
     end
     return TaylorN(r)
 end
@@ -107,7 +107,7 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
 
     ordert = 0
     for ordHP in eachindex(s.coeffs)
-        ordert = max(ordert, s[ordHP][1].order)
+        ordert = max(ordert, s[ordHP-1][1].order)
     end
     vT = Array{TaylorN{T}}(ordert+1)
     @inbounds for ordT in eachindex(vT)
@@ -115,10 +115,10 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
     end
 
     @inbounds for ordN in eachindex(s.coeffs)
-        vHP = HomogeneousPolynomial(zeros(T,length(s[ordN])))
-        @inbounds for ihp in eachindex(s[ordN].coeffs)
-            @inbounds for ind in eachindex(s[ordN][ihp].coeffs)
-                c = s[ordN][ihp][ind]
+        vHP = HomogeneousPolynomial(zeros(T,length(s[ordN-1])))
+        @inbounds for ihp in eachindex(s[ordN-1].coeffs)
+            @inbounds for ind in eachindex(s[ordN-1][ihp].coeffs)
+                c = s[ordN-1][ihp][ind-1]
                 vHP[ihp] = c
                 vT[ind] += TaylorN(vHP)
                 vHP[ihp] = zero(T)

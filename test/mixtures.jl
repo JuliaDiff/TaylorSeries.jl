@@ -49,9 +49,9 @@ end
     @test eltype(complex(0,1)*xHt) == Taylor1{Complex128}
 
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
-    @test tN1[1] == HomogeneousPolynomial([t])
+    @test tN1[0] == HomogeneousPolynomial([t])
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
-    @test t1N[1] == HomogeneousPolynomial(1)
+    @test t1N[0] == HomogeneousPolynomial(1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
     @test eltype(xHt) == Taylor1{Float64}
     @test eltype(tN1) == Taylor1{Float64}
@@ -77,16 +77,16 @@ end
 
     @test mod(tN1+1,1.0) == 0+tN1
     @test mod(tN1-1.125,2) == 0.875+tN1
-    @test (rem(tN1+1.125,1.0))[1][1] == 0.125 + t
-    @test (rem(tN1-1.125,2))[1][1] == -1.125 + t
-    @test mod2pi(-3pi+tN1)[1][1][1] ≈ pi
-    @test mod2pi(0.125+2pi+tN1)[1][1][1] ≈ 0.125
+    @test (rem(tN1+1.125,1.0))[0][1] == 0.125 + t
+    @test (rem(tN1-1.125,2))[0][1] == -1.125 + t
+    @test mod2pi(-3pi+tN1)[0][1][0] ≈ pi
+    @test mod2pi(0.125+2pi+tN1)[0][1][0] ≈ 0.125
     @test mod(t1N+1.125,1.0) == 0.125+t1N
     @test mod(t1N-1.125,2) == 0.875+t1N
-    @test (rem(t1N+1.125,1.0))[1] == 0.125 + t1N[1]
-    @test (rem(t1N-1.125,2))[1] == -1.125 + t1N[1]
-    @test mod2pi(-3pi+t1N)[1][1][1] ≈ pi
-    @test mod2pi(0.125+2pi+t1N)[1][1][1] ≈ 0.125
+    @test (rem(t1N+1.125,1.0))[0] == 0.125 + t1N[0]
+    @test (rem(t1N-1.125,2))[0] == -1.125 + t1N[0]
+    @test mod2pi(-3pi+t1N)[0][0][1] ≈ pi
+    @test mod2pi(0.125+2pi+t1N)[0][0][1] ≈ 0.125
 
     @test abs(tN1+1) == 1+tN1
     @test abs(tN1-1) == 1-tN1
@@ -99,8 +99,10 @@ end
     @test convert(Array{TaylorN{Taylor1{Float64}},2}, [t1N t1N]) == [tN1 tN1]
 
     @test evaluate(t1N, 0.0) == TaylorN(xH, 2)
+    @test t1N() == TaylorN(xH, 2)
     @test string(evaluate(t1N, 0.0)) == " 1.0 x₁ + 𝒪(‖x‖³)"
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
+    @test string((t1N^2)(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = zeros(TaylorN{Float64},2)
     @test evaluate!([t1N, t1N^2], 0.0, v) == nothing
     @test v[1] == TaylorN([xHt])
@@ -167,11 +169,13 @@ end
     #test evaluation of an Array{TaylorN{Taylor1}} at an Array{Taylor1}
     aH1 = [
         HomogeneousPolynomial([Taylor1(rand(2))]),
-        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2))])
+        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),
+            Taylor1(rand(2)),Taylor1(rand(2))])
         ]
     bH1 = [
         HomogeneousPolynomial([Taylor1(rand(2))]),
-        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2)),Taylor1(rand(2))])
+        HomogeneousPolynomial([Taylor1(rand(2)),Taylor1(rand(2)),
+            Taylor1(rand(2)),Taylor1(rand(2))])
         ]
     aTN1 = TaylorN(aH1); bTN1 = TaylorN(bH1)
     x = [aTN1, bTN1]
@@ -180,11 +184,11 @@ end
     @test typeof(δx) == Array{Taylor1{Float64},1}
     x0 = Array{Taylor1{Float64}}(length(x))
     eval_x_δx = evaluate(x,δx)
-    @test x(δx) == evaluate(x,δx)
+    @test x(δx) == eval_x_δx
     evaluate!(x,δx,x0)
     @test x0 == eval_x_δx
     @test typeof(evaluate(x[1],δx)) == Taylor1{Float64}
-    @test x() == map(y->y[1][1], x)
+    @test x() == map(y->y[0][1], x)
     for i in eachindex(x)
         @test evaluate(x[i],δx) == eval_x_δx[i]
         @test x[i](δx) == eval_x_δx[i]
