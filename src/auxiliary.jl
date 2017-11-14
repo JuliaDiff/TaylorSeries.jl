@@ -65,13 +65,13 @@ end
 
 
 
-## get_coeff ##
+## getcoeff ##
 """
-    get_coeff(a, n)
+    getcoeff(a, n)
 
 Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 """
-get_coeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
+getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
 function getindex(a::Taylor1, n::Int)
     @assert 0 ≤ n ≤ length(a.coeffs)
@@ -101,12 +101,12 @@ setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c
 
 
 """
-    get_coeff(a, v)
+    getcoeff(a, v)
 
 Return the coefficient of `a::HomogeneousPolynomial`, specified by
 `v::Array{Int,1}` which has the indices of the specific monomial.
 """
-function get_coeff(a::HomogeneousPolynomial, v::Array{Int,1})
+function getcoeff(a::HomogeneousPolynomial, v::Array{Int,1})
     @assert length(v) == get_numvars()
     kdic = in_base(get_order(),v)
     @inbounds n = pos_table[a.order+1][kdic]
@@ -130,15 +130,15 @@ setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, c::Colon) where {T<:Number
 
 
 """
-    get_coeff(a, v)
+    getcoeff(a, v)
 
 Return the coefficient of `a::TaylorN`, specified by
 `v::Array{Int,1}` which has the indices of the specific monomial.
 """
-function get_coeff(a::TaylorN, v::Array{Int,1})
+function getcoeff(a::TaylorN, v::Array{Int,1})
     order = sum(v)
     @assert order ≤ a.order
-    get_coeff(a[order], v)
+    getcoeff(a[order], v)
 end
 
 function getindex(a::TaylorN, n::Int)
@@ -233,7 +233,7 @@ a zero of a k-th order `HomogeneousPolynomial` of proper type.
 """
 zero_korder(a::Taylor1, ::Int) = zero(a[0])
 
-zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(a[0][0]), k)
+zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(constant_term(a)), k)
 
 
 # Finds the first non zero entry; extended to Taylor1

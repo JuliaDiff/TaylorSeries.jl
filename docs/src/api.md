@@ -30,7 +30,7 @@ set_variables
 get_variables
 show_params_TaylorN
 show_monomials
-get_coeff
+getcoeff
 evaluate
 evaluate!
 taylor_expand

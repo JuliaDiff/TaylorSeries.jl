@@ -77,8 +77,8 @@ end
     @test get_order(zeroT) == 1
     @test xT[1][1] == 1
     @test yH[2] == 1
-    @test get_coeff(xT,[1,0]) == 1
-    @test get_coeff(yH,[1,0]) == 0
+    @test getcoeff(xT,[1,0]) == 1
+    @test getcoeff(yH,[1,0]) == 0
     @test typeof(convert(HomogeneousPolynomial,1im)) ==
         HomogeneousPolynomial{Complex{Int}}
     @test convert(HomogeneousPolynomial,1im) ==
@@ -246,17 +246,17 @@ end
     @test conj(im*yH) == (im*yH)'
     @test conj(im*yT) == (im*yT)'
     @test real( exp(1im * xT)) == cos(xT)
-    @test get_coeff(convert(TaylorN{Rational{Int}},cos(xT)),[4,0]) ==
+    @test getcoeff(convert(TaylorN{Rational{Int}},cos(xT)),[4,0]) ==
         1//factorial(4)
     cr = convert(TaylorN{Rational{Int}},cos(xT))
-    @test get_coeff(cr,[4,0]) == 1//factorial(4)
+    @test getcoeff(cr,[4,0]) == 1//factorial(4)
     @test imag((exp(yT))^(-1im)') == sin(yT)
     exy = exp( xT+yT )
     @test evaluate(exy) == 1
     @test evaluate(exy,[0.1im,0.01im]) == exp(0.11im)
     @test isapprox(evaluate(exy, [1,1]), e^2)
     txy = tan(xT+yT)
-    @test get_coeff(txy,[8,7]) == 929569/99225
+    @test getcoeff(txy,[8,7]) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @test getindex(tan(TaylorN(1)+TaylorN(2)),0:4) == ptxy.coeffs[1:5]
     @test evaluate(xH*yH,[1.0,2.0]) == 2.0
@@ -420,7 +420,7 @@ end
     @test norm(a) == norm([3,4,6,8.0])
     @test norm(a, 4) == sum([3,4,6,8.0].^4)^(1/4.)
     @test norm(a, Inf) == 8.0
-    @test norm((3.0 + 4im)*x) == abs(complex(3.0,4.0))
+    @test norm((3.0 + 4im)*x) == abs(3.0 + 4im)
 
     @test TaylorSeries.rtoldefault(TaylorN{Int64}) == 0
     @test TaylorSeries.rtoldefault(TaylorN{Float64}) == sqrt(eps(Float64))

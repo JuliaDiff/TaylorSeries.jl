@@ -108,13 +108,13 @@ sqrt(t)
 log(t)
 ```
 
-To obtain a specific coefficient, [`get_coeff`](@ref) can be used. Another
+To obtain a specific coefficient, [`getcoeff`](@ref) can be used. Another
 alternative is to request the specific degree using the vector notation,
 where the index corresponds to the degree of the term.
 
 ```@repl userguide
 expon = exp(t)
-get_coeff(expon, 0) == expon[0]
+getcoeff(expon, 0) == expon[0]
 rationalize(expon[3])
 ```
 
@@ -291,13 +291,13 @@ x, y = set_variables("x y", order=10);
 exy = exp(x+y)
 ```
 
-The function [`get_coeff`](@ref)
+The function [`getcoeff`](@ref)
 gives the normalized coefficient of the polynomial that corresponds to the
 monomial specified by a vector `v` containing the powers. For instance, for
 the polynomial `exy` above, the coefficient of the monomial ``x^3 y^5`` is
 
 ```@repl userguide
-get_coeff(exy, [3,5])
+getcoeff(exy, [3,5])
 rationalize(ans)
 ```
 
@@ -312,7 +312,7 @@ obtain the coefficient a specific monomial, given the degree of the
 ```@repl userguide
 exy[8] # get the 8th order term
 show_monomials(8)
-exy[8][6] # get the 1st coeff of the 2th order term
+exy[8][6] # get the 6th coeff of the 8th order term
 ```
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,

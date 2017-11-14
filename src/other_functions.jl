@@ -80,9 +80,9 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function abs(a::$T{T}) where {T<:Real}
-            if constant_term(a) > zero(T)
+            if constant_term(a) > 0
                 return a
-            elseif constant_term(a) < zero(T)
+            elseif constant_term(a) < 0
                 return -a
             else
                 throw(ArgumentError(
@@ -108,9 +108,9 @@ function mod2pi(a::Taylor1{TaylorN{T}}) where {T<:Real}
 end
 
 function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
-    if constant_term(a)[0] > zero(T)
+    if constant_term(a)[0] > 0
         return a
-    elseif constant_term(a)[0] < zero(T)
+    elseif constant_term(a)[0] < 0
         return -a
     else
         throw(ArgumentError(
@@ -120,9 +120,9 @@ function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
 end
 
 function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
-    if constant_term(a[0]) > zero(T)
+    if constant_term(a[0]) > 0
         return a
-    elseif constant_term(a[0]) < zero(T)
+    elseif constant_term(a[0]) < 0
         return -a
     else
         throw(ArgumentError(

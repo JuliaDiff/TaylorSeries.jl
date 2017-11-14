@@ -66,7 +66,7 @@ end
     @test y[:] == rv
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
-    @test get_coeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
+    @test getcoeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
     @test Taylor1(Complex128,3)[1] == complex(1.0,0.0)
     @test getindex(Taylor1(3),1) == 1.0
     @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
@@ -96,7 +96,7 @@ end
 
     @test ot == 1
     @test 0.0 == zt
-    @test get_coeff(tim,1) == complex(0,1)
+    @test getcoeff(tim,1) == complex(0,1)
     @test zt+1.0 == ot
     @test 1.0-ot == zt
     @test t+t == 2t
@@ -174,7 +174,7 @@ end
     @test exp(conj(tim)) == cos(t)-im*sin(t) == exp(tim')
     @test (exp(t))^(2im) == cos(2t)+im*sin(2t)
     @test (exp(t))^Taylor1([-5.2im]) == cos(5.2t)-im*sin(5.2t)
-    @test get_coeff(convert(Taylor1{Rational{Int}},cos(t)),8) == 1//factorial(8)
+    @test getcoeff(convert(Taylor1{Rational{Int}},cos(t)),8) == 1//factorial(8)
     @test abs((tan(t))[7]- 17/315) < tol1
     @test abs((tan(t))[13]- 21844/6081075) < tol1
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e

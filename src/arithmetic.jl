@@ -25,7 +25,7 @@ end
 
 function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     a.order == b.order && return a.coeffs == b.coeffs
-    return (a.coeffs == zeros(a.coeffs)) && (b.coeffs == zeros(b.coeffs))
+    return iszero(a.coeffs) && iszero(b.coeffs)
 end
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)

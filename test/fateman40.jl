@@ -31,7 +31,7 @@ end
 
     f2 = fateman2(20)
     f3 = fateman3(20)
-    c = get_coeff(f2,[1,6,7,20])
+    c = getcoeff(f2,[1,6,7,20])
     @test c == 128358585324486316800
-    @test get_coeff(f3,[1,6,7,20]) == c
+    @test getcoeff(f3,[1,6,7,20]) == c
 end
