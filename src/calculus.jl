@@ -293,4 +293,5 @@ function integrate(a::TaylorN, r::Int, x0::TaylorN)
     res = integrate(a, r)
     return x0+res
 end
-integrate(a::TaylorN, r::Int, x0::NumberNotSeries) = integrate(a,r,TaylorN(x0))
+integrate(a::TaylorN, r::Int, x0::NumberNotSeries) =
+    integrate(a,r,TaylorN(HomogeneousPolynomial([convert(eltype(a),x0)], 0)))

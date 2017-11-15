@@ -156,6 +156,7 @@ end
     @test integrate(TaylorN(0.0), 2, xT) == xT
     @test integrate(xT^17, 2) == 0.0
     @test integrate(xT^17, 1, yT) == yT
+    @test integrate(xT^17, 1, 2.0) == 2.0
     @test_throws AssertionError integrate(xT, 1, xT)
 
     @test derivative(2xT*yT^2,1) == 2yT^2

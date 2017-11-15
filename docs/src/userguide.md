@@ -317,7 +317,7 @@ exy[8][6] # get the 6th coeff of the 8th order term
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,
 through the function [`derivative`](@ref), specifying the number
-of the variable as the second argument; integration is yet to be implemented.
+of the variable as the second argument.
 
 ```@repl userguide
 p = x^3 + 2x^2 * y - 7x + 2
@@ -331,6 +331,19 @@ an error is thrown.
 
 ```@repl userguide
 derivative( q, 3 )   # error, since we are dealing with 2 variables
+```
+
+Integration with respect to the r-th variable for
+`HomogeneousPolynomial`s and `TaylorN` objects is obtained
+using [`integrate`](@ref). Note that `integrate` for `TaylorN`
+objects allows to specify a constant of integration, which must
+be independent from the integrated variable.
+
+```@repl userguide
+integrate( derivative( p, 1 ), 1) # integrate with respect to the first variable
+integrate( derivative( p, 1 ), 1, 2) # integration constant is 2
+integrate( derivative( q, 2 ), 2, -x^4) == q
+integrate( derivative( q, 2 ), 2, y)
 ```
 
 [`evaluate`](@ref) can also be used for [`TaylorN`](@ref) objects, using
