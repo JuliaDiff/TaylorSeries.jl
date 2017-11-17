@@ -22,11 +22,28 @@ function derivative(a::Taylor1)
 end
 
 """
-    derivative(n, a)
+    derivative(a)
+
+Compute recursively the `Taylor1` polynomial of the n-th derivative of
+`a::Taylor1`.
+"""
+function derivative(n::Int, a::Taylor1{T}) where {T <: Number}
+    @assert a.order ≥ n ≥ 0
+    if n==0
+        return a
+    elseif n==1
+        return derivative(a)
+    else
+        return derivative(n-1, derivative(a))
+    end
+end
+
+"""
+    derivativeval(n, a)
 
 Return the value of the `n`-th derivative of the polynomial `a`.
 """
-function derivative(n::Int, a::Taylor1{T}) where {T<:Number}
+function derivativeval(n::Int, a::Taylor1{T}) where {T<:Number}
     @assert a.order ≥ n ≥ 0
     factorial( widen(n) ) * a[n] :: T
 end
