@@ -301,9 +301,20 @@ end
     @test evaluate(v) == vv
     @test evaluate(v, complex(0.0,0.2)) ==
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]
-    @test derivative(5, exp(ta(1.0))) == exp(1.0)
-    @test derivative(3, exp(ta(1.0pi))) == exp(1.0pi)
-    @test isapprox(derivative(10, exp(ta(1.0pi))) , exp(1.0pi) )
+
+    fifth_exp_deriv = Taylor1(convert(Vector{Float64},exp(ta(1.0))[0:10]))
+    @test derivative(5, exp(ta(1.0))) ≈ exp(1.0) atol=eps() rtol=0.0
+    # @test derivative(3, exp(ta(1.0pi))) == exp(1.0pi)
+    # @test isapprox(derivative(10, exp(ta(1.0pi))) , exp(1.0pi) )
+
+    @test derivative(5, exp(ta(1.0)))() == exp(1.0)
+    @test derivative(3, exp(ta(1.0pi)))() == exp(1.0pi)
+    @test isapprox(derivative(10, exp(ta(1.0pi)))() , exp(1.0pi) )
+
+    @test derivativeval(5, exp(ta(1.0))) == exp(1.0)
+    @test derivativeval(3, exp(ta(1.0pi))) == exp(1.0pi)
+    @test isapprox(derivativeval(10, exp(ta(1.0pi))) , exp(1.0pi) )
+
     @test integrate(derivative(exp(t)),1) == exp(t)
     @test integrate(cos(t)) == sin(t)
 
