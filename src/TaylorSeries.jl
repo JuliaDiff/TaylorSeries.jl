@@ -32,7 +32,7 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
-export getcoeff, derivative, derivativeval, integrate,
+export getcoeff, derivative, integrate,
     evaluate, evaluate!, inverse,
     show_params_TaylorN, show_monomials,
     get_order, get_numvars,
