@@ -14,12 +14,27 @@ Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
 The last coefficient is set to zero.
 """
 function derivative(a::Taylor1)
-    coeffs = zero(a.coeffs)
-    @inbounds for i = 1:a.order
-        coeffs[i] = i*a[i]
+    res = zero(a)
+    @inbounds for ord = 0:a.order-1
+        # res[ord] = (ord+1)*a[ord+1]
+        derivative!(res, a, ord)
     end
-    return Taylor1(coeffs, a.order)
+    return res
 end
+
+function derivative!(res::Taylor1, a::Taylor1)
+    # res = zero(a)
+
+    @inbounds for ord = 0:a.order-1
+        # res[ord] = (ord+1)*a[ord+1]
+        derivative!(res, a, ord)
+    end
+    res[a.order] = zero(a[0])
+    nothing
+    # return res
+end
+
+derivative!(p::Taylor1, a::Taylor1, k::Int) = (p[k] = (k+1)*a[k+1])
 
 """
     derivative(a, n)
@@ -31,10 +46,12 @@ function derivative(a::Taylor1{T}, n::Int) where {T <: Number}
     @assert a.order ≥ n ≥ 0
     if n==0
         return a
-    elseif n==1
-        return derivative(a)
     else
-        return derivative(derivative(a), n-1)
+        res = deepcopy(a)
+        for i in 1:n
+            derivative!(res, res)
+        end
+        return res
     end
 end
 
