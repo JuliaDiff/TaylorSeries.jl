@@ -22,7 +22,10 @@ end
 function pretty_print(a::Taylor1{T}) where {T<:Number}
     z = zero(a[0])
     space = string(" ")
-    bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    # bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    bigO = bigOnotation[end] ?
+        string("+ 𝒪(t", superscriptify(a.order+1), ")") :
+        string("")
     a == zero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -42,7 +45,10 @@ end
 function pretty_print(a::Taylor1{HomogeneousPolynomial{T}}) where {T<:Number}
     z = zero(a[0])
     space = string(" ")
-    bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    # bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    bigO = bigOnotation[end] ?
+        string("+ 𝒪(t", superscriptify(a.order+1), ")") :
+        string("")
     a == zero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -64,7 +70,11 @@ end
 function pretty_print(a::Taylor1{TaylorN{T}}) where {T<:Number}
     z = zero(a[0])
     space = string(" ")
-    bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    # bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
+    bigO = bigOnotation[end] ?
+        string("+ 𝒪(t", superscriptify(a.order+1), ")") :
+        string("")
+    a == zero(a) && return string(space, z, space, bigO)
     a == zero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -94,7 +104,11 @@ end
 function pretty_print(a::TaylorN{T}) where {T<:Number}
     z = zero(a[0])
     space = string("")
-    bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
+    # bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
+    bigO::String = bigOnotation[end] ?
+        string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")") :
+        string("")
+    a == zero(a) && return string(space, z, space, bigO)
     a == zero(a) && return string(space, z, bigO)
     strout::String = space#string("")
     ifirst = true
