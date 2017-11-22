@@ -259,4 +259,8 @@ end
     @test p1N ≈ p1N
     @test p1N ≈ q1N
 
+    Pv = [rndTN(get_order(), 3), rndTN(get_order(), 3)]
+    Qv = convert.(Taylor1{TaylorN{Float64}}, Pv)
+
+    @test jacobian(Pv) == jacobian(Qv)
 end
