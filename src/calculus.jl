@@ -15,7 +15,6 @@ The last coefficient is set to zero.
 """
 function derivative(a::Taylor1)
     coeffs = zero(a.coeffs)
-    @inbounds coeffs[1] = a[1]
     @inbounds for i = 1:a.order
         coeffs[i] = i*a[i]
     end
@@ -230,4 +229,69 @@ hessian!(hes::Array{T,2}, f::TaylorN{T}) where {T<:Number} =
     jacobian!(hes, gradient(f))
 
 
-## TODO: Integration...
+##Integration
+"""
+    integrate(a, r)
+
+Integrate the `a::HomogeneousPolynomial` with respect to the `r`-th
+variable. The returned `HomogeneousPolynomial` has no added constant of
+integration. If the order of a corresponds to `get_order()`, a zero
+`HomogeneousPolynomial` of 0-th order is returned.
+
+"""
+function integrate(a::HomogeneousPolynomial, r::Int)
+    @assert 1 ≤ r ≤ get_numvars()
+
+    order_max = get_order()
+    T = promote_type(eltype(a), eltype(a[1]/1))
+    a.order == order_max && return HomogeneousPolynomial(zero(T), 0)
+
+    @inbounds posTb = pos_table[a.order+2]
+    @inbounds num_coeffs = size_table[a.order+2]
+    coeffs = zeros(T, size_table[num_coeffs])
+    @inbounds num_coeffs = size_table[a.order+1]
+
+    @inbounds for i = 1:num_coeffs
+        iind = coeff_table[a.order+1][i]
+        n = iind[r]
+        n == order_max && continue
+        iind[r] += 1
+        kdic = in_base(get_order(), iind)
+        pos = posTb[kdic]
+        coeffs[pos] = a[i] / (n+1)
+        iind[r] -= 1
+    end
+
+    return HomogeneousPolynomial{T}(coeffs, a.order+1)
+end
+
+
+"""
+    integrate(a, r, [x0])
+
+Integrate the `a::TaylorN` series with respect to the `r`-th variable,
+where `x0` the integration constant and must be independent
+of the `r`-th variable; if `x0` is ommitted, it is taken as zero.
+"""
+function integrate(a::TaylorN, r::Int)
+    T = promote_type(eltype(a), eltype(a[0]/1))
+    order_max = min(get_order(), a.order+1)
+    coeffs = zeros(HomogeneousPolynomial{T}, order_max)
+
+    @inbounds for ord = 0:order_max-1
+        coeffs[ord+1] = integrate( a[ord], r)
+    end
+
+    return TaylorN(coeffs)
+end
+function integrate(a::TaylorN, r::Int, x0::TaylorN)
+    # Check constant of integration is independent of re
+    @assert derivative(x0, r) == 0.0 """
+    The integration constant ($x0) must be independent of the
+    $(_params_TaylorN_.variable_names[r]) variable"""
+
+    res = integrate(a, r)
+    return x0+res
+end
+integrate(a::TaylorN, r::Int, x0::NumberNotSeries) =
+    integrate(a,r,TaylorN(HomogeneousPolynomial([convert(eltype(a),x0)], 0)))
