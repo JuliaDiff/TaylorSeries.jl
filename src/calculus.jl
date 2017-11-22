@@ -16,24 +16,41 @@ The last coefficient is set to zero.
 function derivative(a::Taylor1)
     res = zero(a)
     @inbounds for ord = 0:a.order-1
-        # res[ord] = (ord+1)*a[ord+1]
         derivative!(res, a, ord)
     end
     return res
 end
 
-function derivative!(res::Taylor1, a::Taylor1)
-    # res = zero(a)
+"""
+    derivative!(res, a) --> nothing
 
+In-place version of `derivative`. Compute the `Taylor1` polynomial of the
+differential of `a::Taylor1` and save it into `res`. The last coefficient is
+set to zero.
+"""
+function derivative!(res::Taylor1, a::Taylor1)
     @inbounds for ord = 0:a.order-1
-        # res[ord] = (ord+1)*a[ord+1]
         derivative!(res, a, ord)
     end
     res[a.order] = zero(a[0])
     nothing
-    # return res
 end
 
+doc"""
+    derivative!(p, a, k) --> nothing
+
+Update in-place the `k-th` expansion coefficient `p[k]` of `p = derivative(a)`
+for both `p` and `a` `Taylor1`.
+
+The coefficients are given by
+
+```math
+\begin{equation*}
+p_k = (k+1)a_{k+1}.
+\end{equation*}
+```
+
+"""
 derivative!(p::Taylor1, a::Taylor1, k::Int) = (p[k] = (k+1)*a[k+1])
 
 """
