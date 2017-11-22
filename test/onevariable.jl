@@ -332,7 +332,11 @@ end
     @test_throws ArgumentError 1/t
     @test_throws ArgumentError zt/zt
     @test_throws ArgumentError t^1.5
-    @test_throws DomainError t^(-2)
+    if VERSION < v"0.7.0-DEV"
+        @test_throws DomainError t^(-2)
+    else
+        @test_throws ArgumentError t^(-2)
+    end
     @test_throws ArgumentError sqrt(t)
     @test_throws ArgumentError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
