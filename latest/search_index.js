@@ -357,7 +357,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "TaylorSeries.derivative",
     "category": "Function",
-    "text": "derivative(a)\n\nReturn the Taylor1 polynomial of the differential of a::Taylor1. The last coefficient is set to zero.\n\n\n\nderivative(n, a)\n\nReturn the value of the n-th derivative of the polynomial a.\n\n\n\nderivative(a, r)\n\nPartial differentiation of a::HomogeneousPolynomial series with respect to the r-th variable.\n\n\n\nderivative(a, [r=1])\n\nPartial differentiation of a::TaylorN series with respect to the r-th variable.\n\n\n\n"
+    "text": "derivative(a)\n\nReturn the Taylor1 polynomial of the differential of a::Taylor1. The last coefficient is set to zero.\n\n\n\nderivative(a, n)\n\nCompute recursively the Taylor1 polynomial of the n-th derivative of a::Taylor1.\n\n\n\nderivative(n, a)\n\nReturn the value of the n-th derivative of the polynomial a.\n\n\n\nderivative(a, r)\n\nPartial differentiation of a::HomogeneousPolynomial series with respect to the r-th variable.\n\n\n\nderivative(a, [r=1])\n\nPartial differentiation of a::TaylorN series with respect to the r-th variable.\n\n\n\n"
 },
 
 {
