@@ -47,6 +47,7 @@ abs
 norm
 isapprox
 isfinite
+displayBigO
 ```
 
 ## Internals
@@ -79,6 +80,7 @@ atan!
 sinhcosh!
 tanh!
 A_mul_B!
+derivative!
 ```
 
 ## Index
