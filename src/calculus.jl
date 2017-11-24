@@ -14,11 +14,62 @@ Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
 The last coefficient is set to zero.
 """
 function derivative(a::Taylor1)
-    coeffs = zero(a.coeffs)
-    @inbounds for i = 1:a.order
-        coeffs[i] = i*a[i]
+    res = zero(a)
+    @inbounds for ord = 0:a.order-1
+        derivative!(res, a, ord)
     end
-    return Taylor1(coeffs, a.order)
+    return res
+end
+
+"""
+    derivative!(res, a) --> nothing
+
+In-place version of `derivative`. Compute the `Taylor1` polynomial of the
+differential of `a::Taylor1` and save it into `res`. The last coefficient is
+set to zero.
+"""
+function derivative!(res::Taylor1, a::Taylor1)
+    @inbounds for ord = 0:a.order-1
+        derivative!(res, a, ord)
+    end
+    res[a.order] = zero(a[0])
+    nothing
+end
+
+doc"""
+    derivative!(p, a, k) --> nothing
+
+Update in-place the `k-th` expansion coefficient `p[k]` of `p = derivative(a)`
+for both `p` and `a` `Taylor1`.
+
+The coefficients are given by
+
+```math
+\begin{equation*}
+p_k = (k+1)a_{k+1}.
+\end{equation*}
+```
+
+"""
+derivative!(p::Taylor1, a::Taylor1, k::Int) = (p[k] = (k+1)*a[k+1])
+
+"""
+    derivative(a, n)
+
+Compute recursively the `Taylor1` polynomial of the n-th derivative of
+`a::Taylor1`.
+"""
+function derivative(a::Taylor1{T}, n::Int) where {T <: Number}
+    @assert a.order ≥ n ≥ 0
+    if n==0
+        return a
+    else
+        res = deepcopy(a)
+        for i in 1:n
+            derivative!(res, res)
+        end
+        return res
+    end
 end
 
 """
