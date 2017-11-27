@@ -415,6 +415,12 @@ end
     hessian!(hes2,g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes2
 
+    displayBigO(false)
+    @test string(-xH) == " - 1 x₁"
+    @test string(xT^2) == " 1 x₁²"
+    @test string(1im*yT) == " ( 1 im ) x₂"
+    @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂"
+    displayBigO(true)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"
     @test string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"

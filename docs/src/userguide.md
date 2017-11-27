@@ -47,7 +47,15 @@ t = shift_taylor(0.0) # Independent variable `t`
 ```
 
 Note that the information about the maximum order considered is displayed
-using a big-𝒪 notation.
+using a big-𝒪 notation. In some cases, it is desirable to not display
+the big-𝒪 notation. The function [`displayBigO`](@ref) allows to
+control whether it is displayed or not.
+```@repl userguide
+displayBigO(false) # turn-off displaying big O notation
+t
+displayBigO(true) # turn it on
+t
+```
 
 The definition of `shift_taylor(a)` uses the method
 [`Taylor1([::Type{Float64}], [order::Int64=1])`](@ref), which is a
@@ -170,7 +178,8 @@ equivalent to `evaluate(p)`. For more details about function-like behavior for a
 given type in Julia, see the [Function-like objects](https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1)
 section of the Julia manual.
 
-Useful shortcuts are `taylor_expand` are `update!`. The former returns
+Useful shortcuts are [`taylor_expand`](@ref) are [`update!`](@ref).
+The former returns
 the expansion of a function around a given value `t0`. In turn, `update!`
 provides an in-place update of a given Taylor polynomial, that is, it shifts
 it further by the provided amount.

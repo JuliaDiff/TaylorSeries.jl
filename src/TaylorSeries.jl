@@ -34,7 +34,7 @@ export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
 export getcoeff, derivative, integrate,
     evaluate, evaluate!, inverse,
-    show_params_TaylorN, show_monomials,
+    show_params_TaylorN, show_monomials, displayBigO,
     get_order, get_numvars,
     set_variables, get_variables,
     ∇, jacobian, jacobian!, hessian, hessian!,

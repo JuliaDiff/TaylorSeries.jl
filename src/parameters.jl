@@ -140,3 +140,16 @@ function show_params_TaylorN()
     """)
     nothing
 end
+
+
+# Control the display of the big 𝒪 notation
+const bigOnotation = Bool[true]
+
+"""
+    displayBigO(d::Bool) --> nothing
+
+Set/unset displaying of the big 𝒪 notation in  the output
+of `Taylor1` and `TaylorN` polynomials. The initial value is
+`true`.
+"""
+displayBigO(d::Bool) = (bigOnotation[end] = d; d)

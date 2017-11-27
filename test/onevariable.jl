@@ -4,8 +4,10 @@
 using TaylorSeries
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
+    eeuler = Base.e
 else
     using Test
+    eeuler = Base.MathConstants.e
 end
 
 @testset "Tests for Taylor1 expansions" begin
@@ -177,13 +179,13 @@ end
     @test getcoeff(convert(Taylor1{Rational{Int}},cos(t)),8) == 1//factorial(8)
     @test abs((tan(t))[7]- 17/315) < tol1
     @test abs((tan(t))[13]- 21844/6081075) < tol1
-    @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*e
+    @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*eeuler
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
     #Test function-like behavior for Taylor1s
     t17 = Taylor1([0,1],17)
     myexpfun = exp(t17)
-    @test myexpfun(1.0) == 1.0*e
+    @test myexpfun(1.0) == 1.0*eeuler
     @test myexpfun() == 1.0
     @test myexpfun(t17^2) == exp(t17^2)
     @test exp(t17^2)(t17) == exp(t17^2)
@@ -327,7 +329,7 @@ end
 
     @test norm((inverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1
     cfs = [(-n)^(n-1)/gamma(n+1) for n = 1:15]
-    @test norm(inverse(t*exp(t))[1:end]./cfs-1) < 4tol1
+    @test norm(inverse(t*exp(t))[1:end]./cfs .- 1) < 4tol1
 
     @test_throws ArgumentError Taylor1([1,2,3], -2)
     @test_throws ArgumentError abs(ta(big(0)))
@@ -345,11 +347,16 @@ end
     @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
     @test_throws ArgumentError inverse(exp(t))
 
+    displayBigO(false)
+    @test string(ta(-3)) == " - 3 + 1 t "
+    @test string(ta(0)^3-3) == " - 3 + 1 t³ "
+    @test TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t "
+    @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
+    displayBigO(true)
     @test string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
     @test TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"
     @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
-
 
     a = collect(1:12)
     t_a = Taylor1(a,15)
