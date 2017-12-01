@@ -74,27 +74,27 @@ Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
 function getindex(a::Taylor1, n::Int)
-    @assert 0 ≤ n ≤ length(a.coeffs)
-    nn = n == length(a.coeffs) ? n : n+1
-    return a.coeffs[nn]
+    # @assert 0 ≤ n ≤ length(a.coeffs)
+    # nn = n == length(a.coeffs) ? n : n+1
+    return a.coeffs[n+1]
 end
 function getindex(a::Taylor1, u::UnitRange)
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    view(a.coeffs, (1+u.start):u_stop )
+    # u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    view(a.coeffs, u+1 )
 end
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 
 function setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number}
-    @assert 0 ≤ n ≤ a.order
+    # @assert 0 ≤ n ≤ a.order
     a.coeffs[n+1] = x
 end
 function setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number}
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    a.coeffs[(u.start+1):u_stop] = x
+    # u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    a.coeffs[u+1] = x
 end
 function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    a.coeffs[(u.start+1):u_stop] .= x
+    # u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    a.coeffs[u+1] .= x
 end
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] = x
 setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] = x
@@ -143,12 +143,12 @@ end
 
 function getindex(a::TaylorN, n::Int)
     # @assert 0 ≤ n ≤ length(a.coeffs)
-    nn = n == length(a.coeffs) ? n : n+1
-    return a.coeffs[nn]
+    # nn = n == length(a.coeffs) ? n : n+1
+    return a.coeffs[n+1]
 end
 function getindex(a::TaylorN, u::UnitRange)
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    view(a.coeffs, (1+u.start):u_stop )
+    # u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
+    view(a.coeffs, u+1 )
 end
 getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
 
