@@ -192,7 +192,7 @@ for T in (:Taylor1, :TaylorN)
         get_order(a::$T) = a.order
 
         start(a::$T) = start(a.coeffs)-1
-        next(a::$T, ord) = ($T(a[ord], ord+1), ord+1)
+        next(a::$T, ord) = ($T(a[ord], ord), ord+1)
         done(a::$T, ord) = ord > a.order
     end
 end
