@@ -263,3 +263,11 @@ function update!(a::Union{Taylor1,TaylorN})
     #shifting around zero shouldn't change anything...
     nothing
 end
+
+for T in (:Taylor1, :TaylorN)
+    @eval deg2rad(z::$T{T}) where {T<:AbstractFloat} = z * (convert(T, pi) / 180)
+    @eval deg2rad(z::$T{T}) where {T<:Real} = z * (convert(float(T), pi) / 180)
+    
+    @eval rad2deg(z::$T{T}) where {T<:AbstractFloat} = z * (180 / convert(T, pi))
+    @eval rad2deg(z::$T{T}) where {T<:Real} = z * (180 / convert(float(T), pi))
+end
