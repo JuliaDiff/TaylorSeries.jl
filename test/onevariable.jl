@@ -402,6 +402,11 @@ end
     @test t ≈ t
     @test t ≈ t+sqrt(eps())
     @test isapprox(p, q, atol=eps())
+
+    t = Taylor1(35)
+    @test Taylor1([180.0, rad2deg(1.0)], 35) == rad2deg(pi+t)
+    @test sin(pi/2+deg2rad(1.0)t) == sin(deg2rad(90+t))
+
 end
 
 @testset "Matrix multiplication for Taylor1" begin
