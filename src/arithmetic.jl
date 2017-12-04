@@ -122,7 +122,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return nothing
             end
             function ($fc)(v::$T, a::NumberNotSeries, k::Int)
-                ### OJO
                 @inbounds v[k] = k==0 ? ($f)(zero(v[0]),a) : zero(v[k])
                 return nothing
             end

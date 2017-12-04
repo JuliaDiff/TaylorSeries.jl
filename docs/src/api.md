@@ -57,10 +57,8 @@ generate_tables
 generate_index_vectors
 in_base
 make_inverse_dict
-order_posTb
 resize_coeffs1!
 resize_coeffsHP!
-zero_korder
 constant_term
 mul!
 mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)
