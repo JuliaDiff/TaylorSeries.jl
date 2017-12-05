@@ -263,10 +263,4 @@ end
     Qv = convert.(Taylor1{TaylorN{Float64}}, Pv)
 
     @test jacobian(Pv) == jacobian(Qv)
-
-    dx = set_variables("x", numvars=4, order=10)
-    for i in 1:4
-        @test deg2rad(180+dx[i]) == pi + deg2rad(1.0)dx[i]
-        rad2deg(pi+dx[i]) == 180.0+rad2deg(1.0)dx[i]
-    end
 end

@@ -406,7 +406,28 @@ end
     t = Taylor1(35)
     @test Taylor1([180.0, rad2deg(1.0)], 35) == rad2deg(pi+t)
     @test sin(pi/2+deg2rad(1.0)t) == sin(deg2rad(90+t))
-
+    a = Taylor1(rand(10))
+    b = Taylor1(rand(10))
+    c = deepcopy(a)
+    TaylorSeries.deg2rad!(b, a, 0)
+    @test a == c
+    @test a[0]*(pi/180) == b[0]
+    TaylorSeries.deg2rad!.(b, a, [0,1,2])
+    @test a == c
+    for i in 0:2
+        @test a[i]*(pi/180) == b[i]
+    end
+    a = Taylor1(rand(10))
+    b = Taylor1(rand(10))
+    c = deepcopy(a)
+    TaylorSeries.rad2deg!(b, a, 0)
+    @test a == c
+    @test a[0]*(180/pi) == b[0]
+    TaylorSeries.rad2deg!.(b, a, [0,1,2])
+    @test a == c
+    for i in 0:2
+        @test a[i]*(180/pi) == b[i]
+    end
 end
 
 @testset "Matrix multiplication for Taylor1" begin

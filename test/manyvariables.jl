@@ -511,4 +511,30 @@ end
     @test Q() == evaluate.(Q)
     @test Q() == evaluate(Q)
     @test Q[1:3]() == evaluate(Q[1:3])
+
+    dx = set_variables("x", numvars=4, order=10)
+    for i in 1:4
+        @test deg2rad(180+dx[i]) == pi + deg2rad(1.0)dx[i]
+        @test rad2deg(pi+dx[i]) == 180.0+rad2deg(1.0)dx[i]
+    end
+    p = sin(exp(dx[1]*dx[2])+dx[3]*dx[2])/(1.0+dx[4]^2)
+    q = zero(p)
+    TaylorSeries.deg2rad!(q, p, 0)
+    @test q[0] == p[0]*(pi/180)
+    TaylorSeries.deg2rad!.(q, p, [1,3,5])
+    for i in [0,1,3,5]
+        @test q[i] == p[i]*(pi/180)
+    end
+    TaylorSeries.rad2deg!(q, p, 0)
+    @test q[0] == p[0]*(180/pi)
+    TaylorSeries.rad2deg!.(q, p, [1,3,5])
+    for i in [0,1,3,5]
+        @test q[i] == p[i]*(180/pi)
+    end
+    xT = 5+TaylorN(Int64, 1, order=10)
+    yT = TaylorN(2, order=10)
+    TaylorSeries.deg2rad!(yT, xT, 0)
+    @test yT[0] == xT[0]*(pi/180)
+    TaylorSeries.rad2deg!(yT, xT, 0)
+    @test yT[0] == xT[0]*(180/pi)
 end
