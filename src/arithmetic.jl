@@ -211,7 +211,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         *(a::$T, b::Bool) = b * a
 
         function *(a::T, b::$T) where {T<:NumberNotSeries}
-            @inbounds aux = a * b[1]
+            @inbounds aux = a * b.coeffs[1]
             v = Array{typeof(aux)}(length(b.coeffs))
             @__dot__ v = a * b.coeffs
             return $T(v, b.order)
@@ -286,7 +286,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval @inline function mul!(c::$T, a::$T, b::$T, k::Int)
 
-        # c[k+1] = zero( a[k+1] )
+        # c[k] = zero( a[k] )
         @inbounds for i = 0:k
             if $T == Taylor1
                 c[k] += a[i] * b[k-i]
@@ -311,7 +311,7 @@ end
 doc"""
     mul!(c, a, b, k::Int) --> nothing
 
-Update the `k`-th expansion coefficient `c[k+1]` of `c = a * b`,
+Update the `k`-th expansion coefficient `c[k]` of `c = a * b`,
 where all `c`, `a`, and `b` are either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
@@ -467,7 +467,7 @@ end
 doc"""
     div!(c, a, b, k::Int, ordfact::Int=0)
 
-Compute the `k-th` expansion coefficient `c[k+1]` of `c = a / b`,
+Compute the `k-th` expansion coefficient `c[k]` of `c = a / b`,
 where all `c`, `a` and `b` are either `Taylor1` or `TaylorN`.
 
 The coefficients are given by

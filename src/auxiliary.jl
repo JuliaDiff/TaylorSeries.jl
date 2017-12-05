@@ -73,29 +73,14 @@ Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 """
 getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
-function getindex(a::Taylor1, n::Int)
-    @assert 0 ≤ n ≤ length(a.coeffs)
-    nn = n == length(a.coeffs) ? n : n+1
-    return a.coeffs[nn]
-end
-function getindex(a::Taylor1, u::UnitRange)
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    view(a.coeffs, (1+u.start):u_stop )
-end
+getindex(a::Taylor1, n::Int) = a.coeffs[n+1]
+getindex(a::Taylor1, u::UnitRange) = view(a.coeffs, u+1 )
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 
-function setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number}
-    @assert 0 ≤ n ≤ a.order
-    a.coeffs[n+1] = x
-end
-function setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number}
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    a.coeffs[(u.start+1):u_stop] = x
-end
-function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    a.coeffs[(u.start+1):u_stop] .= x
-end
+setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
+setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number} = a.coeffs[u+1] = x
+setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number} =
+    a.coeffs[u+1] .= x
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] = x
 setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] = x
 
@@ -141,15 +126,8 @@ function getcoeff(a::TaylorN, v::Array{Int,1})
     getcoeff(a[order], v)
 end
 
-function getindex(a::TaylorN, n::Int)
-    # @assert 0 ≤ n ≤ length(a.coeffs)
-    nn = n == length(a.coeffs) ? n : n+1
-    return a.coeffs[nn]
-end
-function getindex(a::TaylorN, u::UnitRange)
-    u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-    view(a.coeffs, (1+u.start):u_stop )
-end
+getindex(a::TaylorN, n::Int) = a.coeffs[n+1]
+getindex(a::TaylorN, u::UnitRange) = view(a.coeffs, u+1 )
 getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
 
 function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
@@ -227,38 +205,8 @@ function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 end
 
 
-"""
-    zero_korder(a)
-
-For `a::Taylor1` returns `zero(a[1])` while for `a::TaylorN` returns
-a zero of a k-th order `HomogeneousPolynomial` of proper type.
-"""
-zero_korder(a::Taylor1, ::Int) = zero(a[0])
-
-zero_korder(a::TaylorN, k::Int) = HomogeneousPolynomial(zero(constant_term(a)), k)
-
-
 # Finds the first non zero entry; extended to Taylor1
 Base.findfirst(a::Taylor1{T}) where {T<:Number} = findfirst(a.coeffs)-1
-
-
-"""
-    order_posTb(order, nv, ord)
-
-Return a vector with the positions, in a `HomogeneousPolynomial` of
-order `order`, where the variable `nv` has order `ord`.
-"""
-function order_posTb(order::Int, nv::Int, ord::Int)
-    @assert order ≤ get_order()
-    @inbounds indTb = coeff_table[order+1]
-    @inbounds num_coeffs = size_table[order+1]
-    posV = Int[]
-    for pos = 1:num_coeffs
-        @inbounds indTb[pos][nv] != ord && continue
-        push!(posV, pos)
-    end
-    posV
-end
 
 
 """

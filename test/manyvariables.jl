@@ -306,7 +306,7 @@ end
     TaylorSeries.subst!(xx, 5.0, 0)
     @test xx[0] == HomogeneousPolynomial([-5.0])
     TaylorSeries.subst!(xx, -5.0, 1)
-    @test xx[1] == zero(xx[2])
+    @test xx[1] == zero(xx[end])
     TaylorSeries.div!(xx, 1.0+xT, 1.0+xT, 0)
     @test xx[0] == 1.0
     TaylorSeries.pow!(xx, 1.0+xT, 1.5, 0)
