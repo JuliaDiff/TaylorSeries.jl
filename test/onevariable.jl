@@ -24,6 +24,12 @@ end
     @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3])
     @test get_order(Taylor1([1,2,3,4,5], 2)) == 2
 
+    # ta = Taylor1([1,2,3,4,5])
+    # vT = [h for h in ta]
+    # voT = [h.order for h in Taylor1([1,2,3,4,5])]
+    # @test vT == [Taylor1(1,0), Taylor1(2,1), Taylor1(3,2), Taylor1(4,3), Taylor1(5,4)]
+    # @test voT == [0, 1, 2, 3, 4]
+
     v = [1,2]
     @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Void
     @test v == [1,2,0,0]

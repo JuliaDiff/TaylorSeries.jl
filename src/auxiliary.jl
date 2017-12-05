@@ -191,9 +191,10 @@ for T in (:Taylor1, :TaylorN)
         endof(a::$T) = a.order
         get_order(a::$T) = a.order
 
-        start(a::$T) = start(a.coeffs)-1
-        next(a::$T, ord) = ($T(a[ord], ord+1), ord+1)
-        done(a::$T, ord) = ord > a.order
+        # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
+        # start(a::$T) = start(a.coeffs)-1
+        # next(a::$T, ord) = ($T(a[ord], ord), ord+1)
+        # done(a::$T, ord) = ord == a.order+1
     end
 end
 
@@ -202,9 +203,10 @@ length(a::HomogeneousPolynomial) = length(a.coeffs)
 endof(a::HomogeneousPolynomial) = length(a.coeffs)
 get_order(a::HomogeneousPolynomial) = a.order
 
-start(a::HomogeneousPolynomial) = start(a.coeffs)
-next(a::HomogeneousPolynomial, ord) = (HomogeneousPolynomial(a[ord]), ord+1)
-done(a::HomogeneousPolynomial, ord) = ord > length(a.coeffs)
+# Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
+# start(a::HomogeneousPolynomial) = start(a.coeffs)
+# next(a::HomogeneousPolynomial, ord) = (HomogeneousPolynomial(a[ord]), ord+1)
+# done(a::HomogeneousPolynomial, ord) = ord > length(a.coeffs)
 
 
 ## fixorder ##
