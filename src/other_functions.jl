@@ -263,3 +263,31 @@ function update!(a::Union{Taylor1,TaylorN})
     #shifting around zero shouldn't change anything...
     nothing
 end
+
+for T in (:Taylor1, :TaylorN)
+    @eval deg2rad(z::$T{T}) where {T<:AbstractFloat} = z * (convert(T, pi) / 180)
+    @eval deg2rad(z::$T{T}) where {T<:Real} = z * (convert(float(T), pi) / 180)
+    
+    @eval rad2deg(z::$T{T}) where {T<:AbstractFloat} = z * (180 / convert(T, pi))
+    @eval rad2deg(z::$T{T}) where {T<:Real} = z * (180 / convert(float(T), pi))
+end
+
+# Internal mutating deg2rad!, rad2deg! functions
+for T in (:Taylor1, :TaylorN)
+    @eval @inline function deg2rad!(v::$T{T}, a::$T{T}, k::Int) where {T<:AbstractFloat}
+        @inbounds v[k] = a[k] * (convert(T, pi) / 180)
+        return nothing
+    end
+    @eval @inline function deg2rad!(v::$T{S}, a::$T{T}, k::Int) where {S<:AbstractFloat, T<:Real}
+        @inbounds v[k] = a[k] * (convert(float(T), pi) / 180)
+        return nothing
+    end
+    @eval @inline function rad2deg!(v::$T{T}, a::$T{T}, k::Int) where {T<:AbstractFloat}
+        @inbounds v[k] = a[k] * (180 / convert(T, pi))
+        return nothing
+    end
+    @eval @inline function rad2deg!(v::$T{S}, a::$T{T}, k::Int) where {S<:AbstractFloat, T<:Real}
+        @inbounds v[k] = a[k] * (180 / convert(float(T), pi))
+        return nothing
+    end
+end

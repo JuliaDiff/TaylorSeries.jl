@@ -13,7 +13,7 @@ end
 
     # Dictionaries with calls
     @test length(TaylorSeries._dict_binary_ops) == 5
-    @test length(TaylorSeries._dict_unary_ops) == 20
+    @test length(TaylorSeries._dict_unary_ops) == 22
 
     @test all([haskey(TaylorSeries._dict_binary_ops, op)
         for op in [:+, :-, :*, :/, :^]])
