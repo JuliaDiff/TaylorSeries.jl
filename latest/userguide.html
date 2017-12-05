@@ -12,7 +12,17 @@ julia&gt; shift_taylor(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial o
 shift_taylor (generic function with 1 method)
 
 julia&gt; t = shift_taylor(0.0) # Independent variable `t`
- 1.0 t + 𝒪(t⁶)</code></pre><p>Note that the information about the maximum order considered is displayed using a big-𝒪 notation.</p><p>The definition of <code>shift_taylor(a)</code> uses the method <a href="api.html#TaylorSeries.Taylor1-Tuple{Type{Float64},Int64}"><code>Taylor1([::Type{Float64}], [order::Int64=1])</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type and order (defaults are <code>Float64</code> and <code>order=1</code>). This is one of the easiest ways to work with the package.</p><p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with the <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1</code></a> type, including promotions that involve <code>Number</code>s. The operations return a valid Taylor expansion of maximum order. This is apparent in the last example below, where the answer is beyond the order of the expansion.</p><pre><code class="language-julia-repl">julia&gt; t*(3t+2.5)
+ 1.0 t + 𝒪(t⁶)</code></pre><p>Note that the information about the maximum order considered is displayed using a big-𝒪 notation. In some cases, it is desirable to not display the big-𝒪 notation. The function <a href="api.html#TaylorSeries.displayBigO"><code>displayBigO</code></a> allows to control whether it is displayed or not.</p><pre><code class="language-julia-repl">julia&gt; displayBigO(false) # turn-off displaying big O notation
+false
+
+julia&gt; t
+ 1.0 t
+
+julia&gt; displayBigO(true) # turn it on
+true
+
+julia&gt; t
+ 1.0 t + 𝒪(t⁶)</code></pre><p>The definition of <code>shift_taylor(a)</code> uses the method <a href="api.html#TaylorSeries.Taylor1-Tuple{Type{Float64},Int64}"><code>Taylor1([::Type{Float64}], [order::Int64=1])</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type and order (defaults are <code>Float64</code> and <code>order=1</code>). This is one of the easiest ways to work with the package.</p><p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with the <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1</code></a> type, including promotions that involve <code>Number</code>s. The operations return a valid Taylor expansion of maximum order. This is apparent in the last example below, where the answer is beyond the order of the expansion.</p><pre><code class="language-julia-repl">julia&gt; t*(3t+2.5)
  2.5 t + 3.0 t² + 𝒪(t⁶)
 
 julia&gt; 1/(1-t)
@@ -121,7 +131,7 @@ julia&gt; p(0.0)
 0.0
 
 julia&gt; p() == p(0.0) # p() is a shortcut to obtain the 0-th order coefficient of `p`
-true</code></pre><p>Note that the syntax <code>p(x)</code> is equivalent to <code>evaluate(p, x)</code>, whereas <code>p()</code> is equivalent to <code>evaluate(p)</code>. For more details about function-like behavior for a given type in Julia, see the <a href="https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1">Function-like objects</a> section of the Julia manual.</p><p>Useful shortcuts are <code>taylor_expand</code> are <code>update!</code>. The former returns the expansion of a function around a given value <code>t0</code>. In turn, <code>update!</code> provides an in-place update of a given Taylor polynomial, that is, it shifts it further by the provided amount.</p><pre><code class="language-julia-repl">julia&gt; p = taylor_expand( x -&gt; sin(x), pi/2, order=16) # 16-th order expansion of sin(t) around pi/2
+true</code></pre><p>Note that the syntax <code>p(x)</code> is equivalent to <code>evaluate(p, x)</code>, whereas <code>p()</code> is equivalent to <code>evaluate(p)</code>. For more details about function-like behavior for a given type in Julia, see the <a href="https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1">Function-like objects</a> section of the Julia manual.</p><p>Useful shortcuts are <a href="api.html#TaylorSeries.taylor_expand"><code>taylor_expand</code></a> are <a href="api.html#TaylorSeries.update!"><code>update!</code></a>. The former returns the expansion of a function around a given value <code>t0</code>. In turn, <code>update!</code> provides an in-place update of a given Taylor polynomial, that is, it shifts it further by the provided amount.</p><pre><code class="language-julia-repl">julia&gt; p = taylor_expand( x -&gt; sin(x), pi/2, order=16) # 16-th order expansion of sin(t) around pi/2
  1.0 + 6.123233995736766e-17 t - 0.5 t² - 1.020538999289461e-17 t³ + 0.041666666666666664 t⁴ + 5.102694996447305e-19 t⁵ - 0.001388888888888889 t⁶ - 1.2149273801065013e-20 t⁷ + 2.48015873015873e-5 t⁸ + 1.6873991390368074e-22 t⁹ - 2.7557319223985894e-7 t¹⁰ - 1.5339992173061888e-24 t¹¹ + 2.08767569878681e-9 t¹² + 9.833328316065313e-27 t¹³ - 1.1470745597729726e-11 t¹⁴ - 4.682537293364434e-29 t¹⁵ + 4.779477332387386e-14 t¹⁶ + 𝒪(t¹⁷)
 
 julia&gt; update!(p, 0.025) # updates the expansion given by p, by shifting it further by 0.025
