@@ -497,14 +497,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.order_posTb",
-    "page": "API",
-    "title": "TaylorSeries.order_posTb",
-    "category": "Function",
-    "text": "order_posTb(order, nv, ord)\n\nReturn a vector with the positions, in a HomogeneousPolynomial of order order, where the variable nv has order ord.\n\n\n\n"
-},
-
-{
     "location": "api.html#TaylorSeries.resize_coeffs1!",
     "page": "API",
     "title": "TaylorSeries.resize_coeffs1!",
@@ -521,14 +513,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.zero_korder",
-    "page": "API",
-    "title": "TaylorSeries.zero_korder",
-    "category": "Function",
-    "text": "zero_korder(a)\n\nFor a::Taylor1 returns zero(a[1]) while for a::TaylorN returns a zero of a k-th order HomogeneousPolynomial of proper type.\n\n\n\n"
-},
-
-{
     "location": "api.html#TaylorSeries.constant_term",
     "page": "API",
     "title": "TaylorSeries.constant_term",
@@ -541,7 +525,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "TaylorSeries.mul!",
     "category": "Function",
-    "text": "mul!(c, a, b, k::Int) --> nothing\n\nUpdate the k-th expansion coefficient c[k+1] of c = a * b, where all c, a, and b are either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nc_k = sum_j=0^k a_j b_k-j\n\n\n\n"
+    "text": "mul!(c, a, b, k::Int) --> nothing\n\nUpdate the k-th expansion coefficient c[k] of c = a * b, where all c, a, and b are either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nc_k = sum_j=0^k a_j b_k-j\n\n\n\n"
 },
 
 {
@@ -557,7 +541,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "TaylorSeries.div!",
     "category": "Function",
-    "text": "div!(c, a, b, k::Int, ordfact::Int=0)\n\nCompute the k-th expansion coefficient c[k+1] of c = a / b, where all c, a and b are either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nc_k =  frac1b_0 big(a_k - sum_j=0^k-1 c_j b_k-jbig)\n\nFor Taylor1 polynomials, ordfact is the order of the factorized term of the denominator.\n\n\n\n"
+    "text": "div!(c, a, b, k::Int, ordfact::Int=0)\n\nCompute the k-th expansion coefficient c[k] of c = a / b, where all c, a and b are either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nc_k =  frac1b_0 big(a_k - sum_j=0^k-1 c_j b_k-jbig)\n\nFor Taylor1 polynomials, ordfact is the order of the factorized term of the denominator.\n\n\n\n"
 },
 
 {
@@ -693,7 +677,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "Internals",
     "category": "section",
-    "text": "generate_tables\ngenerate_index_vectors\nin_base\nmake_inverse_dict\norder_posTb\nresize_coeffs1!\nresize_coeffsHP!\nzero_korder\nconstant_term\nmul!\nmul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)\ndiv!\npow!\nsquare\nsqr!\nsqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)\nsqrt!\nexp!\nlog!\nsincos!\ntan!\nasin!\nacos!\natan!\nsinhcosh!\ntanh!\nA_mul_B!\nderivative!"
+    "text": "generate_tables\ngenerate_index_vectors\nin_base\nmake_inverse_dict\nresize_coeffs1!\nresize_coeffsHP!\nconstant_term\nmul!\nmul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)\ndiv!\npow!\nsquare\nsqr!\nsqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)\nsqrt!\nexp!\nlog!\nsincos!\ntan!\nasin!\nacos!\natan!\nsinhcosh!\ntanh!\nA_mul_B!\nderivative!"
 },
 
 {
