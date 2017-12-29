@@ -279,6 +279,10 @@ end
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
     @test v == ones(2)
+    @test evaluate([xT yT; 2xT 2yT], ones(2)) == [1.0 1.0; 2.0 2.0]
+    @test [xT 2xT 3xT; yT 2yT 3yT]([1,2]) == [1.0  2.0  3.0; 2.0  4.0  6.0]
+    t = Taylor1(10)
+    @test [xT 2xT 3xT; yT 2yT 3yT]([t,t^2]) == [t 2t 3t; t^2 2t^2 3t^2]
 
     @test evaluate(sin(asin(xT+yT)), [1.0,0.5]) == 1.5
     @test evaluate(asin(sin(xT+yT)), [1.0,0.5]) == 1.5
