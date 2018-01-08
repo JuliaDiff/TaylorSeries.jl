@@ -230,10 +230,13 @@ end
     taylor_x = exp(Taylor1(Float64,13))
     @which evaluate(taylor_x, taylor_a)
     @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
-    @test evaluate([t 2t 3t; 4t 5t 6t ],1.0) == [1.0  2.0  3.0; 4.0  5.0  6.0]
-    @test evaluate([t 2t 3t; 4t 5t 6t ],1.0) == [t 2t 3t; 4t 5t 6t ](1.0)
-    @test evaluate([t 2t 3t; 4t 5t 6t ]) == [t 2t 3t; 4t 5t 6t ]()
-    @test [t 2t; 3t 4t](tsquare) == [tsquare 2tsquare; 3tsquare 4tsquare]
+    A_T1 = [t 2t 3t; 4t 5t 6t ]
+    @test evaluate(A_T1,1.0) == [1.0  2.0  3.0; 4.0  5.0  6.0]
+    @test evaluate(A_T1,1.0) == A_T1(1.0)
+    @test evaluate(A_T1) == A_T1()
+    @test A_T1(tsquare) == [tsquare 2tsquare 3tsquare; 4tsquare 5tsquare 6tsquare]
+    @test view(A_T1, :, :)(1.0) == A_T1(1.0)
+    @test view(A_T1, :, 1)(1.0) == A_T1[:,1](1.0)
 
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare
