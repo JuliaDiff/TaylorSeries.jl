@@ -344,22 +344,6 @@ function evaluate(x::Array{TaylorN{T},1}, δx::Array{T,1}) where {T<:Number}
     return x0
 end
 
-function evaluate(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1}) where
-        {T<:NumberNotSeriesN}
-
-    x0 = Array{Taylor1{T}}( length(x) )
-    evaluate!( x, δx, x0 )
-    return x0
-end
-
-function evaluate(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1}) where
-        {T<:NumberNotSeriesN}
-
-    x0 = Array{TaylorN{T}}( length(x) )
-    evaluate!( x, δx, x0 )
-    return x0
-end
-
 evaluate(x::Array{TaylorN{T},1}) where {T<:Number} = evaluate.(x)
 evaluate(x::SubArray{TaylorN{T},1}) where {T<:Number} = evaluate.(x)
 
