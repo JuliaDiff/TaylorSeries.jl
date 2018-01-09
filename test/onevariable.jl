@@ -456,7 +456,7 @@ end
         A_mul_B!(Y,A,B)
 
         # do we get the same result when using the `A*B` form?
-        @test A*B==Y
+        @test A*B≈Y
         # Y should be extended after the multilpication
         @test reduce(&, [y1.order for y1 in Y] .== Y[1].order)
         # B should be unchanged
