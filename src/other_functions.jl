@@ -159,6 +159,8 @@ which returns a non-negative number.
 norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
 norm(x::Union{Taylor1{T},HomogeneousPolynomial{T}}, p::Real=2) where
     {T<:NumberNotSeries} = norm(x.coeffs, p)
+#norm for Taylor vectors
+norm(v::Vector{T}, p::Real=2) where T<:AbstractSeries = norm( norm.(v, p), p)
 
 # rtoldefault
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
@@ -190,7 +192,13 @@ function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0.0,
         norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) ||
         (nans && isnan(x) && isnan(y))
 end
+#isapprox for vectors of Taylors
+function isapprox(x::Vector{T}, y::Vector{S}; rtol::Real=rtoldefault(T,S), atol::Real=0.0,
+        nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
 
+    x == y || norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1)) ||
+        (nans && isnan(x) && isnan(y))
+end
 
 #taylor_expand function for Taylor1
 doc"""
@@ -267,7 +275,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval deg2rad(z::$T{T}) where {T<:AbstractFloat} = z * (convert(T, pi) / 180)
     @eval deg2rad(z::$T{T}) where {T<:Real} = z * (convert(float(T), pi) / 180)
-    
+
     @eval rad2deg(z::$T{T}) where {T<:AbstractFloat} = z * (180 / convert(T, pi))
     @eval rad2deg(z::$T{T}) where {T<:Real} = z * (180 / convert(float(T), pi))
 end

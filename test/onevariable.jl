@@ -230,6 +230,13 @@ end
     taylor_x = exp(Taylor1(Float64,13))
     @which evaluate(taylor_x, taylor_a)
     @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
+    A_T1 = [t 2t 3t; 4t 5t 6t ]
+    @test evaluate(A_T1,1.0) == [1.0  2.0  3.0; 4.0  5.0  6.0]
+    @test evaluate(A_T1,1.0) == A_T1(1.0)
+    @test evaluate(A_T1) == A_T1()
+    @test A_T1(tsquare) == [tsquare 2tsquare 3tsquare; 4tsquare 5tsquare 6tsquare]
+    @test view(A_T1, :, :)(1.0) == A_T1(1.0)
+    @test view(A_T1, :, 1)(1.0) == A_T1[:,1](1.0)
 
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare
@@ -449,7 +456,7 @@ end
         A_mul_B!(Y,A,B)
 
         # do we get the same result when using the `A*B` form?
-        @test A*B==Y
+        @test A*B≈Y
         # Y should be extended after the multilpication
         @test reduce(&, [y1.order for y1 in Y] .== Y[1].order)
         # B should be unchanged
