@@ -414,7 +414,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     ordfact, cdivfact = divfactorization(a, b)
 
     c = Taylor1(cdivfact, a.order)
-    for ord = 1:a.order-ordfact
+    for ord = 1:a.order
         div!(c, a, b, ord, ordfact) # updates c[ord]
     end
 

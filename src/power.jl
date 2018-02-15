@@ -88,7 +88,7 @@ function ^(a::Taylor1, r::S) where {S<:Real}
     k0 = lnull+l0nz
     c = Taylor1( zero(aux), a.order)
     @inbounds c[lnull] = aux
-    for k = k0+1:a.order
+    for k = k0+1:a.order+l0nz
         pow!(c, a, r, k, l0nz)
     end
 
@@ -322,7 +322,7 @@ function sqrt(a::Taylor1)
 
     c = Taylor1( zero(T), a.order )
     @inbounds c[lnull] = aux
-    for k = lnull+1:a.order-l0nz
+    for k = lnull+1:a.order
         sqrt!(c, a, k, lnull)
     end
 
