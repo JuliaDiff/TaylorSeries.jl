@@ -378,9 +378,14 @@ coefficient, which must be even.
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
     @inbounds for i = k0+1:k0+kend
+        (k+k0-i > a.order) || (i > a.order) && continue
         c[k] += c[i] * c[k+k0-i]
     end
-    @inbounds aux = a[k+k0] - 2*c[k]
+    if k+k0 ≤ a.order
+        @inbounds aux = a[k+k0] - 2*c[k]
+    else
+        @inbounds aux = - 2*c[k]
+    end
     if kodd == 0
         @inbounds aux = aux - (c[kend+k0+1])^2
     end
