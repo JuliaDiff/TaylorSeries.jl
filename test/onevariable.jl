@@ -144,6 +144,13 @@ end
     @test Taylor1(BigFloat,5)/(6*Taylor1(3)) == 1/BigInt(6)
     @test Taylor1(BigFloat,5)/(6im*Taylor1(3)) == -1im/BigInt(6)
 
+    # These tests involve some sort of factorization
+    @test t/(t+t^2) == 1/(1+t)
+    @test sqrt(t^2+t^3) == t*sqrt(1+t)
+    @test (t^3+t^4)^(1/3) ≈ t*(1+t)^(1/3)
+    @test norm((t^3+t^4)^(1/3) - t*(1+t)^(1/3), Inf) < eps()
+    @test ((t^3+t^4)^(1/3))[15] ≈ -8617640/1162261467
+
     trational = ta(0//1)
     @inferred ta(0//1) == Taylor1{Rational{Int}}
     @test eltype(trational) == Rational{Int}

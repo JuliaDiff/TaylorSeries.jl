@@ -149,6 +149,7 @@ coefficient of `a`.
     end
 
     for i = 0:k-l0-1
+        k-i > a.order && continue
         aux = r*(k-i) - i
         @inbounds c[k-l0] += aux * a[k-i] * c[i]
     end
