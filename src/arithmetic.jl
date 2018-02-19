@@ -414,7 +414,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     ordfact, cdivfact = divfactorization(a, b)
 
     c = Taylor1(cdivfact, a.order)
-    for ord = 1:a.order-ordfact
+    for ord = 1:a.order
         div!(c, a, b, ord, ordfact) # updates c[ord]
     end
 
@@ -486,9 +486,14 @@ term of the denominator.
     end
 
     @inbounds for i = 0:k-1
+        k+ordfact-i > b.order && continue
         c[k] += c[i] * b[k+ordfact-i]
     end
-    @inbounds c[k] = (a[k+ordfact]-c[k]) / b[ordfact]
+    if k+ordfact ≤ b.order
+        @inbounds c[k] = (a[k+ordfact]-c[k]) / b[ordfact]
+    else
+        @inbounds c[k] = - c[k] / b[ordfact]
+    end
     return nothing
 end
 

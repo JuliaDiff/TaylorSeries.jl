@@ -88,7 +88,7 @@ function ^(a::Taylor1, r::S) where {S<:Real}
     k0 = lnull+l0nz
     c = Taylor1( zero(aux), a.order)
     @inbounds c[lnull] = aux
-    for k = k0+1:a.order
+    for k = k0+1:a.order+l0nz
         pow!(c, a, r, k, l0nz)
     end
 
@@ -149,6 +149,7 @@ coefficient of `a`.
     end
 
     for i = 0:k-l0-1
+        k-i > a.order && continue
         aux = r*(k-i) - i
         @inbounds c[k-l0] += aux * a[k-i] * c[i]
     end
@@ -322,7 +323,7 @@ function sqrt(a::Taylor1)
 
     c = Taylor1( zero(T), a.order )
     @inbounds c[lnull] = aux
-    for k = lnull+1:a.order-l0nz
+    for k = lnull+1:a.order
         sqrt!(c, a, k, lnull)
     end
 
@@ -377,9 +378,14 @@ coefficient, which must be even.
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
     @inbounds for i = k0+1:k0+kend
+        (k+k0-i > a.order) || (i > a.order) && continue
         c[k] += c[i] * c[k+k0-i]
     end
-    @inbounds aux = a[k+k0] - 2*c[k]
+    if k+k0 ≤ a.order
+        @inbounds aux = a[k+k0] - 2*c[k]
+    else
+        @inbounds aux = - 2*c[k]
+    end
     if kodd == 0
         @inbounds aux = aux - (c[kend+k0+1])^2
     end
