@@ -298,9 +298,9 @@ function integrate(a::HomogeneousPolynomial, r::Int)
     a.order == order_max && return HomogeneousPolynomial(zero(T), 0)
 
     @inbounds posTb = pos_table[a.order+2]
-    @inbounds num_coeffs = size_table[a.order+2]
-    coeffs = zeros(T, size_table[num_coeffs])
     @inbounds num_coeffs = size_table[a.order+1]
+
+    coeffs = zeros(T, size_table[a.order+2])
 
     @inbounds for i = 1:num_coeffs
         iind = coeff_table[a.order+1][i]
