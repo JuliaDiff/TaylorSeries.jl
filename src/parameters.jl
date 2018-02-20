@@ -37,10 +37,10 @@ get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
 
-set_variable_names(names::Vector{T}) where {T<:AbstractString} =
-    _params_TaylorN_.variable_names = names
-    _params_TaylorN_.variable_symbols = Symbol.(names)
-
+function set_variable_names(varnames::Vector{T}) where {T<:AbstractString}
+    _params_TaylorN_.variable_names = varnames
+    _params_TaylorN_.variable_symbols = Symbol.(varnames)
+end
 """
     get_variables(;order=get_order())
 
