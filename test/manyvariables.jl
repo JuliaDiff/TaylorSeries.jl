@@ -159,6 +159,9 @@ end
     @test integrate(xT^17, 1, 2.0) == 2.0
     @test_throws AssertionError integrate(xT, 1, xT)
 
+
+
+
     @test derivative(2xT*yT^2,1) == 2yT^2
     @test xT*xT^3 == xT^4
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
@@ -544,4 +547,17 @@ end
     @test yT[0] == xT[0]*(pi/180)
     TaylorSeries.rad2deg!(yT, xT, 0)
     @test yT[0] == xT[0]*(180/pi)
+end
+
+@testset "Integrate for several variables" begin
+
+    t, x, y = set_variables("t x y")
+
+    @test integrate(t, 1) == 0.5*t^2
+    @test integrate(t, 2) == t * x
+    @test integrate(t, 3) == t * y
+    @test integrate(x, 1) == t * x
+    @test integrate(x, 2) == 0.5*x^2
+    @test integrate(y, 2) == x * y
+
 end
