@@ -140,6 +140,7 @@ end
     @test (rem(1+xT,1.0))[0] == 0
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
+    @test derivative(yH,1) == derivative(xH,:x₂)
     @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3,:x₂)
     @test derivative(yT) == zeroT
     @test -xT/3im == im*xT/3
@@ -156,6 +157,7 @@ end
     vr = rand(2)
     @test hp(vr) == evaluate(hp, vr)
 
+    @test integrate(yH,1) == integrate(xH,:x₂)
     p = (xT-yT)^6
     @test integrate(derivative(p, 1), 1, yT^6) == p
     @test integrate(derivative(p, :x₁), :x₁, yT^6) == p
