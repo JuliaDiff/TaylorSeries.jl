@@ -4,8 +4,10 @@
 using TaylorSeries
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
+    eeuler = Base.e
 else
     using Test
+    eeuler = Base.MathConstants.e
 end
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
@@ -285,12 +287,14 @@ end
     exy = exp( xT+yT )
     @test evaluate(exy) == 1
     @test evaluate(exy,[0.1im,0.01im]) == exp(0.11im)
-    @test isapprox(evaluate(exy, [1,1]), e^2)
+    @test isapprox(evaluate(exy, [1,1]), eeuler^2)
+    @test exy(:x₁, 1) ≈ exp(1+yT)
     txy = tan(xT+yT)
     @test getcoeff(txy,[8,7]) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @test getindex(tan(TaylorN(1)+TaylorN(2)),0:4) == ptxy.coeffs[1:5]
     @test evaluate(xH*yH,[1.0,2.0]) == 2.0
+    @test ptxy(:x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
     @test v == ones(2)
@@ -506,7 +510,7 @@ end
     #test function-like behavior for TaylorN
     @test exy() == 1
     @test exy([0.1im,0.01im]) == exp(0.11im)
-    @test isapprox(exy([1,1]), e^2)
+    @test isapprox(exy([1,1]), eeuler^2)
     @test sin(asin(xT+yT))([1.0,0.5]) == 1.5
     @test asin(sin(xT+yT))([1.0,0.5]) == 1.5
     @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(rand(2)) == 1
