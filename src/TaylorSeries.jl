@@ -37,6 +37,7 @@ export getcoeff, derivative, integrate,
     show_params_TaylorN, show_monomials, displayBigO,
     get_order, get_numvars,
     set_variables, get_variables,
+    get_variable_names, get_variable_symbols,
     ∇, jacobian, jacobian!, hessian, hessian!,
     taylor_expand, update!, constant_term
 
