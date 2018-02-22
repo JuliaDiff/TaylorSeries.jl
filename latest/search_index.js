@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "TaylorSeries.ParamsTaylorN",
     "category": "Type",
-    "text": "ParamsTaylorN\n\nDataType holding the current parameters for TaylorN and HomogeneousPolynomial.\n\nFields:\n\norder          :: Int  Order (degree) of the polynomials\nnum_vars       :: Int  Number of variables\nvariable_names :: Array{String,1} Name of the variables\n\nThese parameters can be changed using set_params_TaylorN(order, numVars).\n\n\n\n"
+    "text": "ParamsTaylorN\n\nDataType holding the current parameters for TaylorN and HomogeneousPolynomial.\n\nFields:\n\norder            :: Int  Order (degree) of the polynomials\nnum_vars         :: Int  Number of variables\nvariable_names   :: Vector{String} Names of the variables\nvariable_symbols :: Vector{Symbol}  Symbols of the variables\n\nThese parameters can be changed using set_params_TaylorN(order, numVars).\n\n\n\n"
 },
 
 {
