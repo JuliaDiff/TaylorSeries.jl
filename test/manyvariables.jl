@@ -138,7 +138,7 @@ end
     @test (rem(1+xT,1.0))[0] == 0
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
-    @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3,2)
+    @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3,:x₂)
     @test derivative(yT) == zeroT
     @test -xT/3im == im*xT/3
     @test (xH/3im)' == im*xH/3
@@ -156,15 +156,20 @@ end
 
     p = (xT-yT)^6
     @test integrate(derivative(p, 1), 1, yT^6) == p
+    @test integrate(derivative(p, :x₁), :x₁, yT^6) == p
     @test derivative(integrate(p, 2), 2) == p
+    @test derivative(integrate(p, :x₂), :x₂) == p
     @test derivative(TaylorN(1.0)) == 0.0
     @test integrate(TaylorN(6.0), 1) == 6xT
     @test integrate(TaylorN(0.0), 2) == 0.0
     @test integrate(TaylorN(0.0), 2, xT) == xT
+    @test integrate(TaylorN(0.0), :x₂, xT) == xT
     @test integrate(xT^17, 2) == 0.0
     @test integrate(xT^17, 1, yT) == yT
     @test integrate(xT^17, 1, 2.0) == 2.0
+    @test integrate(xT^17, :x₁, 2.0) == 2.0
     @test_throws AssertionError integrate(xT, 1, xT)
+    @test_throws AssertionError integrate(xT, :x₁, xT)
 
 
 
