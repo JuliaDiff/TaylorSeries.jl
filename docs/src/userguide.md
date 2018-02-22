@@ -218,10 +218,11 @@ x.coeffs
 
 As shown, the resulting objects are of `TaylorN{Float64}` type.
 There is an optional `order` keyword argument in [`set_variables`](@ref),
-used to specify the maximum order of the `TaylorN` polynomials.
+used to specify the maximum order of the `TaylorN` polynomials. Note that
+one can specify the variables using a vector of symbols.
 
 ```@repl userguide
-set_variables("x y", order=10)
+set_variables([:x, :y], order=10)
 ```
 
 Similarly, numbered variables are also available by specifying a single
@@ -233,7 +234,8 @@ set_variables("α", numvars=3)
 
 Alternatively to `set_variables`, [`get_variables`](@ref) can be used if one
 doesn't want to change internal dictionaries. `get_variables` returns a vector
-of independent variables  of a desired `order` (lesser than `get_order` so
+of `TaylorN` independent variables of a desired `order`
+(lesser than `get_order` so the
 internals doesn't have to change) with the length and variable names defined
 by `set_variables` initially.
 
@@ -274,7 +276,7 @@ using [`HomogeneousPolynomial`](@ref)
 objects directly, which is uncomfortable.
 
 ```@repl userguide
-set_variables("x", numvars=2);
+set_variables(:x, numvars=2); # symbols can be used
 HomogeneousPolynomial([1,-1])
 TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
 ```
@@ -326,13 +328,13 @@ exy[8][6] # get the 6th coeff of the 8th order term
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,
 through the function [`derivative`](@ref), specifying the number
-of the variable as the second argument.
+of the variable, or its symbol, as the second argument.
 
 ```@repl userguide
 p = x^3 + 2x^2 * y - 7x + 2
 q = y - x^4
 derivative( p, 1 )   # partial derivative with respect to 1st variable
-derivative( q, 2 )
+derivative( q, :y )  # partial derivative with respect to :y
 ```
 
 If we ask for the partial derivative with respect to a non-defined variable,
@@ -342,37 +344,40 @@ an error is thrown.
 derivative( q, 3 )   # error, since we are dealing with 2 variables
 ```
 
-Integration with respect to the r-th variable for
+Integration with respect to the `r`-th variable for
 `HomogeneousPolynomial`s and `TaylorN` objects is obtained
 using [`integrate`](@ref). Note that `integrate` for `TaylorN`
 objects allows to specify a constant of integration, which must
-be independent from the integrated variable.
+be independent from the integrated variable. Again, the integration
+variable may be specified by its symbol.
 
 ```@repl userguide
 integrate( derivative( p, 1 ), 1) # integrate with respect to the first variable
-integrate( derivative( p, 1 ), 1, 2) # integration constant is 2
-integrate( derivative( q, 2 ), 2, -x^4) == q
+integrate( derivative( p, 1 ), :x, 2) # integration with respect to :x, constant of integration is 2
+integrate( derivative( q, 2 ), :y, -x^4) == q
 integrate( derivative( q, 2 ), 2, y)
 ```
 
 [`evaluate`](@ref) can also be used for [`TaylorN`](@ref) objects, using
 it on vectors of
 numbers (`Real` or `Complex`); the length of the vector must coincide with the
-number of independent variables.
+number of independent variables. [`evaluate`](@ref) also allows to specify only
+one variable and a value.
 
 ```@repl userguide
-evaluate(exy, [.1,.02]) == e^0.12
+evaluate(exy, [.1,.02]) == exp(0.12)
+evaluate(exy, :x, 0.0) == exp(y)  # evaluate `exy` for :x -> 0
 ```
 
-Analogously to `Taylor1`, another way to obtain the value of a `TaylorN` polynomial `p` at a given point `x`, is to call `p` as if it were a function:
-
-```@repl userguide
-exy([.1,.02])
-exy([.1,.02]) == e^0.12
-```
-
-Again, the syntax `p(x)` for `p::TaylorN` is equivalent to `evaluate(p,x)`, and
+Analogously to `Taylor1`, another way to obtain the value of a `TaylorN`
+polynomial `p` at a given point `x`, is to call it as if it were a function:
+the syntax `p(x)` for `p::TaylorN` is equivalent to `evaluate(p,x)`, and
 `p()` is equivalent to `evaluate(p)`.
+
+```@repl userguide
+exy([.1,.02]) == exp(0.12)
+exy(:x, 0.0)
+```
 
 The functions `taylor_expand` and `update!` work as well for `TaylorN`.
 
