@@ -17,6 +17,10 @@ end
     @test eltype(set_variables("x", numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(set_variables(BigInt, "x y", order=6)) == TaylorN{BigInt}
     @test eltype(set_variables("x y", order=6)) == TaylorN{Float64}
+    @test eltype(set_variables(Int, :x, numvars=2, order=6)) == TaylorN{Int}
+    @test eltype(set_variables(:x, numvars=2, order=6)) == TaylorN{Float64}
+    @test eltype(set_variables(BigInt, [:x,:y], order=6)) == TaylorN{BigInt}
+    @test eltype(set_variables([:x,:y], order=6)) == TaylorN{Float64}
     @test typeof(show_params_TaylorN()) == Void
     @test typeof(show_monomials(2)) == Void
 
@@ -34,7 +38,10 @@ end
 
     x, y = set_variables("x y", order=6)
     @test x.order == 6
-    @test TaylorSeries.set_variable_names(["x","y"]) == ["x", "y"]
+    @test TaylorSeries.set_variable_names(["x","y"]) == nothing
+    @test TaylorSeries._params_TaylorN_.variable_names == ["x","y"]
+    @test TaylorSeries._params_TaylorN_.variable_symbols == [:x, :y]
+    @test get_variable_symbols() == [:x, :y]
     @test TaylorSeries.get_variable_names() == ["x", "y"]
     @test x == HomogeneousPolynomial(Float64, 1)
     @test x == HomogeneousPolynomial(1)

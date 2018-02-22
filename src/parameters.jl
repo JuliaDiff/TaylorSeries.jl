@@ -40,6 +40,7 @@ get_variable_symbols() = _params_TaylorN_.variable_symbols
 function set_variable_names(varnames::Vector{T}) where {T<:AbstractString}
     _params_TaylorN_.variable_names = varnames
     _params_TaylorN_.variable_symbols = Symbol.(varnames)
+    nothing
 end
 """
     get_variables(;order=get_order())
@@ -114,9 +115,13 @@ function set_variables(R::Type, names::Vector{T}; order=get_order()) where
     # return a list of the new variables
     TaylorN{R}[TaylorN(R,i) for i in 1:get_numvars()]
 end
+set_variables(R::Type, symbs::Vector{T}; order=get_order()) where
+    {T<:Symbol} = set_variables(R, string.(symbs), order=order)
 
-set_variables(names::Vector{T}; order=get_order()) where {T} =
+set_variables(names::Vector{T}; order=get_order()) where {T<:AbstractString} =
     set_variables(Float64, names, order=order)
+set_variables(symbs::Vector{T}; order=get_order()) where {T<:Symbol} =
+    set_variables(Float64, symbs, order=order)
 
 function set_variables(R::Type, names::T; order=get_order(), numvars=-1) where
         {T<:AbstractString}
@@ -130,9 +135,13 @@ function set_variables(R::Type, names::T; order=get_order(), numvars=-1) where
 
     set_variables(R, variable_names, order=order)
 end
+set_variables(R::Type, symbs::Symbol; order=get_order(), numvars=-1) =
+    set_variables(R, string(symbs), order=order, numvars=numvars)
 
 set_variables(names::T; order=get_order(), numvars=-1) where {T<:AbstractString} =
     set_variables(Float64, names, order=order, numvars=numvars)
+set_variables(symbs::Symbol; order=get_order(), numvars=-1) =
+    set_variables(Float64, string(symbs), order=order, numvars=numvars)
 
 
 """
