@@ -329,6 +329,15 @@ function evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
     return suma
 end
 
+function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
+        {T<:Number, S<:NumberNotSeriesN}
+    vars = get_variables()
+    ind = lookupvar(s)
+    vars[ind] = val
+    evaluate(a, vars)
+end
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:Number, S<:NumberNotSeriesN} =
+    evaluate(p, first(x), last(x))
 
 evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
 
@@ -370,6 +379,8 @@ evaluate(A::SubArray{TaylorN{T},2}) where {T<:Number} = evaluate.(A)
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)
 (p::TaylorN)() = evaluate(p)
+(p::TaylorN)(s::Symbol, x) = evaluate(p, s, x)
+(p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
 
 #function-like behavior for Vector{TaylorN}
 (p::Array{TaylorN{T},1})(x) where {T<:Number} = evaluate(p, x)
