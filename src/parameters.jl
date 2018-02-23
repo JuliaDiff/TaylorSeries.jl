@@ -31,11 +31,12 @@ ParamsTaylorN(order, num_vars, variable_names) = ParamsTaylorN(order, num_vars, 
 const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
 
 
-## Utilities to get the maximum order and number of variables
+## Utilities to get the maximum order, number of variables, their names and symbols
 get_order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
+lookupvar(s::Symbol) = findfirst(_params_TaylorN_.variable_symbols, s)
 
 function set_variable_names(varnames::Vector{T}) where {T<:AbstractString}
     _params_TaylorN_.variable_names = varnames

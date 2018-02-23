@@ -131,8 +131,7 @@ function derivative(a::HomogeneousPolynomial, r::Int)
 
     return HomogeneousPolynomial{T}(coeffs, a.order-1)
 end
-derivative(a::HomogeneousPolynomial, s::Symbol) =
-    derivative(a, findfirst(get_variable_symbols(), s))
+derivative(a::HomogeneousPolynomial, s::Symbol) = derivative(a, lookupvar(s))
 
 """
     derivative(a, [r=1])
@@ -149,8 +148,7 @@ function derivative(a::TaylorN, r=1::Int)
     end
     return TaylorN{T}( coeffs, a.order )
 end
-derivative(a::TaylorN, s::Symbol) =
-    derivative(a, findfirst(get_variable_symbols(), s))
+derivative(a::TaylorN, s::Symbol) = derivative(a, lookupvar(s))
 
 ## Gradient, jacobian and hessian
 """
@@ -318,8 +316,7 @@ function integrate(a::HomogeneousPolynomial, r::Int)
 
     return HomogeneousPolynomial{T}(coeffs, a.order+1)
 end
-integrate(a::HomogeneousPolynomial, s::Symbol) =
-    integrate(a, findfirst(get_variable_symbols(), s))
+integrate(a::HomogeneousPolynomial, s::Symbol) = integrate(a, lookupvar(s))
 
 
 """
@@ -352,9 +349,6 @@ end
 integrate(a::TaylorN, r::Int, x0::NumberNotSeries) =
     integrate(a,r,TaylorN(HomogeneousPolynomial([convert(eltype(a),x0)], 0)))
 
-integrate(a::TaylorN, s::Symbol) =
-    integrate(a, findfirst(get_variable_symbols(), s))
-integrate(a::TaylorN, s::Symbol, x0::TaylorN) =
-    integrate(a, findfirst(get_variable_symbols(), s), x0)
-integrate(a::TaylorN, s::Symbol, x0::NumberNotSeries) =
-    integrate(a, findfirst(get_variable_symbols(), s), x0)
+integrate(a::TaylorN, s::Symbol) = integrate(a, lookupvar(s))
+integrate(a::TaylorN, s::Symbol, x0::TaylorN) = integrate(a, lookupvar(s), x0)
+integrate(a::TaylorN, s::Symbol, x0::NumberNotSeries) = integrate(a, lookupvar(s), x0)

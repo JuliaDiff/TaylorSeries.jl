@@ -44,6 +44,8 @@ end
     @test TaylorSeries._params_TaylorN_.variable_names == ["x","y"]
     @test TaylorSeries._params_TaylorN_.variable_symbols == [:x, :y]
     @test get_variable_symbols() == [:x, :y]
+    @test TaylorSeries.lookupvar(:x) == 1
+    @test TaylorSeries.lookupvar(:α) == 0
     @test TaylorSeries.get_variable_names() == ["x", "y"]
     @test x == HomogeneousPolynomial(Float64, 1)
     @test x == HomogeneousPolynomial(1)
@@ -140,8 +142,8 @@ end
     @test (rem(1+xT,1.0))[0] == 0
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
-    @test derivative(yH,1) == derivative(xH,:x₂)
-    @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3,:x₂)
+    @test derivative(yH,1) == derivative(xH, :x₂)
+    @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3, :x₂)
     @test derivative(yT) == zeroT
     @test -xT/3im == im*xT/3
     @test (xH/3im)' == im*xH/3
@@ -157,7 +159,7 @@ end
     vr = rand(2)
     @test hp(vr) == evaluate(hp, vr)
 
-    @test integrate(yH,1) == integrate(xH,:x₂)
+    @test integrate(yH,1) == integrate(xH, :x₂)
     p = (xT-yT)^6
     @test integrate(derivative(p, 1), 1, yT^6) == p
     @test integrate(derivative(p, :x₁), :x₁, yT^6) == p
@@ -290,13 +292,14 @@ end
     @test evaluate(exy) == 1
     @test evaluate(exy,[0.1im,0.01im]) == exp(0.11im)
     @test isapprox(evaluate(exy, [1,1]), eeuler^2)
-    @test exy(:x₁, 1) ≈ exp(1+yT)
+    @test exy(:x₁, 0.0) == exp(yT)
     txy = tan(xT+yT)
     @test getcoeff(txy,[8,7]) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @test getindex(tan(TaylorN(1)+TaylorN(2)),0:4) == ptxy.coeffs[1:5]
-    @test evaluate(xH*yH,[1.0,2.0]) == 2.0
+    @test evaluate(xH*yH, [1.0,2.0]) == 2.0
     @test ptxy(:x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
+    @test ptxy(:x₁ => -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
     @test v == ones(2)
