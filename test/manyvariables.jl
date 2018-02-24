@@ -9,6 +9,7 @@ if VERSION < v"0.7.0-DEV.2004"
     eeuler = Base.e
 else
     using Test
+    using LinearAlgebra
     eeuler = Base.MathConstants.e
 end
 
@@ -130,7 +131,7 @@ end
     @test TaylorN(uT) == convert(TaylorN{Complex},1)
     @test get_numvars() == 2
     @test length(uT) == get_order()+1
-    @test eltype(convert(TaylorN{Complex128},1)) == Complex128
+    @test eltype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])

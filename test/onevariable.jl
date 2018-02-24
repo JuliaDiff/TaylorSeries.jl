@@ -9,6 +9,7 @@ if VERSION < v"0.7.0-DEV.2004"
     eeuler = Base.e
 else
     using Test
+    using LinearAlgebra
     eeuler = Base.MathConstants.e
 end
 
@@ -76,12 +77,12 @@ end
     @test y[:] == rv
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
-    @test getcoeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
-    @test Taylor1(Complex128,3)[1] == complex(1.0,0.0)
+    @test getcoeff(Taylor1(Complex{Float64},3),1) == complex(1.0,0.0)
+    @test Taylor1(Complex{Float64},3)[1] == complex(1.0,0.0)
     @test getindex(Taylor1(3),1) == 1.0
-    @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
-    @test eltype(convert(Taylor1{Complex128},ot)) == Complex128
-    @test eltype(convert(Taylor1{Complex128},1)) == Complex128
+    @inferred convert(Taylor1{Complex{Float64}},ot) == Taylor1{Complex{Float64}}
+    @test eltype(convert(Taylor1{Complex{Float64}},ot)) == Complex{Float64}
+    @test eltype(convert(Taylor1{Complex{Float64}},1)) == Complex{Float64}
     @test eltype(convert(Taylor1, 1im)) == Complex{Int}
     @test convert(Taylor1, 1im) == Taylor1(1im, 0)
     @test convert(Taylor1{Int},[0,2]) == 2*t

@@ -48,7 +48,7 @@ end
     @test 3*xHt == HomogeneousPolynomial([3*one(t), zero(t)])
     @test t*xHt == HomogeneousPolynomial([t, zero(t)])
     @test complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)])
-    @test eltype(complex(0,1)*xHt) == Taylor1{Complex128}
+    @test eltype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
 
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
     @test tN1[0] == HomogeneousPolynomial([t])
