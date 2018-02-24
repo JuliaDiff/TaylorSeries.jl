@@ -228,7 +228,7 @@ end
         @test TaylorSeries.real(Taylor1{TaylorN{Complex{T}}}) == Taylor1{TaylorN{T}}
     end
 
-    rndT1(ord1) = Taylor1(-1+2rand(ord1+1)) # generates a random Taylor1 with order `ord`
+    rndT1(ord1) = Taylor1(-1 .+ 2rand(ord1+1)) # generates a random Taylor1 with order `ord`
     nmonod(s, d) = binomial(d+s-1, d) #number of monomials in s variables with exact degree d
     #rndHP generates a random `ordHP`-th order homog. pol. of Taylor1s, each with order `ord1`
     rndHP(ordHP, ord1) = HomogeneousPolynomial( [rndT1(ord1) for i in 1:nmonod(get_numvars(), ordHP)] )

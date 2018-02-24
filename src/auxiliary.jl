@@ -209,7 +209,7 @@ end
 # Finds the first non zero entry; extended to Taylor1
 function Base.findfirst(a::Taylor1{T}) where {T<:Number}
     first = findfirst(a.coeffs)
-    isa(first, Nothing) && return -1
+    @compat isa(first, Nothing) && return -1
     return first-1
 end
 

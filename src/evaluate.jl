@@ -348,7 +348,7 @@ function evaluate(x::Union{Array{TaylorN{T},1},SubArray{TaylorN{T},1}}, δx::Vec
 end
 
 function evaluate(x::Array{TaylorN{T},1}, δx::Array{T,1}) where {T<:Number}
-    x0 = Array{T}( length(x) )
+    @compat x0 = Array{T}(uninitialized, length(x) )
     evaluate!( x, δx, x0 )
     return x0
 end
