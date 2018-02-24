@@ -25,8 +25,8 @@ end
     @test eltype(set_variables(:x, numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(set_variables(BigInt, [:x,:y], order=6)) == TaylorN{BigInt}
     @test eltype(set_variables([:x,:y], order=6)) == TaylorN{Float64}
-    @test typeof(show_params_TaylorN()) == Void
-    @test typeof(show_monomials(2)) == Void
+    @test @compat typeof(show_params_TaylorN()) == Nothing
+    @test @compat typeof(show_monomials(2)) == Nothing
 
     @test TaylorSeries.coeff_table[2][1] == [1,0]
     @test TaylorSeries.index_table[2][1] == 7
@@ -57,7 +57,7 @@ end
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Void
+    @test @compat typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
     HomogeneousPolynomial(v)[3] = 3

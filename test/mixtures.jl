@@ -196,7 +196,6 @@ end
         @test x[i](δx) == eval_x_δx[i]
     end
     p11 = Taylor1([sin(t),cos(t)])
-    @which evaluate(p11,t)
     @test evaluate(p11,t) == sin(t)+t*cos(t)
     @test p11(t) == sin(t)+t*cos(t)
     a11 = Taylor1([t,t^2,exp(-t),sin(t),cos(t)])

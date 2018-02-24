@@ -2,6 +2,8 @@
 #
 
 using TaylorSeries
+using Compat
+
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
     eeuler = Base.e
@@ -31,7 +33,7 @@ end
     # @test voT == [0, 1, 2, 3, 4]
 
     v = [1,2]
-    @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Void
+    @test @compat typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
     @test v == [1,2,0,0]
     TaylorSeries.resize_coeffs1!(v,0)
     @test v == [1]
@@ -235,7 +237,6 @@ end
     @test p(Mr) == evaluate.(p,Mr)
     taylor_a = Taylor1(Int64,10)
     taylor_x = exp(Taylor1(Float64,13))
-    @which evaluate(taylor_x, taylor_a)
     @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
     A_T1 = [t 2t 3t; 4t 5t 6t ]
     @test evaluate(A_T1,1.0) == [1.0  2.0  3.0; 4.0  5.0  6.0]
