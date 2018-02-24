@@ -9,7 +9,7 @@ if VERSION < v"0.7.0-DEV.2004"
     eeuler = Base.e
 else
     using Test
-    using LinearAlgebra
+    using LinearAlgebra, SparseArrays
     eeuler = Base.MathConstants.e
 end
 
@@ -319,7 +319,7 @@ end
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
-    vv = Vector{Float64}(2)
+    @compat vv = Vector{Float64}(uninitialized, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv

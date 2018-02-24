@@ -36,7 +36,11 @@ get_order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
-lookupvar(s::Symbol) = findfirst(_params_TaylorN_.variable_symbols, s)
+function lookupvar(s::Symbol)
+    ind = findfirst(_params_TaylorN_.variable_symbols, s)
+    isa(ind, Nothing) && return 0
+    return ind
+end
 
 function set_variable_names(varnames::Vector{T}) where {T<:AbstractString}
     _params_TaylorN_.variable_names = varnames
