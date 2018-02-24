@@ -18,6 +18,8 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
+using Compat
+
 import Base: ==, +, -, *, /, ^
 
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,

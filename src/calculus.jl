@@ -141,7 +141,7 @@ to the `r`-th variable.
 """
 function derivative(a::TaylorN, r=1::Int)
     T = eltype(a)
-    coeffs = Array{HomogeneousPolynomial{T}}(a.order)
+    @compat coeffs = Array{HomogeneousPolynomial{T}}(uninitialized, a.order)
 
     @inbounds for ord = 1:a.order
         coeffs[ord] = derivative( a[ord], r)
@@ -162,7 +162,7 @@ Compute the gradient of the polynomial `f::TaylorN`.
 function gradient(f::TaylorN)
     T = eltype(f)
     numVars = get_numvars()
-    grad = Array{TaylorN{T}}(numVars)
+    @compat grad = Array{TaylorN{T}}(uninitialized, numVars)
     @inbounds for nv = 1:numVars
         grad[nv] = derivative(f, nv)
     end
@@ -182,7 +182,7 @@ evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at zero.
 function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
     @assert length(vf) == numVars
-    jac = Array{T}(numVars,numVars)
+    @compat jac = Array{T}(uninitialized, numVars, numVars)
 
     @inbounds for comp = 1:numVars
         jac[:,comp] = vf[comp][1][1:end]
@@ -196,7 +196,7 @@ function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where
     R = promote_type(T,S)
     numVars = get_numvars()
     @assert length(vf) == numVars == length(vals)
-    jac = Array{R}(numVars,numVars)
+    @compat jac = Array{R}(uninitialized, numVars, numVars)
 
     for comp = 1:numVars
         @inbounds grad = gradient( vf[comp] )

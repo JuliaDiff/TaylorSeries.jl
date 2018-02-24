@@ -46,7 +46,7 @@ function evaluate(x::Union{Array{Taylor1{T},1}, SubArray{Taylor1{T},1}}, δt::S)
     return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
 end
 function evaluate(x::Array{Taylor1{T},1}, δt::T) where {T<:Number}
-    xnew = Array{T}( length(x) )
+    @compat xnew = Array{T}(uninitialized, length(x) )
     evaluate!(x, δt, xnew)
     return xnew
 end
@@ -60,8 +60,8 @@ function evaluate(A::Union{Array{Taylor1{T},2}, SubArray{Taylor1{T},2}}, δt::S)
 end
 function evaluate(A::Array{Taylor1{T},2}, δt::T) where {T<:Number}
     n,m = size(A)
-    Anew = Array{T}( n,m )
-    xnew = Array{T}( n )
+    @compat Anew = Array{T}(uninitialized, n, m )
+    @compat xnew = Array{T}(uninitialized, n )
 
     for i in 1:m
         evaluate!(A[:,i], δt, xnew)
@@ -363,8 +363,8 @@ function evaluate(A::Union{Array{TaylorN{T},2}, SubArray{TaylorN{T},2}}, δx::Ve
 end
 function evaluate(A::Array{TaylorN{T},2}, δx::Vector{T}) where {T<:Number}
     n,m = size(A)
-    Anew = Array{T}( n,m )
-    xnew = Array{T}( n )
+    @compat Anew = Array{T}(uninitialized, n, m )
+    @compat xnew = Array{T}(uninitialized, n )
 
     for i in 1:m
         evaluate!(A[:,i], δx, xnew)

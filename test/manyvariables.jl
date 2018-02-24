@@ -2,6 +2,8 @@
 #
 
 using TaylorSeries
+using Compat
+
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
     eeuler = Base.e
@@ -423,7 +425,7 @@ end
     @test gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
     @test jacobian([f1,f2], [2,1]) == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
-    jac = Array{Int64}(2, 2)
+    @compat jac = Array{Int64}(uninitialized, 2, 2)
     jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
     @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jacobian!(jac, [f1,f2], [2,1])
@@ -433,7 +435,7 @@ end
     @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
     @test hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
-    hes = Array{Int64}(2, 2)
+    @compat hes = Array{Int64}(uninitialized, 2, 2)
     hessian!(hes, f1*f2)
     @test hes == hessian(f1*f2)
     @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
@@ -441,10 +443,10 @@ end
     @test hes/2 == [ [49,0] [0,12] ]
     hessian!(hes, f1-f2-2*f1*f2)
     @test hes == hes'
-    hes1 = hes2 = Array{Int64}(2, 2)
-    hessian!(hes1,f1-f2,[1,-1])
-    hessian!(hes2,g1(xT+1,yT-1)-g2(xT+1,yT-1))
-    @test hes1 == hes2
+    @compat hes1 = Array{Int64}(uninitialized, 2, 2)
+    hessian!(hes1, f1-f2,[1,-1])
+    hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    @test hes1 == hes
 
     displayBigO(false)
     @test string(-xH) == " - 1 x₁"

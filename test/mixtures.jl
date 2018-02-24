@@ -2,6 +2,8 @@
 #
 
 using TaylorSeries
+using Compat
+
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
 else
@@ -182,7 +184,7 @@ end
     δx = [Taylor1(rand(3)) for i in 1:4]
     @test typeof(x) == Array{TaylorN{Taylor1{Float64}},1}
     @test typeof(δx) == Array{Taylor1{Float64},1}
-    x0 = Array{Taylor1{Float64}}(length(x))
+    @compat x0 = Array{Taylor1{Float64}}(uninitialized, length(x))
     eval_x_δx = evaluate(x,δx)
     @test x(δx) == eval_x_δx
     evaluate!(x,δx,x0)
