@@ -32,7 +32,7 @@ function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
 end
 evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
-doc"""
+@doc doc"""
     evaluate(x, δt)
 
 Evaluates each element of `x::Union{ Vector{Taylor1{T}}, Matrix{Taylor1{T}} }`, representing
@@ -73,7 +73,7 @@ end
 evaluate(A::Array{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
 evaluate(A::SubArray{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
 
-doc"""
+@doc doc"""
     evaluate!(x, δt, x0)
 
 Evaluates each element of `x::Array{Taylor1{T},1}`,
@@ -100,7 +100,7 @@ function evaluate!(x::Array{Taylor1{T},1}, δt::S,
     nothing
 end
 
-doc"""
+@doc doc"""
     evaluate(a, x)
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
@@ -189,7 +189,7 @@ function evaluate!(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
     nothing
 end
 
-doc"""
+@doc doc"""
     evaluate(a, [vals])
 
 Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
@@ -227,7 +227,7 @@ end
 
 (p::HomogeneousPolynomial)() = evaluate(p)
 
-doc"""
+@doc doc"""
     evaluate(a, [vals])
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.

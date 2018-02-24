@@ -3,7 +3,7 @@
 # Parameters for HomogeneousPolynomial and TaylorN
 
 
-doc"""
+@doc doc"""
     ParamsTaylorN
 
 DataType holding the current parameters for `TaylorN` and

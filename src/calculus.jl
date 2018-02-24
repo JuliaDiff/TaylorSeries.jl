@@ -36,7 +36,7 @@ function derivative!(res::Taylor1, a::Taylor1)
     nothing
 end
 
-doc"""
+@doc doc"""
     derivative!(p, a, k) --> nothing
 
 Update in-place the `k-th` expansion coefficient `p[k]` of `p = derivative(a)`

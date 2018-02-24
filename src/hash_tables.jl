@@ -2,7 +2,7 @@
 
 # Hash tables for HomogeneousPolynomial and TaylorN
 
-doc"""
+@doc doc"""
     generate_tables(num_vars, order)
 
 Return the hash tables `coeff_table`, `index_table`, `size_table`

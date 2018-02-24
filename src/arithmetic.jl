@@ -308,7 +308,7 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-doc"""
+@doc doc"""
     mul!(c, a, b, k::Int) --> nothing
 
 Update the `k`-th expansion coefficient `c[k]` of `c = a * b`,
@@ -464,7 +464,7 @@ end
 
 
 # Homogeneous coefficient for the division
-doc"""
+@doc doc"""
     div!(c, a, b, k::Int, ordfact::Int=0)
 
 Compute the `k-th` expansion coefficient `c[k]` of `c = a / b`,
