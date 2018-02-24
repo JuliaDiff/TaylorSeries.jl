@@ -180,6 +180,7 @@ end
 
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
 length(a::HomogeneousPolynomial) = length(a.coeffs)
+endof(a::HomogeneousPolynomial) = length(a.coeffs)
 @compat lastindex(a::HomogeneousPolynomial) = length(a.coeffs)
 get_order(a::HomogeneousPolynomial) = a.order
 
