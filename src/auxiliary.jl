@@ -167,6 +167,7 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         eltype(::$T{S}) where {S<:Number} = S
         length(a::$T) = length(a.coeffs)
+        endof(a::$T) = a.order
         @compat lastindex(a::$T) = a.order
         get_order(a::$T) = a.order
 

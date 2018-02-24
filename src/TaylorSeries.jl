@@ -21,7 +21,7 @@ module TaylorSeries
 using Compat
 
 if VERSION <= v"0.7.0-DEV.2004"
-    import Base: A_mul_B!, norm, gradient, endof
+    import Base: A_mul_B!, norm, gradient
 else
     using InteractiveUtils: subtypes
     using SparseArrays: SparseMatrixCSC
