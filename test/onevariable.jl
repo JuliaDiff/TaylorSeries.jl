@@ -462,7 +462,7 @@ end
         B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
         Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
         Bcopy = deepcopy(B)
-        A_mul_B!(Y,A,B)
+        @compat mul!(Y,A,B)
 
         # do we get the same result when using the `A*B` form?
         @test A*B≈Y
@@ -481,9 +481,9 @@ end
         # multiplication and the specialized version
         @test abs(y1-y2) < n1*(eps(y1)+eps(y2))
 
-        @test_throws DimensionMismatch A_mul_B!(Y,A[:,1:end-1],B)
-        @test_throws DimensionMismatch A_mul_B!(Y,A[1:end-1,:],B)
-        @test_throws DimensionMismatch A_mul_B!(Y,A,B[1:end-1])
-        @test_throws DimensionMismatch A_mul_B!(Y[1:end-1],A,B)
+        @compat @test_throws DimensionMismatch mul!(Y,A[:,1:end-1],B)
+        @compat @test_throws DimensionMismatch mul!(Y,A[1:end-1,:],B)
+        @compat @test_throws DimensionMismatch mul!(Y,A,B[1:end-1])
+        @compat @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
     end
 end

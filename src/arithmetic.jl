@@ -523,11 +523,11 @@ end
 
 
 """
-    A_mul_B!(Y, A, B)
+    mul!(Y, A, B)
 
 Multiply A*B and save the result in Y.
 """
-function A_mul_B!(y::Vector{Taylor1{T}},
+function mul!(y::Vector{Taylor1{T}},
         a::Union{Matrix{T},SparseMatrixCSC{T}},
         b::Vector{Taylor1{T}}) where {T<:Number}
 
@@ -537,7 +537,7 @@ function A_mul_B!(y::Vector{Taylor1{T}},
     # determine the maximal order of b
     order = maximum([b1.order for b1 in b])
 
-    # Use matrices of coefficients (of proper size) and A_mul_B!
+    # Use matrices of coefficients (of proper size) and mul!
     B = zeros(T, k, order+1)
     for i = 1:k
         @inbounds ord = b[i].order
@@ -546,7 +546,7 @@ function A_mul_B!(y::Vector{Taylor1{T}},
         end
     end
     @compat Y = Array{T}(uninitialized, n, order+1)
-    A_mul_B!(Y, a, B)
+    @compat mul!(Y, a, B)
     @inbounds for i = 1:n
         y[i] = Taylor1( collect(Y[i,:]), order)
     end
