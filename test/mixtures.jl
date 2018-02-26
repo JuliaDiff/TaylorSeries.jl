@@ -8,6 +8,7 @@ if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
 else
     using Test
+    using LinearAlgebra, SparseArrays
 end
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
@@ -112,7 +113,7 @@ end
 
     tint = Taylor1(Int, 10)
     t = Taylor1(10)
-    x = TaylorN( [HomogeneousPolynomial(zero(t)), HomogeneousPolynomial([one(t),zero(t)])], 5)
+    x = TaylorN( [HomogeneousPolynomial(zero(t), 5), HomogeneousPolynomial([one(t),zero(t)])], 5)
     y = TaylorN(typeof(tint), 2, order=5)
     @test typeof(x) == TaylorN{Taylor1{Float64}}
     @test eltype(y) == Taylor1{Int}
