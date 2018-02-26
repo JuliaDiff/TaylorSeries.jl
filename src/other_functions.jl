@@ -185,7 +185,7 @@ Inexact equality comparison between polynomials: returns `true` if
 `norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are
 polynomials. For more details, see [`Base.isapprox`](@ref).
 """
-function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0.0,
+@compat function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y,0), atol::Real=0.0,
         nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
 
     x == y || (isfinite(x) && isfinite(y) &&
@@ -193,7 +193,7 @@ function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y), atol::Real=0.0,
         (nans && isnan(x) && isnan(y))
 end
 #isapprox for vectors of Taylors
-function isapprox(x::Vector{T}, y::Vector{S}; rtol::Real=rtoldefault(T,S), atol::Real=0.0,
+@compat function isapprox(x::Vector{T}, y::Vector{S}; rtol::Real=rtoldefault(T,S,0), atol::Real=0.0,
         nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
 
     x == y || norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1)) ||
