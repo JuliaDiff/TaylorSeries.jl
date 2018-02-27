@@ -129,8 +129,8 @@ function defined by the `_InternalMutFuncs` object.
 This is used to construct [`_dict_internalcalls`](@ref).
 The call contains the prefix `TaylorSeries.`.
 """
-_internalmutfunc_call( fn :: _InternalMutFuncs ) = (
-    Expr( :call, parse("TaylorSeries.$(fn.namef)"), fn.argsf... ), fn.defexpr, fn.auxexpr )
+@compat _internalmutfunc_call( fn :: _InternalMutFuncs ) = (
+    Expr( :call, Meta.parse("TaylorSeries.$(fn.namef)"), fn.argsf... ), fn.defexpr, fn.auxexpr )
 
 
 

@@ -2,10 +2,13 @@
 #
 
 using TaylorSeries
+using Compat
+
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
 else
     using Test
+    using LinearAlgebra, SparseArrays
 end
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
@@ -46,7 +49,7 @@ end
     @test 3*xHt == HomogeneousPolynomial([3*one(t), zero(t)])
     @test t*xHt == HomogeneousPolynomial([t, zero(t)])
     @test complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)])
-    @test eltype(complex(0,1)*xHt) == Taylor1{Complex128}
+    @test eltype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
 
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
     @test tN1[0] == HomogeneousPolynomial([t])
@@ -110,7 +113,7 @@ end
 
     tint = Taylor1(Int, 10)
     t = Taylor1(10)
-    x = TaylorN( [HomogeneousPolynomial(zero(t)), HomogeneousPolynomial([one(t),zero(t)])], 5)
+    x = TaylorN( [HomogeneousPolynomial(zero(t), 5), HomogeneousPolynomial([one(t),zero(t)])], 5)
     y = TaylorN(typeof(tint), 2, order=5)
     @test typeof(x) == TaylorN{Taylor1{Float64}}
     @test eltype(y) == Taylor1{Int}
@@ -182,7 +185,7 @@ end
     δx = [Taylor1(rand(3)) for i in 1:4]
     @test typeof(x) == Array{TaylorN{Taylor1{Float64}},1}
     @test typeof(δx) == Array{Taylor1{Float64},1}
-    x0 = Array{Taylor1{Float64}}(length(x))
+    @compat x0 = Array{Taylor1{Float64}}(uninitialized, length(x))
     eval_x_δx = evaluate(x,δx)
     @test x(δx) == eval_x_δx
     evaluate!(x,δx,x0)
@@ -194,7 +197,6 @@ end
         @test x[i](δx) == eval_x_δx[i]
     end
     p11 = Taylor1([sin(t),cos(t)])
-    @which evaluate(p11,t)
     @test evaluate(p11,t) == sin(t)+t*cos(t)
     @test p11(t) == sin(t)+t*cos(t)
     a11 = Taylor1([t,t^2,exp(-t),sin(t),cos(t)])
@@ -227,7 +229,7 @@ end
         @test TaylorSeries.real(Taylor1{TaylorN{Complex{T}}}) == Taylor1{TaylorN{T}}
     end
 
-    rndT1(ord1) = Taylor1(-1+2rand(ord1+1)) # generates a random Taylor1 with order `ord`
+    rndT1(ord1) = Taylor1(-1 .+ 2rand(ord1+1)) # generates a random Taylor1 with order `ord`
     nmonod(s, d) = binomial(d+s-1, d) #number of monomials in s variables with exact degree d
     #rndHP generates a random `ordHP`-th order homog. pol. of Taylor1s, each with order `ord1`
     rndHP(ordHP, ord1) = HomogeneousPolynomial( [rndT1(ord1) for i in 1:nmonod(get_numvars(), ordHP)] )

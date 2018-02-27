@@ -358,7 +358,7 @@ for T in (:Taylor1, :TaylorN)
 end
 
 
-doc"""
+@doc doc"""
     inverse(f)
 
 Return the Taylor expansion of $f^{-1}(t)$, of order `N = f.order`,
@@ -400,7 +400,7 @@ end
 
 
 # Documentation for the recursion relations
-doc"""
+@doc doc"""
     exp!(c, a, k) --> nothing
 
 Update the `k-th` expansion coefficient `c[k+1]` of `c = exp(a)`
@@ -417,7 +417,7 @@ c_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j.
 """ exp!
 
 
-doc"""
+@doc doc"""
     log!(c, a, k) --> nothing
 
 Update the `k-th` expansion coefficient `c[k+1]` of `c = log(a)`
@@ -434,7 +434,7 @@ c_k = \frac{1}{a_0} \big(a_k - \frac{1}{k} \sum_{j=0}^{k-1} j a_{k-j} c_j \big).
 """ log!
 
 
-doc"""
+@doc doc"""
     sincos!(s, c, a, k) --> nothing
 
 Update the `k-th` expansion coefficients `s[k+1]` and `c[k+1]`
@@ -453,7 +453,7 @@ c_k &=& -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
 """ sincos!
 
 
-doc"""
+@doc doc"""
     tan!(c, a, p, k::Int) --> nothing
 
 Update the `k-th` expansion coefficients `c[k+1]` of `c = tan(a)`,
@@ -471,7 +471,7 @@ c_k = a_k + \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j.
 """ tan!
 
 
-doc"""
+@doc doc"""
     asin!(c, a, r, k)
 
 Update the `k-th` expansion coefficients `c[k+1]` of `c = asin(a)`,
@@ -488,7 +488,7 @@ c_k = \frac{1}{ \sqrt{r_0} }
 """ asin!
 
 
-doc"""
+@doc doc"""
     acos!(c, a, r, k)
 
 Update the `k-th` expansion coefficients `c[k+1]` of `c = acos(a)`,
@@ -505,7 +505,7 @@ c_k = - \frac{1}{ r_0 }
 """ acos!
 
 
-doc"""
+@doc doc"""
     atan!(c, a, r, k)
 
 Update the `k-th` expansion coefficients `c[k+1]` of `c = atan(a)`,
@@ -521,7 +521,7 @@ c_k = \frac{1}{r_0}\big(a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j\big).
 """ atan!
 
 
-doc"""
+@doc doc"""
     sinhcosh!(s, c, a, k)
 
 Update the `k-th` expansion coefficients `s[k+1]` and `c[k+1]`
@@ -540,7 +540,7 @@ c_k &=& \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
 """ sinhcosh!
 
 
-doc"""
+@doc doc"""
     tanh!(c, a, p, k)
 
 Update the `k-th` expansion coefficients `c[k+1]` of `c = tanh(a)`,

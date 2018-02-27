@@ -77,7 +77,7 @@ acos!
 atan!
 sinhcosh!
 tanh!
-A_mul_B!
+mul!
 derivative!
 ```
 

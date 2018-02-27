@@ -2,11 +2,14 @@
 #
 
 using TaylorSeries
+using Compat
+
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
     eeuler = Base.e
 else
     using Test
+    using LinearAlgebra, SparseArrays
     eeuler = Base.MathConstants.e
 end
 
@@ -31,7 +34,7 @@ end
     # @test voT == [0, 1, 2, 3, 4]
 
     v = [1,2]
-    @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Void
+    @test @compat typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
     @test v == [1,2,0,0]
     TaylorSeries.resize_coeffs1!(v,0)
     @test v == [1]
@@ -74,12 +77,12 @@ end
     @test y[:] == rv
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
-    @test getcoeff(Taylor1(Complex128,3),1) == complex(1.0,0.0)
-    @test Taylor1(Complex128,3)[1] == complex(1.0,0.0)
+    @test getcoeff(Taylor1(Complex{Float64},3),1) == complex(1.0,0.0)
+    @test Taylor1(Complex{Float64},3)[1] == complex(1.0,0.0)
     @test getindex(Taylor1(3),1) == 1.0
-    @inferred convert(Taylor1{Complex128},ot) == Taylor1{Complex128}
-    @test eltype(convert(Taylor1{Complex128},ot)) == Complex128
-    @test eltype(convert(Taylor1{Complex128},1)) == Complex128
+    @inferred convert(Taylor1{Complex{Float64}},ot) == Taylor1{Complex{Float64}}
+    @test eltype(convert(Taylor1{Complex{Float64}},ot)) == Complex{Float64}
+    @test eltype(convert(Taylor1{Complex{Float64}},1)) == Complex{Float64}
     @test eltype(convert(Taylor1, 1im)) == Complex{Int}
     @test convert(Taylor1, 1im) == Taylor1(1im, 0)
     @test convert(Taylor1{Int},[0,2]) == 2*t
@@ -235,7 +238,6 @@ end
     @test p(Mr) == evaluate.(p,Mr)
     taylor_a = Taylor1(Int64,10)
     taylor_x = exp(Taylor1(Float64,13))
-    @which evaluate(taylor_x, taylor_a)
     @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
     A_T1 = [t 2t 3t; 4t 5t 6t ]
     @test evaluate(A_T1,1.0) == [1.0  2.0  3.0; 4.0  5.0  6.0]
@@ -317,7 +319,7 @@ end
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
-    vv = Vector{Float64}(2)
+    @compat vv = Vector{Float64}(uninitialized, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv
@@ -460,7 +462,7 @@ end
         B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
         Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
         Bcopy = deepcopy(B)
-        A_mul_B!(Y,A,B)
+        @compat mul!(Y,A,B)
 
         # do we get the same result when using the `A*B` form?
         @test A*B≈Y
@@ -479,9 +481,9 @@ end
         # multiplication and the specialized version
         @test abs(y1-y2) < n1*(eps(y1)+eps(y2))
 
-        @test_throws DimensionMismatch A_mul_B!(Y,A[:,1:end-1],B)
-        @test_throws DimensionMismatch A_mul_B!(Y,A[1:end-1,:],B)
-        @test_throws DimensionMismatch A_mul_B!(Y,A,B[1:end-1])
-        @test_throws DimensionMismatch A_mul_B!(Y[1:end-1],A,B)
+        @compat @test_throws DimensionMismatch mul!(Y,A[:,1:end-1],B)
+        @compat @test_throws DimensionMismatch mul!(Y,A[1:end-1,:],B)
+        @compat @test_throws DimensionMismatch mul!(Y,A,B[1:end-1])
+        @compat @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
     end
 end

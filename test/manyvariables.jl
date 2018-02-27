@@ -2,11 +2,14 @@
 #
 
 using TaylorSeries
+using Compat
+
 if VERSION < v"0.7.0-DEV.2004"
     using Base.Test
     eeuler = Base.e
 else
     using Test
+    using LinearAlgebra
     eeuler = Base.MathConstants.e
 end
 
@@ -23,8 +26,8 @@ end
     @test eltype(set_variables(:x, numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(set_variables(BigInt, [:x,:y], order=6)) == TaylorN{BigInt}
     @test eltype(set_variables([:x,:y], order=6)) == TaylorN{Float64}
-    @test typeof(show_params_TaylorN()) == Void
-    @test typeof(show_monomials(2)) == Void
+    @test @compat typeof(show_params_TaylorN()) == Nothing
+    @test @compat typeof(show_monomials(2)) == Nothing
 
     @test TaylorSeries.coeff_table[2][1] == [1,0]
     @test TaylorSeries.index_table[2][1] == 7
@@ -55,7 +58,7 @@ end
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Void
+    @test @compat typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
     HomogeneousPolynomial(v)[3] = 3
@@ -128,7 +131,7 @@ end
     @test TaylorN(uT) == convert(TaylorN{Complex},1)
     @test get_numvars() == 2
     @test length(uT) == get_order()+1
-    @test eltype(convert(TaylorN{Complex128},1)) == Complex128
+    @test eltype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])
@@ -165,15 +168,15 @@ end
     @test integrate(derivative(p, :x₁), :x₁, yT^6) == p
     @test derivative(integrate(p, 2), 2) == p
     @test derivative(integrate(p, :x₂), :x₂) == p
-    @test derivative(TaylorN(1.0)) == 0.0
-    @test integrate(TaylorN(6.0), 1) == 6xT
-    @test integrate(TaylorN(0.0), 2) == 0.0
-    @test integrate(TaylorN(0.0), 2, xT) == xT
-    @test integrate(TaylorN(0.0), :x₂, xT) == xT
-    @test integrate(xT^17, 2) == 0.0
+    @test derivative(TaylorN(1.0, get_order())) == TaylorN(0.0, get_order())
+    @test integrate(TaylorN(6.0, get_order()), 1) == 6xT
+    @test integrate(TaylorN(0.0, get_order()), 2) == TaylorN(0.0, get_order())
+    @test integrate(TaylorN(0.0, get_order()), 2, xT) == xT
+    @test integrate(TaylorN(0.0, get_order()), :x₂, xT) == xT
+    @test integrate(xT^17, 2) == TaylorN(0.0, get_order())
     @test integrate(xT^17, 1, yT) == yT
-    @test integrate(xT^17, 1, 2.0) == 2.0
-    @test integrate(xT^17, :x₁, 2.0) == 2.0
+    @test integrate(xT^17, 1, 2.0) == TaylorN(2.0, get_order())
+    @test integrate(xT^17, :x₁, 2.0) == TaylorN(2.0, get_order())
     @test_throws AssertionError integrate(xT, 1, xT)
     @test_throws AssertionError integrate(xT, :x₁, xT)
 
@@ -423,7 +426,7 @@ end
     @test gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
     @test jacobian([f1,f2], [2,1]) == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
-    jac = Array{Int64}(2, 2)
+    @compat jac = Array{Int64}(uninitialized, 2, 2)
     jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
     @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jacobian!(jac, [f1,f2], [2,1])
@@ -433,7 +436,7 @@ end
     @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
     @test hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
-    hes = Array{Int64}(2, 2)
+    @compat hes = Array{Int64}(uninitialized, 2, 2)
     hessian!(hes, f1*f2)
     @test hes == hessian(f1*f2)
     @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
@@ -441,10 +444,10 @@ end
     @test hes/2 == [ [49,0] [0,12] ]
     hessian!(hes, f1-f2-2*f1*f2)
     @test hes == hes'
-    hes1 = hes2 = Array{Int64}(2, 2)
-    hessian!(hes1,f1-f2,[1,-1])
-    hessian!(hes2,g1(xT+1,yT-1)-g2(xT+1,yT-1))
-    @test hes1 == hes2
+    @compat hes1 = Array{Int64}(uninitialized, 2, 2)
+    hessian!(hes1, f1-f2,[1,-1])
+    hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    @test hes1 == hes
 
     displayBigO(false)
     @test string(-xH) == " - 1 x₁"

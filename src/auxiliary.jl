@@ -74,13 +74,14 @@ Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
 getindex(a::Taylor1, n::Int) = a.coeffs[n+1]
-getindex(a::Taylor1, u::UnitRange) = view(a.coeffs, u+1 )
+getindex(a::Taylor1, u::UnitRange) = view(a.coeffs, u .+ 1 )
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 
 setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
-setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number} = a.coeffs[u+1] = x
+setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number} =
+    a.coeffs[u .+ 1] = x
 setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number} =
-    a.coeffs[u+1] .= x
+    a.coeffs[u .+ 1] .= x
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] = x
 setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] = x
 
@@ -127,7 +128,7 @@ function getcoeff(a::TaylorN, v::Array{Int,1})
 end
 
 getindex(a::TaylorN, n::Int) = a.coeffs[n+1]
-getindex(a::TaylorN, u::UnitRange) = view(a.coeffs, u+1 )
+getindex(a::TaylorN, u::UnitRange) = view(a.coeffs, u .+ 1)
 getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
 
 function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
@@ -167,6 +168,7 @@ for T in (:Taylor1, :TaylorN)
         eltype(::$T{S}) where {S<:Number} = S
         length(a::$T) = length(a.coeffs)
         endof(a::$T) = a.order
+        @compat lastindex(a::$T) = a.order
         get_order(a::$T) = a.order
 
         # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
@@ -179,6 +181,7 @@ end
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
 length(a::HomogeneousPolynomial) = length(a.coeffs)
 endof(a::HomogeneousPolynomial) = length(a.coeffs)
+@compat lastindex(a::HomogeneousPolynomial) = length(a.coeffs)
 get_order(a::HomogeneousPolynomial) = a.order
 
 # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
@@ -206,8 +209,11 @@ end
 
 
 # Finds the first non zero entry; extended to Taylor1
-Base.findfirst(a::Taylor1{T}) where {T<:Number} = findfirst(a.coeffs)-1
-
+function Base.findfirst(a::Taylor1{T}) where {T<:Number}
+    first = findfirst(a.coeffs)
+    @compat isa(first, Nothing) && return -1
+    return first-1
+end
 
 """
     constant_term(a)

@@ -114,7 +114,7 @@ end
 
 
 # Homogeneous coefficients for real power
-doc"""
+@doc doc"""
     pow!(c, a, r::Real, k::Int, k0::Int=0)
 
 Update the `k-th` expansion coefficient `c[k]` of `c = a^r`, for
@@ -217,7 +217,7 @@ end
 
 
 # Homogeneous coefficients for square
-doc"""
+@doc doc"""
     sqr!(c, a, k::Int) --> nothing
 
 Update the `k-th` expansion coefficient `c[k]` of `c = a^2`, for
@@ -347,7 +347,7 @@ function sqrt(a::TaylorN)
 end
 
 # Homogeneous coefficients for the square-root
-doc"""
+@doc doc"""
     sqrt!(c, a, k::Int, k0::Int=0)
 
 Compute the `k-th` expansion coefficient `c[k]` of `c = sqrt(a)`

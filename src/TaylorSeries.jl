@@ -18,15 +18,30 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
+using Compat
+
+if VERSION <= v"0.7.0-DEV.2004"
+    import Base: norm, gradient, A_mul_B!
+    const mul! = A_mul_B!
+    export mul!
+else
+    using InteractiveUtils: subtypes
+    using SparseArrays: SparseMatrixCSC
+    using LinearAlgebra
+    import LinearAlgebra: norm, gradient, mul!
+    import Base: lastindex
+    using Markdown
+end
+
 import Base: ==, +, -, *, /, ^
 
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, eltype, length, show,
     real, imag, conj, ctranspose,
-    rem, mod, mod2pi, abs, abs2, norm, gradient,
+    rem, mod, mod2pi, abs, abs2,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
-    A_mul_B!, power_by_squaring,
+    power_by_squaring,
     getindex, setindex!, endof,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 

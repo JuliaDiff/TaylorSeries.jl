@@ -32,7 +32,7 @@ function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
 end
 evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
-doc"""
+@doc doc"""
     evaluate(x, δt)
 
 Evaluates each element of `x::Union{ Vector{Taylor1{T}}, Matrix{Taylor1{T}} }`, representing
@@ -46,7 +46,7 @@ function evaluate(x::Union{Array{Taylor1{T},1}, SubArray{Taylor1{T},1}}, δt::S)
     return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
 end
 function evaluate(x::Array{Taylor1{T},1}, δt::T) where {T<:Number}
-    xnew = Array{T}( length(x) )
+    @compat xnew = Array{T}(uninitialized, length(x) )
     evaluate!(x, δt, xnew)
     return xnew
 end
@@ -60,8 +60,8 @@ function evaluate(A::Union{Array{Taylor1{T},2}, SubArray{Taylor1{T},2}}, δt::S)
 end
 function evaluate(A::Array{Taylor1{T},2}, δt::T) where {T<:Number}
     n,m = size(A)
-    Anew = Array{T}( n,m )
-    xnew = Array{T}( n )
+    @compat Anew = Array{T}(uninitialized, n, m )
+    @compat xnew = Array{T}(uninitialized, n )
 
     for i in 1:m
         evaluate!(A[:,i], δt, xnew)
@@ -73,7 +73,7 @@ end
 evaluate(A::Array{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
 evaluate(A::SubArray{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
 
-doc"""
+@doc doc"""
     evaluate!(x, δt, x0)
 
 Evaluates each element of `x::Array{Taylor1{T},1}`,
@@ -100,7 +100,7 @@ function evaluate!(x::Array{Taylor1{T},1}, δt::S,
     nothing
 end
 
-doc"""
+@doc doc"""
     evaluate(a, x)
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
@@ -189,7 +189,7 @@ function evaluate!(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
     nothing
 end
 
-doc"""
+@doc doc"""
     evaluate(a, [vals])
 
 Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
@@ -227,7 +227,7 @@ end
 
 (p::HomogeneousPolynomial)() = evaluate(p)
 
-doc"""
+@doc doc"""
     evaluate(a, [vals])
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.
@@ -348,7 +348,7 @@ function evaluate(x::Union{Array{TaylorN{T},1},SubArray{TaylorN{T},1}}, δx::Vec
 end
 
 function evaluate(x::Array{TaylorN{T},1}, δx::Array{T,1}) where {T<:Number}
-    x0 = Array{T}( length(x) )
+    @compat x0 = Array{T}(uninitialized, length(x) )
     evaluate!( x, δx, x0 )
     return x0
 end
@@ -363,8 +363,8 @@ function evaluate(A::Union{Array{TaylorN{T},2}, SubArray{TaylorN{T},2}}, δx::Ve
 end
 function evaluate(A::Array{TaylorN{T},2}, δx::Vector{T}) where {T<:Number}
     n,m = size(A)
-    Anew = Array{T}( n,m )
-    xnew = Array{T}( n )
+    @compat Anew = Array{T}(uninitialized, n, m )
+    @compat xnew = Array{T}(uninitialized, n )
 
     for i in 1:m
         evaluate!(A[:,i], δx, xnew)

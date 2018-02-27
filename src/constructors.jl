@@ -18,7 +18,7 @@ abstract type AbstractSeries{T<:Number} <: Number end
 ## Constructors ##
 
 ######################### Taylor1
-doc"""
+@doc doc"""
     Taylor1{T<:Number} <: AbstractSeries{T}
 
 DataType for polynomial expansions in one independent variable.
@@ -54,7 +54,7 @@ function Taylor1(x::T, order::Int) where {T<:Number}
 end
 
 # Shortcut to define Taylor1 independent variables
-doc"""
+@doc doc"""
     Taylor1([T::Type=Float64], [order::Int=1])
 
 Shortcut to define the independent variable of a `Taylor1{T}` polynomial of
@@ -73,7 +73,7 @@ Taylor1(order::Int=1) = Taylor1(Float64, order)
 
 
 ######################### HomogeneousPolynomial
-doc"""
+@doc doc"""
     HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
 
 DataType for homogenous polynomials in many (>1) independent variables.
@@ -132,7 +132,7 @@ HomogeneousPolynomial(nv::Int) = HomogeneousPolynomial(Float64, nv)
 
 
 ######################### TaylorN
-doc"""
+@doc doc"""
     TaylorN{T<:Number} <: AbstractSeries{T}
 
 DataType for polynomial expansions in many (>1) independent variables.
