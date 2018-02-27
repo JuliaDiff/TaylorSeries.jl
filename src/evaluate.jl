@@ -356,7 +356,7 @@ function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
 end
 
 evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:Number, S<:NumberNotSeriesN} =
-    evaluate(p, first(x), last(x))
+    evaluate(a, first(x), last(x))
 
 evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
 

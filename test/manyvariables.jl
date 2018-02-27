@@ -311,6 +311,8 @@ end
     @test evaluate(xH*yH, [1.0, 2.0]) == 2.0
     @test ptxy(:x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     @test ptxy(:x₁ => -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
+    @test evaluate(ptxy, :x₁ => -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
+    @test evaluate(ptxy, :x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
     @test v == ones(2)
