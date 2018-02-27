@@ -50,9 +50,13 @@ end
     @test t*xHt == HomogeneousPolynomial([t, zero(t)])
     @test complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)])
     @test eltype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
+    @test (xHt+yHt)(1, 1) == 1+t
+    @test (xHt+yHt)([1, 1]) == (xHt+yHt)((1, 1))
 
     tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
     @test tN1[0] == HomogeneousPolynomial([t])
+    @test tN1(t,one(t)) == 2t+t^2
+    @test tN1([t,one(t)]) == tN1((t,one(t)))
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
     @test t1N[0] == HomogeneousPolynomial(1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
@@ -166,7 +170,7 @@ end
     #evaluate a TaylorN at an array of Taylor1s
     @test P[1](aT1) == evaluate(P[1], aT1)
     @test P[1](aT1) == evaluate(P[1], (aT1...,))
-    @test Q[2](aT1) == evaluate(Q[2], aT1)
+    @test Q[2](aT1) == evaluate(Q[2], [aT1...])
     #evaluate an array of TaylorN{Float64} at an array of Taylor1{Float64}
     @test P(aT1) == evaluate(P, aT1)
     @test Q(aT1) == evaluate(Q, aT1)

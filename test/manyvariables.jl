@@ -294,8 +294,8 @@ end
     @test imag((exp(yT))^(-1im)') == sin(yT)
     exy = exp( xT+yT )
     @test evaluate(exy) == 1
-    # @test evaluate(exy, 0.1im, 0.01im) == exp(0.11im)
-    # @test exy(0.1im, 0.01im) == exp(0.11im)
+    @test evaluate(exy, 0.1im, 0.01im) == exp(0.11im)
+    @test exy(0.1im, 0.01im) == exp(0.11im)
     @test evaluate(exy,(0.1im, 0.01im)) == exp(0.11im)
     @test exy((0.1im, 0.01im)) == exp(0.11im)
     @test evaluate(exy,[0.1im, 0.01im]) == exp(0.11im)
@@ -306,7 +306,7 @@ end
     @test getcoeff(txy,[8,7]) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @test getindex(tan(TaylorN(1)+TaylorN(2)),0:4) == ptxy.coeffs[1:5]
-    # @test evaluate(xH*yH, 1.0, 2.0) == (xH*yH)(1.0, 2.0) == 2.0
+    @test evaluate(xH*yH, 1.0, 2.0) == (xH*yH)(1.0, 2.0) == 2.0
     @test evaluate(xH*yH, (1.0, 2.0)) == 2.0
     @test evaluate(xH*yH, [1.0, 2.0]) == 2.0
     @test ptxy(:x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
