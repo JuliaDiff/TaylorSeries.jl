@@ -165,6 +165,7 @@ end
     @test (aT1.^2)(Q[3]) == evaluate(aT1.^2, Q[3])
     #evaluate a TaylorN at an array of Taylor1s
     @test P[1](aT1) == evaluate(P[1], aT1)
+    @test P[1](aT1) == evaluate(P[1], (aT1...,))
     @test Q[2](aT1) == evaluate(Q[2], aT1)
     #evaluate an array of TaylorN{Float64} at an array of Taylor1{Float64}
     @test P(aT1) == evaluate(P, aT1)

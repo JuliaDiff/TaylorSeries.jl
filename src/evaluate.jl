@@ -196,19 +196,19 @@ Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
 it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
 `evaluate(a, vals)`; and `a()` is equivalent to `evaluate(a)`.
 """
-function evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
-        {T<:Number, S<:NumberNotSeriesN}
+function evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
+        {T<:Number, S<:NumberNotSeriesN, N}
 
-    @assert length(vals) == get_numvars()
+    @assert N == get_numvars()
 
-    num_vars = get_numvars()
+    # num_vars = get_numvars()
     ct = coeff_table[a.order+1]
     R = promote_type(T,S)
     suma = zero(R)
 
     for (i,a_coeffs) in enumerate(a.coeffs)
         tmp = vals[1]^(ct[i][1])
-        for n in 2:num_vars
+        for n in 2:N#num_vars
             tmp *= vals[n]^(ct[i][n])
         end
         suma += a_coeffs * tmp
@@ -216,6 +216,9 @@ function evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
 
     return suma
 end
+
+evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
+        {T<:Number, S<:NumberNotSeriesN} = evaluate(a, (vals...,))
 
 function evaluate(a::HomogeneousPolynomial)
     a.order == 0 && return a[1]
@@ -235,12 +238,12 @@ If `vals` is ommitted, it's evaluated at zero.
 Note that the syntax `a(vals)` is equivalent to `evaluate(a, vals)`; and `a()`
 is equivalent to `evaluate(a)`.
 """
-function evaluate(a::TaylorN{T}, vals::Array{S,1}) where
-        {T<:Number,S<:NumberNotSeriesN}
+function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
+        {T<:Number,S<:NumberNotSeriesN, N}
 
-    @assert length(vals) == get_numvars()
+    @assert N == get_numvars()
 
-    num_vars = get_numvars()
+    # num_vars = get_numvars()
     R = promote_type(T,S)
     a_length = length(a)
     suma = zeros(R, a_length)
@@ -248,7 +251,7 @@ function evaluate(a::TaylorN{T}, vals::Array{S,1}) where
         sun = zero(R)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(coeff_table[homPol][i][1])
-            for n in 2:num_vars
+            for n in 2:N#num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             sun += a_coeff * tmp
@@ -258,12 +261,16 @@ function evaluate(a::TaylorN{T}, vals::Array{S,1}) where
 
     return sum( sort!(suma, by=abs2) )
 end
-function evaluate(a::TaylorN{T}, vals::Array{Taylor1{S},1}) where
-        {T<:Number, S<:NumberNotSeries}
 
-    @assert length(vals) == get_numvars()
+evaluate(a::TaylorN{T}, vals::Array{S,1}) where
+    {T<:Number, S<:NumberNotSeriesN} = evaluate(a, (vals...,))
 
-    num_vars = get_numvars()
+function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
+        {T<:Number, S<:NumberNotSeries, N}
+
+    @assert N == get_numvars()
+
+    # num_vars = get_numvars()
     R = promote_type(T,S)
     a_length = length(a)
     ord = maximum( get_order.(vals) )
@@ -272,7 +279,7 @@ function evaluate(a::TaylorN{T}, vals::Array{Taylor1{S},1}) where
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(coeff_table[homPol][i][1])
-            for n in 2:num_vars
+            for n in 2:N#num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             suma += a_coeff * tmp
@@ -282,12 +289,15 @@ function evaluate(a::TaylorN{T}, vals::Array{Taylor1{S},1}) where
     return suma
 end
 
-function evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
-        {T<:NumberNotSeries}
+evaluate(a::TaylorN{T}, vals::Array{Taylor1{S},1}) where
+    {T<:Number, S<:NumberNotSeriesN} = evaluate(a, (vals...,))
 
-    # @assert length(vals) == get_numvars()
+function evaluate(a::TaylorN{Taylor1{T}}, vals::NTuple{N, Taylor1{T}}) where
+        {T<:NumberNotSeries, N}
 
-    num_vars = get_numvars()
+    # @assert N == get_numvars()
+
+    # num_vars = get_numvars()
     a_length = length(a)
     ord = maximum( get_order.(vals) )
     suma = Taylor1(zeros(T, ord))
@@ -295,7 +305,7 @@ function evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             tmp = vals[1]^(coeff_table[homPol][i][1])
-            for n in 2:num_vars
+            for n in 2:N#num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
             end
             suma += a_coeff * tmp
@@ -305,8 +315,11 @@ function evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
     return suma
 end
 
-function evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
-        {T<:Number, S<:NumberNotSeries}
+evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
+    {T<:NumberNotSeries} = evaluate(a, (vals...,))
+
+function evaluate(a::TaylorN{T}, vals::NTuple{N, TaylorN{S}}) where
+        {T<:Number, S<:NumberNotSeries, N}
 
     @assert length(vals) == get_numvars()
 
@@ -329,6 +342,9 @@ function evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
     return suma
 end
 
+evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
+    {T<:Number, S<:NumberNotSeries} = evaluate(a, (vals...,))
+
 function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
         {T<:Number, S<:NumberNotSeriesN}
     vars = get_variables()
@@ -336,6 +352,7 @@ function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
     vars[ind] = val
     evaluate(a, vars)
 end
+
 evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:Number, S<:NumberNotSeriesN} =
     evaluate(p, first(x), last(x))
 

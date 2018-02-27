@@ -157,6 +157,7 @@ end
     @test evaluate(xH) == zero(eltype(xH))
     @test xH() == zero(eltype(xH))
     @test xH([1,1]) == evaluate(xH, [1,1])
+    @test xH((1,1)) == 1
     hp = -5.4xH+6.89yH
     @test hp([1,1]) == evaluate(hp, [1,1])
     vr = rand(2)
@@ -293,14 +294,21 @@ end
     @test imag((exp(yT))^(-1im)') == sin(yT)
     exy = exp( xT+yT )
     @test evaluate(exy) == 1
-    @test evaluate(exy,[0.1im,0.01im]) == exp(0.11im)
-    @test isapprox(evaluate(exy, [1,1]), eeuler^2)
+    # @test evaluate(exy, 0.1im, 0.01im) == exp(0.11im)
+    # @test exy(0.1im, 0.01im) == exp(0.11im)
+    @test evaluate(exy,(0.1im, 0.01im)) == exp(0.11im)
+    @test exy((0.1im, 0.01im)) == exp(0.11im)
+    @test evaluate(exy,[0.1im, 0.01im]) == exp(0.11im)
+    @test exy([0.1im, 0.01im]) == exp(0.11im)
+    @test isapprox(evaluate(exy, (1,1)), eeuler^2)
     @test exy(:x₁, 0.0) == exp(yT)
     txy = tan(xT+yT)
     @test getcoeff(txy,[8,7]) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @test getindex(tan(TaylorN(1)+TaylorN(2)),0:4) == ptxy.coeffs[1:5]
-    @test evaluate(xH*yH, [1.0,2.0]) == 2.0
+    # @test evaluate(xH*yH, 1.0, 2.0) == (xH*yH)(1.0, 2.0) == 2.0
+    @test evaluate(xH*yH, (1.0, 2.0)) == 2.0
+    @test evaluate(xH*yH, [1.0, 2.0]) == 2.0
     @test ptxy(:x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     @test ptxy(:x₁ => -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     v = zeros(Int, 2)
