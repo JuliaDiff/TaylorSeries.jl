@@ -38,7 +38,7 @@ for T in (:Taylor1, :TaylorN), f in (:zero, :one)
 end
 
 function zero(a::HomogeneousPolynomial{T}) where {T<:Number}
-    v = fill!(copy(a.coeffs), zero(T))
+    v = zero.(a.coeffs)
     return HomogeneousPolynomial(v, a.order)
 end
 
@@ -55,7 +55,7 @@ zeros(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
     zeros( HomogeneousPolynomial([zero(T)], 0), order)
 
 function one(a::HomogeneousPolynomial{T}) where {T<:Number}
-    v = fill!(copy(a.coeffs), one(T))
+    v = one.(a.coeffs)
     return HomogeneousPolynomial(v, a.order)
 end
 
@@ -540,7 +540,7 @@ function mul!(y::Vector{Taylor1{T}},
     # Use matrices of coefficients (of proper size) and mul!
     # B = zeros(T, k, order+1)
     @compat B = Array{T}(uninitialized, k, order+1)
-    B = fill!(B, zero(T))
+    B = zero.(B)
     for i = 1:k
         @inbounds ord = b[i].order
         @inbounds for j = 1:ord+1
