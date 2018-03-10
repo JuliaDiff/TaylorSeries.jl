@@ -27,7 +27,6 @@ if VERSION <= v"0.7.0-DEV.2004"
 else
     using InteractiveUtils: subtypes
     using SparseArrays: SparseMatrixCSC
-    using LinearAlgebra
     import LinearAlgebra: norm, gradient, mul!
     import Base: lastindex
     using Markdown

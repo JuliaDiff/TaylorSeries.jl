@@ -203,10 +203,12 @@ end
     @test a[1:end] == b[1:end]
     @test a[end][:] == b[end][:]
     @test a[end][1:end] == b[end][1:end]
-    rv = a[end][:] .= rand.()
+    a[end][:] .= rand.()
+    rv = a[end][:]
     @test a[end][:] == rv
     @test a[end][:] != b[end][:]
-    rv = a[end][1:end] .= rand.()
+    a[end][1:end] .= rand.()
+    rv = a[end][1:end]
     @test a[end][1:end] == rv
     @test a[end][1:end] != b[end][1:end]
 

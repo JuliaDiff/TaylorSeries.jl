@@ -70,10 +70,12 @@ end
     y[:] = 0.0
     @test y[:] == zero(y[:])
     y = sin(Taylor1(16))
-    rv = y[0:4] .= rand.()
+    rv = rand.(length(0:4))
+    y[0:4] .= rv
     @test y[0:4] == rv
     @test y[6:end] == sin(Taylor1(16))[6:end]
-    rv = y[:] .= rand.()
+    rv = rand.(length(y))
+    y[:] = rv
     @test y[:] == rv
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)

@@ -80,8 +80,13 @@ getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
 setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number} =
     a.coeffs[u .+ 1] = x
-setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number} =
-    a.coeffs[u .+ 1] .= x
+function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
+    # a.coeffs[u .+ 1] .= x
+    @assert length(u) == length(x)
+    for ind in eachindex(x)
+        a.coeffs[u[ind]+1] = x[ind]
+    end
+end
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] = x
 setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] = x
 
@@ -138,22 +143,26 @@ function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
 end
 setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n+1] = HomogeneousPolynomial(x, n)
-# function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, u::UnitRange) where {T<:Number}
-#     u_stop = u.stop == length(a.coeffs) ? u.stop : u.stop+1
-#     a.coeffs[(u.start+1):u_stop] = x
-# end
 function setindex!(a::TaylorN{T}, x::T, u::UnitRange) where {T<:Number}
     for ind in u
         a[ind] = x
     end
     a[u]
 end
-setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1},
-    u::UnitRange) where {T<:Number} = a[u[:]] .= x[:]
-setindex!(a::TaylorN{T}, x::Array{T,1}, u::UnitRange) where {T<:Number} =
-    a[u] .= x
-# setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, c::Colon) where {T<:Number} =
-#     a.coeffs[c] = x
+function setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, u::UnitRange) where {T<:Number}
+    # a[u[:]] .= x[:]
+    @assert length(u) == length(x)
+    for ind in eachindex(x)
+        a[u[ind]] = x[ind]
+    end
+end
+function setindex!(a::TaylorN{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
+    # a[u] .= x
+    @assert length(u) == length(x)
+    for ind in eachindex(x)
+        a[u[ind]] = x[ind]
+    end
+end
 setindex!(a::TaylorN{T}, x::T, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
 setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, ::Colon) where
