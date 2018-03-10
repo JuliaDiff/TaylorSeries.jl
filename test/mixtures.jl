@@ -112,8 +112,11 @@ end
     @test string((t1N^2)(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = zeros(TaylorN{Float64},2)
     @test evaluate!([t1N, t1N^2], 0.0, v) == nothing
-    @test v[1] == TaylorN([xHt])
-    @test v[2] == TaylorN([xHt^2])
+    @test v == [TaylorN(1), TaylorN(1)^2]
+
+    vt = zeros(Taylor1{Float64},2)
+    @test evaluate!([tN1, tN1^2], [t, t], vt) == nothing
+    @test vt == [2t, 4t^2]
 
     tint = Taylor1(Int, 10)
     t = Taylor1(10)

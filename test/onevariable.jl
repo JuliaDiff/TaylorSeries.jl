@@ -285,6 +285,8 @@ end
     @test tt[0] == cind
     TaylorSeries.div!(tt, 1+ut, 1+ut, 0)
     @test tt[0] == 1.0
+    TaylorSeries.div!(tt, 1, 1+ut, 0)
+    @test tt[0] == 1.0
     TaylorSeries.pow!(tt, 1+t, 1.5, 0, 0)
     @test tt[0] == 1.0
     TaylorSeries.pow!(tt, 1+t, 1.5, 0)
