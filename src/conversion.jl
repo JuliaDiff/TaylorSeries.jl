@@ -195,5 +195,10 @@ promote_rule(::Type{TaylorN{T}}, ::Type{S}) where {T<:Number, S<:Number} =
 promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries, T<:AbstractSeries} =
     promote_rule(T,S)
 
-promote_rule(::Type{S}, ::Type{T}) where {S<:AbstractIrrational, T<:AbstractSeries} =
-    promote_rule(T,S)
+if VERSION <= v"0.7.0-DEV"
+    promote_rule(::Type{S}, ::Type{T}) where
+        {S<:Irrational, T<:AbstractSeries} = promote_rule(T,S)
+else
+    promote_rule(::Type{S}, ::Type{T}) where
+        {S<:AbstractIrrational, T<:AbstractSeries} = promote_rule(T,S)
+end
