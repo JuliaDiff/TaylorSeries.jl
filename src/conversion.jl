@@ -30,7 +30,7 @@ convert(::Type{Taylor1{T}}, b::S)  where {T<:Number, S<:Number} =
 
 convert(::Type{Taylor1{T}}, b::T)  where {T<:Number} = Taylor1([b], 0)
 
-convert(::Type{Taylor1}, a::Number) = Taylor1(a, 0)
+convert(::Type{Taylor1}, a::T) where {T<:Number} = Taylor1(a, 0)
 
 
 convert(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) where {T<:Number} =
@@ -189,3 +189,11 @@ promote_rule(::Type{TaylorN{T}}, ::Type{Array{HomogeneousPolynomial{S},1}}) wher
 
 promote_rule(::Type{TaylorN{T}}, ::Type{S}) where {T<:Number, S<:Number} =
     TaylorN{promote_type(T,S)}
+
+
+# Order may matter
+promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries, T<:AbstractSeries} =
+    promote_rule(T,S)
+
+promote_rule(::Type{S}, ::Type{T}) where {S<:AbstractIrrational, T<:AbstractSeries} =
+    promote_rule(T,S)
