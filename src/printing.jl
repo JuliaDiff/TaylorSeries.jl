@@ -19,13 +19,45 @@ function superscriptify(n::Int)
 end
 
 
-function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
+t_subscr(n::Int) = string("t", subscriptify(n))
+
+
+pretty_print(a::Taylor1{T}) where {T<:NumberNotSeriesN} =
+    _pretty_print(a, Val(get_numvars(a)))
+
+function _pretty_print(a::Taylor1{T}, ::Val{N}) where {T<:Number, N}
+    numvars = get_numvars(a)
+    tvar = t_subscr(numvars)
     z = zero(a[0])
     space = string(" ")
     bigO = bigOnotation[end] ?
-        string("+ 𝒪(t", superscriptify(a.order+1), ")") :
-        string("")
-    iszero(a) && return string(space, z, space, bigO)
+        string("+ 𝒪($tvar", superscriptify(a.order+1), ")") : string("")
+    strout::String = string("")# numvars > 1 ? string("") : space
+    a == zero(a) && return string(strout, z, space, bigO)
+    ifirst = true
+    for i in eachindex(a.coeffs)
+        monom::String = i==1 ? string("") : i==2 ? string(" $tvar") :
+            string(" $tvar", superscriptify(i-1))
+        @inbounds c = a[i-1]
+        c == z && continue
+        cadena = numbr2str(c, ifirst)
+        # @show(cadena)
+        ccad::String = i==1 ? cadena[1:end] : ifirst ? string("(", cadena, ")") :
+            string(cadena[1:2], "(", cadena[3:end], ")")
+        strout = string(strout, ccad, monom, space)
+        # strout = string(strout, cadena, monom, space)
+        ifirst = false
+    end
+    strout = strout * bigO
+    strout
+end
+
+function _pretty_print(a::Taylor1{T}, ::Val{1}) where {T<:Number}
+    z = zero(a[0])
+    space = string(" ")
+    bigO = bigOnotation[end] ?
+        string("+ 𝒪(t", superscriptify(a.order+1), ")") : string("")
+    a == zero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a.coeffs)
@@ -37,7 +69,7 @@ function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
         strout = string(strout, cadena, monom, space)
         ifirst = false
     end
-    strout = strout * bigO
+    strout = bigOnotation[end] ? strout * bigO : strout[1:end-1]
     strout
 end
 

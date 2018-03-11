@@ -1,4 +1,4 @@
-# This file is part of the Taylor1Series.jl Julia package, MIT license
+# This file is part of the TaylorSeries.jl Julia package, MIT license
 #
 # Luis Benet & David P. Sanders
 # UNAM
@@ -50,6 +50,8 @@ Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1(coeffs, length(coeffs)-1
 function Taylor1(x::T, order::Int) where {T<:Number}
     # v = zeros(T, order+1)
     v = fill(zero(x), order+1)
+    # @compat v = Array{T,1}(uninitialized, order+1)
+    # v .= zero.(x)
     v[1] = x
     return Taylor1(v, order)
 end
@@ -202,3 +204,56 @@ const NumberNotSeries = Union{setdiff(subtypes(Number), [AbstractSeries])...}
 # A `Number` which is not `TaylorN` nor a `HomogeneousPolynomial`
 const NumberNotSeriesN =
     Union{setdiff(subtypes(Number), [AbstractSeries])..., Taylor1}
+
+
+# Recursive Taylor1 as independent many variables
+
+rectaylor1(n::Int, order::Int) = _rectaylor1(Float64, Val(n), order)
+
+rectaylor1(::Type{T}, n::Int, order::Int) where {T <: NumberNotSeries} =
+    _rectaylor1(T, Val(n), order)
+
+function _rectaylor1(::Type{T}, ::Val{N}, order::Int) where {T<:Number, N}
+    numvars = Int(N)
+
+    tr1 = _last_rectaylor1(T, Val(N), order)
+    vars = [ tr1 ]
+
+    for nv = 1:numvars-1
+        tr2 = _rectaylor1_vars!( deepcopy(vars[end]), Val(nv), order )
+        push!(vars, tr2)
+    end
+
+    return vars[end:-1:1]
+end
+
+function _last_rectaylor1(::Type{T}, ::Val{N}, order::Int) where
+        {T<:NumberNotSeries, N}
+    vv = Any[]
+    push!(vv, Taylor1(T, order))
+    for nv = 2:Int(N)
+        push!(vv, Taylor1([zero(vv[end]), one(vv[end])], order))
+    end
+    return vv[end]
+end
+
+function _rectaylor1_vars!(w::Taylor1{T}, ::Val{N}, order::Int) where
+        {T<:Number, N}
+    ww = _rectaylor1_vars!(w[0], Val(Int(N)-1), order)
+    return Taylor1(ww, order)
+end
+
+function _rectaylor1_vars!(w::Taylor1{T}, ::Val{1}, order::Int) where {T<:Number}
+    w[1] = zero(w[0])
+    w[0][1] = one(w[0][1])
+    return w
+end
+
+
+"""
+    get_numvars(t::Taylor1)
+
+Return the number of variables of a `Taylor1`.
+"""
+get_numvars(t::Taylor1{T}) where {T<:NumberNotSeriesN} = get_numvars(t[0])+1
+get_numvars(t::T) where {T<:NumberNotSeries} = 0

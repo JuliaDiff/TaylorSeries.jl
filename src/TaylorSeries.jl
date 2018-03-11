@@ -46,7 +46,7 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
-export getcoeff, derivative, integrate,
+export getcoeff, derivative, integrate, rectaylor1,
     evaluate, evaluate!, inverse,
     show_params_TaylorN, show_monomials, displayBigO, use_show_default,
     get_order, get_numvars,
