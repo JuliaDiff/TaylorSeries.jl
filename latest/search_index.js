@@ -196,7 +196,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#TaylorSeries",
     "page": "API",
     "title": "TaylorSeries",
-    "category": "Module",
+    "category": "module",
     "text": "TaylorSeries\n\nA Julia package for Taylor expansions in one or more independent variables.\n\nThe basic constructors are Taylor1 and TaylorN; see also HomogeneousPolynomial.\n\n\n\n"
 },
 
