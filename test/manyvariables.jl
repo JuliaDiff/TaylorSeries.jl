@@ -18,6 +18,12 @@ end
     @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
     @test TaylorN{Float64} <: AbstractSeries{Float64}
 
+    _taylorNparams = TaylorSeries.ParamsTaylorN(6, 2, String["x₁", "x₂"])
+    @test _taylorNparams.order == get_order()
+    @test _taylorNparams.num_vars == get_numvars()
+    @test _taylorNparams.variable_names == get_variable_names()
+    @test _taylorNparams.variable_symbols == get_variable_symbols()
+
     @test eltype(set_variables(Int, "x", numvars=2, order=6)) == TaylorN{Int}
     @test eltype(set_variables("x", numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(set_variables(BigInt, "x y", order=6)) == TaylorN{BigInt}
@@ -125,6 +131,7 @@ end
     @test get_order(xT) == 17
     @test xT * true == xT
     @test false * yT == zero(yT)
+    @test HomogeneousPolynomial([1.0])*xH == xH
 
     @test xT == TaylorN([xH])
     @test one(xT) == TaylorN(1,5)
@@ -203,10 +210,12 @@ end
     @test a[1:end] == b[1:end]
     @test a[end][:] == b[end][:]
     @test a[end][1:end] == b[end][1:end]
-    rv = a[end][:] .= rand.()
+    a[end][:] .= rand.()
+    rv = a[end][:]
     @test a[end][:] == rv
     @test a[end][:] != b[end][:]
-    rv = a[end][1:end] .= rand.()
+    a[end][1:end] .= rand.()
+    rv = a[end][1:end]
     @test a[end][1:end] == rv
     @test a[end][1:end] != b[end][1:end]
 
@@ -318,7 +327,9 @@ end
     @test v == ones(2)
     A_TN = [xT 2xT 3xT; yT 2yT 3yT]
     @test evaluate(A_TN, ones(2)) == [1.0 2.0 3.0; 1.0 2.0 3.0]
+    @test evaluate(A_TN) == [0.0 0.0 0.0; 0.0 0.0 0.0]
     @test A_TN() == [0.0  0.0  0.0; 0.0  0.0  0.0]
+    @test (view(A_TN,:,:))() == [0.0 0.0 0.0; 0.0 0.0 0.0]
     t = Taylor1(10)
     @test A_TN([t,t^2]) == [t 2t 3t; t^2 2t^2 3t^2]
     @test view(A_TN, :, :)(ones(2)) == A_TN(ones(2))

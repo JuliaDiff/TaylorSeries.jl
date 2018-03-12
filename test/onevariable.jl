@@ -70,10 +70,12 @@ end
     y[:] = 0.0
     @test y[:] == zero(y[:])
     y = sin(Taylor1(16))
-    rv = y[0:4] .= rand.()
+    rv = rand.(length(0:4))
+    y[0:4] .= rv
     @test y[0:4] == rv
     @test y[6:end] == sin(Taylor1(16))[6:end]
-    rv = y[:] .= rand.()
+    rv = rand.(length(y))
+    y[:] = rv
     @test y[:] == rv
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
@@ -282,6 +284,8 @@ end
     TaylorSeries.div!(tt, ut, ut, 0, iind)
     @test tt[0] == cind
     TaylorSeries.div!(tt, 1+ut, 1+ut, 0)
+    @test tt[0] == 1.0
+    TaylorSeries.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
     TaylorSeries.pow!(tt, 1+t, 1.5, 0, 0)
     @test tt[0] == 1.0
