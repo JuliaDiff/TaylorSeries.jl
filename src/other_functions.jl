@@ -227,7 +227,7 @@ function taylor_expand(f::Function, x0::Vector{T};
 
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
-    @compat X = Array{TaylorN{T}}(uninitialized, ll)
+    @compat X = Array{TaylorN{T}}(undef, ll)
 
     for i in eachindex(X)
         X[i] = x0[i] + TaylorN(T, i, order=order)
@@ -241,7 +241,7 @@ function taylor_expand(f::Function, x0...; order::Int64=get_order())
     T = eltype(x0[1])
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
-    @compat X = Array{TaylorN{T}}(uninitialized, ll)
+    @compat X = Array{TaylorN{T}}(undef, ll)
 
     for i in eachindex(X)
         X[i] = x0[i] + TaylorN(T, i, order=order)

@@ -14,7 +14,7 @@ function convert(::Type{Taylor1{Rational{T}}}, a::Taylor1{S}) where
         {T<:Integer, S<:AbstractFloat}
 
     la = length(a.coeffs)
-    @compat v = Array{Rational{T}}(uninitialized, la)
+    @compat v = Array{Rational{T}}(undef, la)
     v .= rationalize.(a[0:la-1])
     return Taylor1(v)
 end
@@ -40,7 +40,7 @@ function convert(::Type{HomogeneousPolynomial{Rational{T}}},
         a::HomogeneousPolynomial{S}) where {T<:Integer, S<:AbstractFloat}
 
     la = length(a.coeffs)
-    @compat v = Array{Rational{T}}(uninitialized, la)
+    @compat v = Array{Rational{T}}(undef, la)
     v .= rationalize.(a[1:la], tol=eps(one(S)))
     return HomogeneousPolynomial(v, a.order)
 end
@@ -109,7 +109,7 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
     for ordHP in eachindex(s.coeffs)
         ordert = max(ordert, s[ordHP-1][1].order)
     end
-    @compat vT = Array{TaylorN{T}}(uninitialized, ordert+1)
+    @compat vT = Array{TaylorN{T}}(undef, ordert+1)
     @inbounds for ordT in eachindex(vT)
         vT[ordT] = TaylorN(zero(T), s.order)
     end
@@ -131,7 +131,7 @@ end
 function convert(::Type{Array{TaylorN{Taylor1{T}},N}},
         s::Array{Taylor1{TaylorN{T}},N}) where {T<:Number, N}
 
-    @compat v = Array{TaylorN{Taylor1{T}}}(uninitialized, size(s))
+    @compat v = Array{TaylorN{Taylor1{T}}}(undef, size(s))
     for ind in eachindex(s)
         v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
     end
@@ -141,7 +141,7 @@ end
 function convert(::Type{Array{Taylor1{TaylorN{T}},N}},
         s::Array{TaylorN{Taylor1{T}},N}) where {T<:Number, N}
 
-    @compat v = Array{Taylor1{TaylorN{T}}}(uninitialized, size(s))
+    @compat v = Array{Taylor1{TaylorN{T}}}(undef, size(s))
     for ind in eachindex(s)
         v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
     end
