@@ -323,7 +323,7 @@ end
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
-    @compat vv = Vector{Float64}(uninitialized, 2)
+    @compat vv = Vector{Float64}(undef, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv

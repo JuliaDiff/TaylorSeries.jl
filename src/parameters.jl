@@ -37,7 +37,7 @@ get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
 function lookupvar(s::Symbol)
-    @compat ind = findfirst(equalto(s), _params_TaylorN_.variable_symbols)
+    @compat ind = findfirst(x -> x==s, _params_TaylorN_.variable_symbols)
     @compat isa(ind, Nothing) && return 0
     return ind
 end
