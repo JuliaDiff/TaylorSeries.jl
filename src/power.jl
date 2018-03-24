@@ -32,6 +32,14 @@ for T in (:Taylor1, :TaylorN)
         return power_by_squaring(a, n)
     end
 
+    @eval function ^(a::$T{Rational{T}}, n::Integer) where {T<:Integer}
+        n == 0 && return one(a)
+        n == 1 && return copy(a)
+        n == 2 && return square(a)
+        n < 0 && return inv( a^(-n) )
+        return power_by_squaring(a, n)
+    end
+
     @eval ^(a::$T, x::Rational) = a^(x.num/x.den)
 
     @eval ^(a::$T, b::$T) = exp( b*log(a) )
@@ -70,13 +78,18 @@ end
 
 ## Real power ##
 function ^(a::Taylor1, r::S) where {S<:Real}
-    r == zero(r) && return one(a)
-    r == one(r)/2 && return sqrt(a)
-    isinteger(r) && return a^round(Int,r)
+    a0 = constant_term(a)
+    aux = one(a0^r)
+
+    iszero(r) && return Taylor1(aux, a.order)
+    aa = aux*a
+    r == 1 && return aa
+    r == 2 && return square(aa)
+    r == 1/2 && return sqrt(aa)
 
     # First non-zero coefficient
     l0nz = findfirst(a)
-    l0nz < 0 && return zero(a)
+    l0nz < 0 && return Taylor1(zero(aux), a.order)
 
     # The first non-zero coefficient of the result; must be integer
     !isinteger(r*l0nz) && throw(ArgumentError(
@@ -89,7 +102,7 @@ function ^(a::Taylor1, r::S) where {S<:Real}
     c = Taylor1( zero(aux), a.order)
     @inbounds c[lnull] = aux
     for k = k0+1:a.order+l0nz
-        pow!(c, a, r, k, l0nz)
+        pow!(c, aa, r, k, l0nz)
     end
 
     return c
@@ -97,16 +110,21 @@ end
 
 ## Real power ##
 function ^(a::TaylorN, r::S) where {S<:Real}
-    r == zero(r) && return TaylorN( one(eltype(a)), 0 )
-    r == one(r)/2 && return sqrt(a)
-    isinteger(r) && return a^round(Int,r)
-
     a0 = constant_term(a)
-    @assert a0 != zero(a0)
+    aux = one(a0^r)
+
+    iszero(r) && return TaylorN(aux, a.order)
+    aa = aux*a
+    r == 1 && return aa
+    r == 2 && return square(aa)
+    r == one(r)/2 && return sqrt(aa)
+    isinteger(r) && return aa^round(Int,r)
+
+    @assert !iszero(a0)
 
     c = TaylorN( a0^r, a.order)
     for ord in 1:a.order
-        pow!(c, a, r, ord)
+        pow!(c, aa, r, ord)
     end
 
     return c

@@ -289,7 +289,7 @@ end
     else
         @test_throws AssertionError yT^(-2)
     end
-    @test_throws DomainError yT^(-2.0)
+    @test_throws AssertionError yT^(-2.0)
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
     @test real(xH) == xH
     @test imag(xH) == zero(xH)
