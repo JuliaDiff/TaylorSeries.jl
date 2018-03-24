@@ -303,13 +303,13 @@ Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
-        ca == zero(T) && continue
+        iszero(ca) && continue
         inda = idxTb[na]
         pos = posTb[2*inda]
         c[pos] += ca * ca
         @inbounds for nb = na+1:num_coeffs_a
             cb = a[nb]
-            cb == zero(T) && continue
+            iszero(cb) && continue
             indb = idxTb[nb]
             pos = posTb[inda+indb]
             c[pos] += 2 * ca * cb
@@ -350,7 +350,7 @@ end
 
 function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( constant_term(a) )
-    if p0 == zero(p0)
+    if iszero(p0)
         throw(ArgumentError(
         """The 0-th order TaylorN coefficient must be non-zero
         in order to expand `sqrt` around 0."""))

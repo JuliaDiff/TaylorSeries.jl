@@ -20,8 +20,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function log(a::$T)
-            constant_term(a) == zero(constant_term(a)) &&
-                throw(ArgumentError("""
+            iszero(constant_term(a)) && throw(ArgumentError("""
                     The 0-th order `TaylorN` coefficient must be non-zero
                     in order to expand `log` around 0.
                     """))
@@ -96,8 +95,7 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             c = $T( atan(a0), order)
             r = $T(1 + a0^2, order)
-            constant_term(r) == zero(constant_term(a)) &&
-                throw(ArgumentError(
+            iszero(constant_term(r)) && throw(ArgumentError(
                     """
                     Recursion formula has a pole.
                     """))

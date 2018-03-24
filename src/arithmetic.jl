@@ -345,12 +345,12 @@ Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
-        ca == zero(T) && continue
+        iszero(ca) && continue
         inda = indTa[na]
 
         @inbounds for nb = 1:num_coeffs_b
             cb = b[nb]
-            cb == zero(T) && continue
+            iszero(cb) && continue
             indb = indTb[nb]
 
             pos = posTb[inda + indb]
