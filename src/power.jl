@@ -97,10 +97,9 @@ function ^(a::Taylor1, r::S) where {S<:Real}
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0nz )
 
-    @inbounds aux = ( a[l0nz] )^r
     k0 = lnull+l0nz
     c = Taylor1( zero(aux), a.order)
-    @inbounds c[lnull] = aux
+    @inbounds c[lnull] = ( a[l0nz] )^r
     for k = k0+1:a.order+l0nz
         pow!(c, aa, r, k, l0nz)
     end
@@ -120,7 +119,10 @@ function ^(a::TaylorN, r::S) where {S<:Real}
     r == one(r)/2 && return sqrt(aa)
     isinteger(r) && return aa^round(Int,r)
 
-    @assert !iszero(a0)
+    # @assert !iszero(a0)
+    iszero(a0) && throw(ArgumentError(
+        """The 0-th order TaylorN coefficient must be non-zero
+        in order to expand `^` around 0."""))
 
     c = TaylorN( a0^r, a.order)
     for ord in 1:a.order
@@ -148,8 +150,8 @@ For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient of `a`.
 
 """
-@inline function pow!(c::Taylor1, a::Taylor1, r::S, k::Int, l0::Int=0) where
-        {S<:Real}
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int, l0::Int=0) where
+        {T<:Number, S<:Real}
 
     if r == 0
         return one!(c, a, k)
@@ -177,7 +179,8 @@ coefficient of `a`.
     return nothing
 end
 
-@inline function pow!(c::TaylorN, a::TaylorN, r::S, k::Int) where {S<:Real}
+@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, r::S, k::Int) where
+        {T<:NumberNotSeriesN, S<:Real}
 
     if r == 0
         return one!(c, a, k)
@@ -256,7 +259,7 @@ c_k & = & 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
 
 for T = (:Taylor1, :TaylorN)
     @eval begin
-        @inline function sqr!(c::$T, a::$T, k::Int)
+        @inline function sqr!(c::$T{T}, a::$T{T}, k::Int) where {T}
             if k == 0
                 @inbounds c[0] = constant_term(a)^2
                 return nothing
@@ -292,10 +295,10 @@ end
 Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
 
 """
-@inline function sqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
+@inline function sqr!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where
+        {T<:NumberNotSeriesN}
     iszero(a) && return nothing
 
-    T = eltype(c)
     @inbounds num_coeffs_a = size_table[a.order+1]
 
     @inbounds posTb = pos_table[c.order+1]
@@ -326,8 +329,9 @@ function sqrt(a::Taylor1)
 
     # First non-zero coefficient
     l0nz = findfirst(a)
+    aux = zero(sqrt( constant_term(a) ))
     if l0nz < 0
-        return zero(a)
+        return Taylor1(aux, a.order)
     elseif l0nz%2 == 1 # l0nz must be pair
         throw(ArgumentError(
         """First non-vanishing Taylor1 coefficient must correspond
@@ -336,13 +340,11 @@ function sqrt(a::Taylor1)
 
     # The last l0nz coefficients are set to zero.
     lnull = div(l0nz, 2)
-    @inbounds aux = sqrt( a[l0nz] )
-    T = typeof(aux)
-
-    c = Taylor1( zero(T), a.order )
-    @inbounds c[lnull] = aux
+    c = Taylor1( aux, a.order )
+    @inbounds c[lnull] = sqrt( a[l0nz] )
+    aa = one(aux) * a
     for k = lnull+1:a.order
-        sqrt!(c, a, k, lnull)
+        sqrt!(c, aa, k, lnull)
     end
 
     return c
@@ -357,8 +359,9 @@ function sqrt(a::TaylorN)
     end
 
     c = TaylorN( p0, a.order)
+    aa = one(p0)*a
     for k = 1:a.order
-        sqrt!(c, a, k)
+        sqrt!(c, aa, k)
     end
 
     return c
@@ -386,7 +389,7 @@ For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient, which must be even.
 
 """
-@inline function sqrt!(c::Taylor1, a::Taylor1, k::Int, k0::Int=0)
+@inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T}
 
     if k == k0
         @inbounds c[k] = sqrt(a[2*k0])
@@ -412,7 +415,7 @@ coefficient, which must be even.
     return nothing
 end
 
-@inline function sqrt!(c::TaylorN, a::TaylorN, k::Int)
+@inline function sqrt!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:NumberNotSeriesN}
 
     if k == 0
         @inbounds c[0] = sqrt( constant_term(a) )

@@ -287,29 +287,29 @@ end
     @test tt[0] == 1.0
     TaylorSeries.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1+t, 1.5, 0, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1+t, 1.5, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0)
     @test tt[0] == 1.0
-    TaylorSeries.sqrt!(tt, 1+t, 0, 0)
+    TaylorSeries.sqrt!(tt, 1.0+t, 0, 0)
     @test tt[0] == 1.0
-    TaylorSeries.sqrt!(tt, 1+t, 0)
+    TaylorSeries.sqrt!(tt, 1.0+t, 0)
     @test tt[0] == 1.0
-    TaylorSeries.exp!(tt, t, 0)
+    TaylorSeries.exp!(tt, 1.0*t, 0)
     @test tt[0] == exp(t[0])
     TaylorSeries.log!(tt, 1.0+t, 0)
     @test tt[0] == 0.0
     ct = zero(ut)
-    TaylorSeries.sincos!(tt, ct, t, 0)
+    TaylorSeries.sincos!(tt, ct, 1.0*t, 0)
     @test tt[0] == sin(t[0])
     @test ct[0] == cos(t[0])
-    TaylorSeries.tan!(tt, t, ct, 0)
+    TaylorSeries.tan!(tt, 1.0*t, ct, 0)
     @test tt[0] == tan(t[0])
     @test ct[0] == tan(t[0])^2
-    TaylorSeries.asin!(tt, t, ct, 0)
+    TaylorSeries.asin!(tt, 1.0*t, ct, 0)
     @test tt[0] == asin(t[0])
     @test ct[0] == sqrt(1.0-t[0]^2)
-    TaylorSeries.acos!(tt, t, ct, 0)
+    TaylorSeries.acos!(tt, 1.0*t, ct, 0)
     @test tt[0] == acos(t[0])
     @test ct[0] == sqrt(1.0-t[0]^2)
     TaylorSeries.atan!(tt, ut, ct, 0)

@@ -374,8 +374,8 @@ end
     @test xx[0] == 1.0
     @test xx[1] == HomogeneousPolynomial([0.5,0.0])
     xx = 1.0*zeroT
-    TaylorSeries.exp!(xx, xT, 0)
-    TaylorSeries.exp!(xx, xT, 1)
+    TaylorSeries.exp!(xx, 1.0*xT, 0)
+    TaylorSeries.exp!(xx, 1.0*xT, 1)
     @test xx[0] == 1.0
     @test xx[1] == HomogeneousPolynomial([1.0,0.0])
     xx = 1.0*zeroT
