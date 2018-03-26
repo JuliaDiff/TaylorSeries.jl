@@ -184,7 +184,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline abs2!(c::$T{T}, a::$T{T}, k::Int) where {T} = pow!(c, a, 2, k)
+        @inline abs2!(c::$T{T}, a::$T{T}, k::Int) where {T} = sqr!(c, a, k)
 
         @inline function exp!(c::$T{T}, a::$T{T}, k::Int) where {T}
             if k == 0
