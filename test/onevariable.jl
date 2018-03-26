@@ -266,6 +266,12 @@ end
 
     ut = 1.0*t
     tt = zero(ut)
+    TaylorSeries.one!(tt, ut, 0)
+    @test tt[0] == 1.0
+    TaylorSeries.one!(tt, ut, 1)
+    @test tt[1] == 0.0
+    TaylorSeries.abs!(tt, 1.0+ut, 0)
+    @test tt[0] == 1.0
     TaylorSeries.add!(tt, ut, ut, 1)
     @test tt[1] == 2.0
     TaylorSeries.add!(tt, -3.0, 0)
@@ -385,6 +391,7 @@ end
     @test_throws ArgumentError cos(t)/sin(t)
     @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
     @test_throws ArgumentError inverse(exp(t))
+    @test_throws ArgumentError abs(t)
 
     displayBigO(false)
     @test string(ta(-3)) == " - 3 + 1 t "
