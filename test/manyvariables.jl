@@ -363,11 +363,24 @@ end
     TaylorSeries.subst!(xx, -5.0, 1)
     @test xx[1] == zero(xx[end])
     TaylorSeries.div!(xx, 1.0+xT, 1.0+xT, 0)
-    @test xx[0] == 1.0
+    @test xx[0] == HomogeneousPolynomial([1.0])
+    TaylorSeries.pow!(xx, 1.0+xT, 0.5, 1)
+    @test xx[1] == HomogeneousPolynomial([0.5,0.0])
+    xx = 1.0*zeroT
     TaylorSeries.pow!(xx, 1.0+xT, 1.5, 0)
-    @test xx[0] == 1.0
+    @test xx[0] == HomogeneousPolynomial([1.0])
     TaylorSeries.pow!(xx, 1.0+xT, 1.5, 1)
     @test xx[1] == HomogeneousPolynomial([1.5,0.0])
+    xx = 1.0*zeroT
+    TaylorSeries.pow!(xx, 1.0+xT, 0, 0)
+    @test xx[0] == HomogeneousPolynomial([1.0])
+    TaylorSeries.pow!(xx, 1.0+xT, 1, 1)
+    @test xx[1] == HomogeneousPolynomial([1.0,0.0])
+    xx = 1.0*zeroT
+    TaylorSeries.pow!(xx, 1.0+xT, 2, 0)
+    @test xx[0] == HomogeneousPolynomial([1.0])
+    TaylorSeries.pow!(xx, 1.0+xT, 2, 1)
+    @test xx[1] == HomogeneousPolynomial([2.0,0.0])
     xx = 1.0*zeroT
     TaylorSeries.sqrt!(xx, 1.0+xT, 0)
     TaylorSeries.sqrt!(xx, 1.0+xT, 1)

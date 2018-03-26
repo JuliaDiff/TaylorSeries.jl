@@ -291,6 +291,19 @@ end
     @test tt[0] == 1.0
     TaylorSeries.pow!(tt, 1.0+t, 1.5, 0)
     @test tt[0] == 1.0
+    TaylorSeries.pow!(tt, 1.0+t, 0.5, 1)
+    @test tt[1] == 0.5
+    TaylorSeries.pow!(tt, 1.0+t, 0, 0)
+    @test tt[0] == 1.0
+    TaylorSeries.pow!(tt, 1.0+t, 1, 1)
+    @test tt[1] == 1.0
+    tt = zero(ut)
+    TaylorSeries.pow!(tt, 1.0+t, 2, 0)
+    @test tt[0] == 1.0
+    TaylorSeries.pow!(tt, 1.0+t, 2, 1)
+    @test tt[1] == 2.0
+    TaylorSeries.pow!(tt, 1.0+t, 2, 2)
+    @test tt[2] == 1.0
     TaylorSeries.sqrt!(tt, 1.0+t, 0, 0)
     @test tt[0] == 1.0
     TaylorSeries.sqrt!(tt, 1.0+t, 0)
