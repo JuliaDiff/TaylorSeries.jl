@@ -205,12 +205,13 @@ function evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
     R = promote_type(T,S)
     suma = zero(R)
 
-    for (i,a_coeffs) in enumerate(a.coeffs)
+    for (i,a_coeff) in enumerate(a.coeffs)
+        iszero(a_coeff) && continue
         tmp = vals[1]^(ct[i][1])
         for n in 2:N
             tmp *= vals[n]^(ct[i][n])
         end
-        suma += a_coeffs * tmp
+        suma += a_coeff * tmp
     end
 
     return suma
@@ -252,6 +253,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
     for homPol in 1:length(a)
         sun = zero(R)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:N
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -281,6 +283,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
 
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:N
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -306,6 +309,7 @@ function evaluate(a::TaylorN{Taylor1{T}}, vals::NTuple{N, Taylor1{T}}) where
 
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:N
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -333,6 +337,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N, TaylorN{S}}) where
 
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
