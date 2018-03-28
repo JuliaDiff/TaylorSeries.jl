@@ -101,7 +101,13 @@ end
     @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
+    @test TaylorSeries.findfirst(t^2) == 2
+    @test TaylorSeries.findfirst(ot) == 0
     @test TaylorSeries.findfirst(zt) == -1
+    @test TaylorSeries.findlast(t) == 1
+    @test TaylorSeries.findlast(t^2) == 2
+    @test TaylorSeries.findlast(ot) == 0
+    @test TaylorSeries.findlast(zt) == -1
     @test iszero(zero(t))
     @test !iszero(one(t))
     @test isinf(Taylor1([typemax(1.0)]))

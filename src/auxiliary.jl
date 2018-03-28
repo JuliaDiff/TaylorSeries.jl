@@ -223,6 +223,11 @@ function Base.findfirst(a::Taylor1{T}) where {T<:Number}
     @compat isa(first, Nothing) && return -1
     return first-1
 end
+function Base.findlast(a::Taylor1{T}) where {T<:Number}
+    last = findlast(a.coeffs)
+    @compat isa(last, Nothing) && return -1
+    return last-1
+end
 
 """
     constant_term(a)
