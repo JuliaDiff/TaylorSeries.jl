@@ -15,15 +15,25 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     return power_by_squaring(a, n)
 end
 
-for T in (:Taylor1, :TaylorN)
-    @eval function ^(a::$T{T}, n::Integer) where {T<:Number}
-        n == 0 && return one(a)
-        n == 1 && return copy(a)
-        n == 2 && return square(a)
-        n < 0 && return inv( a^(-n) )
-        return power_by_squaring(a, n)
-    end
+function ^(a::Taylor1{T}, n::Integer) where {T<:Number}
+    n == 0 && return one(a)
+    n == 1 && return copy(a)
+    n == 2 && return square(a)
+    # Return a^float(n) instead of power_by_squaring(a,n)
+    # because it yields better accuracy
+    return a^float(n)
+end
 
+function ^(a::TaylorN{T}, n::Integer) where {T<:Number}
+    n == 0 && return one(a)
+    n == 1 && return copy(a)
+    n == 2 && return square(a)
+    n < 0 && return inv( a^(-n) )
+    return power_by_squaring(a, n)
+end
+
+
+for T in (:Taylor1, :TaylorN)
     @eval function ^(a::$T{T}, n::Integer) where {T<:Integer}
         n == 0 && return one(a)
         n == 1 && return copy(a)
@@ -96,6 +106,7 @@ function ^(a::Taylor1, r::S) where {S<:Real}
         """The 0th order Taylor1 coefficient must be non-zero
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0nz )
+    lnull > a.order && return Taylor1(zero(aux), a.order)
 
     k0 = lnull+l0nz
     c = Taylor1( zero(aux), a.order)
@@ -168,8 +179,15 @@ coefficient of `a`.
         return nothing
     end
 
-    for i = 0:k-l0-1
-        k-i > a.order && continue
+    # Relevant for positive integer r, to avoid round-off errors
+    if isinteger(r) && (k-l0 > r*findlast(a) > 0)
+        @inbounds c[k-l0] = zero(c[0])
+        return nothing
+    end
+
+    imin = max(0,k-a.order)
+    for i = imin:k-l0-1
+        # k-i > a.order && continue
         aux = r*(k-i) - i
         @inbounds c[k-l0] += aux * a[k-i] * c[i]
     end
