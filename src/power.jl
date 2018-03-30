@@ -148,7 +148,7 @@ end
 @doc doc"""
     pow!(c, a, r::Real, k::Int, k0::Int=0)
 
-Update the `k-th` expansion coefficient `c[k]` of `c = a^r`, for
+Update the `k`-th expansion coefficient `c[k]` of `c = a^r`, for
 both `c` and `a` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
@@ -160,7 +160,8 @@ c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} \big(r(k-j) -j\big)a_{k-j} c_j.
 For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient of `a`.
 
-"""
+""" pow!
+
 @inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int, l0::Int=0) where
         {T<:Number, S<:Real}
 
@@ -397,16 +398,17 @@ The coefficients are given by
 ```math
 \begin{eqnarray*}
 c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-1)/2} c_{k-j}c_j\big),
-    \text{ if $k$ is odd,} \\
+    \text{ if k is odd,} \\
 c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-2)/2} c_{k-j}c_j
-    - (c_{k/2})^2\big), \text{ if $k$ is even.}
+    - (c_{k/2})^2\big), \text{ if k is even.}
 \end{eqnarray*}
 ```
 
 For `Taylor1` polynomials, `k0` is the order of the first non-zero
 coefficient, which must be even.
 
-"""
+""" sqrt!
+
 @inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T}
 
     if k == k0

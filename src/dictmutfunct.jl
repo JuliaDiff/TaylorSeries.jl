@@ -126,7 +126,8 @@ _internalmutfunc_call( fn :: _InternalMutFuncs )
 
 Creates the appropriate call to the internal mutating
 function defined by the `_InternalMutFuncs` object.
-This is used to construct [`_dict_internalcalls`](@ref).
+This is used to construct [`_dict_unary_calls`](@ref)
+and [`_dict_binary_calls`](@ref).
 The call contains the prefix `TaylorSeries.`.
 """
 @compat _internalmutfunc_call( fn :: _InternalMutFuncs ) = (
@@ -148,7 +149,7 @@ the actual calls to the internal mutating functions.
 """
 const _dict_unary_calls = Dict{Symbol, NTuple{3,Expr}}()
 
-#Populates the constant vector `_dict_internalcalls`.
+#Populates the constant vector `_dict_unary_calls`.
 for kk in keys(_dict_unary_ops)
     res = _internalmutfunc_call( _InternalMutFuncs(_dict_unary_ops[kk]) )
     push!(_dict_unary_calls, kk => res )

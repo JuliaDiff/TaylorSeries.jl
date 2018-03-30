@@ -36,7 +36,7 @@ function derivative!(res::Taylor1, a::Taylor1)
     nothing
 end
 
-@doc doc"""
+"""
     derivative!(p, a, k) --> nothing
 
 Update in-place the `k-th` expansion coefficient `p[k]` of `p = derivative(a)`
@@ -45,9 +45,7 @@ for both `p` and `a` `Taylor1`.
 The coefficients are given by
 
 ```math
-\begin{equation*}
 p_k = (k+1)a_{k+1}.
-\end{equation*}
 ```
 
 """

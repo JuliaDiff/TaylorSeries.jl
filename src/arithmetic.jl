@@ -478,7 +478,8 @@ c_k =  \frac{1}{b_0} \big(a_k - \sum_{j=0}^{k-1} c_j b_{k-j}\big).
 
 For `Taylor1` polynomials, `ordfact` is the order of the factorized
 term of the denominator.
-"""
+""" div!
+
 @inline function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
     if k == 0
         @inbounds c[0] = a[ordfact] / b[ordfact]

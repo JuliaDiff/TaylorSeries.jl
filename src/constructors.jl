@@ -18,15 +18,15 @@ abstract type AbstractSeries{T<:Number} <: Number end
 ## Constructors ##
 
 ######################### Taylor1
-@doc doc"""
+"""
     Taylor1{T<:Number} <: AbstractSeries{T}
 
 DataType for polynomial expansions in one independent variable.
 
 **Fields:**
 
-- `coeffs :: Array{T,1}` Expansion coefficients; the $i$-th
-    component is the coefficient of degree $i-1$ of the expansion.
+- `coeffs :: Array{T,1}` Expansion coefficients; the ``i``-th
+    component is the coefficient of degree ``i-1`` of the expansion.
 - `order  :: Int64` Maximum order (degree) of the polynomial.
 
 Note that `Taylor1` variables are callable. For more information, see
@@ -54,7 +54,7 @@ function Taylor1(x::T, order::Int) where {T<:Number}
 end
 
 # Shortcut to define Taylor1 independent variables
-@doc doc"""
+"""
     Taylor1([T::Type=Float64], [order::Int=1])
 
 Shortcut to define the independent variable of a `Taylor1{T}` polynomial of
@@ -73,7 +73,7 @@ Taylor1(order::Int=1) = Taylor1(Float64, order)
 
 
 ######################### HomogeneousPolynomial
-@doc doc"""
+"""
     HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
 
 DataType for homogenous polynomials in many (>1) independent variables.
@@ -81,7 +81,7 @@ DataType for homogenous polynomials in many (>1) independent variables.
 **Fields:**
 
 - `coeffs  :: Array{T,1}` Expansion coefficients of the homogeneous
-polynomial; the $i$-th component is related to a monomial, where the degrees
+polynomial; the ``i``-th component is related to a monomial, where the degrees
 of the independent variables are specified by `coeff_table[order+1][i]`.
 - `order   :: Int` order (degree) of the homogenous polynomial.
 
@@ -132,7 +132,7 @@ HomogeneousPolynomial(nv::Int) = HomogeneousPolynomial(Float64, nv)
 
 
 ######################### TaylorN
-@doc doc"""
+"""
     TaylorN{T<:Number} <: AbstractSeries{T}
 
 DataType for polynomial expansions in many (>1) independent variables.
@@ -140,8 +140,8 @@ DataType for polynomial expansions in many (>1) independent variables.
 **Fields:**
 
 - `coeffs  :: Array{HomogeneousPolynomial{T},1}` Vector containing the
-`HomogeneousPolynomial` entries. The $i$-th component corresponds to the
-homogeneous polynomial of degree $i-1$.
+`HomogeneousPolynomial` entries. The ``i``-th component corresponds to the
+homogeneous polynomial of degree ``i-1``.
 - `order   :: Int`  maximum order of the polynomial expansion.
 
 Note that `TaylorN` variables are callable. For more information, see
@@ -198,6 +198,6 @@ TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
 # A `Number` which is not an `AbstractSeries`
 const NumberNotSeries = Union{setdiff(subtypes(Number), [AbstractSeries])...}
 
-# A `Number` which is not a TaylorN nor a HomogeneousPolynomial
+# A `Number` which is not `TaylorN` nor a `HomogeneousPolynomial`
 const NumberNotSeriesN =
     Union{setdiff(subtypes(Number), [AbstractSeries])..., Taylor1}

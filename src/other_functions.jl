@@ -143,7 +143,6 @@ Notice that `typeof(abs(a)) <: AbstractSeries`.
 
 #norm
 @doc doc"""
-
     norm(x::AbstractSeries, p::Real)
 
 Returns the p-norm of an `x::AbstractSeries`, defined by
@@ -155,7 +154,8 @@ Returns the p-norm of an `x::AbstractSeries`, defined by
 ```
 which returns a non-negative number.
 
-"""
+""" norm
+
 norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
 norm(x::Union{Taylor1{T},HomogeneousPolynomial{T}}, p::Real=2) where
     {T<:NumberNotSeries} = norm(x.coeffs, p)
@@ -169,7 +169,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 # isfinite
-@doc doc"""
+"""
     isfinite(x::AbstractSeries) -> Bool
 
 Test whether the coefficients of the polynomial `x` are finite.
@@ -177,9 +177,8 @@ Test whether the coefficients of the polynomial `x` are finite.
 isfinite(x::AbstractSeries) = !isnan(x) && !isinf(x)
 
 # isapprox; modified from Julia's Base.isapprox
-@doc doc"""
-    isapprox(x::AbstractSeries, y::AbstractSeries;
-        rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false)
+"""
+    isapprox(x::AbstractSeries, y::AbstractSeries; rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false)
 
 Inexact equality comparison between polynomials: returns `true` if
 `norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are
@@ -201,7 +200,7 @@ end
 end
 
 #taylor_expand function for Taylor1
-@doc doc"""
+"""
     taylor_expand(f, x0; order)
 
 Computes the Taylor expansion of the function `f` around the point `x0`.
@@ -251,7 +250,7 @@ function taylor_expand(f::Function, x0...; order::Int64=get_order())
 end
 
 #update! function for Taylor1
-@doc doc"""
+"""
     update!(a, x0)
 
 Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.

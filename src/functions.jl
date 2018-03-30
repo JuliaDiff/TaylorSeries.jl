@@ -375,11 +375,11 @@ end
 @doc doc"""
     inverse(f)
 
-Return the Taylor expansion of $f^{-1}(t)$, of order `N = f.order`,
+Return the Taylor expansion of ``f^{-1}(t)``, of order `N = f.order`,
 for `f::Taylor1` polynomial if the first coefficient of `f` is zero.
 Otherwise, an `ArgumentError` is thrown.
 
-The algorithm implements Lagrange inversion at $t=0$ if $f(0)=0$:
+The algorithm implements Lagrange inversion at ``t=0`` if ``f(0)=0``:
 ```math
 \begin{equation*}
 f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
@@ -388,7 +388,8 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
 \end{equation*}
 ```
 
-"""
+""" inverse
+
 function inverse(f::Taylor1{T}) where {T<:Number}
     if f[0] != zero(T)
         throw(ArgumentError(
