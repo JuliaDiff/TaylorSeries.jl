@@ -101,7 +101,13 @@ end
     @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
+    @test TaylorSeries.findfirst(t^2) == 2
+    @test TaylorSeries.findfirst(ot) == 0
     @test TaylorSeries.findfirst(zt) == -1
+    @test TaylorSeries.findlast(t) == 1
+    @test TaylorSeries.findlast(t^2) == 2
+    @test TaylorSeries.findlast(ot) == 0
+    @test TaylorSeries.findlast(zt) == -1
     @test iszero(zero(t))
     @test !iszero(one(t))
     @test isinf(Taylor1([typemax(1.0)]))
@@ -266,6 +272,12 @@ end
 
     ut = 1.0*t
     tt = zero(ut)
+    TaylorSeries.one!(tt, ut, 0)
+    @test tt[0] == 1.0
+    TaylorSeries.one!(tt, ut, 1)
+    @test tt[1] == 0.0
+    TaylorSeries.abs!(tt, 1.0+ut, 0)
+    @test tt[0] == 1.0
     TaylorSeries.add!(tt, ut, ut, 1)
     @test tt[1] == 2.0
     TaylorSeries.add!(tt, -3.0, 0)
@@ -287,29 +299,42 @@ end
     @test tt[0] == 1.0
     TaylorSeries.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1+t, 1.5, 0, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1+t, 1.5, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0)
     @test tt[0] == 1.0
-    TaylorSeries.sqrt!(tt, 1+t, 0, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 0.5, 1)
+    @test tt[1] == 0.5
+    TaylorSeries.pow!(tt, 1.0+t, 0, 0)
     @test tt[0] == 1.0
-    TaylorSeries.sqrt!(tt, 1+t, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 1, 1)
+    @test tt[1] == 1.0
+    tt = zero(ut)
+    TaylorSeries.pow!(tt, 1.0+t, 2, 0)
     @test tt[0] == 1.0
-    TaylorSeries.exp!(tt, t, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 2, 1)
+    @test tt[1] == 2.0
+    TaylorSeries.pow!(tt, 1.0+t, 2, 2)
+    @test tt[2] == 1.0
+    TaylorSeries.sqrt!(tt, 1.0+t, 0, 0)
+    @test tt[0] == 1.0
+    TaylorSeries.sqrt!(tt, 1.0+t, 0)
+    @test tt[0] == 1.0
+    TaylorSeries.exp!(tt, 1.0*t, 0)
     @test tt[0] == exp(t[0])
     TaylorSeries.log!(tt, 1.0+t, 0)
     @test tt[0] == 0.0
     ct = zero(ut)
-    TaylorSeries.sincos!(tt, ct, t, 0)
+    TaylorSeries.sincos!(tt, ct, 1.0*t, 0)
     @test tt[0] == sin(t[0])
     @test ct[0] == cos(t[0])
-    TaylorSeries.tan!(tt, t, ct, 0)
+    TaylorSeries.tan!(tt, 1.0*t, ct, 0)
     @test tt[0] == tan(t[0])
     @test ct[0] == tan(t[0])^2
-    TaylorSeries.asin!(tt, t, ct, 0)
+    TaylorSeries.asin!(tt, 1.0*t, ct, 0)
     @test tt[0] == asin(t[0])
     @test ct[0] == sqrt(1.0-t[0]^2)
-    TaylorSeries.acos!(tt, t, ct, 0)
+    TaylorSeries.acos!(tt, 1.0*t, ct, 0)
     @test tt[0] == acos(t[0])
     @test ct[0] == sqrt(1.0-t[0]^2)
     TaylorSeries.atan!(tt, ut, ct, 0)
@@ -372,6 +397,7 @@ end
     @test_throws ArgumentError cos(t)/sin(t)
     @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
     @test_throws ArgumentError inverse(exp(t))
+    @test_throws ArgumentError abs(t)
 
     displayBigO(false)
     @test string(ta(-3)) == " - 3 + 1 t "

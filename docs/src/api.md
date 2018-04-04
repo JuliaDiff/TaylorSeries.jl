@@ -6,6 +6,7 @@
 CurrentModule = TaylorSeries
 ```
 
+## Module
 ```@docs
 TaylorSeries
 ```
@@ -17,15 +18,14 @@ Taylor1
 HomogeneousPolynomial
 TaylorN
 AbstractSeries
-ParamsTaylorN
 ```
 
 ## Functions and methods
 
 ```@docs
-Taylor1([::Type{Float64}], [order::Int64=1])
-HomogeneousPolynomial{T<:Number}(::Type{T}, ::Int)
-TaylorN{T<:Number}(::Type{T}, nv::Int; [order::Int=get_order()])
+Taylor1(::Type{T}, ::Int64=1) where {T<:Number}
+HomogeneousPolynomial(::Type{T}, ::Int) where {T<:Number}
+TaylorN(::Type{T}, ::Int; ::Int=get_order()) where {T<:Number}
 set_variables
 get_variables
 show_params_TaylorN
@@ -53,6 +53,8 @@ displayBigO
 ## Internals
 
 ```@docs
+ParamsTaylorN
+_InternalMutFuncs
 generate_tables
 generate_index_vectors
 in_base
@@ -61,12 +63,13 @@ resize_coeffs1!
 resize_coeffsHP!
 constant_term
 mul!
-mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)
+mul!(::Vector{Taylor1{T}}, ::Union{Matrix{T},SparseMatrixCSC{T}},::Vector{Taylor1{T}}) where {T<:Number}
 div!
 pow!
 square
 sqr!
-sqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)
+sqr!(::HomogeneousPolynomial{T}, ::HomogeneousPolynomial{T}) where {T<:NumberNotSeriesN}
 sqrt!
 exp!
 log!
@@ -77,8 +80,12 @@ acos!
 atan!
 sinhcosh!
 tanh!
-mul!
 derivative!
+_internalmutfunc_call
+_dict_unary_ops
+_dict_binary_calls
+_dict_unary_calls
+_dict_binary_ops
 ```
 
 ## Index

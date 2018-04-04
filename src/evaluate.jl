@@ -11,9 +11,8 @@
     evaluate(a, [dx])
 
 Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
-ommitted, its value is considered as zero. Note that a `Taylor1` polynomial `a`
-may also be evaluated by calling it as a function; that is, the syntax `a(dx)`
-is equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
+ommitted, its value is considered as zero. Note that the syntax `a(dx)` is
+equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     @inbounds suma = a[end]
@@ -32,13 +31,12 @@ function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
 end
 evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
-@doc doc"""
+"""
     evaluate(x, δt)
 
-Evaluates each element of `x::Union{ Vector{Taylor1{T}}, Matrix{Taylor1{T}} }`, representing
-the dependent variables of an ODE, at *time* δt. Note that an array `x` of
-`Taylor1` polynomials may also be evaluated by calling it as a function;
-that is, the syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
+Evaluates each element of `x::Union{ Vector{Taylor1{T}}, Matrix{Taylor1{T}} }`,
+representing the dependent variables of an ODE, at *time* δt. Note that the
+syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
 is equivalent to `evaluate(x)`.
 """
 function evaluate(x::Union{Array{Taylor1{T},1}, SubArray{Taylor1{T},1}}, δt::S) where {T<:Number, S<:Number}
@@ -73,7 +71,7 @@ end
 evaluate(A::Array{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
 evaluate(A::SubArray{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
 
-@doc doc"""
+"""
     evaluate!(x, δt, x0)
 
 Evaluates each element of `x::Array{Taylor1{T},1}`,
@@ -100,7 +98,7 @@ function evaluate!(x::Array{Taylor1{T},1}, δt::S,
     nothing
 end
 
-@doc doc"""
+"""
     evaluate(a, x)
 
 Substitute `x::Taylor1` as independent variable in a `a::Taylor1` polynomial.
@@ -189,7 +187,7 @@ function evaluate!(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
     nothing
 end
 
-@doc doc"""
+"""
     evaluate(a, [vals])
 
 Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
@@ -205,12 +203,13 @@ function evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
     R = promote_type(T,S)
     suma = zero(R)
 
-    for (i,a_coeffs) in enumerate(a.coeffs)
+    for (i,a_coeff) in enumerate(a.coeffs)
+        iszero(a_coeff) && continue
         tmp = vals[1]^(ct[i][1])
         for n in 2:N
             tmp *= vals[n]^(ct[i][n])
         end
-        suma += a_coeffs * tmp
+        suma += a_coeff * tmp
     end
 
     return suma
@@ -233,7 +232,7 @@ end
 
 (p::HomogeneousPolynomial)() = evaluate(p)
 
-@doc doc"""
+"""
     evaluate(a, [vals])
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.
@@ -252,6 +251,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
     for homPol in 1:length(a)
         sun = zero(R)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:N
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -281,6 +281,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
 
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:N
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -306,6 +307,7 @@ function evaluate(a::TaylorN{Taylor1{T}}, vals::NTuple{N, Taylor1{T}}) where
 
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:N
                 tmp *= vals[n]^(coeff_table[homPol][i][n])
@@ -333,6 +335,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N, TaylorN{S}}) where
 
     for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
+            iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])
             for n in 2:num_vars
                 tmp *= vals[n]^(coeff_table[homPol][i][n])

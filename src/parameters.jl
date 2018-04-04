@@ -3,7 +3,7 @@
 # Parameters for HomogeneousPolynomial and TaylorN
 
 
-@doc doc"""
+"""
     ParamsTaylorN
 
 DataType holding the current parameters for `TaylorN` and
@@ -16,7 +16,7 @@ DataType holding the current parameters for `TaylorN` and
 - `variable_names   :: Vector{String}` Names of the variables
 - `variable_symbols :: Vector{Symbol}`  Symbols of the variables
 
-These parameters can be changed using `set_params_TaylorN(order, numVars)`.
+These parameters can be changed using [`set_variables`](@ref)
 """
 mutable struct ParamsTaylorN
     order            :: Int

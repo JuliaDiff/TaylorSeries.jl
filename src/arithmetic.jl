@@ -117,7 +117,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             end
 
             ## add! and subst! ##
-            function ($fc)(v::$T, a::$T, k::Int)
+            function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T}
                 @inbounds v[k] = ($f)(a[k])
                 return nothing
             end
@@ -130,11 +130,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return nothing
             end
             function ($fc)(v::$T, a::$T, b::NumberNotSeries, k::Int)
-                @inbounds v[k] = k==0 ? ($f)(a[0], b) : a[k]
+                @inbounds v[k] = k==0 ? ($f)(a[0], b) : ($f)(a[k], zero(b))
                 return nothing
             end
             function ($fc)(v::$T, a::NumberNotSeries, b::$T, k::Int)
-                @inbounds v[k] = k==0 ? ($f)(a, b[0]) : ($f)(b[k])
+                @inbounds v[k] = k==0 ? ($f)(a, b[0]) : ($f)(zero(a), b[k])
                 return nothing
             end
         end
@@ -284,7 +284,7 @@ end
 
 # Internal multiplication functions
 for T in (:Taylor1, :TaylorN)
-    @eval @inline function mul!(c::$T, a::$T, b::$T, k::Int)
+    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T}
 
         # c[k] = zero( a[k] )
         @inbounds for i = 0:k
@@ -345,12 +345,12 @@ Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
-        ca == zero(T) && continue
+        iszero(ca) && continue
         inda = indTa[na]
 
         @inbounds for nb = 1:num_coeffs_b
             cb = b[nb]
-            cb == zero(T) && continue
+            iszero(cb) && continue
             indb = indTb[nb]
 
             pos = posTb[inda + indb]
@@ -478,7 +478,8 @@ c_k =  \frac{1}{b_0} \big(a_k - \sum_{j=0}^{k-1} c_j b_{k-j}\big).
 
 For `Taylor1` polynomials, `ordfact` is the order of the factorized
 term of the denominator.
-"""
+""" div!
+
 @inline function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
     if k == 0
         @inbounds c[0] = a[ordfact] / b[ordfact]

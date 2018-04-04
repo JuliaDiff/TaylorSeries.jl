@@ -12,24 +12,27 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         function exp(a::$T)
             order = a.order
-            c = $T( exp( constant_term(a) ), order )
+            aux = exp(constant_term(a))
+            aa = one(aux) * a
+            c = $T( aux, order )
             for k = 1:order
-                exp!(c, a, k)
+                exp!(c, aa, k)
             end
             return c
         end
 
         function log(a::$T)
-            constant_term(a) == zero(constant_term(a)) &&
-                throw(ArgumentError("""
+            iszero(constant_term(a)) && throw(ArgumentError("""
                     The 0-th order `TaylorN` coefficient must be non-zero
                     in order to expand `log` around 0.
                     """))
 
             order = a.order
-            c = $T( log( constant_term(a) ), order )
+            aux = log(constant_term(a))
+            aa = one(aux) * a
+            c = $T( aux, order )
             for k = 1:order
-                log!(c, a, k)
+                log!(c, aa, k)
             end
             return c
         end
@@ -38,10 +41,12 @@ for T in (:Taylor1, :TaylorN)
         cos(a::$T) = sincos(a)[2]
         function sincos(a::$T)
             order = a.order
-            s = $T( sin(constant_term(a)), order )
+            aux = sin(constant_term(a))
+            aa = one(aux) * a
+            s = $T( aux, order )
             c = $T( cos(constant_term(a)), order )
             for k = 1:order
-                sincos!(s, c, a, k)
+                sincos!(s, c, aa, k)
             end
             return s, c
         end
@@ -49,10 +54,11 @@ for T in (:Taylor1, :TaylorN)
         function tan(a::$T)
             order = a.order
             aux = tan(constant_term(a))
+            aa = one(aux) * a
             c = $T(aux, order)
             c2 = $T(aux^2, order)
             for k = 1:order
-                tan!(c, a, c2, k)
+                tan!(c, aa, c2, k)
             end
             return c
         end
@@ -66,10 +72,12 @@ for T in (:Taylor1, :TaylorN)
                 """))
 
             order = a.order
-            c = $T( asin(a0), order )
+            aux = asin(a0)
+            aa = one(aux) * a
+            c = $T( aux, order )
             r = $T( sqrt(1 - a0^2), order )
             for k in 1:order
-                asin!(c, a, r, k)
+                asin!(c, aa, r, k)
             end
             return c
         end
@@ -83,10 +91,12 @@ for T in (:Taylor1, :TaylorN)
                 """))
 
             order = a.order
-            c = $T( acos(a0), order )
+            aux = acos(a0)
+            aa = one(aux) * a
+            c = $T( aux, order )
             r = $T( sqrt(1 - a0^2), order )
             for k in 1:order
-                acos!(c, a, r, k)
+                acos!(c, aa, r, k)
             end
             return c
         end
@@ -94,16 +104,17 @@ for T in (:Taylor1, :TaylorN)
         function atan(a::$T)
             order = a.order
             a0 = constant_term(a)
-            c = $T( atan(a0), order)
-            r = $T(1 + a0^2, order)
-            constant_term(r) == zero(constant_term(a)) &&
-                throw(ArgumentError(
+            aux = atan(a0)
+            aa = one(aux) * a
+            c = $T( aux, order)
+            r = $T(one(aux) + a0^2, order)
+            iszero(constant_term(r)) && throw(ArgumentError(
                     """
                     Recursion formula has a pole.
                     """))
 
             for k in 1:order
-                atan!(c, a, r, k)
+                atan!(c, aa, r, k)
             end
             return c
         end
@@ -112,10 +123,12 @@ for T in (:Taylor1, :TaylorN)
         cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)
             order = a.order
-            s = $T( sinh(constant_term(a)), order)
+            aux = sinh(constant_term(a))
+            aa = one(aux) * a
+            s = $T( aux, order)
             c = $T( cosh(constant_term(a)), order)
             for k = 1:order
-                sinhcosh!(s, c, a, k)
+                sinhcosh!(s, c, aa, k)
             end
             return s, c
         end
@@ -123,10 +136,11 @@ for T in (:Taylor1, :TaylorN)
         function tanh(a::$T)
             order = a.order
             aux = tanh( constant_term(a) )
+            aa = one(aux) * a
             c = $T( aux, order)
             c2 = $T( aux^2, order)
             for k = 1:order
-                tanh!(c, a, c2, k)
+                tanh!(c, aa, c2, k)
             end
             return c
         end
@@ -137,17 +151,17 @@ end
 # Recursive functions (homogeneous coefficients)
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        @inline function identity!(c::$T, a::$T, k::Int)
+        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T}
             @inbounds c[k] = identity(a[k])
             return nothing
         end
 
-        @inline function zero!(c::$T, a::$T, k::Int)
+        @inline function zero!(c::$T{T}, a::$T{T}, k::Int) where{T}
             @inbounds c[k] = zero(a[k])
             return nothing
         end
 
-        @inline function one!(c::$T, a::$T, k::Int)
+        @inline function one!(c::$T{T}, a::$T{T}, k::Int) where{T}
             if k == 0
                 @inbounds c[0] = one(a[0])
             else
@@ -156,7 +170,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function abs!(c::$T, a::$T, k::Int)
+        @inline function abs!(c::$T{T}, a::$T{T}, k::Int) where {T}
             z = zero(constant_term(a))
             if constant_term(constant_term(a)) > constant_term(z)
                 return add!(c, a, k)
@@ -170,9 +184,9 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline abs2!(c::$T, a::$T, k::Int) = pow!(c, a, 2, k)
+        @inline abs2!(c::$T{T}, a::$T{T}, k::Int) where {T} = sqr!(c, a, k)
 
-        @inline function exp!(c::$T, a::$T, k::Int)
+        @inline function exp!(c::$T{T}, a::$T{T}, k::Int) where {T}
             if k == 0
                 @inbounds c[0] = exp(constant_term(a))
                 return nothing
@@ -190,7 +204,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function log!(c::$T, a::$T, k::Int)
+        @inline function log!(c::$T{T}, a::$T{T}, k::Int) where {T}
             if k == 0
                 @inbounds c[0] = log(constant_term(a))
                 return nothing
@@ -208,7 +222,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function sincos!(s::$T, c::$T, a::$T, k::Int)
+        @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds s[0], c[0] = sin( a0 ), cos( a0 )
@@ -231,7 +245,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function tan!(c::$T, a::$T, c2::$T, k::Int)
+        @inline function tan!(c::$T{T}, a::$T{T}, c2::$T{T}, k::Int) where {T}
             if k == 0
                 @inbounds aux = tan( constant_term(a) )
                 @inbounds c[0] = aux
@@ -252,7 +266,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function asin!(c::$T, a::$T, r::$T, k::Int)
+        @inline function asin!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = asin( a0 )
@@ -272,7 +286,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function acos!(c::$T, a::$T, r::$T, k::Int)
+        @inline function acos!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = acos( a0 )
@@ -292,7 +306,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function atan!(c::$T, a::$T, r::$T, k::Int)
+        @inline function atan!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = atan( a0 )
@@ -312,7 +326,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function sinhcosh!(s::$T, c::$T, a::$T, k::Int)
+        @inline function sinhcosh!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T}
             if k == 0
                 @inbounds s[0] = sinh( constant_term(a) )
                 @inbounds c[0] = cosh( constant_term(a) )
@@ -334,7 +348,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function tanh!(c::$T, a::$T, c2::$T, k::Int)
+        @inline function tanh!(c::$T{T}, a::$T{T}, c2::$T{T}, k::Int) where {T}
             if k == 0
                 @inbounds aux = tanh( constant_term(a) )
                 @inbounds c[0] = aux
@@ -361,11 +375,11 @@ end
 @doc doc"""
     inverse(f)
 
-Return the Taylor expansion of $f^{-1}(t)$, of order `N = f.order`,
+Return the Taylor expansion of ``f^{-1}(t)``, of order `N = f.order`,
 for `f::Taylor1` polynomial if the first coefficient of `f` is zero.
 Otherwise, an `ArgumentError` is thrown.
 
-The algorithm implements Lagrange inversion at $t=0$ if $f(0)=0$:
+The algorithm implements Lagrange inversion at ``t=0`` if ``f(0)=0``:
 ```math
 \begin{equation*}
 f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
@@ -374,7 +388,8 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
 \end{equation*}
 ```
 
-"""
+""" inverse
+
 function inverse(f::Taylor1{T}) where {T<:Number}
     if f[0] != zero(T)
         throw(ArgumentError(

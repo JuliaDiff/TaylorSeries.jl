@@ -2,7 +2,7 @@
 
 # Hash tables for HomogeneousPolynomial and TaylorN
 
-@doc doc"""
+"""
     generate_tables(num_vars, order)
 
 Return the hash tables `coeff_table`, `index_table`, `size_table`
@@ -12,22 +12,22 @@ and `pos_table`. Internally, these are treated as `const`.
 
     coeff_table :: Array{Array{Array{Int64,1},1},1}
 
-The $i+1$-th component contains a vector with the vectors of all the possible
-combinations of monomials of a `HomogeneousPolynomial` of order $i$.
+The ``i+1``-th component contains a vector with the vectors of all the possible
+combinations of monomials of a `HomogeneousPolynomial` of order ``i``.
 
     index_table :: Array{Array{Int64,1},1}
 
-The $i+1$-th component contains a vector of (hashed) indices that represent
-the distinct monomials of a `HomogeneousPolynomial` of order (degree) $i$.
+The ``i+1``-th component contains a vector of (hashed) indices that represent
+the distinct monomials of a `HomogeneousPolynomial` of order (degree) ``i``.
 
     size_table :: Array{Int64,1}
 
-The $i+1$-th component contains the number of distinct monomials of the
-`HomogeneousPolynomial` of order $i$, equivalent to `length(coeff_table[i])`.
+The ``i+1``-th component contains the number of distinct monomials of the
+`HomogeneousPolynomial` of order ``i``, equivalent to `length(coeff_table[i])`.
 
     pos_table :: Array{Dict{Int64,Int64},1}
 
-The $i+1$-th component maps the hash index to the (lexicographic) position
+The ``i+1``-th component maps the hash index to the (lexicographic) position
 of the corresponding monomial in `coeffs_table`.
 """
 function generate_tables(num_vars, order)

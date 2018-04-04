@@ -26,7 +26,7 @@ function pretty_print(a::Taylor1{T}) where {T<:Number}
     bigO = bigOnotation[end] ?
         string("+ 𝒪(t", superscriptify(a.order+1), ")") :
         string("")
-    a == zero(a) && return string(space, z, space, bigO)
+    iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a.coeffs)
@@ -49,7 +49,7 @@ function pretty_print(a::Taylor1{HomogeneousPolynomial{T}}) where {T<:Number}
     bigO = bigOnotation[end] ?
         string("+ 𝒪(t", superscriptify(a.order+1), ")") :
         string("")
-    a == zero(a) && return string(space, z, space, bigO)
+    iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a.coeffs)
@@ -74,8 +74,8 @@ function pretty_print(a::Taylor1{TaylorN{T}}) where {T<:Number}
     bigO = bigOnotation[end] ?
         string("+ 𝒪(t", superscriptify(a.order+1), ")") :
         string("")
-    a == zero(a) && return string(space, z, space, bigO)
-    a == zero(a) && return string(space, z, space, bigO)
+    iszero(a) && return string(space, z, space, bigO)
+    iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a.coeffs)
@@ -96,7 +96,7 @@ end
 function pretty_print(a::HomogeneousPolynomial{T}) where {T<:Number}
     z = zero(a[1])
     space = string(" ")
-    a == zero(a) && return string(space, z)
+    iszero(a) && return string(space, z)
     strout::String = homogPol2str(a)
     strout
 end
@@ -108,13 +108,13 @@ function pretty_print(a::TaylorN{T}) where {T<:Number}
     bigO::String = bigOnotation[end] ?
         string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")") :
         string("")
-    a == zero(a) && return string(space, z, space, bigO)
-    a == zero(a) && return string(space, z, bigO)
+    iszero(a) && return string(space, z, space, bigO)
+    iszero(a) && return string(space, z, bigO)
     strout::String = space#string("")
     ifirst = true
     for ord in eachindex(a.coeffs)
         pol = a[ord-1]
-        pol == zero(pol) && continue
+        iszero(pol) && continue
         cadena::String = homogPol2str( pol )
         strsgn = (ifirst || ord == 1 || cadena[2] == '-') ?
             string("") : string(" +")
@@ -185,14 +185,14 @@ function homogPol2str(a::HomogeneousPolynomial{Taylor1{T}}) where {T<:Number}
 end
 
 function numbr2str(zz, ifirst::Bool=false)
-    zz == zero(zz) && return string( zz )
+    iszero(zz) && return string( zz )
     plusmin = ifelse( ifirst, string(""), string("+ ") )
     return string(plusmin, zz)
 end
 
 function numbr2str(zz::T, ifirst::Bool=false) where
         {T<:Union{AbstractFloat,Integer,Rational}}
-    zz == zero(T) && return string( zz )
+    iszero(zz) && return string( zz )
     plusmin = ifelse( zz < zero(T), string("- "),
                 ifelse( ifirst, string(""), string("+ ")) )
     return string(plusmin, abs(zz))
@@ -200,7 +200,7 @@ end
 
 function numbr2str(zz::T, ifirst::Bool=false) where {T<:Complex}
     zT = zero(zz.re)
-    zz == zero(zz) && return string(zT)
+    iszero(zz) && return string(zT)
     zre, zim = reim(zz)
     cadena = string("")
     if zre > zT
