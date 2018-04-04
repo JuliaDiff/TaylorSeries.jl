@@ -193,19 +193,59 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries",
-    "page": "API",
-    "title": "TaylorSeries",
-    "category": "Module",
-    "text": "TaylorSeries\n\nA Julia package for Taylor expansions in one or more independent variables.\n\nThe basic constructors are Taylor1 and TaylorN; see also HomogeneousPolynomial.\n\n\n\n"
-},
-
-{
     "location": "api.html#Library-1",
     "page": "API",
     "title": "Library",
     "category": "section",
-    "text": "CurrentModule = TaylorSeriesTaylorSeries"
+    "text": "CurrentModule = TaylorSeries"
+},
+
+{
+    "location": "api.html#TaylorSeries",
+    "page": "API",
+    "title": "TaylorSeries",
+    "category": "module",
+    "text": "TaylorSeries\n\nA Julia package for Taylor expansions in one or more independent variables.\n\nThe basic constructors are Taylor1 and TaylorN; see also HomogeneousPolynomial.\n\n\n\n"
+},
+
+{
+    "location": "api.html#Module-1",
+    "page": "API",
+    "title": "Module",
+    "category": "section",
+    "text": "TaylorSeries"
+},
+
+{
+    "location": "api.html#TaylorSeries.Taylor1",
+    "page": "API",
+    "title": "TaylorSeries.Taylor1",
+    "category": "type",
+    "text": "Taylor1{T<:Number} <: AbstractSeries{T}\n\nDataType for polynomial expansions in one independent variable.\n\nFields:\n\ncoeffs :: Array{T,1} Expansion coefficients; the i-th   component is the coefficient of degree i-1 of the expansion.\norder  :: Int64 Maximum order (degree) of the polynomial.\n\nNote that Taylor1 variables are callable. For more information, see evaluate.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.HomogeneousPolynomial",
+    "page": "API",
+    "title": "TaylorSeries.HomogeneousPolynomial",
+    "category": "type",
+    "text": "HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}\n\nDataType for homogenous polynomials in many (>1) independent variables.\n\nFields:\n\ncoeffs  :: Array{T,1} Expansion coefficients of the homogeneous\n\npolynomial; the i-th component is related to a monomial, where the degrees of the independent variables are specified by coeff_table[order+1][i].\n\norder   :: Int order (degree) of the homogenous polynomial.\n\nNote that HomogeneousPolynomial variables are callable. For more information, see evaluate.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.TaylorN",
+    "page": "API",
+    "title": "TaylorSeries.TaylorN",
+    "category": "type",
+    "text": "TaylorN{T<:Number} <: AbstractSeries{T}\n\nDataType for polynomial expansions in many (>1) independent variables.\n\nFields:\n\ncoeffs  :: Array{HomogeneousPolynomial{T},1} Vector containing the\n\nHomogeneousPolynomial entries. The i-th component corresponds to the homogeneous polynomial of degree i-1.\n\norder   :: Int  maximum order of the polynomial expansion.\n\nNote that TaylorN variables are callable. For more information, see evaluate.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.AbstractSeries",
+    "page": "API",
+    "title": "TaylorSeries.AbstractSeries",
+    "category": "type",
+    "text": "AbstractSeries{T<:Number} <: Number\n\nParameterized abstract type for Taylor1, HomogeneousPolynomial and TaylorN.\n\n\n\n"
 },
 
 {
@@ -213,7 +253,207 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "Types",
     "category": "section",
-    "text": "Taylor1\nHomogeneousPolynomial\nTaylorN\nAbstractSeries\nParamsTaylorN"
+    "text": "Taylor1\nHomogeneousPolynomial\nTaylorN\nAbstractSeries"
+},
+
+{
+    "location": "api.html#TaylorSeries.Taylor1-Union{Tuple{T}, Tuple{Type{T},Int64}, Tuple{Type{T}}} where T<:Number",
+    "page": "API",
+    "title": "TaylorSeries.Taylor1",
+    "category": "method",
+    "text": "Taylor1([T::Type=Float64], [order::Int=1])\n\nShortcut to define the independent variable of a Taylor1{T} polynomial of given order. The default type for T is Float64.\n\njulia> Taylor1(16)\n 1.0 t + 𝒪(t¹⁷)\n\njulia> Taylor1(Rational{Int}, 4)\n 1//1 t + 𝒪(t⁵)\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.HomogeneousPolynomial-Union{Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
+    "page": "API",
+    "title": "TaylorSeries.HomogeneousPolynomial",
+    "category": "method",
+    "text": "HomogeneousPolynomial([T::Type=Float64], nv::Int])\n\nShortcut to define the nv-th independent HomogeneousPolynomial{T}. The default type for T is Float64.\n\njulia> HomogeneousPolynomial(1)\n 1.0 x₁\n\njulia> HomogeneousPolynomial(Rational{Int}, 2)\n 1//1 x₂\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.TaylorN-Union{Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
+    "page": "API",
+    "title": "TaylorSeries.TaylorN",
+    "category": "method",
+    "text": "TaylorN([T::Type=Float64], nv::Int; [order::Int=get_order()])\n\nShortcut to define the nv-th independent TaylorN{T} variable as a polynomial. The order is defined through the keyword parameter order, whose default corresponds to get_order(). The default of type for T is Float64.\n\njulia> TaylorN(1)\n 1.0 x₁ + 𝒪(‖x‖⁷)\n\njulia> TaylorN(Rational{Int},2)\n 1//1 x₂ + 𝒪(‖x‖⁷)\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.set_variables",
+    "page": "API",
+    "title": "TaylorSeries.set_variables",
+    "category": "function",
+    "text": "set_variables([T::Type], names::String; [order=get_order(), numvars=-1])\n\nReturn a TaylorN{T} vector with each entry representing an independent variable. names defines the output for each variable (separated by a space). The default type T is Float64, and the default for order is the one defined globally. Changing the order or numvars resets the hash_tables.\n\nIf numvars is not specified, it is inferred from names. If only one variable name is defined and numvars>1, it uses this name with subscripts for the different variables.\n\njulia> set_variables(Int, \"x y z\", order=4)\n3-element Array{TaylorSeries.TaylorN{Int64},1}:\n  1 x + 𝒪(‖x‖⁵)\n  1 y + 𝒪(‖x‖⁵)\n  1 z + 𝒪(‖x‖⁵)\n\njulia> set_variables(\"α\", numvars=2)\n2-element Array{TaylorSeries.TaylorN{Float64},1}:\n  1.0 α₁ + 𝒪(‖x‖⁵)\n  1.0 α₂ + 𝒪(‖x‖⁵)\n\njulia> set_variables(\"x\", order=6, numvars=2)\n2-element Array{TaylorSeries.TaylorN{Float64},1}:\n  1.0 x₁ + 𝒪(‖x‖⁷)\n  1.0 x₂ + 𝒪(‖x‖⁷)\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.get_variables",
+    "page": "API",
+    "title": "TaylorSeries.get_variables",
+    "category": "function",
+    "text": "get_variables(;order=get_order())\n\nReturn a TaylorN vector with each entry representing an independent variable. It takes the default _params_TaylorN_ values if set_variables hasn\'t been changed with the exception that order can be explicitely established by the user without changing internal values for num_vars or variable_names.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.show_params_TaylorN",
+    "page": "API",
+    "title": "TaylorSeries.show_params_TaylorN",
+    "category": "function",
+    "text": "show_params_TaylorN()\n\nDisplay the current parameters for TaylorN and HomogeneousPolynomial types.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.show_monomials",
+    "page": "API",
+    "title": "TaylorSeries.show_monomials",
+    "category": "function",
+    "text": "show_monomials(ord::Int) --> nothing\n\nList the indices and corresponding of a HomogeneousPolynomial of degree ord.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.getcoeff",
+    "page": "API",
+    "title": "TaylorSeries.getcoeff",
+    "category": "function",
+    "text": "getcoeff(a, n)\n\nReturn the coefficient of order n::Int of a a::Taylor1 polynomial.\n\n\n\ngetcoeff(a, v)\n\nReturn the coefficient of a::HomogeneousPolynomial, specified by v::Array{Int,1} which has the indices of the specific monomial.\n\n\n\ngetcoeff(a, v)\n\nReturn the coefficient of a::TaylorN, specified by v::Array{Int,1} which has the indices of the specific monomial.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.evaluate",
+    "page": "API",
+    "title": "TaylorSeries.evaluate",
+    "category": "function",
+    "text": "evaluate(a, [dx])\n\nEvaluate a Taylor1 polynomial using Horner\'s rule (hand coded). If dx is ommitted, its value is considered as zero. Note that the syntax a(dx) is equivalent to evaluate(a,dx), and a() is equivalent to evaluate(a).\n\n\n\nevaluate(x, δt)\n\nEvaluates each element of x::Union{ Vector{Taylor1{T}}, Matrix{Taylor1{T}} }, representing the dependent variables of an ODE, at time δt. Note that the syntax x(δt) is equivalent to evaluate(x, δt), and x() is equivalent to evaluate(x).\n\n\n\nevaluate(a, x)\n\nSubstitute x::Taylor1 as independent variable in a a::Taylor1 polynomial. Note that the syntax a(x) is equivalent to evaluate(a, x).\n\n\n\nevaluate(a, [vals])\n\nEvaluate a HomogeneousPolynomial polynomial at vals. If vals is ommitted, it\'s evaluated at zero. Note that the syntax a(vals) is equivalent to evaluate(a, vals); and a() is equivalent to evaluate(a).\n\n\n\nevaluate(a, [vals])\n\nEvaluate the TaylorN polynomial a at vals. If vals is ommitted, it\'s evaluated at zero. Note that the syntax a(vals) is equivalent to evaluate(a, vals); and a() is equivalent to evaluate(a).\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.evaluate!",
+    "page": "API",
+    "title": "TaylorSeries.evaluate!",
+    "category": "function",
+    "text": "evaluate!(x, δt, x0)\n\nEvaluates each element of x::Array{Taylor1{T},1}, representing the Taylor expansion for the dependent variables of an ODE at time δt. It updates the vector x0 with the computed values.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.taylor_expand",
+    "page": "API",
+    "title": "TaylorSeries.taylor_expand",
+    "category": "function",
+    "text": "taylor_expand(f, x0; order)\n\nComputes the Taylor expansion of the function f around the point x0.\n\nIf x0 is a scalar, a Taylor1 expansion will be returned. If x0 is a vector, a TaylorN expansion will be computed. If the dimension of x0 (length(x0)) is different from the variables set for TaylorN (get_numvars()), an AssertionError will be thrown.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.update!",
+    "page": "API",
+    "title": "TaylorSeries.update!",
+    "category": "function",
+    "text": "update!(a, x0)\n\nTakes a <: Union{Taylo1,TaylorN} and expands it around the coordinate x0.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.derivative",
+    "page": "API",
+    "title": "TaylorSeries.derivative",
+    "category": "function",
+    "text": "derivative(a)\n\nReturn the Taylor1 polynomial of the differential of a::Taylor1. The last coefficient is set to zero.\n\n\n\nderivative(a, n)\n\nCompute recursively the Taylor1 polynomial of the n-th derivative of a::Taylor1.\n\n\n\nderivative(n, a)\n\nReturn the value of the n-th derivative of the polynomial a.\n\n\n\nderivative(a, r)\n\nPartial differentiation of a::HomogeneousPolynomial series with respect to the r-th variable.\n\n\n\nderivative(a, [r=1])\n\nPartial differentiation of a::TaylorN series with respect to the r-th variable.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.integrate",
+    "page": "API",
+    "title": "TaylorSeries.integrate",
+    "category": "function",
+    "text": "integrate(a, [x])\n\nReturn the integral of a::Taylor1. The constant of integration (0-th order coefficient) is set to x, which is zero if ommitted.\n\n\n\nintegrate(a, r)\n\nIntegrate the a::HomogeneousPolynomial with respect to the r-th variable. The returned HomogeneousPolynomial has no added constant of integration. If the order of a corresponds to get_order(), a zero HomogeneousPolynomial of 0-th order is returned.\n\n\n\nintegrate(a, r, [x0])\n\nIntegrate the a::TaylorN series with respect to the r-th variable, where x0 the integration constant and must be independent of the r-th variable; if x0 is ommitted, it is taken as zero.\n\n\n\n"
+},
+
+{
+    "location": "api.html#Base.LinAlg.gradient",
+    "page": "API",
+    "title": "Base.LinAlg.gradient",
+    "category": "function",
+    "text": "    gradient(f)\n    ∇(f)\n\nCompute the gradient of the polynomial f::TaylorN.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.jacobian",
+    "page": "API",
+    "title": "TaylorSeries.jacobian",
+    "category": "function",
+    "text": "    jacobian(vf)\n    jacobian(vf, [vals])\n\nCompute the jacobian matrix of vf, a vector of TaylorN polynomials, evaluated at the vector vals. If vals is ommited, it is evaluated at zero.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.jacobian!",
+    "page": "API",
+    "title": "TaylorSeries.jacobian!",
+    "category": "function",
+    "text": "    jacobian!(jac, vf)\n    jacobian!(jac, vf, [vals])\n\nCompute the jacobian matrix of vf, a vector of TaylorN polynomials evaluated at the vector vals, and write results to jac. If vals is ommited, it is evaluated at zero.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.hessian",
+    "page": "API",
+    "title": "TaylorSeries.hessian",
+    "category": "function",
+    "text": "    hessian(f)\n    hessian(f, [vals])\n\nReturn the hessian matrix (jacobian of the gradient) of f::TaylorN, evaluated at the vector vals. If vals is ommited, it is evaluated at zero.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.hessian!",
+    "page": "API",
+    "title": "TaylorSeries.hessian!",
+    "category": "function",
+    "text": "    hessian!(hes, f)\n    hessian!(hes, f, [vals])\n\nReturn the hessian matrix (jacobian of the gradient) of f::TaylorN, evaluated at the vector vals, and write results to hes. If vals is ommited, it is evaluated at zero.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.inverse",
+    "page": "API",
+    "title": "TaylorSeries.inverse",
+    "category": "function",
+    "text": "inverse(f)\n\nReturn the Taylor expansion of f^-1(t), of order N = f.order, for f::Taylor1 polynomial if the first coefficient of f is zero. Otherwise, an ArgumentError is thrown.\n\nThe algorithm implements Lagrange inversion at t=0 if f(0)=0:\n\nbeginequation*\nf^-1(t) = sum_n=1^N fract^nn left\n    fracrm d^n-1rm d z^n-1left(fraczf(z)right)^n\n    rightvert_z=0\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#Base.abs",
+    "page": "API",
+    "title": "Base.abs",
+    "category": "function",
+    "text": "abs(a)\n\nReturns a if constant_term(a) > 0 and -a if constant_term(a) < 0 for a <:Union{Taylor1,TaylorN}. Notice that typeof(abs(a)) <: AbstractSeries.\n\n\n\n"
+},
+
+{
+    "location": "api.html#Base.LinAlg.norm",
+    "page": "API",
+    "title": "Base.LinAlg.norm",
+    "category": "function",
+    "text": "norm(x::AbstractSeries, p::Real)\n\nReturns the p-norm of an x::AbstractSeries, defined by\n\nbeginequation*\nleftVert x rightVert_p =  left( sum_k  x_k ^p right)^frac1p\nendequation*\n\nwhich returns a non-negative number.\n\n\n\n"
+},
+
+{
+    "location": "api.html#Base.isapprox",
+    "page": "API",
+    "title": "Base.isapprox",
+    "category": "function",
+    "text": "isapprox(x::AbstractSeries, y::AbstractSeries; rtol::Real=sqrt(eps), atol::Real=0, nans::Bool=false)\n\nInexact equality comparison between polynomials: returns true if norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1)), where x and y are polynomials. For more details, see Base.isapprox.\n\n\n\n"
+},
+
+{
+    "location": "api.html#Base.isfinite",
+    "page": "API",
+    "title": "Base.isfinite",
+    "category": "function",
+    "text": "isfinite(x::AbstractSeries) -> Bool\n\nTest whether the coefficients of the polynomial x are finite.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.displayBigO",
+    "page": "API",
+    "title": "TaylorSeries.displayBigO",
+    "category": "function",
+    "text": "displayBigO(d::Bool) --> nothing\n\nSet/unset displaying of the big 𝒪 notation in  the output of Taylor1 and TaylorN polynomials. The initial value is true.\n\n\n\n"
 },
 
 {
@@ -221,7 +461,271 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "Functions and methods",
     "category": "section",
-    "text": "Taylor1([::Type{Float64}], [order::Int64=1])\nHomogeneousPolynomial{T<:Number}(::Type{T}, ::Int)\nTaylorN{T<:Number}(::Type{T}, nv::Int; [order::Int=get_order()])\nset_variables\nget_variables\nshow_params_TaylorN\nshow_monomials\ngetcoeff\nevaluate\nevaluate!\ntaylor_expand\nupdate!\nderivative\nintegrate\ngradient\njacobian\njacobian!\nhessian\nhessian!\ninverse\nabs\nnorm\nisapprox\nisfinite\ndisplayBigO"
+    "text": "Taylor1(::Type{T}, ::Int64=1) where {T<:Number}\nHomogeneousPolynomial(::Type{T}, ::Int) where {T<:Number}\nTaylorN(::Type{T}, ::Int; ::Int=get_order()) where {T<:Number}\nset_variables\nget_variables\nshow_params_TaylorN\nshow_monomials\ngetcoeff\nevaluate\nevaluate!\ntaylor_expand\nupdate!\nderivative\nintegrate\ngradient\njacobian\njacobian!\nhessian\nhessian!\ninverse\nabs\nnorm\nisapprox\nisfinite\ndisplayBigO"
+},
+
+{
+    "location": "api.html#TaylorSeries.ParamsTaylorN",
+    "page": "API",
+    "title": "TaylorSeries.ParamsTaylorN",
+    "category": "type",
+    "text": "ParamsTaylorN\n\nDataType holding the current parameters for TaylorN and HomogeneousPolynomial.\n\nFields:\n\norder            :: Int  Order (degree) of the polynomials\nnum_vars         :: Int  Number of variables\nvariable_names   :: Vector{String} Names of the variables\nvariable_symbols :: Vector{Symbol}  Symbols of the variables\n\nThese parameters can be changed using set_variables\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries._InternalMutFuncs",
+    "page": "API",
+    "title": "TaylorSeries._InternalMutFuncs",
+    "category": "type",
+    "text": "_InternalMutFuncs\n\nContains parameters and expressions that allow a simple programatic construction for calling the internal mutating functions.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.generate_tables",
+    "page": "API",
+    "title": "TaylorSeries.generate_tables",
+    "category": "function",
+    "text": "generate_tables(num_vars, order)\n\nReturn the hash tables coeff_table, index_table, size_table and pos_table. Internally, these are treated as const.\n\nHash tables\n\ncoeff_table :: Array{Array{Array{Int64,1},1},1}\n\nThe i+1-th component contains a vector with the vectors of all the possible combinations of monomials of a HomogeneousPolynomial of order i.\n\nindex_table :: Array{Array{Int64,1},1}\n\nThe i+1-th component contains a vector of (hashed) indices that represent the distinct monomials of a HomogeneousPolynomial of order (degree) i.\n\nsize_table :: Array{Int64,1}\n\nThe i+1-th component contains the number of distinct monomials of the HomogeneousPolynomial of order i, equivalent to length(coeff_table[i]).\n\npos_table :: Array{Dict{Int64,Int64},1}\n\nThe i+1-th component maps the hash index to the (lexicographic) position of the corresponding monomial in coeffs_table.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.generate_index_vectors",
+    "page": "API",
+    "title": "TaylorSeries.generate_index_vectors",
+    "category": "function",
+    "text": "generate_index_vectors(num_vars, degree)\n\nReturn a vector of index vectors with num_vars (number of variables) and degree.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.in_base",
+    "page": "API",
+    "title": "TaylorSeries.in_base",
+    "category": "function",
+    "text": "in_base(order, v)\n\nConvert vector v of non-negative integers to base order+1.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.make_inverse_dict",
+    "page": "API",
+    "title": "TaylorSeries.make_inverse_dict",
+    "category": "function",
+    "text": "make_inverse_dict(v)\n\nReturn a Dict with the enumeration of v: the elements of v point to the corresponding index.\n\nIt is used to construct pos_table from index_table.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.resize_coeffs1!",
+    "page": "API",
+    "title": "TaylorSeries.resize_coeffs1!",
+    "category": "function",
+    "text": "resize_coeffs1!{T<Number}(coeffs::Array{T,1}, order::Int)\n\nIf the length of coeffs is smaller than order+1, it resizes coeffs appropriately filling it with zeros.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.resize_coeffsHP!",
+    "page": "API",
+    "title": "TaylorSeries.resize_coeffsHP!",
+    "category": "function",
+    "text": "resize_coeffsHP!{T<Number}(coeffs::Array{T,1}, order::Int)\n\nIf the length of coeffs is smaller than the number of coefficients correspondinf to order (given by size_table[order+1]), it resizes coeffs appropriately filling it with zeros.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.constant_term",
+    "page": "API",
+    "title": "TaylorSeries.constant_term",
+    "category": "function",
+    "text": "constant_term(a)\n\nReturn the constant value (zero order coefficient) for Taylor1 and TaylorN.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.mul!",
+    "page": "API",
+    "title": "TaylorSeries.mul!",
+    "category": "function",
+    "text": "mul!(c, a, b, k::Int) --> nothing\n\nUpdate the k-th expansion coefficient c[k] of c = a * b, where all c, a, and b are either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nc_k = sum_j=0^k a_j b_k-j\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.mul!-Tuple{TaylorSeries.HomogeneousPolynomial,TaylorSeries.HomogeneousPolynomial,TaylorSeries.HomogeneousPolynomial}",
+    "page": "API",
+    "title": "TaylorSeries.mul!",
+    "category": "method",
+    "text": "mul!(c, a, b) --> nothing\n\nReturn c = a*b with no allocation; all arguments are HomogeneousPolynomial.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.mul!-Union{Tuple{Array{TaylorSeries.Taylor1{T},1},Union{Array{T,2}, SparseMatrixCSC{T,Ti} where Ti<:Integer},Array{TaylorSeries.Taylor1{T},1}}, Tuple{T}} where T<:Number",
+    "page": "API",
+    "title": "TaylorSeries.mul!",
+    "category": "method",
+    "text": "mul!(Y, A, B)\n\nMultiply A*B and save the result in Y.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.div!",
+    "page": "API",
+    "title": "TaylorSeries.div!",
+    "category": "function",
+    "text": "div!(c, a, b, k::Int, ordfact::Int=0)\n\nCompute the k-th expansion coefficient c[k] of c = a / b, where all c, a and b are either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nc_k =  frac1b_0 big(a_k - sum_j=0^k-1 c_j b_k-jbig)\n\nFor Taylor1 polynomials, ordfact is the order of the factorized term of the denominator.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.pow!",
+    "page": "API",
+    "title": "TaylorSeries.pow!",
+    "category": "function",
+    "text": "pow!(c, a, r::Real, k::Int, k0::Int=0)\n\nUpdate the k-th expansion coefficient c[k] of c = a^r, for both c and a either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nc_k = frac1k a_0 sum_j=0^k-1 big(r(k-j) -jbig)a_k-j c_j\n\nFor Taylor1 polynomials, k0 is the order of the first non-zero coefficient of a.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.square",
+    "page": "API",
+    "title": "TaylorSeries.square",
+    "category": "function",
+    "text": "square(a::AbstractSeries) --> typeof(a)\n\nReturn a^2; see TaylorSeries.sqr!.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.sqr!",
+    "page": "API",
+    "title": "TaylorSeries.sqr!",
+    "category": "function",
+    "text": "sqr!(c, a, k::Int) --> nothing\n\nUpdate the k-th expansion coefficient c[k] of c = a^2, for both c and a either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nbegineqnarray*\nc_k  =  2 sum_j=0^(k-1)2 a_k-j a_j\n    text if k is odd \nc_k  =  2 sum_j=0^(k-2)2 a_k-j a_j + (a_k2)^2\n    text if k is even \nendeqnarray*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.sqr!-Union{Tuple{T}, Tuple{TaylorSeries.HomogeneousPolynomial{T},TaylorSeries.HomogeneousPolynomial{T}}} where T<:Union{Complex, Real, TaylorSeries.Taylor1}",
+    "page": "API",
+    "title": "TaylorSeries.sqr!",
+    "category": "method",
+    "text": "sqr!(c, a)\n\nReturn c = a*a with no allocation; all parameters are HomogeneousPolynomial.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.sqrt!",
+    "page": "API",
+    "title": "TaylorSeries.sqrt!",
+    "category": "function",
+    "text": "sqrt!(c, a, k::Int, k0::Int=0)\n\nCompute the k-th expansion coefficient c[k] of c = sqrt(a) for bothc and a either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nbegineqnarray*\nc_k = frac12 c_0 big( a_k - 2sum_j=1^(k-1)2 c_k-jc_jbig)\n    text if k is odd \nc_k = frac12 c_0 big( a_k - 2 sum_j=1^(k-2)2 c_k-jc_j\n    - (c_k2)^2big) text if k is even\nendeqnarray*\n\nFor Taylor1 polynomials, k0 is the order of the first non-zero coefficient, which must be even.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.exp!",
+    "page": "API",
+    "title": "TaylorSeries.exp!",
+    "category": "function",
+    "text": "exp!(c, a, k) --> nothing\n\nUpdate the k-th expansion coefficient c[k+1] of c = exp(a) for both c and a either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nbeginequation*\nc_k = frac1k sum_j=0^k-1 (k-j) a_k-j c_j\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.log!",
+    "page": "API",
+    "title": "TaylorSeries.log!",
+    "category": "function",
+    "text": "log!(c, a, k) --> nothing\n\nUpdate the k-th expansion coefficient c[k+1] of c = log(a) for both c and a either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nbeginequation*\nc_k = frac1a_0 big(a_k - frac1k sum_j=0^k-1 j a_k-j c_j big)\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.sincos!",
+    "page": "API",
+    "title": "TaylorSeries.sincos!",
+    "category": "function",
+    "text": "sincos!(s, c, a, k) --> nothing\n\nUpdate the k-th expansion coefficients s[k+1] and c[k+1] of s = sin(a) and c = cos(a) simultaneously, for s, c and a either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nbegineqnarray*\ns_k =  frac1ksum_j=0^k-1 (k-j) a_k-j c_j \nc_k = -frac1ksum_j=0^k-1 (k-j) a_k-j s_j\nendeqnarray*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.tan!",
+    "page": "API",
+    "title": "TaylorSeries.tan!",
+    "category": "function",
+    "text": "tan!(c, a, p, k::Int) --> nothing\n\nUpdate the k-th expansion coefficients c[k+1] of c = tan(a), for c and a either Taylor1 or TaylorN; p = c^2 and is passed as an argument for efficiency.\n\nThe coefficients are given by\n\nbeginequation*\nc_k = a_k + frac1k sum_j=0^k-1 (k-j) a_k-j p_j\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.asin!",
+    "page": "API",
+    "title": "TaylorSeries.asin!",
+    "category": "function",
+    "text": "asin!(c, a, r, k)\n\nUpdate the k-th expansion coefficients c[k+1] of c = asin(a), for c and a either Taylor1 or TaylorN; r = sqrt(1-c^2) and is passed as an argument for efficiency.\n\nbeginequation*\nc_k = frac1 sqrtr_0 \n    big( a_k - frac1k sum_j=1^k-1 j r_k-j c_j big)\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.acos!",
+    "page": "API",
+    "title": "TaylorSeries.acos!",
+    "category": "function",
+    "text": "acos!(c, a, r, k)\n\nUpdate the k-th expansion coefficients c[k+1] of c = acos(a), for c and a either Taylor1 or TaylorN; r = sqrt(1-c^2) and is passed as an argument for efficiency.\n\nbeginequation*\nc_k = - frac1 r_0 \n    big( a_k - frac1k sum_j=1^k-1 j r_k-j c_j big)\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.atan!",
+    "page": "API",
+    "title": "TaylorSeries.atan!",
+    "category": "function",
+    "text": "atan!(c, a, r, k)\n\nUpdate the k-th expansion coefficients c[k+1] of c = atan(a), for c and a either Taylor1 or TaylorN; r = 1+a^2 and is passed as an argument for efficiency.\n\nbeginequation*\nc_k = frac1r_0big(a_k - frac1k sum_j=1^k-1 j r_k-j c_jbig)\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.sinhcosh!",
+    "page": "API",
+    "title": "TaylorSeries.sinhcosh!",
+    "category": "function",
+    "text": "sinhcosh!(s, c, a, k)\n\nUpdate the k-th expansion coefficients s[k+1] and c[k+1] of s = sinh(a) and c = cosh(a) simultaneously, for s, c and a either Taylor1 or TaylorN.\n\nThe coefficients are given by\n\nbegineqnarray*\ns_k = frac1k sum_j=0^k-1 (k-j) a_k-j c_j \nc_k = frac1k sum_j=0^k-1 (k-j) a_k-j s_j\nendeqnarray*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.tanh!",
+    "page": "API",
+    "title": "TaylorSeries.tanh!",
+    "category": "function",
+    "text": "tanh!(c, a, p, k)\n\nUpdate the k-th expansion coefficients c[k+1] of c = tanh(a), for c and a either Taylor1 or TaylorN; p = a^2 and is passed as an argument for efficiency.\n\nbeginequation*\nc_k = a_k - frac1k sum_j=0^k-1 (k-j) a_k-j p_j\nendequation*\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries.derivative!",
+    "page": "API",
+    "title": "TaylorSeries.derivative!",
+    "category": "function",
+    "text": "derivative!(res, a) --> nothing\n\nIn-place version of derivative. Compute the Taylor1 polynomial of the differential of a::Taylor1 and save it into res. The last coefficient is set to zero.\n\n\n\nderivative!(p, a, k) --> nothing\n\nUpdate in-place the k-th expansion coefficient p[k] of p = derivative(a) for both p and a Taylor1.\n\nThe coefficients are given by\n\np_k = (k+1)a_k+1\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries._internalmutfunc_call",
+    "page": "API",
+    "title": "TaylorSeries._internalmutfunc_call",
+    "category": "function",
+    "text": "_internalmutfunc_call( fn :: _InternalMutFuncs )\n\nCreates the appropriate call to the internal mutating function defined by the _InternalMutFuncs object. This is used to construct _dict_unary_calls and _dict_binary_calls. The call contains the prefix TaylorSeries..\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries._dict_unary_ops",
+    "page": "API",
+    "title": "TaylorSeries._dict_unary_ops",
+    "category": "constant",
+    "text": "_dict_binary_ops\n\nDict{Symbol, Array{Any,1}} with the information to construct the _InternalMutFuncs related to unary operations.\n\nThe keys correspond to the function symbols.\n\nThe arguments of the array are the function name (e.g. add!), a tuple with the function arguments, and an Expr with the calling pattern. The convention for the arguments of the functions and the calling pattern is to use :_res for the (mutated) result, :_arg1, for the required argument, possibly :_aux when there is an auxiliary expression needed, and :_k for the computed order of :_res. When an auxiliary expression is required, and Expr defining its calling pattern is added as the last entry of the vector.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries._dict_binary_calls",
+    "page": "API",
+    "title": "TaylorSeries._dict_binary_calls",
+    "category": "constant",
+    "text": "_dict_binary_calls::Dict{Symbol, NTuple{2,Expr}}\n\nDictionary with the expressions that define the internal binary functions and the auxiliary functions, whenever they exist. The keys correspond to those functions, passed as symbols, with the defined internal mutating functions.\n\nEvaluating the entries generates symbols that represent the actual calls to the internal mutating functions.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries._dict_unary_calls",
+    "page": "API",
+    "title": "TaylorSeries._dict_unary_calls",
+    "category": "constant",
+    "text": "_dict_unary_calls::Dict{Symbol, NTuple{2,Expr}}\n\nDictionary with the expressions that define the internal unary functions and the auxiliary functions, whenever they exist. The keys correspond to those functions, passed as symbols, with the defined internal mutating functions.\n\nEvaluating the entries generates expressions that represent the actual calls to the internal mutating functions.\n\n\n\n"
+},
+
+{
+    "location": "api.html#TaylorSeries._dict_binary_ops",
+    "page": "API",
+    "title": "TaylorSeries._dict_binary_ops",
+    "category": "constant",
+    "text": "_dict_binary_ops\n\nDict{Symbol, Array{Any,1}} with the information to construct the _InternalMutFuncs related to binary operations.\n\nThe keys correspond to the function symbols.\n\nThe arguments of the array are the function name (e.g. add!), a tuple with the function arguments, and an Expr with the calling pattern. The convention for the arguments of the functions and the calling pattern is to use :_res for the (mutated) result, :_arg1 and _arg2 for the required arguments, and :_k for the computed order of :_res.\n\n\n\n"
 },
 
 {
@@ -229,7 +733,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "Internals",
     "category": "section",
-    "text": "generate_tables\ngenerate_index_vectors\nin_base\nmake_inverse_dict\nresize_coeffs1!\nresize_coeffsHP!\nconstant_term\nmul!\nmul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial, b::HomogeneousPolynomial)\ndiv!\npow!\nsquare\nsqr!\nsqr!(c::HomogeneousPolynomial, a::HomogeneousPolynomial)\nsqrt!\nexp!\nlog!\nsincos!\ntan!\nasin!\nacos!\natan!\nsinhcosh!\ntanh!\nmul!\nderivative!"
+    "text": "ParamsTaylorN\n_InternalMutFuncs\ngenerate_tables\ngenerate_index_vectors\nin_base\nmake_inverse_dict\nresize_coeffs1!\nresize_coeffsHP!\nconstant_term\nmul!\nmul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)\nmul!(::Vector{Taylor1{T}}, ::Union{Matrix{T},SparseMatrixCSC{T}},::Vector{Taylor1{T}}) where {T<:Number}\ndiv!\npow!\nsquare\nsqr!\nsqr!(::HomogeneousPolynomial{T}, ::HomogeneousPolynomial{T}) where {T<:NumberNotSeriesN}\nsqrt!\nexp!\nlog!\nsincos!\ntan!\nasin!\nacos!\natan!\nsinhcosh!\ntanh!\nderivative!\n_internalmutfunc_call\n_dict_unary_ops\n_dict_binary_calls\n_dict_unary_calls\n_dict_binary_ops"
 },
 
 {
