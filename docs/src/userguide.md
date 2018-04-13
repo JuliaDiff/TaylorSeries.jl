@@ -344,6 +344,17 @@ an error is thrown.
 derivative( q, 3 )   # error, since we are dealing with 2 variables
 ```
 
+To obtain more involved partial derivatives we have a specialized method
+involving a tuple, which represents the number of derivatives with
+respect to each variable (so the tuple's length has to be the
+same as the actual number of variables), in order, and the `TaylorN`
+object in question.
+
+```@repl userguide
+derivative((2,1), p) # two derivatives on :x and one on :y
+derivative((0,2),p) == derivative(derivative(p, :y),:y) # two derivatives on :y
+```
+
 Integration with respect to the `r`-th variable for
 `HomogeneousPolynomial`s and `TaylorN` objects is obtained
 using [`integrate`](@ref). Note that `integrate` for `TaylorN`
