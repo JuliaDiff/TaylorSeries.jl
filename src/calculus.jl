@@ -132,10 +132,11 @@ end
 derivative(a::HomogeneousPolynomial, s::Symbol) = derivative(a, lookupvar(s))
 
 """
-    derivative(a, [r=1])
+    derivative(a, r)
 
 Partial differentiation of `a::TaylorN` series with respect
-to the `r`-th variable.
+to the `r`-th variable. The `r`-th variable may be also
+specified through its symbol.
 """
 function derivative(a::TaylorN, r=1::Int)
     T = eltype(a)
@@ -147,6 +148,32 @@ function derivative(a::TaylorN, r=1::Int)
     return TaylorN{T}( coeffs, a.order )
 end
 derivative(a::TaylorN, s::Symbol) = derivative(a, lookupvar(s))
+
+"""
+    derivative(ntup::NTuple{N,Int}, a::TaylorN{T})
+
+Return a `TaylorN` of the partial derivative of `a` defined
+by `ntup::NTuple{N,Int}`, where the first entry is the number
+of derivatives with respect to the first variable, the second is
+the number of derivatives with respect to the second, and so on.
+"""
+function derivative(ntup::NTuple{N,Int}, a::TaylorN) where {N}
+
+    @assert N == get_numvars() && all(ntup .>= 0)
+
+    aa = copy(a)
+    sum(ntup) > a.order && return zero(aa)
+    sum(ntup) == 0 && return aa
+
+    for nvar in 1:get_numvars()
+        for numder in 1:ntup[nvar]
+            aa = derivative(aa, nvar)
+        end
+    end
+
+    return aa
+end
+
 
 ## Gradient, jacobian and hessian
 """
