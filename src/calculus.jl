@@ -150,21 +150,21 @@ end
 derivative(a::TaylorN, s::Symbol) = derivative(a, lookupvar(s))
 
 """
-    derivative(ntup::NTuple{N,Int}, a::TaylorN{T})
+    derivative(a::TaylorN{T}, ntup::NTuple{N,Int})
 
-Return a `TaylorN` of the partial derivative of `a` defined
+Return a `TaylorN` with the partial derivative of `a` defined
 by `ntup::NTuple{N,Int}`, where the first entry is the number
 of derivatives with respect to the first variable, the second is
 the number of derivatives with respect to the second, and so on.
 """
-function derivative(ntup::NTuple{N,Int}, a::TaylorN) where {N}
+function derivative(a::TaylorN, ntup::NTuple{N,Int}) where {N}
 
     @assert N == get_numvars() && all(ntup .>= 0)
 
-    aa = copy(a)
-    sum(ntup) > a.order && return zero(aa)
-    sum(ntup) == 0 && return aa
+    sum(ntup) > a.order && return zero(a)
+    sum(ntup) == 0 && return copy(a)
 
+    aa = copy(a)
     for nvar in 1:get_numvars()
         for numder in 1:ntup[nvar]
             aa = derivative(aa, nvar)
@@ -172,6 +172,25 @@ function derivative(ntup::NTuple{N,Int}, a::TaylorN) where {N}
     end
 
     return aa
+end
+
+"""
+    derivative(ntup::NTuple{N,Int}, a::TaylorN{T})
+
+Returns the value of the coefficient of `a` specified by
+`ntup::NTuple{N,Int}`, multiplied by the corresponding
+factorials.
+"""
+function derivative(ntup::NTuple{N,Int}, a::TaylorN) where {N}
+
+    @assert N == get_numvars() && all(ntup .>= 0)
+
+    c = getcoeff(a, [ntup...])
+    for ind = 1:get_numvars()
+        c *= factorial(ntup[ind])
+    end
+
+    return c
 end
 
 

@@ -344,15 +344,19 @@ an error is thrown.
 derivative( q, 3 )   # error, since we are dealing with 2 variables
 ```
 
-To obtain more involved partial derivatives we have a specialized method
-involving a tuple, which represents the number of derivatives with
+To obtain more specific partial derivatives we have two specialized methods
+that involve a tuple, which represents the number of derivatives with
 respect to each variable (so the tuple's length has to be the
-same as the actual number of variables), in order, and the `TaylorN`
-object in question.
+same as the actual number of variables). These methods either return
+the `TaylorN` object in question, or the coefficient corresponding to
+the specified tuple, normalized by the factorials defined by the tuple.
+The latter is in essence the 0-th order coefficient of the former.
 
 ```@repl userguide
-derivative((2,1), p) # two derivatives on :x and one on :y
-derivative((0,2),p) == derivative(derivative(p, :y),:y) # two derivatives on :y
+derivative(p, (2,1)) # two derivatives on :x and one on :y
+derivative((2,1), p) # 0-th order coefficient of the previous expression
+derivative(p, (1,1)) # one derivative on :x and one on :y
+derivative((1,1), p) # 0-th order coefficient of the previous expression
 ```
 
 Integration with respect to the `r`-th variable for

@@ -154,8 +154,9 @@ end
     @test abs(-1-xT)  == 1+xT
     @test derivative(yH,1) == derivative(xH, :x₂)
     @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3, :x₂)
-    @test derivative(yT^3, :x₂) == derivative((0,1), yT^3)
-    @test derivative(yT) == zeroT == derivative((1,0), yT)
+    @test derivative(yT^3, :x₂) == derivative(yT^3, (0,1))
+    @test derivative(yT) == zeroT == derivative(yT, (1,0))
+    @test derivative((0,1), yT) == 1
     @test -xT/3im == im*xT/3
     @test (xH/3im)' == im*xH/3
     @test xT/BigInt(3) == TaylorN(BigFloat,1)/3
@@ -188,13 +189,20 @@ end
     @test integrate(xT^17, :x₁, 2.0) == TaylorN(2.0, get_order())
     @test_throws AssertionError integrate(xT, 1, xT)
     @test_throws AssertionError integrate(xT, :x₁, xT)
+    @test_throws AssertionError derivative(xT, (1,))
+    @test_throws AssertionError derivative(xT, (1,2,3))
+    @test_throws AssertionError derivative(xT, (-1,2))
     @test_throws AssertionError derivative((1,), xT)
     @test_throws AssertionError derivative((1,2,3), xT)
     @test_throws AssertionError derivative((-1,2), xT)
 
 
-    @test derivative((8,8), 2xT*yT^2) == zero(xT)
-    @test derivative(2xT*yT^2,1) == 2yT^2
+    @test derivative(2xT*yT^2, (8,8)) == 0
+    @test derivative((8,8), 2xT*yT^2) == 0
+    @test derivative(2xT*yT^2, 1) == 2yT^2
+    @test derivative((1,0), 2xT*yT^2) == 0
+    @test derivative(2xT*yT^2, (1,2)) == 4*one(yT)
+    @test derivative((1,2), 2xT*yT^2) == 4
     @test xT*xT^3 == xT^4
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
     @test getindex((1+TaylorN(1))^TaylorN(2),0:4) == txy.coeffs[1:5]
@@ -468,10 +476,12 @@ end
     @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jacobian!(jac, [f1,f2], [2,1])
     @test jac == jacobian([f1,f2], [2,1])
-    @test hessian( f1*f2 ) == [4 -7; -7 0]
+    @test hessian( f1*f2 ) ==
+        [derivative((2,0), f1*f2) derivative((1,1), (f1*f2));
+         derivative((1,1), f1*f2) derivative((0,2), (f1*f2))] == [4 -7; -7 0]
     @test hessian( f1*f2, [xT, yT] ) ==
-        [derivative((2,0), f1*f2) derivative((1,1), f1*f2);
-         derivative((1,1), f1*f2) derivative((0,2), f1*f2)]
+        [derivative(f1*f2, (2,0)) derivative((f1*f2), (1,1));
+         derivative(f1*f2, (1,1)) derivative((f1*f2), (0,2))]
     @test [xT yT]*hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
     @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
