@@ -304,11 +304,12 @@ exy = exp(x+y)
 
 The function [`getcoeff`](@ref)
 gives the normalized coefficient of the polynomial that corresponds to the
-monomial specified by a vector `v` containing the powers. For instance, for
+monomial specified by the tuple or vector `v` containing the powers.
+For instance, for
 the polynomial `exy` above, the coefficient of the monomial ``x^3 y^5`` is
-
+obtained using `getcoeff(exy, (3,5))` or `getcoeff(exy, [3,5])`.
 ```@repl userguide
-getcoeff(exy, [3,5])
+getcoeff(exy, (3,5))
 rationalize(ans)
 ```
 

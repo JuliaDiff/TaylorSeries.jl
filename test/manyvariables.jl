@@ -97,8 +97,8 @@ end
     @test get_order(zeroT) == 1
     @test xT[1][1] == 1
     @test yH[2] == 1
-    @test getcoeff(xT,[1,0]) == 1
-    @test getcoeff(yH,[1,0]) == 0
+    @test getcoeff(xT,(1,0)) == getcoeff(xT,[1,0]) == 1
+    @test getcoeff(yH,(1,0)) == getcoeff(yH,[1,0]) == 0
     @test typeof(convert(HomogeneousPolynomial,1im)) ==
         HomogeneousPolynomial{Complex{Int}}
     @test convert(HomogeneousPolynomial,1im) ==
@@ -307,10 +307,10 @@ end
     @test conj(im*yH) == (im*yH)'
     @test conj(im*yT) == (im*yT)'
     @test real( exp(1im * xT)) == cos(xT)
-    @test getcoeff(convert(TaylorN{Rational{Int}},cos(xT)),[4,0]) ==
+    @test getcoeff(convert(TaylorN{Rational{Int}},cos(xT)),(4,0)) ==
         1//factorial(4)
     cr = convert(TaylorN{Rational{Int}},cos(xT))
-    @test getcoeff(cr,[4,0]) == 1//factorial(4)
+    @test getcoeff(cr,(4,0)) == 1//factorial(4)
     @test imag((exp(yT))^(-1im)') == sin(yT)
     exy = exp( xT+yT )
     @test evaluate(exy) == 1
@@ -323,7 +323,7 @@ end
     @test isapprox(evaluate(exy, (1,1)), eeuler^2)
     @test exy(:x₁, 0.0) == exp(yT)
     txy = tan(xT+yT)
-    @test getcoeff(txy,[8,7]) == 929569/99225
+    @test getcoeff(txy,(8,7)) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @test getindex(tan(TaylorN(1)+TaylorN(2)),0:4) == ptxy.coeffs[1:5]
     @test evaluate(xH*yH, 1.0, 2.0) == (xH*yH)(1.0, 2.0) == 2.0
