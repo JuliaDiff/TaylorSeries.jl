@@ -145,7 +145,7 @@ end
     @test (Rational(1,2)*tsquare)[2] == 1//2
     @test t^2/tsquare == ot
     @test ((1+t)^(1/3))[2]+1/9 ≤ tol1
-    @test 1-tsquare == (1+t)-t*(1+t)
+    @test (1.0-tsquare)^3 == (1.0-t)^3*(1.0+t)^3
     @test (1-tsquare)^2 == (1+t)^2.0 * (1-t)^2.0
     @test (sqrt(1+t))[2] == -1/8
     @test ((1-tsquare)^(1//2))^2 == 1-tsquare
