@@ -94,15 +94,17 @@ setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c
 """
     getcoeff(a, v)
 
-Return the coefficient of `a::HomogeneousPolynomial`, specified by
-`v::Array{Int,1}` which has the indices of the specific monomial.
+Return the coefficient of `a::HomogeneousPolynomial`, specified by `v`,
+which is a tuple (or vector) with the indices of the specific
+monomial.
 """
-function getcoeff(a::HomogeneousPolynomial, v::Array{Int,1})
-    @assert length(v) == get_numvars()
+function getcoeff(a::HomogeneousPolynomial, v::NTuple{N,Int}) where {N}
+    @assert N == get_numvars() && all(v .>= 0)
     kdic = in_base(get_order(),v)
     @inbounds n = pos_table[a.order+1][kdic]
     a[n]
 end
+getcoeff(a::HomogeneousPolynomial, v::Array{Int,1}) = getcoeff(a, (v...,))
 
 getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
 getindex(a::HomogeneousPolynomial, n::UnitRange) = view(a.coeffs, n)
@@ -123,14 +125,16 @@ setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, c::Colon) where {T<:Number
 """
     getcoeff(a, v)
 
-Return the coefficient of `a::TaylorN`, specified by
-`v::Array{Int,1}` which has the indices of the specific monomial.
+Return the coefficient of `a::TaylorN`, specified by `v`,
+which is a tuple (or vector) with the indices of the specific
+monomial.
 """
-function getcoeff(a::TaylorN, v::Array{Int,1})
+function getcoeff(a::TaylorN, v::NTuple{N, Int}) where {N}
     order = sum(v)
     @assert order ≤ a.order
     getcoeff(a[order], v)
 end
+getcoeff(a::TaylorN, v::Array{Int,1}) = getcoeff(a, (v...,))
 
 getindex(a::TaylorN, n::Int) = a.coeffs[n+1]
 getindex(a::TaylorN, u::UnitRange) = view(a.coeffs, u .+ 1)

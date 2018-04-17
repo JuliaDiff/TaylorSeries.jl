@@ -304,11 +304,12 @@ exy = exp(x+y)
 
 The function [`getcoeff`](@ref)
 gives the normalized coefficient of the polynomial that corresponds to the
-monomial specified by a vector `v` containing the powers. For instance, for
+monomial specified by the tuple or vector `v` containing the powers.
+For instance, for
 the polynomial `exy` above, the coefficient of the monomial ``x^3 y^5`` is
-
+obtained using `getcoeff(exy, (3,5))` or `getcoeff(exy, [3,5])`.
 ```@repl userguide
-getcoeff(exy, [3,5])
+getcoeff(exy, (3,5))
 rationalize(ans)
 ```
 
@@ -342,6 +343,21 @@ an error is thrown.
 
 ```@repl userguide
 derivative( q, 3 )   # error, since we are dealing with 2 variables
+```
+
+To obtain more specific partial derivatives we have two specialized methods
+that involve a tuple, which represents the number of derivatives with
+respect to each variable (so the tuple's length has to be the
+same as the actual number of variables). These methods either return
+the `TaylorN` object in question, or the coefficient corresponding to
+the specified tuple, normalized by the factorials defined by the tuple.
+The latter is in essence the 0-th order coefficient of the former.
+
+```@repl userguide
+derivative(p, (2,1)) # two derivatives on :x and one on :y
+derivative((2,1), p) # 0-th order coefficient of the previous expression
+derivative(p, (1,1)) # one derivative on :x and one on :y
+derivative((1,1), p) # 0-th order coefficient of the previous expression
 ```
 
 Integration with respect to the `r`-th variable for

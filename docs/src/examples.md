@@ -112,7 +112,7 @@ We note that the above functions use expansions in `Int128`. This is actually
 required, since some coefficients are larger than `typemax(Int)`:
 
 ```@repl fateman
-getcoeff(f2, [1,6,7,20]) # coefficient of x y^6 z^7 w^{20}
+getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
 ans > typemax(Int)
 length(f2)
 sum(TaylorSeries.size_table)
