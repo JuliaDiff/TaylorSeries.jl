@@ -348,7 +348,7 @@ Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
         iszero(ca) && continue
         inda = idxTb[na]
         pos = posTb[2*inda]
-        c[pos] += ca * ca
+        c[pos] += ca^2
         @inbounds for nb = na+1:num_coeffs_a
             cb = a[nb]
             iszero(cb) && continue
