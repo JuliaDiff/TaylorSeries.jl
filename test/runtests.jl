@@ -8,7 +8,8 @@ testfiles = (
     "mixtures.jl",
     "mutatingfuncts.jl",
     "identities_Euler.jl",
-    "fateman40.jl"
+    "fateman40.jl",
+    "intervals.jl"
     )
 
 for file in testfiles

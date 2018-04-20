@@ -15,14 +15,34 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     return power_by_squaring(a, n)
 end
 
+#= The following three methods are coded like that, to use
+preferentially a^float(n), but for cases like Taylor1{Interval{T}}^n
+power_by_squaring is used. The latter is important when the
+0-th order coefficient is/contains zero.
+=#
 function ^(a::Taylor1{T}, n::Integer) where {T<:Number}
     n == 0 && return one(a)
     n == 1 && return copy(a)
     n == 2 && return square(a)
-    # Return a^float(n) instead of power_by_squaring(a,n)
-    # because it yields better accuracy
     return a^float(n)
 end
+
+# Method used for Taylor1{Interval{T}}^n
+function ^(a::Taylor1{T}, n::Integer) where {T<:Real}
+    n == 0 && return one(a)
+    n == 1 && return copy(a)
+    n == 2 && return square(a)
+    n < 0 && return a^float(n)
+    return power_by_squaring(a, n)
+end
+
+function ^(a::Taylor1{T}, n::Integer) where {T<:AbstractFloat}
+    n == 0 && return one(a)
+    n == 1 && return copy(a)
+    n == 2 && return square(a)
+    return a^float(n)
+end
+
 
 function ^(a::TaylorN{T}, n::Integer) where {T<:Number}
     n == 0 && return one(a)
@@ -328,7 +348,7 @@ Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
         iszero(ca) && continue
         inda = idxTb[na]
         pos = posTb[2*inda]
-        c[pos] += ca * ca
+        c[pos] += ca^2
         @inbounds for nb = na+1:num_coeffs_a
             cb = a[nb]
             iszero(cb) && continue
