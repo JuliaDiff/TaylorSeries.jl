@@ -264,6 +264,10 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
     return sum( sort!(suma, by=abs2) )
 end
 
+# This should allow to evaluate IntervalBoxes appropriately
+evaluate(a::TaylorN{T}, vals::AbstractArray) where
+    {T<:TaylorSeries.NumberNotSeries} = evaluate(a, vals...,)
+
 evaluate(a::TaylorN{T}, vals::Array{S,1}) where
     {T<:Number, S<:NumberNotSeriesN} = evaluate(a, (vals...,))
 
