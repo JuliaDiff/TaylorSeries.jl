@@ -48,15 +48,18 @@ function set_variable_names(varnames::Vector{T}) where {T<:AbstractString}
     nothing
 end
 """
-    get_variables(;order=get_order())
+    get_variables(T::Type, [order::Int=get_order()])
 
-Return a `TaylorN` vector with each entry representing an
+Return a `TaylorN{T}` vector with each entry representing an
 independent variable. It takes the default `_params_TaylorN_` values
 if `set_variables` hasn't been changed with the exception that `order`
 can be explicitely established by the user without changing internal values
-for `num_vars` or `variable_names`.
+for `num_vars` or `variable_names`. Ommiting `T` defaults to `Float64`.
 """
-get_variables(;order::Integer=get_order()) = [TaylorN(i,order=order) for i in 1:get_numvars()]
+get_variables(T::Type, order::Int=get_order()) =
+    [TaylorN(T, i, order=order) for i in 1:get_numvars()]
+get_variables(order::Int=get_order()) =
+    [TaylorN(Float64, i, order=order) for i in 1:get_numvars()]
 
 """
     set_variables([T::Type], names::String; [order=get_order(), numvars=-1])
