@@ -44,8 +44,10 @@ end
     @test get_numvars() == 2
 
     @test get_variables()[1].order == get_order()
-    @test get_variables(order=2)[1].order == 2
-    @test get_variables(order=3)[1] == TaylorN(1,order=3)
+    @test get_variables(2)[1].order == 2
+    @test get_variables(3)[1] == TaylorN(1, order=3)
+    @test get_variables(Int, 3)[1] == TaylorN(Int, 1, order=3)
+    @test length(get_variables()) == get_numvars()
 
     x, y = set_variables("x y", order=6)
     @test x.order == 6
