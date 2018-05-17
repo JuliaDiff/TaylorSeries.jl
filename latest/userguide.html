@@ -164,10 +164,7 @@ julia&gt; x.coeffs
   1.0 α₁ + 𝒪(‖x‖¹¹)
   1.0 α₂ + 𝒪(‖x‖¹¹)
   1.0 α₃ + 𝒪(‖x‖¹¹)</code></pre><p>Alternatively to <code>set_variables</code>, <a href="api.html#TaylorSeries.get_variables"><code>get_variables</code></a> can be used if one doesn&#39;t want to change internal dictionaries. <code>get_variables</code> returns a vector of <code>TaylorN</code> independent variables of a desired <code>order</code> (lesser than <code>get_order</code> so the internals doesn&#39;t have to change) with the length and variable names defined by <code>set_variables</code> initially.</p><pre><code class="language-julia-repl">julia&gt; get_variables(order=2) #vector of independent variables of order 2
-3-element Array{TaylorSeries.TaylorN{Float64},1}:
-  1.0 α₁ + 𝒪(‖x‖³)
-  1.0 α₂ + 𝒪(‖x‖³)
-  1.0 α₃ + 𝒪(‖x‖³)</code></pre><p>The function <a href="api.html#TaylorSeries.show_params_TaylorN"><code>show_params_TaylorN</code></a> displays the current values of the parameters, in an info block.</p><pre><code class="language-julia-repl">julia&gt; show_params_TaylorN()
+ERROR: function get_variables does not accept keyword arguments</code></pre><p>The function <a href="api.html#TaylorSeries.show_params_TaylorN"><code>show_params_TaylorN</code></a> displays the current values of the parameters, in an info block.</p><pre><code class="language-julia-repl">julia&gt; show_params_TaylorN()
 Info: Parameters for `TaylorN` and `HomogeneousPolynomial`:
 Maximum order       = 10
 Number of variables = 3

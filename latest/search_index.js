@@ -293,7 +293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "TaylorSeries.get_variables",
     "category": "function",
-    "text": "get_variables(;order=get_order())\n\nReturn a TaylorN vector with each entry representing an independent variable. It takes the default _params_TaylorN_ values if set_variables hasn\'t been changed with the exception that order can be explicitely established by the user without changing internal values for num_vars or variable_names.\n\n\n\n"
+    "text": "get_variables(T::Type, [order::Int=get_order()])\n\nReturn a TaylorN{T} vector with each entry representing an independent variable. It takes the default _params_TaylorN_ values if set_variables hasn\'t been changed with the exception that order can be explicitely established by the user without changing internal values for num_vars or variable_names. Ommiting T defaults to Float64.\n\n\n\n"
 },
 
 {
