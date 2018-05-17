@@ -264,8 +264,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
     return sum( sort!(suma, by=abs2) )
 end
 
-evaluate(a::TaylorN{T}, vals::AbstractArray{S,1}) where
-    {T<:Number, S<:NumberNotSeries} = evaluate(a, (vals...,))
+evaluate(a::TaylorN, vals) = evaluate(a, (vals...,))
 
 evaluate(a::TaylorN, v, vals...) = evaluate(a, (v, vals...,))
 
