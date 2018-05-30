@@ -37,5 +37,7 @@ end
     for ind in eachindex((p5(x,-b)).coeffs)
         @test all(((p5(x,-b)).coeffs[ind]).coeffs .⊆ (((x-b)^5).coeffs[ind]).coeffs)
     end
+    @test evaluate(p4(x,-b), IntervalBox(a,b)) == p4(a, b)
+    @test (p5(x,-b))(IntervalBox(a,b)) == p5(a, b)
 
 end
