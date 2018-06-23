@@ -501,6 +501,15 @@ end
     hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes
 
+    use_show_default(true)
+    @test string(xH) == "TaylorSeries.HomogeneousPolynomial{Int64}([1, 0], 1)"
+    @test string(TaylorN(2, order=1)) ==
+    "TaylorSeries.TaylorN{Float64}(TaylorSeries.HomogeneousPolynomial{Float64}" *
+    "[TaylorSeries.HomogeneousPolynomial{Float64}([0.0], 0), " *
+    "TaylorSeries.HomogeneousPolynomial{Float64}([0.0, 1.0], 1)], 1)"
+    use_show_default(false)
+    @test string(xH) == " 1 x₁"
+
     displayBigO(false)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁²"

@@ -57,6 +57,17 @@ displayBigO(true) # turn it on
 t
 ```
 
+Similarly, it is possible to control if the format of the
+displayed series through the function [`use_show_default`](@ref);
+`use_show_default(true)` uses the `Base.show_default`, while
+`use_show_default(false)` uses the custom display form (default).
+```@repl userguide
+use_show_default(true) # use Base.show method
+t
+use_show_default(false) # use custom `show`
+t
+```
+
 The definition of `shift_taylor(a)` uses the method
 [`Taylor1([::Type{Float64}], [order::Int64=1])`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,

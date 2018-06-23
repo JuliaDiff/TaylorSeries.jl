@@ -251,5 +251,9 @@ end
 
 # show
 function show(io::IO, a::Union{Taylor1, HomogeneousPolynomial, TaylorN})
-    print(io, pretty_print(a))
+    if _show_default[end]
+        return Base.show_default(io, a)
+    else
+        return print(io, pretty_print(a))
+    end
 end
