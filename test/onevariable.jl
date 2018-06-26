@@ -379,7 +379,7 @@ end
     @test promote(ta(0.0), t) == (ta(0.0),ta(0.0))
 
     @test norm((inverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1
-    cfs = [(-n)^(n-1)/gamma(n+1) for n = 1:15]
+    cfs = [(-n)^(n-1)/factorial(n) for n = 1:15]
     @test norm(inverse(t*exp(t))[1:end]./cfs .- 1) < 4tol1
 
     @test_throws ArgumentError Taylor1([1,2,3], -2)

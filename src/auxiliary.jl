@@ -79,7 +79,7 @@ getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 
 setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
 setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number} =
-    a.coeffs[u .+ 1] = x
+    a.coeffs[u .+ 1] .= x
 function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
     # a.coeffs[u .+ 1] .= x
     @assert length(u) == length(x)
@@ -87,8 +87,8 @@ function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
         a.coeffs[u[ind]+1] = x[ind]
     end
 end
-setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] = x
-setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] = x
+setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] .= x
+setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] .= x
 
 
 """
@@ -113,11 +113,11 @@ getindex(a::HomogeneousPolynomial, c::Colon) = view(a.coeffs, c)
 setindex!(a::HomogeneousPolynomial{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n] = x
 setindex!(a::HomogeneousPolynomial{T}, x::T, n::UnitRange) where {T<:Number} =
-    a.coeffs[n] = x
+    a.coeffs[n] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, n::UnitRange) where {T<:Number} =
-    a.coeffs[n] = x
+    a.coeffs[n] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::T, c::Colon) where {T<:Number} =
-    a.coeffs[c] = x
+    a.coeffs[c] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, c::Colon) where {T<:Number} =
     a.coeffs[c] = x
 
@@ -129,7 +129,7 @@ Return the coefficient of `a::TaylorN`, specified by `v`,
 which is a tuple (or vector) with the indices of the specific
 monomial.
 """
-function getcoeff(a::TaylorN, v::NTuple{N, Int}) where {N}
+function getcoeff(a::TaylorN, v::NTuple{N,Int}) where {N}
     order = sum(v)
     @assert order ≤ a.order
     getcoeff(a[order], v)
