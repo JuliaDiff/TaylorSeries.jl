@@ -48,7 +48,8 @@ Taylor1(x::Taylor1{T}) where {T<:Number} = x
 Taylor1(coeffs::Array{T,1}, order::Int) where {T<:Number} = Taylor1{T}(coeffs, order)
 Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1(coeffs, length(coeffs)-1)
 function Taylor1(x::T, order::Int) where {T<:Number}
-    v = zeros(T, order+1)
+    # v = zeros(T, order+1)
+    v = fill(zero(x), order+1)
     v[1] = x
     return Taylor1(v, order)
 end
