@@ -252,7 +252,7 @@ end
 # show
 function show(io::IO, a::Union{Taylor1, HomogeneousPolynomial, TaylorN})
     if _show_default[end]
-        return Base.show_default(io, a)
+        return Base.show_default(IOContext(io, :compact => false), a)
     else
         return print(io, pretty_print(a))
     end

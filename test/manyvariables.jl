@@ -502,19 +502,41 @@ end
     @test hes1 == hes
 
     use_show_default(true)
-    @test string(xH) == "TaylorSeries.HomogeneousPolynomial{Int64}([1, 0], 1)"
-    @test string(TaylorN(2, order=1)) ==
-    "TaylorSeries.TaylorN{Float64}(TaylorSeries.HomogeneousPolynomial{Float64}" *
-    "[TaylorSeries.HomogeneousPolynomial{Float64}([0.0], 0), " *
-    "TaylorSeries.HomogeneousPolynomial{Float64}([0.0, 1.0], 1)], 1)"
+    aa = sqrt(2) * xH
+    ab = sqrt(2) * TaylorN(2, order=1)
+    if VERSION < v"0.7.0-DEV"
+        @test string(aa) ==
+            "TaylorSeries.HomogeneousPolynomial{Float64}([1.4142135623730951, 0.0], 1)"
+        @test string([aa]) == "TaylorSeries.HomogeneousPolynomial{Float64}" *
+            "[TaylorSeries.HomogeneousPolynomial{Float64}([1.4142135623730951, 0.0], 1)]"
+        @test string(ab) == "TaylorSeries.TaylorN{Float64}(TaylorSeries.HomogeneousPolynomial{Float64}" *
+            "[TaylorSeries.HomogeneousPolynomial{Float64}([0.0], 0), " *
+            "TaylorSeries.HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
+        @test string([ab]) == "TaylorSeries.TaylorN{Float64}[TaylorSeries.TaylorN{Float64}" *
+            "(TaylorSeries.HomogeneousPolynomial{Float64}[TaylorSeries.HomogeneousPolynomial{Float64}([0.0], 0), " *
+            "TaylorSeries.HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)]"
+    else
+        @test string(aa) ==
+            "HomogeneousPolynomial{Float64}([1.4142135623730951, 0.0], 1)"
+        @test string(ab) ==
+            "TaylorN{Float64}(HomogeneousPolynomial{Float64}" *
+            "[HomogeneousPolynomial{Float64}([0.0], 0), " *
+            "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
+    end
     use_show_default(false)
-    @test string(xH) == " 1 x₁"
-
+    @test string(aa) == " 1.4142135623730951 x₁"
+    @test string(ab) == " 1.4142135623730951 x₂ + 𝒪(‖x‖²)"
+    @test string([aa, aa]) == "TaylorSeries.HomogeneousPolynomial{Float64}" *
+        "[ 1.4142135623730951 x₁,  1.4142135623730951 x₁]"
+    @test string([ab, ab]) == "TaylorSeries.TaylorN{Float64}" *
+        "[ 1.4142135623730951 x₂ + 𝒪(‖x‖²),  1.4142135623730951 x₂ + 𝒪(‖x‖²)]"
     displayBigO(false)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁²"
     @test string(1im*yT) == " ( 1 im ) x₂"
     @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂"
+    @test string([ab, ab]) == "TaylorSeries.TaylorN{Float64}" *
+        "[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
     displayBigO(true)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"
