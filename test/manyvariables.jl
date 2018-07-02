@@ -522,21 +522,31 @@ end
             "TaylorN{Float64}(HomogeneousPolynomial{Float64}" *
             "[HomogeneousPolynomial{Float64}([0.0], 0), " *
             "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
+        @test string([aa, aa]) ==
+            "HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
+            "([1.4142135623730951, 0.0], 1), HomogeneousPolynomial{Float64}" *
+            "([1.4142135623730951, 0.0], 1)]"
+        @test string([ab, ab]) == "TaylorN{Float64}[TaylorN{Float64}" *
+            "(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}([0.0], 0), " *
+            "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1), " *
+            "TaylorN{Float64}(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
+            "([0.0], 0), HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)]"
     end
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 x₁"
     @test string(ab) == " 1.4142135623730951 x₂ + 𝒪(‖x‖²)"
-    @test string([aa, aa]) == "TaylorSeries.HomogeneousPolynomial{Float64}" *
-        "[ 1.4142135623730951 x₁,  1.4142135623730951 x₁]"
-    @test string([ab, ab]) == "TaylorSeries.TaylorN{Float64}" *
-        "[ 1.4142135623730951 x₂ + 𝒪(‖x‖²),  1.4142135623730951 x₂ + 𝒪(‖x‖²)]"
     displayBigO(false)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁²"
     @test string(1im*yT) == " ( 1 im ) x₂"
     @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂"
-    @test string([ab, ab]) == "TaylorSeries.TaylorN{Float64}" *
-        "[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
+    if VERSION < v"0.7.0-DEV"
+        @test string([ab, ab]) == "TaylorSeries.TaylorN{Float64}" *
+            "[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
+    else
+        @test string([ab, ab]) ==
+            "TaylorN{Float64}[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
+    end
     displayBigO(true)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"

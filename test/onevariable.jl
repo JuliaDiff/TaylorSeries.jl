@@ -409,8 +409,8 @@ end
     else
         @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
         @test string([aa, aa]) ==
-            "TaylorSeries.Taylor1{Float64}[TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
-            "TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
+            "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
+            "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
     end
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 + 1.0 t + 𝒪(t³)"
