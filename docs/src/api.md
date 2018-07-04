@@ -48,6 +48,7 @@ norm
 isapprox
 isfinite
 displayBigO
+use_show_default
 ```
 
 ## Internals

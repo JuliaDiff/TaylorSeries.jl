@@ -399,6 +399,21 @@ end
     @test_throws ArgumentError inverse(exp(t))
     @test_throws ArgumentError abs(t)
 
+    use_show_default(true)
+    aa = sqrt(2)+Taylor1(2)
+    if VERSION < v"0.7.0-DEV"
+        @test string(aa) == "TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
+        @test string([aa, aa]) ==
+            "TaylorSeries.Taylor1{Float64}[TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
+            "TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
+    else
+        @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
+        @test string([aa, aa]) ==
+            "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
+            "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
+    end
+    use_show_default(false)
+    @test string(aa) == " 1.4142135623730951 + 1.0 t + 𝒪(t³)"
     displayBigO(false)
     @test string(ta(-3)) == " - 3 + 1 t "
     @test string(ta(0)^3-3) == " - 3 + 1 t³ "

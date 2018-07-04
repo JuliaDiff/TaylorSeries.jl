@@ -171,6 +171,7 @@ end
 
 # Control the display of the big 𝒪 notation
 const bigOnotation = Bool[true]
+const _show_default = [false]
 
 """
     displayBigO(d::Bool) --> nothing
@@ -180,3 +181,12 @@ of `Taylor1` and `TaylorN` polynomials. The initial value is
 `true`.
 """
 displayBigO(d::Bool) = (bigOnotation[end] = d; d)
+
+"""
+    use_Base_show(d::Bool) --> nothing
+
+Use `Base.show_default` method (default `show` method
+in Base), or a custom display. The initial value is
+`false`, so customized fisplay is used.
+"""
+use_show_default(d::Bool) = (_show_default[end] = d; d)

@@ -19,10 +19,9 @@ function superscriptify(n::Int)
 end
 
 
-function pretty_print(a::Taylor1{T}) where {T<:Number}
+function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
     z = zero(a[0])
     space = string(" ")
-    # bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
     bigO = bigOnotation[end] ?
         string("+ 𝒪(t", superscriptify(a.order+1), ")") :
         string("")
@@ -42,39 +41,12 @@ function pretty_print(a::Taylor1{T}) where {T<:Number}
     strout
 end
 
-function pretty_print(a::Taylor1{HomogeneousPolynomial{T}}) where {T<:Number}
+function pretty_print(a::Taylor1{T} where {T <: AbstractSeries{S}}) where {S<:Number}
     z = zero(a[0])
     space = string(" ")
-    # bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
     bigO = bigOnotation[end] ?
         string("+ 𝒪(t", superscriptify(a.order+1), ")") :
         string("")
-    iszero(a) && return string(space, z, space, bigO)
-    strout::String = space
-    ifirst = true
-    for i in eachindex(a.coeffs)
-        monom::String = i==1 ? string("") : i==2 ? string(" t") :
-            string(" t", superscriptify(i-1))
-        @inbounds c = a[i-1]
-        c == z && continue
-        cadena = numbr2str(c, ifirst)
-        ccad::String = i==1 ? cadena : ifirst ? string("(", cadena, ")") :
-            string(cadena[1:2], "(", cadena[3:end], ")")
-        strout = string(strout, ccad, monom, space)
-        ifirst = false
-    end
-    strout = strout * bigO
-    strout
-end
-
-function pretty_print(a::Taylor1{TaylorN{T}}) where {T<:Number}
-    z = zero(a[0])
-    space = string(" ")
-    # bigO = string("+ 𝒪(t", superscriptify(a.order+1), ")")
-    bigO = bigOnotation[end] ?
-        string("+ 𝒪(t", superscriptify(a.order+1), ")") :
-        string("")
-    iszero(a) && return string(space, z, space, bigO)
     iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -104,13 +76,11 @@ end
 function pretty_print(a::TaylorN{T}) where {T<:Number}
     z = zero(a[0])
     space = string("")
-    # bigO::String  = string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")")
     bigO::String = bigOnotation[end] ?
         string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")") :
         string("")
     iszero(a) && return string(space, z, space, bigO)
-    iszero(a) && return string(space, z, bigO)
-    strout::String = space#string("")
+    strout::String = space
     ifirst = true
     for ord in eachindex(a.coeffs)
         pol = a[ord-1]
@@ -251,5 +221,9 @@ end
 
 # show
 function show(io::IO, a::Union{Taylor1, HomogeneousPolynomial, TaylorN})
-    print(io, pretty_print(a))
+    if _show_default[end]
+        return Base.show_default(IOContext(io, :compact => false), a)
+    else
+        return print(io, pretty_print(a))
+    end
 end
