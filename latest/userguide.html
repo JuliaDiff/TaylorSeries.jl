@@ -22,6 +22,16 @@ julia&gt; displayBigO(true) # turn it on
 true
 
 julia&gt; t
+ 1.0 t + 𝒪(t⁶)</code></pre><p>Similarly, it is possible to control if the format of the displayed series through the function <a href="api.html#TaylorSeries.use_show_default"><code>use_show_default</code></a>; <code>use_show_default(true)</code> uses the <code>Base.show_default</code>, while <code>use_show_default(false)</code> uses the custom display form (default).</p><pre><code class="language-julia-repl">julia&gt; use_show_default(true) # use Base.show method
+true
+
+julia&gt; t
+TaylorSeries.Taylor1{Float64}([0.0, 1.0, 0.0, 0.0, 0.0, 0.0], 5)
+
+julia&gt; use_show_default(false) # use custom `show`
+false
+
+julia&gt; t
  1.0 t + 𝒪(t⁶)</code></pre><p>The definition of <code>shift_taylor(a)</code> uses the method <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1([::Type{Float64}], [order::Int64=1])</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type and order (defaults are <code>Float64</code> and <code>order=1</code>). This is one of the easiest ways to work with the package.</p><p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with the <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1</code></a> type, including promotions that involve <code>Number</code>s. The operations return a valid Taylor expansion of maximum order. This is apparent in the last example below, where the answer is beyond the order of the expansion.</p><pre><code class="language-julia-repl">julia&gt; t*(3t+2.5)
  2.5 t + 3.0 t² + 𝒪(t⁶)
 
