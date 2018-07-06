@@ -187,6 +187,6 @@ displayBigO(d::Bool) = (bigOnotation[end] = d; d)
 
 Use `Base.show_default` method (default `show` method
 in Base), or a custom display. The initial value is
-`false`, so customized fisplay is used.
+`false`, so customized display is used.
 """
 use_show_default(d::Bool) = (_show_default[end] = d; d)

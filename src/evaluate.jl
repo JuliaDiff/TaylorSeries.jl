@@ -22,8 +22,7 @@ function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     suma
 end
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
-    R = promote_type(T,S)
-    @inbounds suma = convert(R, a[end])
+    suma = promote(a[end], dx)[1]
     @inbounds for k = a.order-1:-1:0
         suma = suma*dx + a[k]
     end
