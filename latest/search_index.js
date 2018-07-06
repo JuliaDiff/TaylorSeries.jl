@@ -461,7 +461,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "TaylorSeries.use_show_default",
     "category": "function",
-    "text": "use_Base_show(d::Bool) --> nothing\n\nUse Base.show_default method (default show method in Base), or a custom display. The initial value is false, so customized fisplay is used.\n\n\n\n"
+    "text": "use_Base_show(d::Bool) --> nothing\n\nUse Base.show_default method (default show method in Base), or a custom display. The initial value is false, so customized display is used.\n\n\n\n"
 },
 
 {
