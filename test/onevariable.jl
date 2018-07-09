@@ -4,14 +4,9 @@
 using TaylorSeries
 using Compat
 
-if VERSION < v"0.7.0-DEV.2004"
-    using Base.Test
-    eeuler = Base.e
-else
-    using Test
-    using LinearAlgebra, SparseArrays
-    eeuler = Base.MathConstants.e
-end
+using Test
+using LinearAlgebra, SparseArrays
+eeuler = Base.MathConstants.e
 
 @testset "Tests for Taylor1 expansions" begin
     ta(a) = Taylor1([a,one(a)],15)
@@ -387,11 +382,7 @@ end
     @test_throws ArgumentError 1/t
     @test_throws ArgumentError zt/zt
     @test_throws ArgumentError t^1.5
-    if VERSION < v"0.7.0-DEV"
-        @test_throws DomainError t^(-2)
-    else
-        @test_throws ArgumentError t^(-2)
-    end
+    @test_throws ArgumentError t^(-2)
     @test_throws ArgumentError sqrt(t)
     @test_throws ArgumentError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
@@ -401,17 +392,10 @@ end
 
     use_show_default(true)
     aa = sqrt(2)+Taylor1(2)
-    if VERSION < v"0.7.0-DEV"
-        @test string(aa) == "TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
-        @test string([aa, aa]) ==
-            "TaylorSeries.Taylor1{Float64}[TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
-            "TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
-    else
-        @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
-        @test string([aa, aa]) ==
-            "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
-            "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
-    end
+    @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
+    @test string([aa, aa]) ==
+        "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
+        "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 + 1.0 t + 𝒪(t³)"
     displayBigO(false)

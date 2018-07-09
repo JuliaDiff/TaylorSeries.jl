@@ -20,17 +20,11 @@ module TaylorSeries
 
 using Compat
 
-if VERSION <= v"0.7.0-DEV.2004"
-    import Base: norm, gradient, A_mul_B!
-    const mul! = A_mul_B!
-    export mul!
-else
-    using InteractiveUtils: subtypes
-    using SparseArrays: SparseMatrixCSC
-    import LinearAlgebra: norm, gradient, mul!
-    import Base: lastindex
-    using Markdown
-end
+using InteractiveUtils: subtypes
+using SparseArrays: SparseMatrixCSC
+import LinearAlgebra: norm, gradient, mul!
+import Base: lastindex
+using Markdown
 
 import Base: ==, +, -, *, /, ^
 
