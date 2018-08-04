@@ -350,7 +350,7 @@ evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
 
 function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
         {T<:Number, S<:NumberNotSeriesN}
-    vars = get_variables()
+    vars = get_variables(T)
     ind = lookupvar(s)
     vars[ind] = val
     evaluate(a, vars)
