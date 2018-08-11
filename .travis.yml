@@ -17,11 +17,11 @@ matrix:
 
 script:
  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
- - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("TaylorSeries"); Pkg.test("TaylorSeries"; coverage=true)'
+ - julia --project --check-bounds=yes -e 'using Pkg; Pkg.clone(pwd()); Pkg.add("TaylorSeries"); Pkg.test("TaylorSeries"; coverage=true)'
 
 after_success:
-  - julia -e 'Pkg.add("Documenter")'
-  - julia -e 'cd(Pkg.dir("TaylorSeries")); include(joinpath("docs", "make.jl"))'
-  - julia -e 'cd(Pkg.dir("TaylorSeries")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'import Pkg; Pkg.add("Documenter")'
+  - julia -e 'import TaylorSeries; joinpath(dirname(pathof(TaylorSeries)), "..", paths...); include(joinpath("docs", "make.jl"))'
+  - julia -e 'Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
 sudo: false
