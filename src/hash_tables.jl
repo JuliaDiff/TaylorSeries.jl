@@ -103,7 +103,7 @@ const coeff_table, index_table, size_table, pos_table =
     generate_tables(get_numvars(), get_order())
 
 # Garbage-collect here to free memory
-@compat GC.gc();
+GC.gc();
 
 
 """

@@ -184,7 +184,7 @@ Inexact equality comparison between polynomials: returns `true` if
 `norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))`, where `x` and `y` are
 polynomials. For more details, see [`Base.isapprox`](@ref).
 """
-@compat function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y,0), atol::Real=0.0,
+function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y,0), atol::Real=0.0,
         nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
 
     x == y || (isfinite(x) && isfinite(y) &&
@@ -192,7 +192,7 @@ polynomials. For more details, see [`Base.isapprox`](@ref).
         (nans && isnan(x) && isnan(y))
 end
 #isapprox for vectors of Taylors
-@compat function isapprox(x::Vector{T}, y::Vector{S}; rtol::Real=rtoldefault(T,S,0), atol::Real=0.0,
+function isapprox(x::Vector{T}, y::Vector{S}; rtol::Real=rtoldefault(T,S,0), atol::Real=0.0,
         nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
 
     x == y || norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1)) ||
@@ -226,7 +226,7 @@ function taylor_expand(f::Function, x0::Vector{T};
 
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
-    @compat X = Array{TaylorN{T}}(undef, ll)
+    X = Array{TaylorN{T}}(undef, ll)
 
     for i in eachindex(X)
         X[i] = x0[i] + TaylorN(T, i, order=order)
@@ -240,7 +240,7 @@ function taylor_expand(f::Function, x0...; order::Int64=get_order())
     T = eltype(x0[1])
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
-    @compat X = Array{TaylorN{T}}(undef, ll)
+    X = Array{TaylorN{T}}(undef, ll)
 
     for i in eachindex(X)
         X[i] = x0[i] + TaylorN(T, i, order=order)

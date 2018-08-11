@@ -27,8 +27,8 @@ eeuler = Base.MathConstants.e
     @test eltype(set_variables(:x, numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(set_variables(BigInt, [:x,:y], order=6)) == TaylorN{BigInt}
     @test eltype(set_variables([:x,:y], order=6)) == TaylorN{Float64}
-    @test @compat typeof(show_params_TaylorN()) == Nothing
-    @test @compat typeof(show_monomials(2)) == Nothing
+    @test typeof(show_params_TaylorN()) == Nothing
+    @test typeof(show_monomials(2)) == Nothing
 
     @test TaylorSeries.coeff_table[2][1] == [1,0]
     @test TaylorSeries.index_table[2][1] == 7
@@ -61,7 +61,7 @@ eeuler = Base.MathConstants.e
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test @compat typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
+    @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
     HomogeneousPolynomial(v)[3] = 3
@@ -463,7 +463,7 @@ eeuler = Base.MathConstants.e
     @test gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
     @test jacobian([f1,f2], [2,1]) == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
-    @compat jac = Array{Int64}(undef, 2, 2)
+    jac = Array{Int64}(undef, 2, 2)
     jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
     @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jacobian!(jac, [f1,f2], [2,1])
@@ -478,7 +478,7 @@ eeuler = Base.MathConstants.e
     @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
     @test hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
-    @compat hes = Array{Int64}(undef, 2, 2)
+    hes = Array{Int64}(undef, 2, 2)
     hessian!(hes, f1*f2)
     @test hes == hessian(f1*f2)
     @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
@@ -486,7 +486,7 @@ eeuler = Base.MathConstants.e
     @test hes/2 == [ [49,0] [0,12] ]
     hessian!(hes, f1-f2-2*f1*f2)
     @test hes == hes'
-    @compat hes1 = Array{Int64}(undef, 2, 2)
+    hes1 = Array{Int64}(undef, 2, 2)
     hessian!(hes1, f1-f2,[1,-1])
     hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes

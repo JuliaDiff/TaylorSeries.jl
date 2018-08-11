@@ -43,7 +43,7 @@ function evaluate(x::Union{Array{Taylor1{T},1}, SubArray{Taylor1{T},1}}, δt::S)
     return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
 end
 function evaluate(x::Array{Taylor1{T},1}, δt::T) where {T<:Number}
-    @compat xnew = Array{T}(undef, length(x) )
+    xnew = Array{T}(undef, length(x) )
     evaluate!(x, δt, xnew)
     return xnew
 end
@@ -57,8 +57,8 @@ function evaluate(A::Union{Array{Taylor1{T},2}, SubArray{Taylor1{T},2}}, δt::S)
 end
 function evaluate(A::Array{Taylor1{T},2}, δt::T) where {T<:Number}
     n,m = size(A)
-    @compat Anew = Array{T}(undef, n, m )
-    @compat xnew = Array{T}(undef, n )
+    Anew = Array{T}(undef, n, m )
+    xnew = Array{T}(undef, n )
 
     for i in 1:m
         evaluate!(A[:,i], δt, xnew)
@@ -370,7 +370,7 @@ function evaluate(x::Union{Array{TaylorN{T},1},SubArray{TaylorN{T},1}}, δx::Vec
 end
 
 function evaluate(x::Array{TaylorN{T},1}, δx::Array{T,1}) where {T<:Number}
-    @compat x0 = Array{T}(undef, length(x) )
+    x0 = Array{T}(undef, length(x) )
     evaluate!( x, δx, x0 )
     return x0
 end
@@ -385,8 +385,8 @@ function evaluate(A::Union{Array{TaylorN{T},2}, SubArray{TaylorN{T},2}}, δx::Ve
 end
 function evaluate(A::Array{TaylorN{T},2}, δx::Vector{T}) where {T<:Number}
     n,m = size(A)
-    @compat Anew = Array{T}(undef, n, m )
-    @compat xnew = Array{T}(undef, n )
+    Anew = Array{T}(undef, n, m )
+    xnew = Array{T}(undef, n )
 
     for i in 1:m
         evaluate!(A[:,i], δx, xnew)

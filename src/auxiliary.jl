@@ -181,7 +181,7 @@ for T in (:Taylor1, :TaylorN)
         eltype(::$T{S}) where {S<:Number} = S
         length(a::$T) = length(a.coeffs)
         endof(a::$T) = a.order
-        @compat lastindex(a::$T) = a.order
+        lastindex(a::$T) = a.order
         get_order(a::$T) = a.order
 
         # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
@@ -194,7 +194,7 @@ end
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
 length(a::HomogeneousPolynomial) = length(a.coeffs)
 endof(a::HomogeneousPolynomial) = length(a.coeffs)
-@compat lastindex(a::HomogeneousPolynomial) = length(a.coeffs)
+lastindex(a::HomogeneousPolynomial) = length(a.coeffs)
 get_order(a::HomogeneousPolynomial) = a.order
 
 # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
@@ -224,12 +224,12 @@ end
 # Finds the first non zero entry; extended to Taylor1
 function Base.findfirst(a::Taylor1{T}) where {T<:Number}
     first = findfirst(a.coeffs)
-    @compat isa(first, Nothing) && return -1
+    isa(first, Nothing) && return -1
     return first-1
 end
 function Base.findlast(a::Taylor1{T}) where {T<:Number}
     last = findlast(a.coeffs)
-    @compat isa(last, Nothing) && return -1
+    isa(last, Nothing) && return -1
     return last-1
 end
 

@@ -29,7 +29,7 @@ eeuler = Base.MathConstants.e
     # @test voT == [0, 1, 2, 3, 4]
 
     v = [1,2]
-    @test @compat typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
+    @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
     @test v == [1,2,0,0]
     TaylorSeries.resize_coeffs1!(v,0)
     @test v == [1]
@@ -343,7 +343,7 @@ eeuler = Base.MathConstants.e
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
-    @compat vv = Vector{Float64}(undef, 2)
+    vv = Vector{Float64}(undef, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv
@@ -491,7 +491,7 @@ end
         B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
         Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
         Bcopy = deepcopy(B)
-        @compat mul!(Y,A,B)
+        mul!(Y,A,B)
 
         # do we get the same result when using the `A*B` form?
         @test A*B≈Y
@@ -510,9 +510,9 @@ end
         # multiplication and the specialized version
         @test abs(y1-y2) < n1*(eps(y1)+eps(y2))
 
-        @compat @test_throws DimensionMismatch mul!(Y,A[:,1:end-1],B)
-        @compat @test_throws DimensionMismatch mul!(Y,A[1:end-1,:],B)
-        @compat @test_throws DimensionMismatch mul!(Y,A,B[1:end-1])
-        @compat @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
+        @test_throws DimensionMismatch mul!(Y,A[:,1:end-1],B)
+        @test_throws DimensionMismatch mul!(Y,A[1:end-1,:],B)
+        @test_throws DimensionMismatch mul!(Y,A,B[1:end-1])
+        @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
     end
 end

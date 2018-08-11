@@ -189,7 +189,7 @@ using LinearAlgebra, SparseArrays
     δx = [Taylor1(rand(3)) for i in 1:4]
     @test typeof(x) == Array{TaylorN{Taylor1{Float64}},1}
     @test typeof(δx) == Array{Taylor1{Float64},1}
-    @compat x0 = Array{Taylor1{Float64}}(undef, length(x))
+    x0 = Array{Taylor1{Float64}}(undef, length(x))
     eval_x_δx = evaluate(x,δx)
     @test x(δx) == eval_x_δx
     evaluate!(x,δx,x0)
