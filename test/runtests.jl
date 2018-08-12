@@ -15,6 +15,6 @@ testfiles = (
 for file in testfiles
     # Tests in 0.7 pass when current IntervalArithmetics master
     # is used, i.e., IntervalArithmetic 0.14.0, not yet released
-    file == "intervals.jl" && VERSION ≥ v"0.7.0-DEV" && continue
+    # file == "intervals.jl" && VERSION ≥ v"0.7.0-DEV" && continue
     include(file)
 end
