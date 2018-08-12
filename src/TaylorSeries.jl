@@ -18,7 +18,6 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
-using Compat
 
 using InteractiveUtils: subtypes
 using SparseArrays: SparseMatrixCSC

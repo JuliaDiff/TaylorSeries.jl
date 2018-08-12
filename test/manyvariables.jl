@@ -2,7 +2,6 @@
 #
 
 using TaylorSeries
-using Compat
 
 using Test
 using LinearAlgebra

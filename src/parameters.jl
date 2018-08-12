@@ -158,7 +158,7 @@ set_variables(symbs::Symbol; order=get_order(), numvars=-1) =
 Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
 """
 function show_params_TaylorN()
-    Compat.@info( """
+    @info( """
     Parameters for `TaylorN` and `HomogeneousPolynomial`:
     Maximum order       = $(get_order())
     Number of variables = $(get_numvars())
