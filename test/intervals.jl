@@ -42,5 +42,5 @@ end
 
     # Tests `evaluate`
     @test (a-b)^4 ⊆ ((x-y)^4)(a × b)
-    @test (((x-y)^4)[4])(a × b) == [-39,81]
+    @test (((x-y)^4)[4])(a × b) == -39 .. 81
 end
