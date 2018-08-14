@@ -5,8 +5,6 @@
 #
 # Handles Taylor series of arbitrary but finite order
 
-__precompile__(true)
-
 """
     TaylorSeries
 
