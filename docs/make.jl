@@ -16,7 +16,7 @@ makedocs(
 deploydocs(
     repo   = "github.com/JuliaDiff/TaylorSeries.jl.git",
     target = "build",
-    julia = "0.6",
+    julia = "0.7",
     osname = "linux",
     deps   = nothing,
     make   = nothing
