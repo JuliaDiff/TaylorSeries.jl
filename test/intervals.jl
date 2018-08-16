@@ -40,4 +40,7 @@ end
     @test evaluate(p4(x,-b), IntervalBox(a,b)) == p4(a, b)
     @test (p5(x,-b))(IntervalBox(a,b)) == p5(a, b)
 
+    # Tests `evaluate`
+    @test (a-b)^4 ⊆ ((x-y)^4)(a × b)
+    @test (((x-y)^4)[4])(a × b) == -39 .. 81
 end
