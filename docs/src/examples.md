@@ -131,10 +131,11 @@ The relevant files used for benchmarking can be found
 [here](https://github.com/JuliaDiff/TaylorSeries.jl/tree/master/perf).
 Running on a MacPro with Intel-Xeon processors 2.7GHz, we obtain that
 Mathematica requires on average (5 runs) 3.075957 seconds for the computation,
-while for `fateman1` and `fateman2` above we obtain 2.811391 and 1.490256,
+while for `fateman1` and `fateman2` above we obtain 2.15408 and 1.08337,
 respectively.
 
-Then, with the current version of `TaylorSeries.jl`, our implementation of
-`fateman1` is about 10% faster, and `fateman2` is about a factor
-2 faster. (The original test by Fateman corresponds to `fateman1` above, which
-avoids some optimizations related to squaring.)
+Then, with the current version of `TaylorSeries.jl` and using Julia v0.7.0,
+our implementation of `fateman1` is about 30%-40% faster.
+(The original test by Fateman corresponds to `fateman1` above, which
+avoids some optimizations related to squaring; the implementation in Mathematica
+is done such that this optimization does not occur.)
