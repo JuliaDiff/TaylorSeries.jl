@@ -90,7 +90,7 @@ function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:
     r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
 
     v = zeros(T, s.order+1)
-    @inbounds for ordT in 0:s.order
+    @inbounds for ordT in eachindex(s)
         v[ordT+1] = one(T)
         @inbounds for ordHP in 0:s[ordT].order
             @inbounds for ic in eachindex(s[ordT][ordHP].coeffs)
@@ -106,19 +106,19 @@ end
 function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:Number}
 
     ordert = 0
-    for ordHP in eachindex(s.coeffs)
-        ordert = max(ordert, s[ordHP-1][1].order)
+    for ordHP in eachindex(s)
+        ordert = max(ordert, s[ordHP][1].order)
     end
     vT = Array{TaylorN{T}}(undef, ordert+1)
     @inbounds for ordT in eachindex(vT)
         vT[ordT] = TaylorN(zero(T), s.order)
     end
 
-    @inbounds for ordN in eachindex(s.coeffs)
-        vHP = HomogeneousPolynomial(zeros(T,length(s[ordN-1])))
-        @inbounds for ihp in eachindex(s[ordN-1].coeffs)
-            @inbounds for ind in eachindex(s[ordN-1][ihp].coeffs)
-                c = s[ordN-1][ihp][ind-1]
+    @inbounds for ordN in eachindex(s)
+        vHP = HomogeneousPolynomial(zeros(T,length(s[ordN])))
+        @inbounds for ihp in eachindex(s[ordN].coeffs)
+            @inbounds for ind in eachindex(s[ordN][ihp].coeffs)
+                c = s[ordN][ihp][ind-1]
                 vHP[ihp] = c
                 vT[ind] += TaylorN(vHP)
                 vHP[ihp] = zero(T)

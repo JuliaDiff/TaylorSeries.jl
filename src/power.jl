@@ -257,7 +257,7 @@ Return `a^2`; see [`TaylorSeries.sqr!`](@ref).
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
         c = $T( constant_term(a)^2, a.order)
-        for k = 1:a.order
+        for k in 1:a.order
             sqr!(c, a, k)
         end
         return c
@@ -399,7 +399,7 @@ function sqrt(a::TaylorN)
 
     c = TaylorN( p0, a.order)
     aa = one(p0)*a
-    for k = 1:a.order
+    for k in 1:a.order
         sqrt!(c, aa, k)
     end
 

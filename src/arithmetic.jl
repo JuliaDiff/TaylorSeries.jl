@@ -258,7 +258,7 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
             a, b = fixorder(a, b)
         end
         c = $T(zero(a[0]), a.order)
-        for ord = 0:c.order
+        for ord in eachindex(c)
             mul!(c, a, b, ord) # updates c[ord]
         end
         return c
@@ -414,7 +414,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     ordfact, cdivfact = divfactorization(a, b)
 
     c = Taylor1(cdivfact, a.order)
-    for ord = 1:a.order
+    for ord in eachindex(c)
         div!(c, a, b, ord, ordfact) # updates c[ord]
     end
 
@@ -434,7 +434,7 @@ function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
     # first coefficient
     @inbounds cdivfact = a[0] / constant_term(b)
     c = TaylorN(cdivfact, a.order)
-    for ord in 1:a.order
+    for ord in eachindex(c)
         div!(c, a, b, ord) # updates c[ord]
     end
 
@@ -536,7 +536,8 @@ function mul!(y::Vector{Taylor1{T}},
     @assert (length(y)== n && length(b)== k)
 
     # determine the maximal order of b
-    order = maximum([b1.order for b1 in b])
+    # order = maximum([b1.order for b1 in b])
+    order = maximum(get_order.(b))
 
     # Use matrices of coefficients (of proper size) and mul!
     # B = zeros(T, k, order+1)

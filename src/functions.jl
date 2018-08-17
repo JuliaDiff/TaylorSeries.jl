@@ -15,7 +15,7 @@ for T in (:Taylor1, :TaylorN)
             aux = exp(constant_term(a))
             aa = one(aux) * a
             c = $T( aux, order )
-            for k = 1:order
+            for k in eachindex(a)
                 exp!(c, aa, k)
             end
             return c
@@ -31,7 +31,7 @@ for T in (:Taylor1, :TaylorN)
             aux = log(constant_term(a))
             aa = one(aux) * a
             c = $T( aux, order )
-            for k = 1:order
+            for k in eachindex(a)
                 log!(c, aa, k)
             end
             return c
@@ -45,7 +45,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             s = $T( aux, order )
             c = $T( cos(constant_term(a)), order )
-            for k = 1:order
+            for k in eachindex(a)
                 sincos!(s, c, aa, k)
             end
             return s, c
@@ -57,7 +57,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T(aux, order)
             c2 = $T(aux^2, order)
-            for k = 1:order
+            for k in eachindex(a)
                 tan!(c, aa, c2, k)
             end
             return c
@@ -76,7 +76,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T( aux, order )
             r = $T( sqrt(1 - a0^2), order )
-            for k in 1:order
+            for k in eachindex(a)
                 asin!(c, aa, r, k)
             end
             return c
@@ -95,7 +95,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T( aux, order )
             r = $T( sqrt(1 - a0^2), order )
-            for k in 1:order
+            for k in eachindex(a)
                 acos!(c, aa, r, k)
             end
             return c
@@ -113,7 +113,7 @@ for T in (:Taylor1, :TaylorN)
                     Recursion formula has a pole.
                     """))
 
-            for k in 1:order
+            for k in eachindex(a)
                 atan!(c, aa, r, k)
             end
             return c
@@ -127,7 +127,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             s = $T( aux, order)
             c = $T( cosh(constant_term(a)), order)
-            for k = 1:order
+            for k in eachindex(a)
                 sinhcosh!(s, c, aa, k)
             end
             return s, c
@@ -139,7 +139,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T( aux, order)
             c2 = $T( aux^2, order)
-            for k = 1:order
+            for k in eachindex(a)
                 tanh!(c, aa, c2, k)
             end
             return c
@@ -405,8 +405,8 @@ function inverse(f::Taylor1{T}) where {T<:Number}
     coeffs = zeros(S,f.order+1)
 
     coeffs[1] = zero(S)
-    @inbounds for n = 1:f.order
-        coeffs[n+1] = zdivfpown[n-1]/n
+    @inbounds for n in eachindex(f)
+        coeffs[n+2] = zdivfpown[n]/(n+1)
         zdivfpown *= zdivf
     end
     Taylor1(coeffs, f.order)
