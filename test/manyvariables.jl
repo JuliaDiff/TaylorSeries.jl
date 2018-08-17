@@ -44,6 +44,14 @@ eeuler = Base.MathConstants.e
     @test length(get_variables()) == get_numvars()
 
     x, y = set_variables("x y", order=6)
+    @test size(x) == (7,)
+    @test firstindex(x) == 0
+    @test lastindex(y) == get_order()
+    @test eachindex(x) == 0:6
+    @test iterate(x) == (HomogeneousPolynomial([0.0], 0), 1)
+    @test iterate(y, 1) == (HomogeneousPolynomial([0.0, 1.0], 1), 2)
+    @test iterate(x, 7) == nothing
+
     @test x.order == 6
     @test TaylorSeries.set_variable_names(["x","y"]) == nothing
     @test TaylorSeries._params_TaylorN_.variable_names == ["x","y"]

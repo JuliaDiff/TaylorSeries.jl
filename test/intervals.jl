@@ -29,8 +29,8 @@ eeuler = Base.MathConstants.e
     @test p4(x,-a) == (x-a)^4
     @test p5(x,-a) == (x-a)^5
     @test p4(x,-b) == (x-b)^4
-    for ind in eachindex((p5(x,-b)).coeffs)
-        @test all(((p5(x,-b)).coeffs[ind]).coeffs .⊆ (((x-b)^5).coeffs[ind]).coeffs)
+    for ind in eachindex(p5(x,-b))
+        @test all((p5(x,-b)[ind]).coeffs .⊆ (((x-b)^5)[ind]).coeffs)
     end
     @test evaluate(p4(x,-b), IntervalBox(a,b)) == p4(a, b)
     @test (p5(x,-b))(IntervalBox(a,b)) == p5(a, b)
