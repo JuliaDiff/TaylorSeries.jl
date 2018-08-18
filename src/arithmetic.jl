@@ -334,7 +334,6 @@ Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
 
     (iszero(b) || iszero(a)) && return nothing
 
-    T = eltype(c)
     @inbounds num_coeffs_a = size_table[a.order+1]
     @inbounds num_coeffs_b = size_table[b.order+1]
 
@@ -343,14 +342,14 @@ Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
     @inbounds indTa = index_table[a.order+1]
     @inbounds indTb = index_table[b.order+1]
 
-    @inbounds for na = 1:num_coeffs_a
+    @inbounds for na in 1:num_coeffs_a
         ca = a[na]
-        iszero(ca) && continue
+        # iszero(ca) && continue
         inda = indTa[na]
 
-        @inbounds for nb = 1:num_coeffs_b
+        @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
-            iszero(cb) && continue
+            # iszero(cb) && continue
             indb = indTb[nb]
 
             pos = posTb[inda + indb]
