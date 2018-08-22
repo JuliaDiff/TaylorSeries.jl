@@ -161,11 +161,14 @@ promote_rule(::Type{Taylor1{T}}, ::Type{Array{T,1}}) where {T<:Number} = Taylor1
 promote_rule(::Type{Taylor1{T}}, ::Type{Array{S,1}}) where {T<:Number, S<:Number} =
     Taylor1{promote_type(T,S)}
 
+
 promote_rule(::Type{Taylor1{T}}, ::Type{T}) where {T<:Number} = Taylor1{T}
 
 promote_rule(::Type{Taylor1{T}}, ::Type{S}) where {T<:Number, S<:Number} =
     Taylor1{promote_type(T,S)}
 
+promote_rule(::Type{Taylor1{Taylor1{T}}}, ::Type{Taylor1{T}}) where {T<:Number} =
+    Taylor1{Taylor1{T}}
 
 promote_rule(::Type{HomogeneousPolynomial{T}},
     ::Type{HomogeneousPolynomial{S}}) where {T<:Number, S<:Number} =
