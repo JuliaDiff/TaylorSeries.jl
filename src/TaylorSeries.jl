@@ -19,7 +19,7 @@ module TaylorSeries
 
 using InteractiveUtils: subtypes
 using SparseArrays: SparseMatrixCSC
-import LinearAlgebra: norm, mul!
+import LinearAlgebra: norm, gradient, mul!
 using Markdown
 
 import Base: ==, +, -, *, /, ^
@@ -44,7 +44,7 @@ export getcoeff, derivative, integrate,
     get_order, get_numvars,
     set_variables, get_variables,
     get_variable_names, get_variable_symbols,
-    ∇, gradient, jacobian, jacobian!, hessian, hessian!,
+    ∇, jacobian, jacobian!, hessian, hessian!,
     taylor_expand, update!, constant_term
 
 include("parameters.jl")
