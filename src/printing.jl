@@ -28,10 +28,10 @@ function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
     iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
-    for i in eachindex(a.coeffs)
-        monom::String = i==1 ? string("") : i==2 ? string(" t") :
-            string(" t", superscriptify(i-1))
-        @inbounds c = a[i-1]
+    for i in eachindex(a)
+        monom::String = i==0 ? string("") : i==1 ? string(" t") :
+            string(" t", superscriptify(i))
+        @inbounds c = a[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
         strout = string(strout, cadena, monom, space)
@@ -50,13 +50,13 @@ function pretty_print(a::Taylor1{T} where {T <: AbstractSeries{S}}) where {S<:Nu
     iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
-    for i in eachindex(a.coeffs)
-        monom::String = i==1 ? string("") : i==2 ? string(" t") :
-            string(" t", superscriptify(i-1))
-        @inbounds c = a[i-1]
+    for i in eachindex(a)
+        monom::String = i==0 ? string("") : i==1 ? string(" t") :
+            string(" t", superscriptify(i))
+        @inbounds c = a[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
-        ccad::String = i==1 ? cadena : ifirst ? string("(", cadena, ")") :
+        ccad::String = i==0 ? cadena : ifirst ? string("(", cadena, ")") :
             string(cadena[1:2], "(", cadena[3:end], ")")
         strout = string(strout, ccad, monom, space)
         ifirst = false
@@ -82,11 +82,11 @@ function pretty_print(a::TaylorN{T}) where {T<:Number}
     iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
-    for ord in eachindex(a.coeffs)
-        pol = a[ord-1]
+    for ord in eachindex(a)
+        pol = a[ord]
         iszero(pol) && continue
         cadena::String = homogPol2str( pol )
-        strsgn = (ifirst || ord == 1 || cadena[2] == '-') ?
+        strsgn = (ifirst || ord == 0 || cadena[2] == '-') ?
             string("") : string(" +")
         strout = string( strout, strsgn, cadena)
         ifirst = false

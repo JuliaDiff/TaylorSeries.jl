@@ -15,8 +15,9 @@ The last coefficient is set to zero.
 """
 function derivative(a::Taylor1)
     res = zero(a)
-    @inbounds for ord = 0:a.order-1
+    @inbounds for ord in eachindex(a)
         derivative!(res, a, ord)
+        # ord == a.order-1 && break
     end
     return res
 end
@@ -29,8 +30,9 @@ differential of `a::Taylor1` and save it into `res`. The last coefficient is
 set to zero.
 """
 function derivative!(res::Taylor1, a::Taylor1)
-    @inbounds for ord = 0:a.order-1
+    @inbounds for ord in eachindex(a)
         derivative!(res, a, ord)
+        # ord == a.order-1 && break
     end
     res[a.order] = zero(a[0])
     nothing
@@ -49,7 +51,8 @@ p_k = (k+1)a_{k+1}.
 ```
 
 """
-derivative!(p::Taylor1, a::Taylor1, k::Int) = (p[k] = (k+1)*a[k+1])
+derivative!(p::Taylor1, a::Taylor1, k::Int) = k < a.order ? p[k] = (k+1)*a[k+1] : nothing
+
 
 """
     derivative(a, n)

@@ -21,6 +21,14 @@ eeuler = Base.MathConstants.e
     @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3])
     @test get_order(Taylor1([1,2,3,4,5], 2)) == 2
 
+    @test size(t) == (16,)
+    @test firstindex(t) == 0
+    @test lastindex(t) == 15
+    @test eachindex(t) == 0:15
+    @test iterate(t) == (0.0, 1)
+    @test iterate(t, 1) == (1.0, 2)
+    @test iterate(t, 16) == nothing
+
     # ta = Taylor1([1,2,3,4,5])
     # vT = [h for h in ta]
     # voT = [h.order for h in Taylor1([1,2,3,4,5])]

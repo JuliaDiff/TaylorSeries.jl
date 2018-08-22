@@ -258,7 +258,7 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
             a, b = fixorder(a, b)
         end
         c = $T(zero(a[0]), a.order)
-        for ord = 0:c.order
+        for ord in eachindex(c)
             mul!(c, a, b, ord) # updates c[ord]
         end
         return c
@@ -334,7 +334,6 @@ Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
 
     (iszero(b) || iszero(a)) && return nothing
 
-    T = eltype(c)
     @inbounds num_coeffs_a = size_table[a.order+1]
     @inbounds num_coeffs_b = size_table[b.order+1]
 
@@ -343,14 +342,14 @@ Return `c = a*b` with no allocation; all arguments are `HomogeneousPolynomial`.
     @inbounds indTa = index_table[a.order+1]
     @inbounds indTb = index_table[b.order+1]
 
-    @inbounds for na = 1:num_coeffs_a
+    @inbounds for na in 1:num_coeffs_a
         ca = a[na]
-        iszero(ca) && continue
+        # iszero(ca) && continue
         inda = indTa[na]
 
-        @inbounds for nb = 1:num_coeffs_b
+        @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
-            iszero(cb) && continue
+            # iszero(cb) && continue
             indb = indTb[nb]
 
             pos = posTb[inda + indb]
@@ -414,7 +413,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     ordfact, cdivfact = divfactorization(a, b)
 
     c = Taylor1(cdivfact, a.order)
-    for ord = 1:a.order
+    for ord in eachindex(c)
         div!(c, a, b, ord, ordfact) # updates c[ord]
     end
 
@@ -434,7 +433,7 @@ function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
     # first coefficient
     @inbounds cdivfact = a[0] / constant_term(b)
     c = TaylorN(cdivfact, a.order)
-    for ord in 1:a.order
+    for ord in eachindex(c)
         div!(c, a, b, ord) # updates c[ord]
     end
 
@@ -536,7 +535,8 @@ function mul!(y::Vector{Taylor1{T}},
     @assert (length(y)== n && length(b)== k)
 
     # determine the maximal order of b
-    order = maximum([b1.order for b1 in b])
+    # order = maximum([b1.order for b1 in b])
+    order = maximum(get_order.(b))
 
     # Use matrices of coefficients (of proper size) and mul!
     # B = zeros(T, k, order+1)

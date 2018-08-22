@@ -23,7 +23,7 @@ script:
 
 after_success:
   - julia -e 'import Pkg; Pkg.add("Documenter")'
-  - julia -e 'import TaylorSeries; using Pkg; include(joinpath(dirname(pathof(TaylorSeries)), "../docs", "make.jl"))'
+  - julia -e 'import TaylorSeries; include(joinpath(dirname(pathof(TaylorSeries)), "../docs", "make.jl"))'
   - julia -e 'Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
 sudo: false

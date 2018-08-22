@@ -16,14 +16,14 @@ equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     @inbounds suma = a[end]
-    @inbounds for k = a.order-1:-1:0
+    @inbounds for k in a.order-1:-1:0
         suma = suma*dx + a[k]
     end
     suma
 end
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     suma = promote(a[end], dx)[1]
-    @inbounds for k = a.order-1:-1:0
+    @inbounds for k in a.order-1:-1:0
         suma = suma*dx + a[k]
     end
     suma
@@ -81,8 +81,8 @@ computed values.
 function evaluate!(x::Array{Taylor1{T},1}, δt::T,
         x0::Union{Array{T,1},SubArray{T,1}}) where {T<:Number}
 
-    @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x)
+    # @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δt )
     end
     nothing
@@ -90,8 +90,8 @@ end
 function evaluate!(x::Array{Taylor1{T},1}, δt::S,
         x0::Union{Array{T,1},SubArray{T,1}}) where {T<:Number, S<:Number}
 
-    @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x)
+    # @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δt )
     end
     nothing
@@ -149,8 +149,8 @@ evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{T,1},
         x0::Array{T,1}) where {T<:Number}
 
-    @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x)
+    # @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δx )
     end
     nothing
@@ -159,8 +159,8 @@ end
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{Taylor1{T},1},
         x0::Array{Taylor1{T},1}) where {T<:NumberNotSeriesN}
 
-    @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x)
+    # @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δx )
     end
     nothing
@@ -169,8 +169,8 @@ end
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{TaylorN{T},1},
         x0::Array{TaylorN{T},1}) where {T<:NumberNotSeriesN}
 
-    @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x)
+    # @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δx )
     end
     nothing
@@ -179,8 +179,8 @@ end
 function evaluate!(x::Array{Taylor1{TaylorN{T}},1}, δt::T,
         x0::Array{TaylorN{T},1}) where {T<:Number}
 
-    @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x)
+    # @assert length(x) == length(x0)
+    @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δt )
     end
     nothing
