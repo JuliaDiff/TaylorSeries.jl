@@ -26,7 +26,7 @@ julia&gt; t
 true
 
 julia&gt; t
-TaylorSeries.Taylor1{Float64}([0.0, 1.0, 0.0, 0.0, 0.0, 0.0], 5)
+Taylor1{Float64}([0.0, 1.0, 0.0, 0.0, 0.0, 0.0], 5)
 
 julia&gt; use_show_default(false) # use custom `show`
 false
@@ -106,22 +106,22 @@ julia&gt; derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
 true
 
 julia&gt; derivative(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
-true</code></pre><p>To evaluate a Taylor series at a given point, Horner&#39;s rule is used via the function <code>evaluate(a, dt)</code>. Here, <code>dt</code> is the increment from the point <span>$t_0$</span> around which the Taylor expansion of <code>a</code> is calculated, i.e., the series is evaluated at <span>$t = t_0 + dt$</span>. Omitting <code>dt</code> corresponds to <span>$dt = 0$</span>; see <a href="api.html#TaylorSeries.evaluate"><code>evaluate</code></a>.</p><pre><code class="language-julia-repl">julia&gt; evaluate(exp(shift_taylor(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
+true</code></pre><p>To evaluate a Taylor series at a given point, Horner&#39;s rule is used via the function <code>evaluate(a, dt)</code>. Here, <code>dt</code> is the increment from the point <span>$t_0$</span> around which the Taylor expansion of <code>a</code> is calculated, i.e., the series is evaluated at <span>$t = t_0 + dt$</span>. Omitting <code>dt</code> corresponds to <span>$dt = 0$</span>; see <a href="api.html#TaylorSeries.evaluate"><code>evaluate</code></a>.</p><pre><code class="language-julia-repl">julia&gt; evaluate(exp(shift_taylor(1.0))) - ℯ # exp(t) around t0=1 (order 5), evaluated there (dt=0)
 0.0
 
-julia&gt; evaluate(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
+julia&gt; evaluate(exp(t), 1) - ℯ # exp(t) around t0=0 (order 5), evaluated at t=1
 -0.0016151617923783057
 
-julia&gt; evaluate(exp( Taylor1(17) ), 1) - e # exp(t) around t0=0, order 17
+julia&gt; evaluate(exp( Taylor1(17) ), 1) - ℯ # exp(t) around t0=0, order 17
 0.0
 
 julia&gt; tBig = Taylor1(BigFloat, 50) # Independent variable with BigFloats, order 50
- 1.000000000000000000000000000000000000000000000000000000000000000000000000000000 t + 𝒪(t⁵¹)
+ 1.0 t + 𝒪(t⁵¹)
 
 julia&gt; eBig = evaluate( exp(tBig), one(BigFloat) )
 2.718281828459045235360287471352662497757247093699959574966967627723419298053556
 
-julia&gt; e - eBig
+julia&gt; ℯ - eBig
 6.573322999985292556154129119543257102601105719980995128942636339920549561322098e-67</code></pre><p>Another way to obtain the value of a <code>Taylor1</code> polynomial <code>p</code> at a given value <code>x</code>, is to call <code>p</code> as if it were a function, i.e., <code>p(x)</code>:</p><pre><code class="language-julia-repl">julia&gt; t = Taylor1(15)
  1.0 t + 𝒪(t¹⁶)
 
@@ -148,18 +148,18 @@ julia&gt; update!(p, 0.025) # updates the expansion given by p, by shifting it f
 
 julia&gt; p
  0.9996875162757026 - 0.02499739591471227 t - 0.49984375813785126 t² + 0.004166232652452044 t³ + 0.0416536465114876 t⁴ - 0.00020831163262260228 t⁵ - 0.0013884548837162537 t⁶ + 4.959800776728625e-6 t⁷ + 2.4793837209218816e-5 t⁸ - 6.888612189900868e-8 t⁹ - 2.7548708010243125e-7 t¹⁰ + 6.262374718092001e-10 t¹¹ + 2.0870233341100357e-9 t¹² - 4.014342754938811e-12 t¹³ - 1.1467160989730436e-11 t¹⁴ + 1.9117909329549495e-14 t¹⁵ + 4.779477332387386e-14 t¹⁶ + 𝒪(t¹⁷)</code></pre><h2><a class="nav-anchor" id="Many-variables-1" href="#Many-variables-1">Many variables</a></h2><p>A polynomial in <span>$N&gt;1$</span> variables can be represented in (at least) two ways: As a vector whose coefficients are homogeneous polynomials of fixed degree, or as a vector whose coefficients are polynomials in <span>$N-1$</span> variables. The current implementation of <code>TaylorSeries.jl</code> corresponds to the first option, though some infrastructure has been built that permits to develop the second one. An elegant (lazy) implementation of the second representation was discussed  <a href="https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ">here</a>.</p><p>The structure <a href="api.html#TaylorSeries.TaylorN"><code>TaylorN</code></a> is constructed as a vector of parameterized homogeneous polynomials defined by the type <a href="api.html#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a>, which in turn is a vector of coefficients of given order (degree). This implementation imposes the user to specify the (maximum) order considered and the number of independent variables at the beginning, which can be conveniently done using <a href="api.html#TaylorSeries.set_variables"><code>set_variables</code></a>. A vector of the resulting Taylor variables is returned:</p><pre><code class="language-julia-repl">julia&gt; x, y = set_variables(&quot;x y&quot;)
-2-element Array{TaylorSeries.TaylorN{Float64},1}:
+2-element Array{TaylorN{Float64},1}:
   1.0 x + 𝒪(‖x‖⁷)
   1.0 y + 𝒪(‖x‖⁷)
 
 julia&gt; typeof(x)
-TaylorSeries.TaylorN{Float64}
+TaylorN{Float64}
 
 julia&gt; x.order
 6
 
 julia&gt; x.coeffs
-7-element Array{TaylorSeries.HomogeneousPolynomial{Float64},1}:
+7-element Array{HomogeneousPolynomial{Float64},1}:
     0.0
   1.0 x
     0.0
@@ -167,19 +167,22 @@ julia&gt; x.coeffs
     0.0
     0.0
     0.0</code></pre><p>As shown, the resulting objects are of <code>TaylorN{Float64}</code> type. There is an optional <code>order</code> keyword argument in <a href="api.html#TaylorSeries.set_variables"><code>set_variables</code></a>, used to specify the maximum order of the <code>TaylorN</code> polynomials. Note that one can specify the variables using a vector of symbols.</p><pre><code class="language-julia-repl">julia&gt; set_variables([:x, :y], order=10)
-2-element Array{TaylorSeries.TaylorN{Float64},1}:
+2-element Array{TaylorN{Float64},1}:
   1.0 x + 𝒪(‖x‖¹¹)
   1.0 y + 𝒪(‖x‖¹¹)</code></pre><p>Similarly, numbered variables are also available by specifying a single variable name and the optional keyword argument <code>numvars</code>:</p><pre><code class="language-julia-repl">julia&gt; set_variables(&quot;α&quot;, numvars=3)
-3-element Array{TaylorSeries.TaylorN{Float64},1}:
+3-element Array{TaylorN{Float64},1}:
   1.0 α₁ + 𝒪(‖x‖¹¹)
   1.0 α₂ + 𝒪(‖x‖¹¹)
-  1.0 α₃ + 𝒪(‖x‖¹¹)</code></pre><p>Alternatively to <code>set_variables</code>, <a href="api.html#TaylorSeries.get_variables"><code>get_variables</code></a> can be used if one doesn&#39;t want to change internal dictionaries. <code>get_variables</code> returns a vector of <code>TaylorN</code> independent variables of a desired <code>order</code> (lesser than <code>get_order</code> so the internals doesn&#39;t have to change) with the length and variable names defined by <code>set_variables</code> initially.</p><pre><code class="language-julia-repl">julia&gt; get_variables(order=2) #vector of independent variables of order 2
-ERROR: function get_variables does not accept keyword arguments</code></pre><p>The function <a href="api.html#TaylorSeries.show_params_TaylorN"><code>show_params_TaylorN</code></a> displays the current values of the parameters, in an info block.</p><pre><code class="language-julia-repl">julia&gt; show_params_TaylorN()
-Info: Parameters for `TaylorN` and `HomogeneousPolynomial`:
-Maximum order       = 10
-Number of variables = 3
-Variable names      = String[&quot;α₁&quot;, &quot;α₂&quot;, &quot;α₃&quot;]
-Variable symbols    = Symbol[:α₁, :α₂, :α₃]</code></pre><p>Internally, changing the parameters (maximum order and number of variables) redefines the hash-tables that translate the index of the coefficients of a <a href="api.html#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> of given order into the corresponding multi-variable monomials, or the other way around. Fixing these values from the start is imperative; the initial (default) values are <code>order = 6</code> and <code>num_vars=2</code>.</p><p>The easiest way to construct a <a href="api.html#TaylorSeries.TaylorN"><code>TaylorN</code></a> object is by defining the independent variables. This can be done using <code>set_variables</code> as above, or through the method <a href="api.html#TaylorSeries.TaylorN"><code>TaylorN{T&lt;:Number}(::Type{T}, nv::Int)</code></a> for the <code>nv</code> independent <code>TaylorN{T}</code> variable; the order can be also specified using the optional keyword argument <code>order</code>.</p><pre><code class="language-julia-repl">julia&gt; x, y = set_variables(&quot;x y&quot;, numvars=2, order=6);
+  1.0 α₃ + 𝒪(‖x‖¹¹)</code></pre><p>Alternatively to <code>set_variables</code>, <a href="api.html#TaylorSeries.get_variables"><code>get_variables</code></a> can be used if one doesn&#39;t want to change internal dictionaries. <code>get_variables</code> returns a vector of <code>TaylorN</code> independent variables of a desired <code>order</code> (lesser than <code>get_order</code> so the internals doesn&#39;t have to change) with the length and variable names defined by <code>set_variables</code> initially.</p><pre><code class="language-julia-repl">julia&gt; get_variables(2) # vector of independent variables of order 2
+3-element Array{TaylorN{Float64},1}:
+  1.0 α₁ + 𝒪(‖x‖³)
+  1.0 α₂ + 𝒪(‖x‖³)
+  1.0 α₃ + 𝒪(‖x‖³)</code></pre><p>The function <a href="api.html#TaylorSeries.show_params_TaylorN"><code>show_params_TaylorN</code></a> displays the current values of the parameters, in an info block.</p><pre><code class="language-julia-repl">julia&gt; show_params_TaylorN()
+┌ Info: Parameters for `TaylorN` and `HomogeneousPolynomial`:
+│ Maximum order       = 10
+│ Number of variables = 3
+│ Variable names      = [&quot;α₁&quot;, &quot;α₂&quot;, &quot;α₃&quot;]
+└ Variable symbols    = Symbol[:α₁, :α₂, :α₃]</code></pre><p>Internally, changing the parameters (maximum order and number of variables) redefines the hash-tables that translate the index of the coefficients of a <a href="api.html#TaylorSeries.HomogeneousPolynomial"><code>HomogeneousPolynomial</code></a> of given order into the corresponding multi-variable monomials, or the other way around. Fixing these values from the start is imperative; the initial (default) values are <code>order = 6</code> and <code>num_vars=2</code>.</p><p>The easiest way to construct a <a href="api.html#TaylorSeries.TaylorN"><code>TaylorN</code></a> object is by defining the independent variables. This can be done using <code>set_variables</code> as above, or through the method <a href="api.html#TaylorSeries.TaylorN-Union{Tuple{T}, Tuple{Type{T},Int64}} where T&lt;:Number"><code>TaylorN{T&lt;:Number}(::Type{T}, nv::Int)</code></a> for the <code>nv</code> independent <code>TaylorN{T}</code> variable; the order can be also specified using the optional keyword argument <code>order</code>.</p><pre><code class="language-julia-repl">julia&gt; x, y = set_variables(&quot;x y&quot;, numvars=2, order=6);
 
 julia&gt; x
  1.0 x + 𝒪(‖x‖⁷)
@@ -267,13 +270,17 @@ julia&gt; xysq
 julia&gt; update!(xysq, [-1.0, 2.0]) # shift-back
 
 julia&gt; xysq == x^2 + y^2
-true</code></pre><p>Functions to compute the gradient, Jacobian and Hessian have also been implemented. Using the polynomials <span>$p = x^3 + 2x^2 y - 7 x + 2$</span> and <span>$q = y-x^4$</span> defined above, we may use <a href="api.html#Base.LinAlg.gradient"><code>gradient</code></a> (or <code>∇</code>); the results are of type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian and Hessian of a vector field evaluated at a point, we use respectively <a href="api.html#TaylorSeries.jacobian"><code>jacobian</code></a> and <a href="api.html#TaylorSeries.hessian"><code>hessian</code></a>:</p><pre><code class="language-julia-repl">julia&gt; ∇(p)
-2-element Array{TaylorSeries.TaylorN{Float64},1}:
+true</code></pre><p>Functions to compute the gradient, Jacobian and Hessian have also been implemented. Using the polynomials <span>$p = x^3 + 2x^2 y - 7 x + 2$</span> and <span>$q = y-x^4$</span> defined above, we may use <a href="api.html#LinearAlgebra.gradient"><code>gradient</code></a> (or <code>∇</code>); the results are of type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian and Hessian of a vector field evaluated at a point, we use respectively <a href="api.html#TaylorSeries.jacobian"><code>jacobian</code></a> and <a href="api.html#TaylorSeries.hessian"><code>hessian</code></a>:</p><pre><code class="language-julia-repl">julia&gt; ∇(p)
+2-element Array{TaylorN{Float64},1}:
   - 7.0 + 3.0 x² + 4.0 x y + 𝒪(‖x‖¹¹)
                     2.0 x² + 𝒪(‖x‖¹¹)
 
 julia&gt; gradient( q )
-2-element Array{TaylorSeries.TaylorN{Float64},1}:
+WARNING: importing deprecated binding Base.gradient into ex-userguide.
+WARNING: Base.gradient is deprecated: it has been moved to the standard library package `LinearAlgebra`.
+Add `using LinearAlgebra` to your imports.
+  likely near /home/travis/build/JuliaDiff/TaylorSeries.jl/docs/make.jl:3
+2-element Array{TaylorN{Float64},1}:
   - 4.0 x³ + 𝒪(‖x‖¹¹)
        1.0 + 𝒪(‖x‖¹¹)
 
@@ -281,20 +288,20 @@ julia&gt; r = p-q-2*p*q
  2.0 - 7.0 x - 5.0 y + 14.0 x y + 1.0 x³ + 2.0 x² y + 5.0 x⁴ - 2.0 x³ y - 4.0 x² y² - 14.0 x⁵ + 2.0 x⁷ + 4.0 x⁶ y + 𝒪(‖x‖¹¹)
 
 julia&gt; hessian(ans)
-2×2 Array{Float64,2}:
+2×2 LinearAlgebra.Transpose{Float64,Array{Float64,2}}:
   0.0  14.0
  14.0   0.0
 
 julia&gt; jacobian([p,q], [2,1])
-2×2 Array{Float64,2}:
+2×2 LinearAlgebra.Transpose{Float64,Array{Float64,2}}:
   13.0  8.0
  -32.0  1.0
 
 julia&gt; hessian(r, [1.0,1.0])
-2×2 Array{Float64,2}:
+2×2 LinearAlgebra.Transpose{Float64,Array{Float64,2}}:
  -26.0  20.0
   20.0  -8.0</code></pre><p>Other specific applications are described in the <a href="examples.html#Examples-1">Examples</a>.</p><h2><a class="nav-anchor" id="Mixtures-1" href="#Mixtures-1">Mixtures</a></h2><p>As mentioned above, <code>Taylor1{T}</code>, <code>HomogeneousPolynomial{T}</code> and <code>TaylorN{T}</code> are parameterized structures such that <code>T&lt;:AbstractSeries</code>, the latter is a subtype of <code>Number</code>. Then, we may actually define Taylor expansions in <span>$N+1$</span> variables, where one of the variables (the <code>Taylor1</code> variable) is somewhat special.</p><pre><code class="language-julia-repl">julia&gt; x, y = set_variables(&quot;x y&quot;, order=3)
-2-element Array{TaylorSeries.TaylorN{Float64},1}:
+2-element Array{TaylorN{Float64},1}:
   1.0 x + 𝒪(‖x‖⁴)
   1.0 y + 𝒪(‖x‖⁴)
 
