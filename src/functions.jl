@@ -404,9 +404,8 @@ function inverse(f::Taylor1{T}) where {T<:Number}
     S = eltype(zdivf)
     coeffs = zeros(S,f.order+1)
 
-    coeffs[1] = zero(S)
-    @inbounds for n in eachindex(f)
-        coeffs[n+2] = zdivfpown[n]/(n+1)
+    @inbounds for n in 1:f.order
+        coeffs[n+1] = zdivfpown[n-1]/n
         zdivfpown *= zdivf
     end
     Taylor1(coeffs, f.order)
