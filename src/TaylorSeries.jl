@@ -19,20 +19,21 @@ module TaylorSeries
 
 using InteractiveUtils: subtypes
 using SparseArrays: SparseMatrixCSC
-import LinearAlgebra: norm, gradient, mul!
-import Base: lastindex
+import LinearAlgebra: norm, mul!
 using Markdown
 
 import Base: ==, +, -, *, /, ^
 
+import Base: iterate, size, eachindex, firstindex, lastindex,
+    eltype, length, getindex, setindex!
+
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
-    convert, promote_rule, promote, eltype, length, show,
-    real, imag, conj, ctranspose,
+    convert, promote_rule, promote, show,
+    real, imag, conj, adjoint,
     rem, mod, mod2pi, abs, abs2,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
     power_by_squaring,
-    getindex, setindex!, endof,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
@@ -43,7 +44,7 @@ export getcoeff, derivative, integrate,
     get_order, get_numvars,
     set_variables, get_variables,
     get_variable_names, get_variable_symbols,
-    ∇, jacobian, jacobian!, hessian, hessian!,
+    ∇, gradient, jacobian, jacobian!, hessian, hessian!,
     taylor_expand, update!, constant_term
 
 include("parameters.jl")

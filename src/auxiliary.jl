@@ -175,12 +175,13 @@ setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
 
 
-## eltype, length, endof, get_order ##
+## eltype, length, get_order ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
         eltype(::$T{S}) where {S<:Number} = S
         length(a::$T) = length(a.coeffs)
-        endof(a::$T) = a.order
+        size(a::$T) = (length(a),)
+        firstindex(a::$T) = 0
         lastindex(a::$T) = a.order
         get_order(a::$T) = a.order
 
@@ -192,9 +193,10 @@ for T in (:Taylor1, :TaylorN)
 end
 
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
-length(a::HomogeneousPolynomial) = length(a.coeffs)
-endof(a::HomogeneousPolynomial) = length(a.coeffs)
-lastindex(a::HomogeneousPolynomial) = length(a.coeffs)
+length(a::HomogeneousPolynomial) = size_table[a.order+1]#length(a.coeffs)
+size(a::HomogeneousPolynomial) = (length(a),)
+firstindex(a::HomogeneousPolynomial) = 1
+lastindex(a::HomogeneousPolynomial) = length(a)
 get_order(a::HomogeneousPolynomial) = a.order
 
 # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
