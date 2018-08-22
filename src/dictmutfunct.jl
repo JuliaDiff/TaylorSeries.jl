@@ -130,7 +130,7 @@ This is used to construct [`_dict_unary_calls`](@ref)
 and [`_dict_binary_calls`](@ref).
 The call contains the prefix `TaylorSeries.`.
 """
-@compat _internalmutfunc_call( fn :: _InternalMutFuncs ) = (
+_internalmutfunc_call( fn :: _InternalMutFuncs ) = (
     Expr( :call, Meta.parse("TaylorSeries.$(fn.namef)"), fn.argsf... ), fn.defexpr, fn.auxexpr )
 
 

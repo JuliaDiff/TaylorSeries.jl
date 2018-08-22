@@ -2,11 +2,7 @@
 #
 
 using TaylorSeries
-if VERSION < v"0.7.0-DEV.2004"
-    using Base.Test
-else
-    using Test
-end
+using Test
 
 @testset "Test inspired by Fateman (takes a few seconds)" begin
     x, y, z, w = set_variables(Int128, "x", numvars=4, order=40)

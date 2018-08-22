@@ -175,13 +175,14 @@ setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
 
 
-## eltype, length, endof, get_order ##
+## eltype, length, get_order ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
         eltype(::$T{S}) where {S<:Number} = S
         length(a::$T) = length(a.coeffs)
-        endof(a::$T) = a.order
-        @compat lastindex(a::$T) = a.order
+        size(a::$T) = (length(a),)
+        firstindex(a::$T) = 0
+        lastindex(a::$T) = a.order
         get_order(a::$T) = a.order
 
         # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
@@ -192,9 +193,10 @@ for T in (:Taylor1, :TaylorN)
 end
 
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
-length(a::HomogeneousPolynomial) = length(a.coeffs)
-endof(a::HomogeneousPolynomial) = length(a.coeffs)
-@compat lastindex(a::HomogeneousPolynomial) = length(a.coeffs)
+length(a::HomogeneousPolynomial) = size_table[a.order+1]#length(a.coeffs)
+size(a::HomogeneousPolynomial) = (length(a),)
+firstindex(a::HomogeneousPolynomial) = 1
+lastindex(a::HomogeneousPolynomial) = length(a)
 get_order(a::HomogeneousPolynomial) = a.order
 
 # Use `a[i0:i1]` or `a[:]` for iterations; see discussion in #140
@@ -223,13 +225,14 @@ end
 
 # Finds the first non zero entry; extended to Taylor1
 function Base.findfirst(a::Taylor1{T}) where {T<:Number}
-    first = findfirst(a.coeffs)
-    @compat isa(first, Nothing) && return -1
+    first = findfirst(x->!iszero(x), a.coeffs)
+    isa(first, Nothing) && return -1
     return first-1
 end
+# Finds the last non-zero entry; extended to Taylor1
 function Base.findlast(a::Taylor1{T}) where {T<:Number}
-    last = findlast(a.coeffs)
-    @compat isa(last, Nothing) && return -1
+    last = findlast(x->!iszero(x), a.coeffs)
+    isa(last, Nothing) && return -1
     return last-1
 end
 

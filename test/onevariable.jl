@@ -2,16 +2,10 @@
 #
 
 using TaylorSeries
-using Compat
 
-if VERSION < v"0.7.0-DEV.2004"
-    using Base.Test
-    eeuler = Base.e
-else
-    using Test
-    using LinearAlgebra, SparseArrays
-    eeuler = Base.MathConstants.e
-end
+using Test
+using LinearAlgebra, SparseArrays
+eeuler = Base.MathConstants.e
 
 @testset "Tests for Taylor1 expansions" begin
     ta(a) = Taylor1([a,one(a)],15)
@@ -34,7 +28,7 @@ end
     # @test voT == [0, 1, 2, 3, 4]
 
     v = [1,2]
-    @test @compat typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
+    @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
     @test v == [1,2,0,0]
     TaylorSeries.resize_coeffs1!(v,0)
     @test v == [1]
@@ -348,7 +342,7 @@ end
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
-    @compat vv = Vector{Float64}(undef, 2)
+    vv = Vector{Float64}(undef, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv
@@ -387,11 +381,7 @@ end
     @test_throws ArgumentError 1/t
     @test_throws ArgumentError zt/zt
     @test_throws ArgumentError t^1.5
-    if VERSION < v"0.7.0-DEV"
-        @test_throws DomainError t^(-2)
-    else
-        @test_throws ArgumentError t^(-2)
-    end
+    @test_throws ArgumentError t^(-2)
     @test_throws ArgumentError sqrt(t)
     @test_throws ArgumentError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
@@ -401,17 +391,10 @@ end
 
     use_show_default(true)
     aa = sqrt(2)+Taylor1(2)
-    if VERSION < v"0.7.0-DEV"
-        @test string(aa) == "TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
-        @test string([aa, aa]) ==
-            "TaylorSeries.Taylor1{Float64}[TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
-            "TaylorSeries.Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
-    else
-        @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
-        @test string([aa, aa]) ==
-            "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
-            "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
-    end
+    @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
+    @test string([aa, aa]) ==
+        "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
+        "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 + 1.0 t + 𝒪(t³)"
     displayBigO(false)
@@ -507,7 +490,7 @@ end
         B  = Taylor1{Float64}[Taylor1(collect(B1[i,1:i]),i) for i=1:n1]
         Y  = Taylor1{Float64}[Taylor1(collect(Y1[k,1:k]),k) for k=1:k1]
         Bcopy = deepcopy(B)
-        @compat mul!(Y,A,B)
+        mul!(Y,A,B)
 
         # do we get the same result when using the `A*B` form?
         @test A*B≈Y
@@ -526,9 +509,9 @@ end
         # multiplication and the specialized version
         @test abs(y1-y2) < n1*(eps(y1)+eps(y2))
 
-        @compat @test_throws DimensionMismatch mul!(Y,A[:,1:end-1],B)
-        @compat @test_throws DimensionMismatch mul!(Y,A[1:end-1,:],B)
-        @compat @test_throws DimensionMismatch mul!(Y,A,B[1:end-1])
-        @compat @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
+        @test_throws DimensionMismatch mul!(Y,A[:,1:end-1],B)
+        @test_throws DimensionMismatch mul!(Y,A[1:end-1,:],B)
+        @test_throws DimensionMismatch mul!(Y,A,B[1:end-1])
+        @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
     end
 end

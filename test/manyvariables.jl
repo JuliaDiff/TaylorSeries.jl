@@ -2,16 +2,10 @@
 #
 
 using TaylorSeries
-using Compat
 
-if VERSION < v"0.7.0-DEV.2004"
-    using Base.Test
-    eeuler = Base.e
-else
-    using Test
-    using LinearAlgebra
-    eeuler = Base.MathConstants.e
-end
+using Test
+using LinearAlgebra
+eeuler = Base.MathConstants.e
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
     @test HomogeneousPolynomial <: AbstractSeries
@@ -32,8 +26,8 @@ end
     @test eltype(set_variables(:x, numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(set_variables(BigInt, [:x,:y], order=6)) == TaylorN{BigInt}
     @test eltype(set_variables([:x,:y], order=6)) == TaylorN{Float64}
-    @test @compat typeof(show_params_TaylorN()) == Nothing
-    @test @compat typeof(show_monomials(2)) == Nothing
+    @test typeof(show_params_TaylorN()) == Nothing
+    @test typeof(show_monomials(2)) == Nothing
 
     @test TaylorSeries.coeff_table[2][1] == [1,0]
     @test TaylorSeries.index_table[2][1] == 7
@@ -66,7 +60,7 @@ end
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test @compat typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
+    @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
     HomogeneousPolynomial(v)[3] = 3
@@ -296,12 +290,7 @@ end
     @test q[2:end-2] == pol2[2:end-2]
     @test q[end-1:end] == pol[end-1:end]
 
-
-    if VERSION < v"0.7.0-DEV"
-        @test_throws DomainError yT^(-2)
-    else
-        @test_throws AssertionError yT^(-2)
-    end
+    @test_throws AssertionError yT^(-2)
     @test_throws AssertionError yT^(-2.0)
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
     @test real(xH) == xH
@@ -473,7 +462,7 @@ end
     @test gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
     @test jacobian([f1,f2], [2,1]) == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
-    @compat jac = Array{Int64}(undef, 2, 2)
+    jac = Array{Int64}(undef, 2, 2)
     jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
     @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jacobian!(jac, [f1,f2], [2,1])
@@ -488,7 +477,7 @@ end
     @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
     @test hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
-    @compat hes = Array{Int64}(undef, 2, 2)
+    hes = Array{Int64}(undef, 2, 2)
     hessian!(hes, f1*f2)
     @test hes == hessian(f1*f2)
     @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
@@ -496,7 +485,7 @@ end
     @test hes/2 == [ [49,0] [0,12] ]
     hessian!(hes, f1-f2-2*f1*f2)
     @test hes == hes'
-    @compat hes1 = Array{Int64}(undef, 2, 2)
+    hes1 = Array{Int64}(undef, 2, 2)
     hessian!(hes1, f1-f2,[1,-1])
     hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes
@@ -504,34 +493,21 @@ end
     use_show_default(true)
     aa = sqrt(2) * xH
     ab = sqrt(2) * TaylorN(2, order=1)
-    if VERSION < v"0.7.0-DEV"
-        @test string(aa) ==
-            "TaylorSeries.HomogeneousPolynomial{Float64}([1.4142135623730951, 0.0], 1)"
-        @test string([aa]) == "TaylorSeries.HomogeneousPolynomial{Float64}" *
-            "[TaylorSeries.HomogeneousPolynomial{Float64}([1.4142135623730951, 0.0], 1)]"
-        @test string(ab) == "TaylorSeries.TaylorN{Float64}(TaylorSeries.HomogeneousPolynomial{Float64}" *
-            "[TaylorSeries.HomogeneousPolynomial{Float64}([0.0], 0), " *
-            "TaylorSeries.HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
-        @test string([ab]) == "TaylorSeries.TaylorN{Float64}[TaylorSeries.TaylorN{Float64}" *
-            "(TaylorSeries.HomogeneousPolynomial{Float64}[TaylorSeries.HomogeneousPolynomial{Float64}([0.0], 0), " *
-            "TaylorSeries.HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)]"
-    else
-        @test string(aa) ==
-            "HomogeneousPolynomial{Float64}([1.4142135623730951, 0.0], 1)"
-        @test string(ab) ==
-            "TaylorN{Float64}(HomogeneousPolynomial{Float64}" *
-            "[HomogeneousPolynomial{Float64}([0.0], 0), " *
-            "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
-        @test string([aa, aa]) ==
-            "HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
-            "([1.4142135623730951, 0.0], 1), HomogeneousPolynomial{Float64}" *
-            "([1.4142135623730951, 0.0], 1)]"
-        @test string([ab, ab]) == "TaylorN{Float64}[TaylorN{Float64}" *
-            "(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}([0.0], 0), " *
-            "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1), " *
-            "TaylorN{Float64}(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
-            "([0.0], 0), HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)]"
-    end
+    @test string(aa) ==
+        "HomogeneousPolynomial{Float64}([1.4142135623730951, 0.0], 1)"
+    @test string(ab) ==
+        "TaylorN{Float64}(HomogeneousPolynomial{Float64}" *
+        "[HomogeneousPolynomial{Float64}([0.0], 0), " *
+        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
+    @test string([aa, aa]) ==
+        "HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
+        "([1.4142135623730951, 0.0], 1), HomogeneousPolynomial{Float64}" *
+        "([1.4142135623730951, 0.0], 1)]"
+    @test string([ab, ab]) == "TaylorN{Float64}[TaylorN{Float64}" *
+        "(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}([0.0], 0), " *
+        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1), " *
+        "TaylorN{Float64}(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
+        "([0.0], 0), HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)]"
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 x₁"
     @test string(ab) == " 1.4142135623730951 x₂ + 𝒪(‖x‖²)"
@@ -540,13 +516,8 @@ end
     @test string(xT^2) == " 1 x₁²"
     @test string(1im*yT) == " ( 1 im ) x₂"
     @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂"
-    if VERSION < v"0.7.0-DEV"
-        @test string([ab, ab]) == "TaylorSeries.TaylorN{Float64}" *
-            "[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
-    else
-        @test string([ab, ab]) ==
-            "TaylorN{Float64}[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
-    end
+    @test string([ab, ab]) ==
+        "TaylorN{Float64}[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
     displayBigO(true)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"

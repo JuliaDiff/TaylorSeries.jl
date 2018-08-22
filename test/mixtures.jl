@@ -2,14 +2,9 @@
 #
 
 using TaylorSeries
-using Compat
 
-if VERSION < v"0.7.0-DEV.2004"
-    using Base.Test
-else
-    using Test
-    using LinearAlgebra, SparseArrays
-end
+using Test
+using LinearAlgebra, SparseArrays
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
     @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
@@ -193,7 +188,7 @@ end
     δx = [Taylor1(rand(3)) for i in 1:4]
     @test typeof(x) == Array{TaylorN{Taylor1{Float64}},1}
     @test typeof(δx) == Array{Taylor1{Float64},1}
-    @compat x0 = Array{Taylor1{Float64}}(undef, length(x))
+    x0 = Array{Taylor1{Float64}}(undef, length(x))
     eval_x_δx = evaluate(x,δx)
     @test x(δx) == eval_x_δx
     evaluate!(x,δx,x0)

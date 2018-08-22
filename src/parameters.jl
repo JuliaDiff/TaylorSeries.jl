@@ -37,8 +37,8 @@ get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
 function lookupvar(s::Symbol)
-    @compat ind = findfirst(x -> x==s, _params_TaylorN_.variable_symbols)
-    @compat isa(ind, Nothing) && return 0
+    ind = findfirst(x -> x==s, _params_TaylorN_.variable_symbols)
+    isa(ind, Nothing) && return 0
     return ind
 end
 
@@ -117,7 +117,7 @@ function set_variables(R::Type, names::Vector{T}; order=get_order()) where
 
         coeff_table[:], index_table[:], size_table[:], pos_table[:] =
             generate_tables(num_vars, order)
-        @compat GC.gc();
+        GC.gc();
     end
 
     # return a list of the new variables
@@ -158,7 +158,7 @@ set_variables(symbs::Symbol; order=get_order(), numvars=-1) =
 Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
 """
 function show_params_TaylorN()
-    Compat.@info( """
+    @info( """
     Parameters for `TaylorN` and `HomogeneousPolynomial`:
     Maximum order       = $(get_order())
     Number of variables = $(get_numvars())

@@ -3,13 +3,8 @@
 
 using TaylorSeries, IntervalArithmetic
 
-if VERSION < v"0.7.0-DEV.2004"
-    using Base.Test
-    eeuler = Base.e
-else
-    using Test
-    eeuler = Base.MathConstants.e
-end
+using Test
+eeuler = Base.MathConstants.e
 
 @testset "Tests Taylor1 and TaylorN expansions over Intervals" begin
     a = 1..2

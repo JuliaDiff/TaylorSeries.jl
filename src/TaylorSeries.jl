@@ -5,8 +5,6 @@
 #
 # Handles Taylor series of arbitrary but finite order
 
-__precompile__(true)
-
 """
     TaylorSeries
 
@@ -18,30 +16,24 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
-using Compat
 
-if VERSION <= v"0.7.0-DEV.2004"
-    import Base: norm, gradient, A_mul_B!
-    const mul! = A_mul_B!
-    export mul!
-else
-    using InteractiveUtils: subtypes
-    using SparseArrays: SparseMatrixCSC
-    import LinearAlgebra: norm, gradient, mul!
-    import Base: lastindex
-    using Markdown
-end
+using InteractiveUtils: subtypes
+using SparseArrays: SparseMatrixCSC
+import LinearAlgebra: norm, gradient, mul!
+using Markdown
 
 import Base: ==, +, -, *, /, ^
 
+import Base: iterate, size, eachindex, firstindex, lastindex,
+    eltype, length, getindex, setindex!
+
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
-    convert, promote_rule, promote, eltype, length, show,
-    real, imag, conj, ctranspose,
+    convert, promote_rule, promote, show,
+    real, imag, conj, adjoint,
     rem, mod, mod2pi, abs, abs2,
     sqrt, exp, log, sin, cos, tan,
     asin, acos, atan, sinh, cosh, tanh,
     power_by_squaring,
-    getindex, setindex!, endof,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries

@@ -164,12 +164,12 @@ is evaluated at ``t = t_0 + dt``. Omitting `dt` corresponds to ``dt = 0``;
 see [`evaluate`](@ref).
 
 ```@repl userguide
-evaluate(exp(shift_taylor(1.0))) - e # exp(t) around t0=1 (order 5), evaluated there (dt=0)
-evaluate(exp(t), 1) - e # exp(t) around t0=0 (order 5), evaluated at t=1
-evaluate(exp( Taylor1(17) ), 1) - e # exp(t) around t0=0, order 17
+evaluate(exp(shift_taylor(1.0))) - ℯ # exp(t) around t0=1 (order 5), evaluated there (dt=0)
+evaluate(exp(t), 1) - ℯ # exp(t) around t0=0 (order 5), evaluated at t=1
+evaluate(exp( Taylor1(17) ), 1) - ℯ # exp(t) around t0=0, order 17
 tBig = Taylor1(BigFloat, 50) # Independent variable with BigFloats, order 50
 eBig = evaluate( exp(tBig), one(BigFloat) )
-e - eBig
+ℯ - eBig
 ```
 
 Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it were a function, i.e., `p(x)`:
@@ -251,7 +251,7 @@ internals doesn't have to change) with the length and variable names defined
 by `set_variables` initially.
 
 ```@repl userguide
-get_variables(order=2) #vector of independent variables of order 2
+get_variables(2) # vector of independent variables of order 2
 ```
 
 The function [`show_params_TaylorN`](@ref) displays the current values of the
