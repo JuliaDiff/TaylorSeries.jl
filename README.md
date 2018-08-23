@@ -1,6 +1,6 @@
 # TaylorSeries.jl
 
-A [Julia](http://julialang.org) package for Taylor expansions in one or more
+A [Julia](http://julialang.org) package for Taylor polynomial expansions in one or more
 independent variables.
 
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.6.svg)](http://pkg.julialang.org/?pkg=TaylorSeries)
