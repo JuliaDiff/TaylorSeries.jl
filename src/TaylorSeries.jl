@@ -19,8 +19,13 @@ module TaylorSeries
 
 using InteractiveUtils: subtypes
 using SparseArrays: SparseMatrixCSC
-import LinearAlgebra: norm, gradient, mul!
 using Markdown
+import LinearAlgebra: norm, mul!
+if VERSION ≥ v"1.0.0"
+    export gradient
+else
+    import LinearAlgebra: gradient
+end
 
 import Base: ==, +, -, *, /, ^
 

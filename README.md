@@ -5,6 +5,8 @@ independent variables.
 
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.6.svg)](http://pkg.julialang.org/?pkg=TaylorSeries)
 [![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.7.svg)](http://pkg.julialang.org/?pkg=TaylorSeries)
+[![Build Status](https://api.travis-ci.org/JuliaDiff/TaylorSeries.jl.svg)](https://travis-ci.org/JuliaDiff/TaylorSeries.jl)
+
 [![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/stable)
