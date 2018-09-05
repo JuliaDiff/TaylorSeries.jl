@@ -369,9 +369,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#LinearAlgebra.gradient",
+    "location": "api.html#TaylorSeries.gradient",
     "page": "API",
-    "title": "LinearAlgebra.gradient",
+    "title": "TaylorSeries.gradient",
     "category": "function",
     "text": "    gradient(f)\n    ∇(f)\n\nCompute the gradient of the polynomial f::TaylorN.\n\n\n\n\n\n"
 },

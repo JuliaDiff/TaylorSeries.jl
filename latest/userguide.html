@@ -270,16 +270,12 @@ julia&gt; xysq
 julia&gt; update!(xysq, [-1.0, 2.0]) # shift-back
 
 julia&gt; xysq == x^2 + y^2
-true</code></pre><p>Functions to compute the gradient, Jacobian and Hessian have also been implemented. Using the polynomials <span>$p = x^3 + 2x^2 y - 7 x + 2$</span> and <span>$q = y-x^4$</span> defined above, we may use <a href="api.html#LinearAlgebra.gradient"><code>gradient</code></a> (or <code>∇</code>); the results are of type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian and Hessian of a vector field evaluated at a point, we use respectively <a href="api.html#TaylorSeries.jacobian"><code>jacobian</code></a> and <a href="api.html#TaylorSeries.hessian"><code>hessian</code></a>:</p><pre><code class="language-julia-repl">julia&gt; ∇(p)
+true</code></pre><p>Functions to compute the gradient, Jacobian and Hessian have also been implemented. Using the polynomials <span>$p = x^3 + 2x^2 y - 7 x + 2$</span> and <span>$q = y-x^4$</span> defined above, we may use <a href="api.html#TaylorSeries.gradient"><code>gradient</code></a> (or <code>∇</code>); the results are of type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian and Hessian of a vector field evaluated at a point, we use respectively <a href="api.html#TaylorSeries.jacobian"><code>jacobian</code></a> and <a href="api.html#TaylorSeries.hessian"><code>hessian</code></a>:</p><pre><code class="language-julia-repl">julia&gt; ∇(p)
 2-element Array{TaylorN{Float64},1}:
   - 7.0 + 3.0 x² + 4.0 x y + 𝒪(‖x‖¹¹)
                     2.0 x² + 𝒪(‖x‖¹¹)
 
 julia&gt; gradient( q )
-WARNING: importing deprecated binding Base.gradient into ex-userguide.
-WARNING: Base.gradient is deprecated: it has been moved to the standard library package `LinearAlgebra`.
-Add `using LinearAlgebra` to your imports.
-  likely near /home/travis/build/JuliaDiff/TaylorSeries.jl/docs/make.jl:3
 2-element Array{TaylorN{Float64},1}:
   - 4.0 x³ + 𝒪(‖x‖¹¹)
        1.0 + 𝒪(‖x‖¹¹)
