@@ -31,7 +31,8 @@ pkg> add("TaylorSeries")
 
 - [Polynomials.jl](https://github.com/JuliaMath/Polynomials.jl): Polynomial manipulations
 - [PowerSeries.jl](https://github.com/jwmerrill/PowerSeries.jl): Truncated power series for Julia
-- [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl) Multivariate polynomials interface
+- [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl): Multivariate polynomials interface
+- [AbstractAlgebra.jl](https://github.com/Nemocas/AbstractAlgebra.jl): Generic abstract algebra functionality in pure Julia
 
 ### Acknowledgments
 
