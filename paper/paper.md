@@ -41,7 +41,7 @@ as well as `Taylor1` and `TaylorN` objects.
 `TaylorSeries.jl` is a core component of
 [`TaylorIntegration.jl`](https://github.com/PerezHz/TaylorIntegration.jl)
 [@TaylorIntegration], whose aim is to perform accurate integration
-of ODEs using Taylor's method, including jet transport techniques,
+of ODEs using the Taylor method, including jet transport techniques,
 and of
 [`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl),
 which allows to obtain rigorous polynomial approximations of functions.
