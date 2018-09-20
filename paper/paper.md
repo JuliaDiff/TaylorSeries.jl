@@ -15,7 +15,7 @@ affiliations:
    index: 1
  - name: Departamento de Física, Facultad de Ciencias, Universidad Nacional Autónoma de México (UNAM)
    index: 2
-date: February 23, 2018
+date: September 20, 2018
 bibliography: paper.bib
 ---
 
@@ -28,10 +28,10 @@ in [Julia](https://julialang.org) [@Julia]. It allows to compute
 elementary functions of
 polynomials (`Taylor1`- or `TaylorN`-type objects), where
 techniques of automatic differentiation are exploited
-[@Tucker:ValidatedNumerics, @HaroEtAl:ParameterizMeth]. Derivation,
-integration is also implemented.
+[@Tucker:ValidatedNumerics, @HaroEtAl:ParameterizMeth]. Derivation and
+integration are also implemented.
 
-The package allows to work with a different `Number` formats
+The package allows to work with different `Number` formats
 as coefficients of the series, including complex numbers,
 the extended precision `BigFloat`s [@MPFR],
 `Intervals` [@ValidatedNumerics], `ArbFloats` [@ArbFloats],
@@ -40,7 +40,10 @@ as well as `Taylor1` and `TaylorN` objects.
 `TaylorSeries.jl` is a core component of
 [`TaylorIntegration.jl`](https://github.com/PerezHz/TaylorIntegration.jl)
 [@TaylorIntegration], whose aim is to perform accurate integration
-of ODEs using Taylor's method, including Jet transport techniques.
+of ODEs using Taylor's method, including Jet transport techniques,
+and of
+[`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl),
+which allow to obtain rigorous polynomial approximations of functions.
 
 ## Acknowledgements
 
