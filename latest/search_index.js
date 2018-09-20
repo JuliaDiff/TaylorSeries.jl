@@ -37,7 +37,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Installation",
     "category": "section",
-    "text": "TaylorSeries.jl is a registered package, and is simply installed by runningjulia> Pkg.add(\"TaylorSeries\")"
+    "text": "TaylorSeries.jl is a registered package, and is simply installed by runningpkg> add(\"TaylorSeries\")"
 },
 
 {
@@ -45,7 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Related packages",
     "category": "section",
-    "text": "Polynomials.jl: Polynomial manipulations\nPowerSeries.jl: Truncated power series for Julia\nMultiPoly.jl Sparse multivariate polynomials in Julia"
+    "text": "Polynomials.jl: Polynomial manipulations\nPowerSeries.jl: Truncated power series for Julia\nMultivariatePolynomials.jl: Multivariate polynomials interface\nAbstractAlgebra.jl: Generic abstract algebra functionality in pure Julia"
 },
 
 {
