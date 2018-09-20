@@ -1,5 +1,5 @@
 ---
-title: 'TaylorSeries.jl: Taylor expansions in one and many variables in Julia'
+title: 'TaylorSeries.jl: Taylor expansions in one and several variables in Julia'
 tags:
   - Taylor series
   - Automatic differentiation
@@ -9,6 +9,7 @@ authors:
    orcid: 0000-0002-8470-9054
    affiliation: 1
  - name: David P. Sanders
+   orcid: 0000-0001-5593-1564
    affiliation: 2
 affiliations:
  - name: Instituto de Ciencias Físicas, Universidad Nacional Autónoma de México (UNAM)
@@ -23,34 +24,34 @@ bibliography: paper.bib
 
 [`TaylorSeries.jl`](https://github.com/JuliaDiff/TaylorSeries.jl)
 [@TaylorSeries] provides a framework to use and manipulate
-Taylor series polynomials in one and more independent variables
-in [Julia](https://julialang.org) [@Julia]. It allows to compute
-elementary functions of
+Taylor polynomials in one and more variables
+in the [Julia programming language](https://julialang.org) [@Julia]. It allows to compute
+elementary functions, e.g. `exp`, of
 polynomials (`Taylor1`- or `TaylorN`-type objects), where
-techniques of automatic differentiation are exploited
-[@Tucker:ValidatedNumerics, @HaroEtAl:ParameterizMeth]. Derivation and
+techniques of automatic differentiation are used
+[@Tucker:ValidatedNumerics, @HaroEtAl:ParameterizMeth]. Differentiation and
 integration are also implemented.
 
 The package allows to work with different `Number` formats
 as coefficients of the series, including complex numbers,
-the extended precision `BigFloat`s [@MPFR],
-`Intervals` [@ValidatedNumerics], `ArbFloats` [@ArbFloats],
+the arbitrary precision `BigFloat`s [@MPFR],
+`Interval`s [@ValidatedNumerics], `ArbFloat`s [@ArbFloats],
 as well as `Taylor1` and `TaylorN` objects.
 
 `TaylorSeries.jl` is a core component of
 [`TaylorIntegration.jl`](https://github.com/PerezHz/TaylorIntegration.jl)
 [@TaylorIntegration], whose aim is to perform accurate integration
-of ODEs using Taylor's method, including Jet transport techniques,
+of ODEs using Taylor's method, including jet transport techniques,
 and of
 [`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl),
-which allow to obtain rigorous polynomial approximations of functions.
+which allows to obtain rigorous polynomial approximations of functions.
 
 ## Acknowledgements
 
 We are thankful for the additions of
 [all contributors](https://github.com/JuliaDiff/TaylorSeries.jl/graphs/contributors)
 to this project. We acknowledge financial support from PAPIME grants
-PE-105911 and PE-107114, and PAPIIT grants IG-101113 and IG-100616. LB
-acknowledges support through a Cátedra Marcos Moshinsky (2013).
+PE-105911 and PE-107114, and PAPIIT grants IG-101113, IG-100616
+and IN-117117. LB acknowledges support through a Cátedra Marcos Moshinsky (2013).
 
 # References
