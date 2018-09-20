@@ -24,14 +24,14 @@ TaylorSeries.jl is a [registered package](http://pkg.julialang.org), and is
 simply installed by running
 
 ```julia
-julia> Pkg.add("TaylorSeries")
+pkg> add("TaylorSeries")
 ```
 
 ### Related packages
 
-- [Polynomials.jl](https://github.com/keno/Polynomials.jl): Polynomial manipulations
+- [Polynomials.jl](https://github.com/JuliaMath/Polynomials.jl): Polynomial manipulations
 - [PowerSeries.jl](https://github.com/jwmerrill/PowerSeries.jl): Truncated power series for Julia
-- [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) Sparse multivariate polynomials in Julia
+- [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl) Multivariate polynomials interface
 
 ### Acknowledgments
 
