@@ -26,7 +26,7 @@ Comments, suggestions and improvements are welcome and appreciated.
 
 #### Installation
 
-`TaylorSeries` can be installed using `Pkg.add("TaylorSeries")`.
+`TaylorSeries` can be installed simply with `using Pkg; Pkg.add("TaylorSeries")`.
 
 #### Contributing
 
