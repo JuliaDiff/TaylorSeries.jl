@@ -487,6 +487,13 @@ eeuler = Base.MathConstants.e
     I_t1_5 = Taylor1.(Matrix{Float64}(I, size(b)), 5) # 5x5 Taylor1{Float64} matrix, order 5
     @test norm(b*binv - I_t1_5, Inf) ≤ 1e-14
     @test norm(binv*b - I_t1_5, Inf) ≤ 1e-14
+
+    @test Taylor1(true) == Taylor1(1.0)
+    @test Taylor1(false) == Taylor1(0.0)
+    @test Taylor1{Float64}(true) == Taylor1(1.0)
+    @test Taylor1{Float64}(false) == Taylor1(0.0)
+    @test Taylor1{Int}(true) == Taylor1{Int}(1)
+    @test Taylor1{Int}(false) == Taylor1{Int}(0)
 end
 
 @testset "Matrix multiplication for Taylor1" begin
