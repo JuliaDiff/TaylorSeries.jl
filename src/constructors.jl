@@ -54,7 +54,7 @@ function Taylor1(x::T, order::Int) where {T<:Number}
     return Taylor1(v, order)
 end
 Taylor1(x::T) where {T<:Number} = Taylor1(x, 0)
-Taylor1{T}(x::S) where {T<:Number, S<:Union{Real, Complex}} = Taylor1([convert(T,b)], 0)
+Taylor1{T}(x::S) where {T<:Number, S<:Union{Real, Complex}} = Taylor1([convert(T,x)], 0)
 
 # Shortcut to define Taylor1 independent variables
 """
