@@ -484,7 +484,7 @@ eeuler = Base.MathConstants.e
     a = rand(3, 3)
     b = Taylor1.(a, 5)
     binv = inv(b)
-    I_t1_5 = Taylor1.(Matrix{Float64}(I, size(b)), 5) # 5x5 Taylor1{Float64} matrix, order 5
+    I_t1_5 = Taylor1.(Matrix{Float64}(I, size(b)), 5) # 5x5 Taylor1{Float64} identity matrix, order 5
     @test norm(b*binv - I_t1_5, Inf) ≤ 1e-14
     @test norm(binv*b - I_t1_5, Inf) ≤ 1e-14
 
