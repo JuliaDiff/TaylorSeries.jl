@@ -44,7 +44,6 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
 end
 
 ## Outer constructors ##
-Taylor1{T}(x::S) where {T<:Number, S<:Union{Real, Complex}} = convert(Taylor1{T}, x)
 Taylor1(x::Taylor1{T}) where {T<:Number} = x
 Taylor1(coeffs::Array{T,1}, order::Int) where {T<:Number} = Taylor1{T}(coeffs, order)
 Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1(coeffs, length(coeffs)-1)
@@ -54,6 +53,8 @@ function Taylor1(x::T, order::Int) where {T<:Number}
     v[1] = x
     return Taylor1(v, order)
 end
+Taylor1(x::T) where {T<:Number} = Taylor1(x, 0)
+Taylor1{T}(x::S) where {T<:Number, S<:Union{Real, Complex}} = Taylor1([convert(T,b)], 0)
 
 # Shortcut to define Taylor1 independent variables
 """
