@@ -44,6 +44,7 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
 end
 
 ## Outer constructors ##
+Taylor1{T}(x::S) where {T<:Number, S<:Number} = convert(Taylor1{T}, x)
 Taylor1(x::Taylor1{T}) where {T<:Number} = x
 Taylor1(coeffs::Array{T,1}, order::Int) where {T<:Number} = Taylor1{T}(coeffs, order)
 Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1(coeffs, length(coeffs)-1)
