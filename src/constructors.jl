@@ -53,8 +53,6 @@ function Taylor1(x::T, order::Int) where {T<:Number}
     v[1] = x
     return Taylor1(v, order)
 end
-Taylor1(x::T) where {T<:Number} = Taylor1(x, 0)
-Taylor1{T}(x::S) where {T<:Number, S<:Union{Real, Complex}} = Taylor1([convert(T,x)], 0)
 
 # Shortcut to define Taylor1 independent variables
 """
@@ -197,10 +195,12 @@ TaylorN(::Type{T}, nv::Int; order::Int=get_order()) where {T<:Number} =
     return TaylorN( [HomogeneousPolynomial(T, nv)], order )
 TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
 
-
 # A `Number` which is not an `AbstractSeries`
 const NumberNotSeries = Union{setdiff(subtypes(Number), [AbstractSeries])...}
 
 # A `Number` which is not `TaylorN` nor a `HomogeneousPolynomial`
 const NumberNotSeriesN =
     Union{setdiff(subtypes(Number), [AbstractSeries])..., Taylor1}
+
+## Additional Taylor1 outer constructor ##
+Taylor1{T}(x::S) where {T<:Number, S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
