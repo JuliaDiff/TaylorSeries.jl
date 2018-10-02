@@ -35,12 +35,12 @@ integration are also implemented.
 The package allows to work with different `Number` formats
 as coefficients of the series, including complex numbers,
 the arbitrary precision `BigFloat`s [@MPFR],
-`Interval`s [@ValidatedNumerics], `ArbFloat`s [@ArbFloats],
+`Interval`s [@ValidatedNumerics.jl], `ArbFloat`s [@ArbFloats.jl],
 as well as `Taylor1` and `TaylorN` objects.
 
 `TaylorSeries.jl` is a core component of
 [`TaylorIntegration.jl`](https://github.com/PerezHz/TaylorIntegration.jl)
-[@TaylorIntegration], whose aim is to perform accurate integration
+[@TaylorIntegration.jl], whose aim is to perform accurate integration
 of ODEs using the Taylor method, including jet transport techniques,
 and of
 [`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl),
