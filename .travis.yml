@@ -21,7 +21,7 @@ script:
  - julia --project --check-bounds=yes -e 'using Pkg; Pkg.clone(pwd()); Pkg.add("TaylorSeries"); Pkg.test("TaylorSeries"; coverage=true)'
 
 after_success:
-  - julia -e 'import Pkg; Pkg.add("Documenter")'
+  - julia -e 'import Pkg; ps=Pkg.PackageSpec(name="Documenter", version="0.19"); Pkg.add(ps); Pkg.pin(ps)'
   - julia -e 'import TaylorSeries; include(joinpath(dirname(pathof(TaylorSeries)), "../docs", "make.jl"))'
   - julia -e 'Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
