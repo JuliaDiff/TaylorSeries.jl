@@ -25,7 +25,7 @@ bibliography: paper.bib
 [`TaylorSeries.jl`](https://github.com/JuliaDiff/TaylorSeries.jl)
 [@TaylorSeries] provides a framework to use and manipulate
 Taylor polynomials in one and more variables
-in the [Julia programming language](https://julialang.org) [@Julia]. It allows to compute
+in the [Julia programming language](https://julialang.org) [@julia]. It allows to compute
 elementary functions, e.g. `exp`, of
 polynomials (`Taylor1`- or `TaylorN`-type objects), where
 techniques of automatic differentiation are used
@@ -35,12 +35,12 @@ integration are also implemented.
 The package allows to work with different `Number` formats
 as coefficients of the series, including complex numbers,
 the arbitrary precision `BigFloat`s [@MPFR],
-`Interval`s [@ValidatedNumerics], `ArbFloat`s [@ArbFloats],
+`Interval`s [@ValidatedNumerics.jl], `ArbFloat`s [@ArbFloats.jl],
 as well as `Taylor1` and `TaylorN` objects.
 
 `TaylorSeries.jl` is a core component of
 [`TaylorIntegration.jl`](https://github.com/PerezHz/TaylorIntegration.jl)
-[@TaylorIntegration], whose aim is to perform accurate integration
+[@TaylorIntegration.jl], whose aim is to perform accurate integration
 of ODEs using the Taylor method, including jet transport techniques,
 and of
 [`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl),
