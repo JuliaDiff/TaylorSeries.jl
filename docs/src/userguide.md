@@ -417,20 +417,22 @@ xysq == x^2 + y^2
 ```
 
 Functions to compute the gradient, Jacobian and
-Hessian have also been implemented. Using the
+Hessian have also been implemented; please note that these
+functions *are not* exported, so its use require the
+prefix `TaylorSeries`. Using the
 polynomials ``p = x^3 + 2x^2 y - 7 x + 2`` and ``q = y-x^4`` defined above,
-we may use [`gradient`](@ref) (or `∇`); the results are of
+we may use [`TaylorSeries.gradient`](@ref) (or `∇`); the results are of
 type `Array{TaylorN{T},1}`. To compute the Jacobian and Hessian of a vector field
-evaluated at a point, we use respectively [`jacobian`](@ref) and
-[`hessian`](@ref):
+evaluated at a point, we use respectively [`TaylorSeries.jacobian`](@ref) and
+[`TaylorSeries.hessian`](@ref):
 
 ```@repl userguide
 ∇(p)
-gradient( q )
+TaylorSeries.gradient( q )
 r = p-q-2*p*q
-hessian(ans)
-jacobian([p,q], [2,1])
-hessian(r, [1.0,1.0])
+TaylorSeries.hessian(ans)
+TaylorSeries.jacobian([p,q], [2,1])
+TaylorSeries.hessian(r, [1.0,1.0])
 ```
 
 Other specific applications are described in the

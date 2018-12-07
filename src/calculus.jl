@@ -215,7 +215,7 @@ function gradient(f::TaylorN)
     end
     return grad
 end
-const ∇ = gradient
+const ∇ = TaylorSeries.gradient
 
 """
 ```
