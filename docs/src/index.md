@@ -33,6 +33,9 @@ pkg> add("TaylorSeries")
 - [PowerSeries.jl](https://github.com/jwmerrill/PowerSeries.jl): Truncated power series for Julia
 - [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl): Multivariate polynomials interface
 - [AbstractAlgebra.jl](https://github.com/Nemocas/AbstractAlgebra.jl): Generic abstract algebra functionality in pure Julia
+- [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl): Forward Mode Automatic Differentiation for Julia
+- [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl): Reverse Mode Automatic Differentiation for Julia
+- [HyperDualNumbers.jl](https://github.com/JuliaDiff/HyperDualNumbers.jl): Julia implementation of HyperDualNumbers
 
 ### Acknowledgments
 
