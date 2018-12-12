@@ -156,7 +156,7 @@ eeuler = Base.MathConstants.e
     @test (rem(1+xT,1.0))[0] == 0
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
-    @test derivative(yH,1) == derivative(xH, :x₂)
+    @test differentiate(yH,1) == differentiate(xH, :x₂)
     @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3, :x₂)
     @test derivative(yT^3, :x₂) == derivative(yT^3, (0,1))
     @test derivative(yT) == zeroT == derivative(yT, (1,0))
