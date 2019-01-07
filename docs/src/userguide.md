@@ -418,7 +418,7 @@ xysq == x^2 + y^2
 ```
 
 Functions to compute the gradient, Jacobian and
-Hessian have also been implemented; please note that these
+Hessian have also been implemented; note that these
 functions *are not* exported, so its use require the
 prefix `TaylorSeries`. Using the
 polynomials ``p = x^3 + 2x^2 y - 7 x + 2`` and ``q = y-x^4`` defined above,
