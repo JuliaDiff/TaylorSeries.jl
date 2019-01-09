@@ -22,7 +22,7 @@ using SparseArrays: SparseMatrixCSC
 using Markdown
 import LinearAlgebra: norm, mul!
 if VERSION ≥ v"1.0.0"
-    export gradient
+    # export gradient
 else
     import LinearAlgebra: gradient
 end
@@ -43,14 +43,14 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
-export getcoeff, derivative, integrate,
+export getcoeff, derivative, integrate, differentiate,
     evaluate, evaluate!, inverse,
     show_params_TaylorN, show_monomials, displayBigO, use_show_default,
     get_order, get_numvars,
     set_variables, get_variables,
     get_variable_names, get_variable_symbols,
-    ∇, jacobian, jacobian!, hessian, hessian!,
-    taylor_expand, update!, constant_term
+    # jacobian, hessian, jacobian!, hessian!,
+    ∇, taylor_expand, update!, constant_term
 
 include("parameters.jl")
 include("hash_tables.jl")

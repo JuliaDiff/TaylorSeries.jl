@@ -36,6 +36,7 @@ evaluate!
 taylor_expand
 update!
 derivative
+differentiate
 integrate
 gradient
 jacobian

@@ -12,6 +12,8 @@
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
 The last coefficient is set to zero.
+
+The function `differentiate` is an exact synonym of `derivative`.
 """
 function derivative(a::Taylor1)
     res = zero(a)
@@ -21,6 +23,13 @@ function derivative(a::Taylor1)
     end
     return res
 end
+
+"""
+    differentiate
+
+An exact synonym of [`derivative`](@ref).
+"""
+const differentiate = derivative
 
 """
     derivative!(res, a) --> nothing
@@ -215,7 +224,7 @@ function gradient(f::TaylorN)
     end
     return grad
 end
-const ∇ = gradient
+const ∇ = TaylorSeries.gradient
 
 """
 ```

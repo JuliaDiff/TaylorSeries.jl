@@ -156,7 +156,7 @@ eeuler = Base.MathConstants.e
     @test (rem(1+xT,1.0))[0] == 0
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
-    @test derivative(yH,1) == derivative(xH, :x₂)
+    @test differentiate(yH,1) == differentiate(xH, :x₂)
     @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3, :x₂)
     @test derivative(yT^3, :x₂) == derivative(yT^3, (0,1))
     @test derivative(yT) == zeroT == derivative(yT, (1,0))
@@ -467,35 +467,35 @@ eeuler = Base.MathConstants.e
     g2(x, y) = y + x^2 - x^4
     f1 = g1(xT, yT)
     f2 = g2(xT, yT)
-    @test gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
+    @test TaylorSeries.gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
-    @test jacobian([f1,f2], [2,1]) == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
+    @test TaylorSeries.jacobian([f1,f2], [2,1]) == TaylorSeries.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jac = Array{Int64}(undef, 2, 2)
-    jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
-    @test jac == jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
-    jacobian!(jac, [f1,f2], [2,1])
-    @test jac == jacobian([f1,f2], [2,1])
-    @test hessian( f1*f2 ) ==
+    TaylorSeries.jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
+    @test jac == TaylorSeries.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
+    TaylorSeries.jacobian!(jac, [f1,f2], [2,1])
+    @test jac == TaylorSeries.jacobian([f1,f2], [2,1])
+    @test TaylorSeries.hessian( f1*f2 ) ==
         [derivative((2,0), f1*f2) derivative((1,1), (f1*f2));
          derivative((1,1), f1*f2) derivative((0,2), (f1*f2))] == [4 -7; -7 0]
-    @test hessian( f1*f2, [xT, yT] ) ==
+    @test TaylorSeries.hessian( f1*f2, [xT, yT] ) ==
         [derivative(f1*f2, (2,0)) derivative((f1*f2), (1,1));
          derivative(f1*f2, (1,1)) derivative((f1*f2), (0,2))]
-    @test [xT yT]*hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
-    @test hessian(f1^2)/2 == [ [49,0] [0,12] ]
-    @test hessian(f1-f2-2*f1*f2) == (hessian(f1-f2-2*f1*f2))'
-    @test hessian(f1-f2,[1,-1]) == hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    @test [xT yT]*TaylorSeries.hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
+    @test TaylorSeries.hessian(f1^2)/2 == [ [49,0] [0,12] ]
+    @test TaylorSeries.hessian(f1-f2-2*f1*f2) == (TaylorSeries.hessian(f1-f2-2*f1*f2))'
+    @test TaylorSeries.hessian(f1-f2,[1,-1]) == TaylorSeries.hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
     hes = Array{Int64}(undef, 2, 2)
-    hessian!(hes, f1*f2)
-    @test hes == hessian(f1*f2)
+    TaylorSeries.hessian!(hes, f1*f2)
+    @test hes == TaylorSeries.hessian(f1*f2)
     @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
-    hessian!(hes, f1^2)
+    TaylorSeries.hessian!(hes, f1^2)
     @test hes/2 == [ [49,0] [0,12] ]
-    hessian!(hes, f1-f2-2*f1*f2)
+    TaylorSeries.hessian!(hes, f1-f2-2*f1*f2)
     @test hes == hes'
     hes1 = Array{Int64}(undef, 2, 2)
-    hessian!(hes1, f1-f2,[1,-1])
-    hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    TaylorSeries.hessian!(hes1, f1-f2,[1,-1])
+    TaylorSeries.hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes
 
     use_show_default(true)

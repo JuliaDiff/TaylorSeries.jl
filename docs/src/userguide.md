@@ -138,7 +138,8 @@ rationalize(expon[3])
 ```
 
 Differentiating and integrating is straightforward for polynomial expansions in
-one variable, using [`derivative`](@ref) and [`integrate`](@ref). These
+one variable, using [`derivative`](@ref) and [`integrate`](@ref). (The
+function [`differentiate`](@ref) is an exact synonym of `derivative`.) These
 functions return the corresponding [`Taylor1`](@ref) expansions.
 The last coefficient of a derivative is set to zero to keep the
 same order as the original polynomial; for the integral, an
@@ -153,7 +154,7 @@ integrate(exp(t))
 integrate( exp(t), 1.0)
 integrate( derivative( exp(-t)), 1.0 ) == exp(-t)
 derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
-derivative(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
+differentiate(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
 ```
 
 To evaluate a Taylor series at a given point, Horner's rule is used via the
@@ -417,20 +418,22 @@ xysq == x^2 + y^2
 ```
 
 Functions to compute the gradient, Jacobian and
-Hessian have also been implemented. Using the
+Hessian have also been implemented; note that these
+functions *are not* exported, so its use require the
+prefix `TaylorSeries`. Using the
 polynomials ``p = x^3 + 2x^2 y - 7 x + 2`` and ``q = y-x^4`` defined above,
-we may use [`gradient`](@ref) (or `∇`); the results are of
+we may use [`TaylorSeries.gradient`](@ref) (or `∇`); the results are of
 type `Array{TaylorN{T},1}`. To compute the Jacobian and Hessian of a vector field
-evaluated at a point, we use respectively [`jacobian`](@ref) and
-[`hessian`](@ref):
+evaluated at a point, we use respectively [`TaylorSeries.jacobian`](@ref) and
+[`TaylorSeries.hessian`](@ref):
 
 ```@repl userguide
 ∇(p)
-gradient( q )
+TaylorSeries.gradient( q )
 r = p-q-2*p*q
-hessian(ans)
-jacobian([p,q], [2,1])
-hessian(r, [1.0,1.0])
+TaylorSeries.hessian(ans)
+TaylorSeries.jacobian([p,q], [2,1])
+TaylorSeries.hessian(r, [1.0,1.0])
 ```
 
 Other specific applications are described in the

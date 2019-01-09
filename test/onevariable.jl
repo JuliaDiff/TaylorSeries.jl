@@ -357,7 +357,7 @@ eeuler = Base.MathConstants.e
     @test evaluate(v, complex(0.0,0.2)) ==
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]
 
-    @test derivative(exp(ta(1.0)), 0) == exp(ta(1.0))
+    @test differentiate(exp(ta(1.0)), 0) == exp(ta(1.0))
     expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0))[0:10]))
     @test derivative(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
     expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0pi))[0:12]),15)
