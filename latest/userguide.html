@@ -90,7 +90,7 @@ julia&gt; getcoeff(expon, 0) == expon[0]
 true
 
 julia&gt; rationalize(expon[3])
-1//6</code></pre><p>Differentiating and integrating is straightforward for polynomial expansions in one variable, using <a href="api.html#TaylorSeries.derivative"><code>derivative</code></a> and <a href="api.html#TaylorSeries.integrate"><code>integrate</code></a>. These functions return the corresponding <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1</code></a> expansions. The last coefficient of a derivative is set to zero to keep the same order as the original polynomial; for the integral, an integration constant may be set by the user (the default is zero). The order of the resulting polynomial is not changed. The value of the <span>$n$</span>-th (<span>$n \ge 0$</span>) derivative is obtained using <code>derivative(n,a)</code>, where <code>a</code> is a Taylor series.</p><pre><code class="language-julia-repl">julia&gt; derivative(exp(t))
+1//6</code></pre><p>Differentiating and integrating is straightforward for polynomial expansions in one variable, using <a href="api.html#TaylorSeries.derivative"><code>derivative</code></a> and <a href="api.html#TaylorSeries.integrate"><code>integrate</code></a>. (The function <a href="api.html#TaylorSeries.differentiate"><code>differentiate</code></a> is an exact synonym of <code>derivative</code>.) These functions return the corresponding <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1</code></a> expansions. The last coefficient of a derivative is set to zero to keep the same order as the original polynomial; for the integral, an integration constant may be set by the user (the default is zero). The order of the resulting polynomial is not changed. The value of the <span>$n$</span>-th (<span>$n \ge 0$</span>) derivative is obtained using <code>derivative(n,a)</code>, where <code>a</code> is a Taylor series.</p><pre><code class="language-julia-repl">julia&gt; derivative(exp(t))
  1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 0.041666666666666664 t⁴ + 𝒪(t⁶)
 
 julia&gt; integrate(exp(t))
@@ -105,7 +105,7 @@ true
 julia&gt; derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
 true
 
-julia&gt; derivative(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
+julia&gt; differentiate(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
 true</code></pre><p>To evaluate a Taylor series at a given point, Horner&#39;s rule is used via the function <code>evaluate(a, dt)</code>. Here, <code>dt</code> is the increment from the point <span>$t_0$</span> around which the Taylor expansion of <code>a</code> is calculated, i.e., the series is evaluated at <span>$t = t_0 + dt$</span>. Omitting <code>dt</code> corresponds to <span>$dt = 0$</span>; see <a href="api.html#TaylorSeries.evaluate"><code>evaluate</code></a>.</p><pre><code class="language-julia-repl">julia&gt; evaluate(exp(shift_taylor(1.0))) - ℯ # exp(t) around t0=1 (order 5), evaluated there (dt=0)
 0.0
 
@@ -270,12 +270,12 @@ julia&gt; xysq
 julia&gt; update!(xysq, [-1.0, 2.0]) # shift-back
 
 julia&gt; xysq == x^2 + y^2
-true</code></pre><p>Functions to compute the gradient, Jacobian and Hessian have also been implemented. Using the polynomials <span>$p = x^3 + 2x^2 y - 7 x + 2$</span> and <span>$q = y-x^4$</span> defined above, we may use <a href="api.html#TaylorSeries.gradient"><code>gradient</code></a> (or <code>∇</code>); the results are of type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian and Hessian of a vector field evaluated at a point, we use respectively <a href="api.html#TaylorSeries.jacobian"><code>jacobian</code></a> and <a href="api.html#TaylorSeries.hessian"><code>hessian</code></a>:</p><pre><code class="language-julia-repl">julia&gt; ∇(p)
+true</code></pre><p>Functions to compute the gradient, Jacobian and Hessian have also been implemented; note that these functions <em>are not</em> exported, so its use require the prefix <code>TaylorSeries</code>. Using the polynomials <span>$p = x^3 + 2x^2 y - 7 x + 2$</span> and <span>$q = y-x^4$</span> defined above, we may use <a href="api.html#TaylorSeries.gradient"><code>TaylorSeries.gradient</code></a> (or <code>∇</code>); the results are of type <code>Array{TaylorN{T},1}</code>. To compute the Jacobian and Hessian of a vector field evaluated at a point, we use respectively <a href="api.html#TaylorSeries.jacobian"><code>TaylorSeries.jacobian</code></a> and <a href="api.html#TaylorSeries.hessian"><code>TaylorSeries.hessian</code></a>:</p><pre><code class="language-julia-repl">julia&gt; ∇(p)
 2-element Array{TaylorN{Float64},1}:
   - 7.0 + 3.0 x² + 4.0 x y + 𝒪(‖x‖¹¹)
                     2.0 x² + 𝒪(‖x‖¹¹)
 
-julia&gt; gradient( q )
+julia&gt; TaylorSeries.gradient( q )
 2-element Array{TaylorN{Float64},1}:
   - 4.0 x³ + 𝒪(‖x‖¹¹)
        1.0 + 𝒪(‖x‖¹¹)
@@ -283,17 +283,17 @@ julia&gt; gradient( q )
 julia&gt; r = p-q-2*p*q
  2.0 - 7.0 x - 5.0 y + 14.0 x y + 1.0 x³ + 2.0 x² y + 5.0 x⁴ - 2.0 x³ y - 4.0 x² y² - 14.0 x⁵ + 2.0 x⁷ + 4.0 x⁶ y + 𝒪(‖x‖¹¹)
 
-julia&gt; hessian(ans)
+julia&gt; TaylorSeries.hessian(ans)
 2×2 LinearAlgebra.Transpose{Float64,Array{Float64,2}}:
   0.0  14.0
  14.0   0.0
 
-julia&gt; jacobian([p,q], [2,1])
+julia&gt; TaylorSeries.jacobian([p,q], [2,1])
 2×2 LinearAlgebra.Transpose{Float64,Array{Float64,2}}:
   13.0  8.0
  -32.0  1.0
 
-julia&gt; hessian(r, [1.0,1.0])
+julia&gt; TaylorSeries.hessian(r, [1.0,1.0])
 2×2 LinearAlgebra.Transpose{Float64,Array{Float64,2}}:
  -26.0  20.0
   20.0  -8.0</code></pre><p>Other specific applications are described in the <a href="examples.html#Examples-1">Examples</a>.</p><h2><a class="nav-anchor" id="Mixtures-1" href="#Mixtures-1">Mixtures</a></h2><p>As mentioned above, <code>Taylor1{T}</code>, <code>HomogeneousPolynomial{T}</code> and <code>TaylorN{T}</code> are parameterized structures such that <code>T&lt;:AbstractSeries</code>, the latter is a subtype of <code>Number</code>. Then, we may actually define Taylor expansions in <span>$N+1$</span> variables, where one of the variables (the <code>Taylor1</code> variable) is somewhat special.</p><pre><code class="language-julia-repl">julia&gt; x, y = set_variables(&quot;x y&quot;, order=3)
