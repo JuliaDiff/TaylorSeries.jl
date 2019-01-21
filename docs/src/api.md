@@ -23,7 +23,7 @@ AbstractSeries
 ## Functions and methods
 
 ```@docs
-Taylor1(::Type{T}, ::Int64=1) where {T<:Number}
+Taylor1(::Type{T}, ::Int=1) where {T<:Number}
 HomogeneousPolynomial(::Type{T}, ::Int) where {T<:Number}
 TaylorN(::Type{T}, ::Int; ::Int=get_order()) where {T<:Number}
 set_variables

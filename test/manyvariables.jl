@@ -80,7 +80,7 @@ eeuler = Base.MathConstants.e
     yH = HomogeneousPolynomial([0,1],1)
     @test HomogeneousPolynomial(0,0)  == 0
     xT = TaylorN(xH, 17)
-    yT = TaylorN(Int64, 2, order=17)
+    yT = TaylorN(Int, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
     @test zeroT.coeffs == zeros(HomogeneousPolynomial{Int}, 1)
     @test length(zeros(HomogeneousPolynomial{Int}, 1)) == 2
@@ -107,7 +107,7 @@ eeuler = Base.MathConstants.e
         HomogeneousPolynomial{Complex{Int}}
     @test convert(HomogeneousPolynomial,1im) ==
         HomogeneousPolynomial([complex(0,1)], 0)
-    @test convert(HomogeneousPolynomial{Int64},[1,1]) == xH+yH
+    @test convert(HomogeneousPolynomial{Int},[1,1]) == xH+yH
     @test convert(HomogeneousPolynomial{Float64},[2,-1]) == 2.0xH-yH
     @test typeof(convert(TaylorN,1im)) == TaylorN{Complex{Int}}
     @test convert(TaylorN, 1im) ==
@@ -118,7 +118,7 @@ eeuler = Base.MathConstants.e
     @test promote(xH, [1,1])[2] == xH+yH
     @test promote(xH, yT)[1] == xT
     @test promote(xT, [xH,yH])[2] == xT+yT
-    @test typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int64}}
+    @test typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int}}
     # @test TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT
     @test iszero(zeroT.coeffs)
     @test iszero(zero(xH))
@@ -470,7 +470,7 @@ eeuler = Base.MathConstants.e
     @test TaylorSeries.gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
     @test TaylorSeries.jacobian([f1,f2], [2,1]) == TaylorSeries.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
-    jac = Array{Int64}(undef, 2, 2)
+    jac = Array{Int}(undef, 2, 2)
     TaylorSeries.jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
     @test jac == TaylorSeries.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     TaylorSeries.jacobian!(jac, [f1,f2], [2,1])
@@ -485,7 +485,7 @@ eeuler = Base.MathConstants.e
     @test TaylorSeries.hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test TaylorSeries.hessian(f1-f2-2*f1*f2) == (TaylorSeries.hessian(f1-f2-2*f1*f2))'
     @test TaylorSeries.hessian(f1-f2,[1,-1]) == TaylorSeries.hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
-    hes = Array{Int64}(undef, 2, 2)
+    hes = Array{Int}(undef, 2, 2)
     TaylorSeries.hessian!(hes, f1*f2)
     @test hes == TaylorSeries.hessian(f1*f2)
     @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
@@ -493,7 +493,7 @@ eeuler = Base.MathConstants.e
     @test hes/2 == [ [49,0] [0,12] ]
     TaylorSeries.hessian!(hes, f1-f2-2*f1*f2)
     @test hes == hes'
-    hes1 = Array{Int64}(undef, 2, 2)
+    hes1 = Array{Int}(undef, 2, 2)
     TaylorSeries.hessian!(hes1, f1-f2,[1,-1])
     TaylorSeries.hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes
@@ -550,7 +550,7 @@ eeuler = Base.MathConstants.e
     @test norm(a, Inf) == 8.0
     @test norm((3.0 + 4im)*x) == abs(3.0 + 4im)
 
-    @test TaylorSeries.rtoldefault(TaylorN{Int64}) == 0
+    @test TaylorSeries.rtoldefault(TaylorN{Int}) == 0
     @test TaylorSeries.rtoldefault(TaylorN{Float64}) == sqrt(eps(Float64))
     @test TaylorSeries.rtoldefault(TaylorN{BigFloat}) == sqrt(eps(BigFloat))
     @test TaylorSeries.real(TaylorN{Float64}) == TaylorN{Float64}
@@ -637,7 +637,7 @@ eeuler = Base.MathConstants.e
     for i in [0,1,3,5]
         @test q[i] == p[i]*(180/pi)
     end
-    xT = 5+TaylorN(Int64, 1, order=10)
+    xT = 5+TaylorN(Int, 1, order=10)
     yT = TaylorN(2, order=10)
     TaylorSeries.deg2rad!(yT, xT, 0)
     @test yT[0] == xT[0]*(pi/180)

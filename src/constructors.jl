@@ -27,7 +27,7 @@ DataType for polynomial expansions in one independent variable.
 
 - `coeffs :: Array{T,1}` Expansion coefficients; the ``i``-th
     component is the coefficient of degree ``i-1`` of the expansion.
-- `order  :: Int64` Maximum order (degree) of the polynomial.
+- `order  :: Int` Maximum order (degree) of the polynomial.
 
 Note that `Taylor1` variables are callable. For more information, see
 [`evaluate`](@ref).
@@ -69,7 +69,7 @@ julia> Taylor1(Rational{Int}, 4)
  1//1 t + 𝒪(t⁵)
 ```
 """
-Taylor1(::Type{T}, order::Int64=1) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
+Taylor1(::Type{T}, order::Int=1) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
 Taylor1(order::Int=1) = Taylor1(Float64, order)
 
 

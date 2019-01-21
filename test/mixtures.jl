@@ -57,7 +57,7 @@ using LinearAlgebra, SparseArrays
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
     @test eltype(xHt) == Taylor1{Float64}
     @test eltype(tN1) == Taylor1{Float64}
-    @test eltype(Taylor1([xH])) == HomogeneousPolynomial{Int64}
+    @test eltype(Taylor1([xH])) == HomogeneousPolynomial{Int}
     @test eltype(tN1) == Taylor1{Float64}
     @test get_order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) == 1
     @test 3*tN1 == TaylorN([HomogeneousPolynomial([3t]),3xHt,3yHt^2])
@@ -221,8 +221,8 @@ using LinearAlgebra, SparseArrays
     @test norm(-10X+4Y,Inf) == 10.
 
 
-    @test TaylorSeries.rtoldefault(TaylorN{Taylor1{Int64}}) == 0
-    @test TaylorSeries.rtoldefault(Taylor1{TaylorN{Int64}}) == 0
+    @test TaylorSeries.rtoldefault(TaylorN{Taylor1{Int}}) == 0
+    @test TaylorSeries.rtoldefault(Taylor1{TaylorN{Int}}) == 0
     for T in (Float64, BigFloat)
         @test TaylorSeries.rtoldefault(TaylorN{Taylor1{T}}) == sqrt(eps(T))
         @test TaylorSeries.rtoldefault(Taylor1{TaylorN{T}}) == sqrt(eps(T))

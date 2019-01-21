@@ -10,22 +10,22 @@ and `pos_table`. Internally, these are treated as `const`.
 
 # Hash tables
 
-    coeff_table :: Array{Array{Array{Int64,1},1},1}
+    coeff_table :: Array{Array{Array{Int,1},1},1}
 
 The ``i+1``-th component contains a vector with the vectors of all the possible
 combinations of monomials of a `HomogeneousPolynomial` of order ``i``.
 
-    index_table :: Array{Array{Int64,1},1}
+    index_table :: Array{Array{Int,1},1}
 
 The ``i+1``-th component contains a vector of (hashed) indices that represent
 the distinct monomials of a `HomogeneousPolynomial` of order (degree) ``i``.
 
-    size_table :: Array{Int64,1}
+    size_table :: Array{Int,1}
 
 The ``i+1``-th component contains the number of distinct monomials of the
 `HomogeneousPolynomial` of order ``i``, equivalent to `length(coeff_table[i])`.
 
-    pos_table :: Array{Dict{Int64,Int64},1}
+    pos_table :: Array{Dict{Int,Int},1}
 
 The ``i+1``-th component maps the hash index to the (lexicographic) position
 of the corresponding monomial in `coeffs_table`.
