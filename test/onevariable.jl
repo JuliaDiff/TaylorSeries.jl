@@ -246,7 +246,7 @@ eeuler = Base.MathConstants.e
     @test p(vr) == evaluate.(p,vr)
     @test p(Mr) == p.(Mr)
     @test p(Mr) == evaluate.(p,Mr)
-    taylor_a = Taylor1(Int64,10)
+    taylor_a = Taylor1(Int,10)
     taylor_x = exp(Taylor1(Float64,13))
     @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
     A_T1 = [t 2t 3t; 4t 5t 6t ]
@@ -427,7 +427,7 @@ eeuler = Base.MathConstants.e
     @test norm(t_a,Inf) == 12
     @test norm(t_C) == norm(complex(3.0,4.0)*a)
 
-    @test TaylorSeries.rtoldefault(Taylor1{Int64}) == 0
+    @test TaylorSeries.rtoldefault(Taylor1{Int}) == 0
     @test TaylorSeries.rtoldefault(Taylor1{Float64}) == sqrt(eps(Float64))
     @test TaylorSeries.rtoldefault(Taylor1{BigFloat}) == sqrt(eps(BigFloat))
     @test TaylorSeries.real(Taylor1{Float64}) == Taylor1{Float64}

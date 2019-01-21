@@ -69,7 +69,7 @@ t
 ```
 
 The definition of `shift_taylor(a)` uses the method
-[`Taylor1([::Type{Float64}], [order::Int64=1])`](@ref), which is a
+[`Taylor1([::Type{Float64}], [order::Int=1])`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,
 of given type and order (defaults are `Float64` and `order=1`).
 This is one of the easiest ways to work with the package.
@@ -117,7 +117,7 @@ log(1-t)
 sqrt(1 + t)
 imag(exp(tI)')
 real(exp(Taylor1([0.0,1im],17))) - cos(Taylor1([0.0,1.0],17)) == 0.0
-convert(Taylor1{Rational{Int64}}, exp(t))
+convert(Taylor1{Rational{Int}}, exp(t))
 ```
 
 Again, errors are thrown whenever it is necessary.

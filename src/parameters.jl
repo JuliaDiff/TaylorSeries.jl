@@ -76,7 +76,7 @@ subscripts for the different variables.
 
 ```julia
 julia> set_variables(Int, "x y z", order=4)
-3-element Array{TaylorSeries.TaylorN{Int64},1}:
+3-element Array{TaylorSeries.TaylorN{Int},1}:
   1 x + 𝒪(‖x‖⁵)
   1 y + 𝒪(‖x‖⁵)
   1 z + 𝒪(‖x‖⁵)
