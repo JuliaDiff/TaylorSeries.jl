@@ -32,7 +32,7 @@ julia&gt; use_show_default(false) # use custom `show`
 false
 
 julia&gt; t
- 1.0 t + 𝒪(t⁶)</code></pre><p>The definition of <code>shift_taylor(a)</code> uses the method <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1([::Type{Float64}], [order::Int64=1])</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type and order (defaults are <code>Float64</code> and <code>order=1</code>). This is one of the easiest ways to work with the package.</p><p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with the <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1</code></a> type, including promotions that involve <code>Number</code>s. The operations return a valid Taylor expansion of maximum order. This is apparent in the last example below, where the answer is beyond the order of the expansion.</p><pre><code class="language-julia-repl">julia&gt; t*(3t+2.5)
+ 1.0 t + 𝒪(t⁶)</code></pre><p>The definition of <code>shift_taylor(a)</code> uses the method <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1([::Type{Float64}], [order::Int=1])</code></a>, which is a shortcut to define the independent variable of a Taylor expansion, of given type and order (defaults are <code>Float64</code> and <code>order=1</code>). This is one of the easiest ways to work with the package.</p><p>The usual arithmetic operators (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>==</code>) have been extended to work with the <a href="api.html#TaylorSeries.Taylor1"><code>Taylor1</code></a> type, including promotions that involve <code>Number</code>s. The operations return a valid Taylor expansion of maximum order. This is apparent in the last example below, where the answer is beyond the order of the expansion.</p><pre><code class="language-julia-repl">julia&gt; t*(3t+2.5)
  2.5 t + 3.0 t² + 𝒪(t⁶)
 
 julia&gt; 1/(1-t)
@@ -76,7 +76,7 @@ julia&gt; imag(exp(tI)&#39;)
 julia&gt; real(exp(Taylor1([0.0,1im],17))) - cos(Taylor1([0.0,1.0],17)) == 0.0
 true
 
-julia&gt; convert(Taylor1{Rational{Int64}}, exp(t))
+julia&gt; convert(Taylor1{Rational{Int}}, exp(t))
  1//1 + 1//1 t + 1//2 t² + 1//6 t³ + 1//24 t⁴ + 1//120 t⁵ + 𝒪(t⁶)</code></pre><p>Again, errors are thrown whenever it is necessary.</p><pre><code class="language-julia-repl">julia&gt; sqrt(t)
 ERROR: ArgumentError: First non-vanishing Taylor1 coefficient must correspond
 to an **even power** in order to expand `sqrt` around 0.
