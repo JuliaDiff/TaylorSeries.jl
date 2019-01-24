@@ -2,8 +2,9 @@ using Documenter, TaylorSeries
 
 makedocs(
     modules = [TaylorSeries],
-    format = :html,
+    format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
     sitename = "TaylorSeries.jl",
+    authors  = "Luis Benet and David P. Sanders",
     pages = [
         "Home" => "index.md",
         "Background" => "background.md",
@@ -16,8 +17,6 @@ makedocs(
 deploydocs(
     repo   = "github.com/JuliaDiff/TaylorSeries.jl.git",
     target = "build",
-    julia = "1.0",
-    osname = "linux",
     deps   = nothing,
     make   = nothing
 )
