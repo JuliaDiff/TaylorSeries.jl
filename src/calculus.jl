@@ -100,15 +100,18 @@ Return the integral of `a::Taylor1`. The constant of integration
 (0-th order coefficient) is set to `x`, which is zero if ommitted.
 """
 function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
-    R = promote_type(T, typeof(a[0] / 1), S)
-    coeffs = zeros(R, a.order+1)
-    @inbounds for i = 1:a.order
+    order = get_order(a)
+    aa = a[0]/1 + zero(x)
+    R = typeof(aa)
+    coeffs = Array{typeof(aa)}(undef, order+1)
+    fill!(coeffs, zero(aa))
+    @inbounds for i = 1:order
         coeffs[i+1] = a[i-1] / i
     end
     @inbounds coeffs[1] = convert(R, x)
     return Taylor1(coeffs, a.order)
 end
-integrate(a::Taylor1{T}) where {T<:Number} = integrate(a, zero(T))
+integrate(a::Taylor1{T}) where {T<:Number} = integrate(a, zero(a[0]))
 
 
 
