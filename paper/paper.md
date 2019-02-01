@@ -22,8 +22,8 @@ bibliography: paper.bib
 
 # Summary
 
-[`TaylorSeries.jl`](https://github.com/JuliaDiff/TaylorSeries.jl)
-[@TaylorSeries] provides a framework to use and manipulate
+`TaylorSeries.jl`
+provides a framework to use and manipulate
 Taylor polynomials in one and more variables
 in the [Julia programming language](https://julialang.org) [@julia]. It allows to compute
 elementary functions, e.g. `exp`, of
