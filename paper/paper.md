@@ -29,7 +29,7 @@ in the [Julia programming language](https://julialang.org) [@julia]. It allows t
 elementary functions, e.g. `exp`, of
 polynomials (`Taylor1`- or `TaylorN`-type objects), where
 techniques of automatic differentiation are used
-[@Tucker:ValidatedNumerics, @HaroEtAl:ParameterizMeth]. Differentiation and
+[@Tucker:ValidatedNumerics; @HaroEtAl:ParameterizMeth]. Differentiation and
 integration are also implemented.
 
 The package allows to work with different `Number` formats
@@ -43,8 +43,9 @@ as well as `Taylor1` and `TaylorN` objects.
 [@TaylorIntegration.jl], whose aim is to perform accurate integration
 of ODEs using the Taylor method, including jet transport techniques,
 and of
-[`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl),
-which allows to obtain rigorous polynomial approximations of functions.
+[`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl)
+[@TaylorModels.jl],
+which constructs rigorous polynomial approximations of functions.
 
 ## Acknowledgements
 
