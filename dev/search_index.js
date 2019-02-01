@@ -1,7 +1,7 @@
 var documenterSearchIndex = {"docs": [
 
 {
-    "location": "index.html#",
+    "location": "#",
     "page": "Home",
     "title": "Home",
     "category": "page",
@@ -9,7 +9,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#TaylorSeries.jl-1",
+    "location": "#TaylorSeries.jl-1",
     "page": "Home",
     "title": "TaylorSeries.jl",
     "category": "section",
@@ -17,7 +17,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Authors-1",
+    "location": "#Authors-1",
     "page": "Home",
     "title": "Authors",
     "category": "section",
@@ -25,7 +25,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#License-1",
+    "location": "#License-1",
     "page": "Home",
     "title": "License",
     "category": "section",
@@ -33,7 +33,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Installation-1",
+    "location": "#Installation-1",
     "page": "Home",
     "title": "Installation",
     "category": "section",
@@ -41,7 +41,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Related-packages-1",
+    "location": "#Related-packages-1",
     "page": "Home",
     "title": "Related packages",
     "category": "section",
@@ -49,7 +49,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#Acknowledgments-1",
+    "location": "#Acknowledgments-1",
     "page": "Home",
     "title": "Acknowledgments",
     "category": "section",
@@ -57,7 +57,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "background.html#",
+    "location": "background/#",
     "page": "Background",
     "title": "Background",
     "category": "page",
@@ -65,7 +65,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "background.html#Background-1",
+    "location": "background/#Background-1",
     "page": "Background",
     "title": "Background",
     "category": "section",
@@ -73,7 +73,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "background.html#Introduction-1",
+    "location": "background/#Introduction-1",
     "page": "Background",
     "title": "Introduction",
     "category": "section",
@@ -81,7 +81,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "background.html#Arithmetic-operations-1",
+    "location": "background/#Arithmetic-operations-1",
     "page": "Background",
     "title": "Arithmetic operations",
     "category": "section",
@@ -89,7 +89,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "background.html#Elementary-functions-of-polynomials-1",
+    "location": "background/#Elementary-functions-of-polynomials-1",
     "page": "Background",
     "title": "Elementary functions of polynomials",
     "category": "section",
@@ -97,7 +97,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "background.html#refs-1",
+    "location": "background/#refs-1",
     "page": "Background",
     "title": "References",
     "category": "section",
@@ -105,7 +105,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "userguide.html#",
+    "location": "userguide/#",
     "page": "User guide",
     "title": "User guide",
     "category": "page",
@@ -113,7 +113,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "userguide.html#User-guide-1",
+    "location": "userguide/#User-guide-1",
     "page": "User guide",
     "title": "User guide",
     "category": "section",
@@ -121,7 +121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "userguide.html#One-independent-variable-1",
+    "location": "userguide/#One-independent-variable-1",
     "page": "User guide",
     "title": "One independent variable",
     "category": "section",
@@ -129,7 +129,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "userguide.html#Many-variables-1",
+    "location": "userguide/#Many-variables-1",
     "page": "User guide",
     "title": "Many variables",
     "category": "section",
@@ -137,7 +137,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "userguide.html#Mixtures-1",
+    "location": "userguide/#Mixtures-1",
     "page": "User guide",
     "title": "Mixtures",
     "category": "section",
@@ -145,7 +145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "examples.html#",
+    "location": "examples/#",
     "page": "Examples",
     "title": "Examples",
     "category": "page",
@@ -153,7 +153,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "examples.html#Examples-1",
+    "location": "examples/#Examples-1",
     "page": "Examples",
     "title": "Examples",
     "category": "section",
@@ -161,7 +161,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "examples.html#Four-square-identity-1",
+    "location": "examples/#Four-square-identity-1",
     "page": "Examples",
     "title": "Four-square identity",
     "category": "section",
@@ -169,7 +169,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "examples.html#Fateman-test-1",
+    "location": "examples/#Fateman-test-1",
     "page": "Examples",
     "title": "Fateman test",
     "category": "section",
@@ -177,7 +177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "examples.html#Bechmarks-1",
+    "location": "examples/#Bechmarks-1",
     "page": "Examples",
     "title": "Bechmarks",
     "category": "section",
@@ -185,7 +185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#",
+    "location": "api/#",
     "page": "API",
     "title": "API",
     "category": "page",
@@ -193,7 +193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Library-1",
+    "location": "api/#Library-1",
     "page": "API",
     "title": "Library",
     "category": "section",
@@ -201,7 +201,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.TaylorSeries",
+    "location": "api/#TaylorSeries.TaylorSeries",
     "page": "API",
     "title": "TaylorSeries.TaylorSeries",
     "category": "module",
@@ -209,7 +209,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Module-1",
+    "location": "api/#Module-1",
     "page": "API",
     "title": "Module",
     "category": "section",
@@ -217,7 +217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.Taylor1",
+    "location": "api/#TaylorSeries.Taylor1",
     "page": "API",
     "title": "TaylorSeries.Taylor1",
     "category": "type",
@@ -225,7 +225,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.HomogeneousPolynomial",
+    "location": "api/#TaylorSeries.HomogeneousPolynomial",
     "page": "API",
     "title": "TaylorSeries.HomogeneousPolynomial",
     "category": "type",
@@ -233,7 +233,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.TaylorN",
+    "location": "api/#TaylorSeries.TaylorN",
     "page": "API",
     "title": "TaylorSeries.TaylorN",
     "category": "type",
@@ -241,7 +241,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.AbstractSeries",
+    "location": "api/#TaylorSeries.AbstractSeries",
     "page": "API",
     "title": "TaylorSeries.AbstractSeries",
     "category": "type",
@@ -249,7 +249,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Types-1",
+    "location": "api/#Types-1",
     "page": "API",
     "title": "Types",
     "category": "section",
@@ -257,7 +257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.Taylor1-Union{Tuple{Type{T}}, Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
+    "location": "api/#TaylorSeries.Taylor1-Union{Tuple{Type{T}}, Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
     "page": "API",
     "title": "TaylorSeries.Taylor1",
     "category": "method",
@@ -265,7 +265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.HomogeneousPolynomial-Union{Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
+    "location": "api/#TaylorSeries.HomogeneousPolynomial-Union{Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
     "page": "API",
     "title": "TaylorSeries.HomogeneousPolynomial",
     "category": "method",
@@ -273,7 +273,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.TaylorN-Union{Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
+    "location": "api/#TaylorSeries.TaylorN-Union{Tuple{T}, Tuple{Type{T},Int64}} where T<:Number",
     "page": "API",
     "title": "TaylorSeries.TaylorN",
     "category": "method",
@@ -281,7 +281,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.set_variables",
+    "location": "api/#TaylorSeries.set_variables",
     "page": "API",
     "title": "TaylorSeries.set_variables",
     "category": "function",
@@ -289,7 +289,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.get_variables",
+    "location": "api/#TaylorSeries.get_variables",
     "page": "API",
     "title": "TaylorSeries.get_variables",
     "category": "function",
@@ -297,7 +297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.show_params_TaylorN",
+    "location": "api/#TaylorSeries.show_params_TaylorN",
     "page": "API",
     "title": "TaylorSeries.show_params_TaylorN",
     "category": "function",
@@ -305,7 +305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.show_monomials",
+    "location": "api/#TaylorSeries.show_monomials",
     "page": "API",
     "title": "TaylorSeries.show_monomials",
     "category": "function",
@@ -313,7 +313,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.getcoeff",
+    "location": "api/#TaylorSeries.getcoeff",
     "page": "API",
     "title": "TaylorSeries.getcoeff",
     "category": "function",
@@ -321,7 +321,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.evaluate",
+    "location": "api/#TaylorSeries.evaluate",
     "page": "API",
     "title": "TaylorSeries.evaluate",
     "category": "function",
@@ -329,7 +329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.evaluate!",
+    "location": "api/#TaylorSeries.evaluate!",
     "page": "API",
     "title": "TaylorSeries.evaluate!",
     "category": "function",
@@ -337,7 +337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.taylor_expand",
+    "location": "api/#TaylorSeries.taylor_expand",
     "page": "API",
     "title": "TaylorSeries.taylor_expand",
     "category": "function",
@@ -345,7 +345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.update!",
+    "location": "api/#TaylorSeries.update!",
     "page": "API",
     "title": "TaylorSeries.update!",
     "category": "function",
@@ -353,7 +353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.derivative",
+    "location": "api/#TaylorSeries.derivative",
     "page": "API",
     "title": "TaylorSeries.derivative",
     "category": "function",
@@ -361,7 +361,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.differentiate",
+    "location": "api/#TaylorSeries.differentiate",
     "page": "API",
     "title": "TaylorSeries.differentiate",
     "category": "function",
@@ -369,7 +369,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.integrate",
+    "location": "api/#TaylorSeries.integrate",
     "page": "API",
     "title": "TaylorSeries.integrate",
     "category": "function",
@@ -377,7 +377,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.gradient",
+    "location": "api/#TaylorSeries.gradient",
     "page": "API",
     "title": "TaylorSeries.gradient",
     "category": "function",
@@ -385,7 +385,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.jacobian",
+    "location": "api/#TaylorSeries.jacobian",
     "page": "API",
     "title": "TaylorSeries.jacobian",
     "category": "function",
@@ -393,7 +393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.jacobian!",
+    "location": "api/#TaylorSeries.jacobian!",
     "page": "API",
     "title": "TaylorSeries.jacobian!",
     "category": "function",
@@ -401,7 +401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.hessian",
+    "location": "api/#TaylorSeries.hessian",
     "page": "API",
     "title": "TaylorSeries.hessian",
     "category": "function",
@@ -409,7 +409,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.hessian!",
+    "location": "api/#TaylorSeries.hessian!",
     "page": "API",
     "title": "TaylorSeries.hessian!",
     "category": "function",
@@ -417,7 +417,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.inverse",
+    "location": "api/#TaylorSeries.inverse",
     "page": "API",
     "title": "TaylorSeries.inverse",
     "category": "function",
@@ -425,7 +425,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Base.abs",
+    "location": "api/#Base.abs",
     "page": "API",
     "title": "Base.abs",
     "category": "function",
@@ -433,7 +433,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#LinearAlgebra.norm",
+    "location": "api/#LinearAlgebra.norm",
     "page": "API",
     "title": "LinearAlgebra.norm",
     "category": "function",
@@ -441,7 +441,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Base.isapprox",
+    "location": "api/#Base.isapprox",
     "page": "API",
     "title": "Base.isapprox",
     "category": "function",
@@ -449,7 +449,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Base.isfinite",
+    "location": "api/#Base.isfinite",
     "page": "API",
     "title": "Base.isfinite",
     "category": "function",
@@ -457,7 +457,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.displayBigO",
+    "location": "api/#TaylorSeries.displayBigO",
     "page": "API",
     "title": "TaylorSeries.displayBigO",
     "category": "function",
@@ -465,7 +465,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.use_show_default",
+    "location": "api/#TaylorSeries.use_show_default",
     "page": "API",
     "title": "TaylorSeries.use_show_default",
     "category": "function",
@@ -473,7 +473,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Functions-and-methods-1",
+    "location": "api/#Functions-and-methods-1",
     "page": "API",
     "title": "Functions and methods",
     "category": "section",
@@ -481,7 +481,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.ParamsTaylorN",
+    "location": "api/#TaylorSeries.ParamsTaylorN",
     "page": "API",
     "title": "TaylorSeries.ParamsTaylorN",
     "category": "type",
@@ -489,7 +489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries._InternalMutFuncs",
+    "location": "api/#TaylorSeries._InternalMutFuncs",
     "page": "API",
     "title": "TaylorSeries._InternalMutFuncs",
     "category": "type",
@@ -497,7 +497,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.generate_tables",
+    "location": "api/#TaylorSeries.generate_tables",
     "page": "API",
     "title": "TaylorSeries.generate_tables",
     "category": "function",
@@ -505,7 +505,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.generate_index_vectors",
+    "location": "api/#TaylorSeries.generate_index_vectors",
     "page": "API",
     "title": "TaylorSeries.generate_index_vectors",
     "category": "function",
@@ -513,7 +513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.in_base",
+    "location": "api/#TaylorSeries.in_base",
     "page": "API",
     "title": "TaylorSeries.in_base",
     "category": "function",
@@ -521,7 +521,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.make_inverse_dict",
+    "location": "api/#TaylorSeries.make_inverse_dict",
     "page": "API",
     "title": "TaylorSeries.make_inverse_dict",
     "category": "function",
@@ -529,7 +529,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.resize_coeffs1!",
+    "location": "api/#TaylorSeries.resize_coeffs1!",
     "page": "API",
     "title": "TaylorSeries.resize_coeffs1!",
     "category": "function",
@@ -537,7 +537,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.resize_coeffsHP!",
+    "location": "api/#TaylorSeries.resize_coeffsHP!",
     "page": "API",
     "title": "TaylorSeries.resize_coeffsHP!",
     "category": "function",
@@ -545,7 +545,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.constant_term",
+    "location": "api/#TaylorSeries.constant_term",
     "page": "API",
     "title": "TaylorSeries.constant_term",
     "category": "function",
@@ -553,7 +553,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#LinearAlgebra.mul!",
+    "location": "api/#LinearAlgebra.mul!",
     "page": "API",
     "title": "LinearAlgebra.mul!",
     "category": "function",
@@ -561,7 +561,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#LinearAlgebra.mul!-Tuple{HomogeneousPolynomial,HomogeneousPolynomial,HomogeneousPolynomial}",
+    "location": "api/#LinearAlgebra.mul!-Tuple{HomogeneousPolynomial,HomogeneousPolynomial,HomogeneousPolynomial}",
     "page": "API",
     "title": "LinearAlgebra.mul!",
     "category": "method",
@@ -569,7 +569,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#LinearAlgebra.mul!-Union{Tuple{T}, Tuple{Array{Taylor1{T},1},Union{Array{T,2}, SparseMatrixCSC{T,Ti} where Ti<:Integer},Array{Taylor1{T},1}}} where T<:Number",
+    "location": "api/#LinearAlgebra.mul!-Union{Tuple{T}, Tuple{Array{Taylor1{T},1},Union{Array{T,2}, SparseMatrixCSC{T,Ti} where Ti<:Integer},Array{Taylor1{T},1}}} where T<:Number",
     "page": "API",
     "title": "LinearAlgebra.mul!",
     "category": "method",
@@ -577,7 +577,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.div!",
+    "location": "api/#TaylorSeries.div!",
     "page": "API",
     "title": "TaylorSeries.div!",
     "category": "function",
@@ -585,7 +585,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.pow!",
+    "location": "api/#TaylorSeries.pow!",
     "page": "API",
     "title": "TaylorSeries.pow!",
     "category": "function",
@@ -593,7 +593,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.square",
+    "location": "api/#TaylorSeries.square",
     "page": "API",
     "title": "TaylorSeries.square",
     "category": "function",
@@ -601,7 +601,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.sqr!",
+    "location": "api/#TaylorSeries.sqr!",
     "page": "API",
     "title": "TaylorSeries.sqr!",
     "category": "function",
@@ -609,7 +609,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.sqr!-Union{Tuple{T}, Tuple{HomogeneousPolynomial{T},HomogeneousPolynomial{T}}} where T<:Union{Real, Complex, Taylor1}",
+    "location": "api/#TaylorSeries.sqr!-Union{Tuple{T}, Tuple{HomogeneousPolynomial{T},HomogeneousPolynomial{T}}} where T<:Union{Real, Complex, Taylor1}",
     "page": "API",
     "title": "TaylorSeries.sqr!",
     "category": "method",
@@ -617,7 +617,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.sqrt!",
+    "location": "api/#TaylorSeries.sqrt!",
     "page": "API",
     "title": "TaylorSeries.sqrt!",
     "category": "function",
@@ -625,7 +625,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.exp!",
+    "location": "api/#TaylorSeries.exp!",
     "page": "API",
     "title": "TaylorSeries.exp!",
     "category": "function",
@@ -633,7 +633,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.log!",
+    "location": "api/#TaylorSeries.log!",
     "page": "API",
     "title": "TaylorSeries.log!",
     "category": "function",
@@ -641,7 +641,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.sincos!",
+    "location": "api/#TaylorSeries.sincos!",
     "page": "API",
     "title": "TaylorSeries.sincos!",
     "category": "function",
@@ -649,7 +649,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.tan!",
+    "location": "api/#TaylorSeries.tan!",
     "page": "API",
     "title": "TaylorSeries.tan!",
     "category": "function",
@@ -657,7 +657,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.asin!",
+    "location": "api/#TaylorSeries.asin!",
     "page": "API",
     "title": "TaylorSeries.asin!",
     "category": "function",
@@ -665,7 +665,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.acos!",
+    "location": "api/#TaylorSeries.acos!",
     "page": "API",
     "title": "TaylorSeries.acos!",
     "category": "function",
@@ -673,7 +673,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.atan!",
+    "location": "api/#TaylorSeries.atan!",
     "page": "API",
     "title": "TaylorSeries.atan!",
     "category": "function",
@@ -681,7 +681,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.sinhcosh!",
+    "location": "api/#TaylorSeries.sinhcosh!",
     "page": "API",
     "title": "TaylorSeries.sinhcosh!",
     "category": "function",
@@ -689,7 +689,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.tanh!",
+    "location": "api/#TaylorSeries.tanh!",
     "page": "API",
     "title": "TaylorSeries.tanh!",
     "category": "function",
@@ -697,7 +697,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries.derivative!",
+    "location": "api/#TaylorSeries.derivative!",
     "page": "API",
     "title": "TaylorSeries.derivative!",
     "category": "function",
@@ -705,7 +705,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries._internalmutfunc_call",
+    "location": "api/#TaylorSeries._internalmutfunc_call",
     "page": "API",
     "title": "TaylorSeries._internalmutfunc_call",
     "category": "function",
@@ -713,7 +713,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries._dict_unary_ops",
+    "location": "api/#TaylorSeries._dict_unary_ops",
     "page": "API",
     "title": "TaylorSeries._dict_unary_ops",
     "category": "constant",
@@ -721,7 +721,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries._dict_binary_calls",
+    "location": "api/#TaylorSeries._dict_binary_calls",
     "page": "API",
     "title": "TaylorSeries._dict_binary_calls",
     "category": "constant",
@@ -729,7 +729,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries._dict_unary_calls",
+    "location": "api/#TaylorSeries._dict_unary_calls",
     "page": "API",
     "title": "TaylorSeries._dict_unary_calls",
     "category": "constant",
@@ -737,7 +737,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#TaylorSeries._dict_binary_ops",
+    "location": "api/#TaylorSeries._dict_binary_ops",
     "page": "API",
     "title": "TaylorSeries._dict_binary_ops",
     "category": "constant",
@@ -745,7 +745,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Internals-1",
+    "location": "api/#Internals-1",
     "page": "API",
     "title": "Internals",
     "category": "section",
@@ -753,7 +753,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#Index-1",
+    "location": "api/#Index-1",
     "page": "API",
     "title": "Index",
     "category": "section",
