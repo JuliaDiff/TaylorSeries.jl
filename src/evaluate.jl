@@ -21,13 +21,12 @@ function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     end
     suma
 end
+
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
-    suma = promote(a[end], dx)[1]
-    @inbounds for k in a.order-1:-1:0
-        suma = suma*dx + a[k]
-    end
-    suma
+    R = promote_type(T, S)
+    return evaluate(convert(Taylor1{R}, a), convert(R, dx))
 end
+
 evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
 """
