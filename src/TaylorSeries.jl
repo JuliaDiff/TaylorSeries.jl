@@ -20,6 +20,8 @@ module TaylorSeries
 using InteractiveUtils: subtypes
 using SparseArrays: SparseMatrixCSC
 using Markdown
+using Requires
+
 import LinearAlgebra: norm, mul!
 if VERSION ≥ v"1.0.0"
     # export gradient
@@ -65,5 +67,9 @@ include("evaluate.jl")
 include("calculus.jl")
 include("dictmutfunct.jl")
 include("printing.jl")
+
+function __init__()
+    @require IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253" include("intervals.jl")
+end
 
 end # module
