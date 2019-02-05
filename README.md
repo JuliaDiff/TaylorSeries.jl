@@ -12,6 +12,8 @@ independent variables.
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/latest)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2557004.svg)](https://zenodo.org/record/2557004)
+
 #### Authors
 - [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas,
 Universidad Nacional Autónoma de México (UNAM)
