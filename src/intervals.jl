@@ -1,32 +1,37 @@
 using .IntervalArithmetic
 
 """
-    evaluate(a, dx; [horner], [normalize], [intersect])
+    evaluate(a, dx; [horner], [normalization], [intersection])
 
 Evaluate a `Taylor1` polynomial with interval coefficients.
 
 Use the `horner` argument (`true` by default), to apply Horner's rule.
 
-Use the `normalize` argument (`false` by default) to evaluate after having
-re-scaled the inputs to the unit symmetric interval `[-1, 1]`.
+If `normalization` is different from ("none" the default), evaluate after having
+re-scaled `a` and `dx` to: (i) the interval `[-1, 1]` if `normalization="symmetric"`,
+(ii) the unit interval `[0, 1]` if `normalization="asymmetric"`.
 
-To combine the previous arguments, use the `intersect` option (`false` by default).
+To combine the previous arguments, use the `intersection` option (`false` by default).
 This method applies the four possible combinations of `horner` and `normalize`, and
 returns their intersection computed with interval arithmetic.
 In this way, the tightest possible bound with any of the available methods is obtained.
 """
 function evaluate(a::Taylor1{<:Interval{T}}, dx::Interval{T};
-                  horner=true, normalize=false, intersect=false) where {T<:Number}
-    # if intersect is true, *ignore* other options
-    if intersect
-        return evaluate(a, dx, horner=false, normalize=false) ∩
-               evaluate(a, dx, horner=false, normalize=true) ∩
-               evaluate(a, dx, horner=true, normalize=false) ∩
-               evaluate(a, dx, horner=true, normalize=true)
+                  horner=true, normalization="none", intersection=false) where {T<:Number}
+    # if intersection is true, *ignore* other options
+    if intersection
+        I1 = evaluate(a, dx, horner=true, normalization="none")
+        I2 = evaluate(a, dx, horner=false, normalization="none")
+        I3 = evaluate(a, dx, horner=true, normalization="symmetric")
+        I4 = evaluate(a, dx, horner=false, normalization="symmetric")
+        I5 = evaluate(a, dx, horner=true, normalization="asymmetric")
+        I6 = evaluate(a, dx, horner=false, normalization="asymmetric")
+        return intersect(I1, I2, I3, I4, I5, I6)
     end
 
-    if normalize
-        (a, dx) = _normalize(a, dx)
+    if normalization != "none"
+        symmetric = normalization == "symmetric" ? true : false
+        (a, dx) = _normalize(a, dx; symmetric=symmetric)
     end
 
     if horner
@@ -57,7 +62,14 @@ function _evaluate_naive(a, dx)
     return suma
 end
 
-function _normalize(a::Taylor1{<:Interval{T}}, dx::Interval{T}) where {T<:Number}
-    t = (0..0) + Taylor1(T, a.order)
-    return (a(radius(dx) + mid(dx)*t), Interval{T}(-1, 1))
+function _normalize(a::Taylor1{<:Interval{T}}, dx::Interval{T}; symmetric=false) where {T<:Number}
+    t = Taylor1(T, a.order)
+    if symmetric
+        tnew = t*diam(dx)/2 + mid(dx)
+        Inew = Interval{T}(-1, 1)
+    else
+        tnew = t*diam(dx) + dx.lo
+        Inew = Interval{T}(0, 1)
+    end
+    return (a(tnew), Inew)
 end
