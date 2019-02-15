@@ -256,7 +256,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
     R = promote_type(T,S)
     a_length = length(a)
     suma = zeros(R, a_length)
-    for homPol in 1:length(a)
+    @inbounds for homPol in 1:length(a)
         suma[homPol] = evaluate(a.coeffs[homPol], vals)
     end
 
@@ -277,7 +277,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
     ord = maximum( get_order.(vals) )
     suma = Taylor1(zeros(R, ord))
 
-    for homPol in 1:length(a)
+    @inbounds for homPol in 1:length(a)
         for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
             iszero(a_coeff) && continue
             tmp = vals[1]^(coeff_table[homPol][i][1])

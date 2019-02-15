@@ -114,76 +114,12 @@ function _evaluate(a::Taylor1, dx::Interval, ::Val{false})
 end
 
 
-# function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {N,T}
-#
-#     @assert N == get_numvars()
-#
-#     @show(dx == IntervalBox(-1..1, Val(N))) && return _evaluate(a, dx, Val(true))
-#     @show(dx == IntervalBox(0..1, Val(N))) && return _evaluate(a, dx, Val(false))
-#
-#     # Otherwise, usual method
-#     R = promote_type(T,S)
-#     a_length = length(a)
-#     suma = zeros(R, a_length)
-#     for homPol in 1:length(a)
-#             # sun = zero(R)
-#             # for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-#             #     iszero(a_coeff) && continue
-#             #     tmp = vals[1]^(coeff_table[homPol][i][1])
-#             #     for n in 2:N
-#             #         tmp *= vals[n]^(coeff_table[homPol][i][n])
-#             #     end
-#             #     sun += a_coeff * tmp
-#             # end
-#             suma[homPol] = a.coeffs[homPol](vals)
-#         end
-#
-#         return sum( sort!(suma, by=abs2) )
-#     end
-# end
-#
-# function _evaluate(a::TaylorN, dx::IntervalBox{N,T}, ::Val{true}) where {N,T}
-#     dx_even = one(dx) * IntervalBox(0..1, Val(N))
-#     if iseven(a.order)
-#         @inbounds begin
-#             suma = a[end]*dx_even
-#             for k in a.order-1:-2:1
-#                 suma = suma + a[k] * dx
-#             end
-#             for k in a.order-2:-2:0
-#                 suma = suma + a[k] * dx_even
-#             end
-#         end
-#     else
-#         @inbounds begin
-#             suma = a[end]*dx
-#             for k in a.order-2:-2:1
-#                 suma = suma + a[k] * dx
-#             end
-#             for k in a.order-1:-2:0
-#                 suma = suma + a[k] * dx_even
-#             end
-#         end
-#     end
-#     return suma
-# end
-#
-# function _evaluate(a::Taylor1, dx::Interval, ::Val{false})
-#     @inbounds begin
-#         suma = a[end]*dx
-#         for k in a.order-1:-1:0
-#             suma = suma + a[k]*dx
-#         end
-#     end
-#     return suma
-# end
-
 function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {N,T}
 
     @assert N == get_numvars()
     a_length = length(a)
     suma = constant_term(a) + Interval{T}(0, 0)
-    for homPol in 1:length(a)
+    @inbounds for homPol in 2:length(a)
         suma += evaluate(a.coeffs[homPol], dx)
     end
 
@@ -194,7 +130,7 @@ function evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}) where {T, N}
 
     @assert N == get_numvars()
     dx == IntervalBox(-1..1, Val(N)) && return _evaluate(a, dx, Val(true))
-    dx == IntervalBox(0..1, Val(N)) && return _evaluate(a, dx, Val(false))
+    dx == IntervalBox( 0..1, Val(N)) && return _evaluate(a, dx, Val(false))
 
     return evaluate(a, dx...)
 end
@@ -202,8 +138,8 @@ end
 function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} ) where {T, N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
-    suma = zero(a[1])
-    for homPol in a.coeffs
+    @inbounds suma = zero(a[1])
+    @inbounds for homPol in a.coeffs
         suma += homPol
     end
     iseven(a.order) && return suma * Interval{T}(0, 1)
@@ -213,8 +149,8 @@ end
 function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{false} ) where {T, N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
-    suma = zero(a[1])
-    for homPol in a.coeffs
+    @inbounds suma = zero(a[1])
+    @inbounds for homPol in a.coeffs
         suma += homPol
     end
     return suma * dx[1]

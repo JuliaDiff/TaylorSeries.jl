@@ -32,10 +32,20 @@ eeuler = Base.MathConstants.e
     for ind in eachindex(p5(x,-b))
         @test all((p5(x,-b)[ind]).coeffs .⊆ (((x-b)^5)[ind]).coeffs)
     end
-    @test evaluate(p4(x,y), IntervalBox(a,-b)) == p4(a, -b)
-    @test (p5(x,y))(IntervalBox(a,b)) == p5(a, b)
 
     # Tests `evaluate`
+    @test evaluate(p4(x,y), IntervalBox(a,-b)) == p4(a, -b)
+    @test (p5(x,y))(IntervalBox(a,b)) == p5(a, b)
     @test (a-b)^4 ⊆ ((x-y)^4)(a × b)
     @test (((x-y)^4)[4])(a × b) == -39 .. 81
+
+    p4n = normalize_taylor(p4(x,y), a × b, true)
+    @test p4n((-1..1)×(-1..1)) ⊆ p4(a,b)
+    p5n = normalize_taylor(p5(x,y), a × b, true)
+    @test p5n((-1..1)×(-1..1)) ⊆ p5(a,b)
+
+    p4n = normalize_taylor(p4(x,y), a × b, false)
+    @test p4n((0..1)×(0..1)) ⊆ p4(a,b)
+    p5n = normalize_taylor(p5(x,y), a × b, false)
+    @test p5n((0..1)×(0..1)) ⊆ p5(a,b)
 end
