@@ -62,14 +62,59 @@ function _evaluate_naive(a, dx)
     return suma
 end
 
-function _normalize(a::Taylor1{<:Interval{T}}, dx::Interval{T}; symmetric=false) where {T<:Number}
-    t = Taylor1(T, a.order)
-    if symmetric
-        tnew = t*diam(dx)/2 + mid(dx)
-        Inew = Interval{T}(-1, 1)
-    else
-        tnew = t*diam(dx) + dx.lo
-        Inew = Interval{T}(0, 1)
+
+"""
+    normalize_interval(a::Taylor1, I::Interval, symI::Bool=true)
+
+Normalizes `a::Taylor1` such that the interval `I` is mapped
+by an affine transformation to the interval `-1..1` (`symI=true`)
+or to `0..1` (`symI=false`).
+"""
+normalize_taylor(a::Taylor1, I::Interval{T}, symI::Bool=true) where {T} =
+    _normalize(a, I, Val(symI))
+
+"""
+    normalize_interval(a::TaylorN, I::IntervalBox, symI::Bool=true)
+
+Normalize `a::TaylorN` such that the intervals in `I::IntervalBox`
+are mapped by an affine transformation to the intervals `-1..1`
+(`symI=true`) or to `0..1` (`symI=false`).
+"""
+normalize_taylor(a::TaylorN, I::IntervalBox{N,T}, symI::Bool=true) where {N,T} =
+    _normalize(a, I, Val(symI))
+
+
+#  I -> -1..1)
+function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T}
+    order = get_order(a)
+    t = Taylor1(T, order)
+    tnew = mid(I) + t*radius(I)
+    return a(tnew)
+end
+#  I -> 0..1
+function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T}
+    order = get_order(a)
+    t = Taylor1(T, order)
+    tnew = inf(I) + t*diam(I)
+    return a(tnew)
+end
+#  I -> IntervalBox(-1..1, Val(N))
+function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{true}) where {N,T}
+    order = get_order(a)
+    x = Array{typeof(a)}(undef, N)
+    for ind in eachindex(x)
+        x[ind] = TaylorN(ind, order=order)
     end
-    return (a(tnew), Inew)
+    x = mid.(I) .+ x .* radius.(I)
+    return a(x)
+end
+#  I -> IntervalBox(0..1, Val(N))
+function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {N,T}
+    order = get_order(a)
+    x = Array{typeof(a),1}(undef, N)
+    for ind in eachindex(x)
+        x[ind] = TaylorN(ind, order=order)
+    end
+    x .= inf.(I) .+ x .* diam.(I)
+    return a(x)
 end
