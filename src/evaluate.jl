@@ -198,21 +198,28 @@ function evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
 
     @assert N == get_numvars()
 
+    return _evaluate(a, vals)
+end
+
+function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
+        {T<:Number, S<:NumberNotSeriesN, N}
+
     ct = coeff_table[a.order+1]
     R = promote_type(T,S)
     suma = zero(R)
 
     for (i,a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        tmp = vals[1]^(ct[i][1])
+        @inbounds tmp = vals[1]^(ct[i][1])
         for n in 2:N
-            tmp *= vals[n]^(ct[i][n])
+            @inbounds tmp *= vals[n]^(ct[i][n])
         end
         suma += a_coeff * tmp
     end
 
     return suma
 end
+
 
 evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
         {T<:Number, S<:NumberNotSeriesN} = evaluate(a, (vals...,))
@@ -250,16 +257,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
     a_length = length(a)
     suma = zeros(R, a_length)
     for homPol in 1:length(a)
-        sun = zero(R)
-        for (i, a_coeff) in enumerate(a.coeffs[homPol].coeffs)
-            iszero(a_coeff) && continue
-            tmp = vals[1]^(coeff_table[homPol][i][1])
-            for n in 2:N
-                tmp *= vals[n]^(coeff_table[homPol][i][n])
-            end
-            sun += a_coeff * tmp
-        end
-        suma[homPol] = sun
+        suma[homPol] = evaluate(a.coeffs[homPol], vals)
     end
 
     return sum( sort!(suma, by=abs2) )
