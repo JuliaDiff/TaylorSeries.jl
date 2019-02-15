@@ -52,7 +52,8 @@ export getcoeff, derivative, integrate, differentiate,
     set_variables, get_variables,
     get_variable_names, get_variable_symbols,
     # jacobian, hessian, jacobian!, hessian!,
-    ∇, taylor_expand, update!, constant_term
+    ∇, taylor_expand, update!, constant_term,
+    normalize_taylor
 
 include("parameters.jl")
 include("hash_tables.jl")
