@@ -138,12 +138,19 @@ end
 function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} ) where {T, N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
-    @inbounds suma = zero(a[1])
-    @inbounds for homPol in a.coeffs
-        suma += homPol
+    ct = coeff_table[a.order+1]
+    @inbounds suma = a[1]*Interval{T}(0,0)
+
+    for (i,a_coeff) in enumerate(a.coeffs)
+        iszero(a_coeff) && continue
+        @inbounds tmp = iseven(ct[i][1]) ? Interval{T}(0,1) : Interval{T}(-1,1)
+        for n in 2:N
+            @inbounds vv = iseven(ct[i][n]) ? Interval{T}(0,1) : Interval{T}(-1,1)
+            tmp *= vv
+        end
+        suma += a_coeff * tmp
     end
-    iseven(a.order) && return suma * Interval{T}(0, 1)
-    return suma * dx[1]
+    return suma
 end
 
 function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{false} ) where {T, N}
