@@ -80,11 +80,11 @@ function _evaluate(a::Taylor1, dx::Interval, ::Val{true})
     if iseven(a.order)
         @inbounds begin
             suma1 = a[end-1]
-            for k in a.order-1:-2:1
+            for k in a.order-3:-2:1
                 suma1 += a[k]
             end
             suma2 = a[end]
-            for k in a.order-2:-2:1
+            for k in a.order-2:-2:2
                 suma2 += a[k]
             end
         end
@@ -95,7 +95,7 @@ function _evaluate(a::Taylor1, dx::Interval, ::Val{true})
                 suma1 += a[k]
             end
             suma2 = a[end-1]
-            for k in a.order-1:-2:1
+            for k in a.order-3:-2:2
                 suma2 += a[k]
             end
         end
@@ -118,8 +118,8 @@ function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {N,T}
 
     @assert N == get_numvars()
     a_length = length(a)
-    suma = constant_term(a) + Interval{T}(0, 0)
-    @inbounds for homPol in 2:length(a)
+    suma = zero(constant_term(a)) + Interval{T}(0, 0)
+    @inbounds for homPol in length(a):-1:1
         suma += evaluate(a.coeffs[homPol], dx)
     end
 
@@ -141,11 +141,12 @@ function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} )
     ct = coeff_table[a.order+1]
     @inbounds suma = a[1]*Interval{T}(0,0)
 
+    Ieven = Interval{T}(0,1)
     for (i,a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        @inbounds tmp = iseven(ct[i][1]) ? Interval{T}(0,1) : Interval{T}(-1,1)
+        @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
         for n in 2:N
-            @inbounds vv = iseven(ct[i][n]) ? Interval{T}(0,1) : Interval{T}(-1,1)
+            @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
             tmp *= vv
         end
         suma += a_coeff * tmp
