@@ -210,10 +210,7 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
 
     for (i,a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        @inbounds tmp = vals[1]^(ct[i][1])
-        for n in 2:N
-            @inbounds tmp *= vals[n]^(ct[i][n])
-        end
+        tmp = prod( vals .^ ct[i] )
         suma += a_coeff * tmp
     end
 

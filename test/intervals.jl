@@ -40,14 +40,14 @@ eeuler = Base.MathConstants.e
     @test (((x-y)^4)[4])(a × b) == -39 .. 81
 
     p4n = normalize_taylor(p4(x,y), a × b, true)
-    @test p4n((-1..1)×(-1..1)) ⊇ p4(a,b)
+    @test (0..16) ⊆ p4n((-1..1)×(-1..1))
     p5n = normalize_taylor(p5(x,y), a × b, true)
-    @test p5n((-1..1)×(-1..1)) ⊇ p5(a,b)
+    @test (-32 .. 32) ⊆ p5n((-1..1)×(-1..1))
 
     p4n = normalize_taylor(p4(x,y), a × b, false)
-    @test p4n((0..1)×(0..1)) ⊆ p4(a,b)
+    @test (0..16) ⊆ p4n((0..1)×(0..1))
     p5n = normalize_taylor(p5(x,y), a × b, false)
-    @test p5n((0..1)×(0..1)) ⊆ p5(a,b)
+    @test (0..32) ⊆ p5n((0..1)×(0..1))
 
     @test evaluate(x*y^3, (-1..1)×(-1..1)) == (-1..1)
     @test evaluate(x*y^2, (-1..1)×(-1..1)) == (-1..1)

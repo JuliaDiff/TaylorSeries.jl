@@ -13,7 +13,7 @@ function evaluate(a::Taylor1, dx::Interval)
     return suma
 end
 
-function _evaluate(a::Taylor1, dx::Interval, ::Val{true})
+function _evaluate(a::Taylor1, dx::Interval{T}, ::Val{true}) where {T}
     if iseven(a.order)
         @inbounds begin
             suma1 = a[end-1]
@@ -37,7 +37,7 @@ function _evaluate(a::Taylor1, dx::Interval, ::Val{true})
             end
         end
     end
-    return a[0] + suma1*dx + suma2 * (one(dx) * (0..1))
+    return a[0] + suma1*dx + suma2 * Interval{T}(0, 1)
 end
 
 function _evaluate(a::Taylor1, dx::Interval, ::Val{false})
@@ -81,6 +81,10 @@ function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} )
     Ieven = Interval{T}(0,1)
     for (i,a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
+        if isodd(sum(ct[i]))
+            suma += sum(a_coeff) * dx[1]
+            continue
+        end
         @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
         for n in 2:N
             @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
