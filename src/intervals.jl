@@ -107,7 +107,7 @@ end
 
 
 """
-    normalize_interval(a::Taylor1, I::Interval, symI::Bool=true)
+    normalize_taylor(a::Taylor1, I::Interval, symI::Bool=true)
 
 Normalizes `a::Taylor1` such that the interval `I` is mapped
 by an affine transformation to the interval `-1..1` (`symI=true`)
@@ -117,7 +117,7 @@ normalize_taylor(a::Taylor1, I::Interval{T}, symI::Bool=true) where {T} =
     _normalize(a, I, Val(symI))
 
 """
-    normalize_interval(a::TaylorN, I::IntervalBox, symI::Bool=true)
+    normalize_taylor(a::TaylorN, I::IntervalBox, symI::Bool=true)
 
 Normalize `a::TaylorN` such that the intervals in `I::IntervalBox`
 are mapped by an affine transformation to the intervals `-1..1`
