@@ -127,13 +127,14 @@ normalize_taylor(a::TaylorN, I::IntervalBox{N,T}, symI::Bool=true) where {N,T} =
     _normalize(a, I, Val(symI))
 
 
-#  I -> -1..1)
+#  I -> -1..1
 function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T}
     order = get_order(a)
     t = Taylor1(T, order)
     tnew = mid(I) + t*radius(I)
     return a(tnew)
 end
+
 #  I -> 0..1
 function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T}
     order = get_order(a)
@@ -141,20 +142,22 @@ function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T}
     tnew = inf(I) + t*diam(I)
     return a(tnew)
 end
+
 #  I -> IntervalBox(-1..1, Val(N))
 function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{true}) where {N,T}
     order = get_order(a)
-    x = Array{typeof(a)}(undef, N)
+    x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
         x[ind] = TaylorN(ind, order=order)
     end
     x = mid.(I) .+ x .* radius.(I)
     return a(x)
 end
+
 #  I -> IntervalBox(0..1, Val(N))
 function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {N,T}
     order = get_order(a)
-    x = Array{typeof(a),1}(undef, N)
+    x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
         x[ind] = TaylorN(ind, order=order)
     end
