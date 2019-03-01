@@ -4,10 +4,11 @@ function evaluate(a::Taylor1, dx::Interval)
     dx == (-1..1) && return _evaluate(a, dx, Val(true))
     dx == (0..1) && return _evaluate(a, dx, Val(false))
     # Usual Horner rule
+    uno = one(dx)
     @inbounds begin
-        suma = a[end]*one(dx)
+        suma = a[end]*uno
         for k in a.order-1:-1:0
-            suma = suma*dx + a[k]
+            suma = suma*dx + a[k]*uno
         end
     end
     return suma
@@ -41,13 +42,14 @@ function _evaluate(a::Taylor1, dx::Interval{T}, ::Val{true}) where {T}
 end
 
 function _evaluate(a::Taylor1, dx::Interval, ::Val{false})
+    uno = one(dx)
     @inbounds begin
-        suma = a[end]
+        suma = a[end]*uno
         for k in a.order-1:-1:1
-            suma = suma + a[k]
+            suma = suma*dx + a[k]*uno
         end
     end
-    return a[0] + suma*dx
+    return a[0] + suma
 end
 
 
@@ -98,11 +100,11 @@ end
 function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{false} ) where {T, N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
-    @inbounds suma = zero(a[1])
+    @inbounds suma = zero(a[1])*dx[1]
     @inbounds for homPol in a.coeffs
-        suma += homPol
+        suma += homPol*dx[1]
     end
-    return suma * dx[1]
+    return suma
 end
 
 
@@ -148,9 +150,8 @@ function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{true}) where {N,T}
     order = get_order(a)
     x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
-        x[ind] = TaylorN(ind, order=order)
+        x[ind] = mid(I[ind]) + TaylorN(ind, order=order)*radius(I[ind])
     end
-    x = mid.(I) .+ x .* radius.(I)
     return a(x)
 end
 
@@ -159,8 +160,7 @@ function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {N,T}
     order = get_order(a)
     x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
-        x[ind] = TaylorN(ind, order=order)
+        x[ind] = inf(I[ind]) + TaylorN(ind, order=order)*diam(I[ind])
     end
-    x .= inf.(I) .+ x .* diam.(I)
     return a(x)
 end

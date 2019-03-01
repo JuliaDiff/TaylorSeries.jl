@@ -51,4 +51,16 @@ eeuler = Base.MathConstants.e
 
     @test evaluate(x*y^3, (-1..1)×(-1..1)) == (-1..1)
     @test evaluate(x*y^2, (-1..1)×(-1..1)) == (-1..1)
+    @test evaluate(x^2*y^2, (-1..1)×(-1..1)) == (0..1)
+
+    ii = 0..6
+    t = Taylor1(3)
+    f(x) = 0.1 * x^3 - 0.5*x^2 + 1
+    f1 = normalize_taylor(f(t), 0..6, true)
+    f2 = normalize_taylor(f(t), 0..6, false)
+    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f(ii)
+    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f(t)(ii)
+    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f1(-1..1)
+    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f2(0..1)
+
 end
