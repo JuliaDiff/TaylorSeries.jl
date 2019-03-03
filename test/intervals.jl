@@ -54,13 +54,27 @@ eeuler = Base.MathConstants.e
     @test evaluate(x^2*y^2, (-1..1)×(-1..1)) == (0..1)
 
     ii = 0..6
-    t = Taylor1(3)
+    t = Taylor1(4)
     f(x) = 0.1 * x^3 - 0.5*x^2 + 1
-    f1 = normalize_taylor(f(t), 0..6, true)
-    f2 = normalize_taylor(f(t), 0..6, false)
-    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f(ii)
-    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f(t)(ii)
-    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f1(-1..1)
-    @test Interval(-0.8518522648419729, 4.600000000000001) ⊆ f2(0..1)
+    ft = f(t)
+    f1 = normalize_taylor(ft, ii, true)
+    f2 = normalize_taylor(ft, ii, false)
+    @test Interval(-23/27, f(6)) ⊆ f(ii)
+    @test Interval(-23/27, f(6)) ⊆ ft(ii)
+    @test Interval(-23/27, f(6)) ⊆ f1(-1..1)
+    @test Interval(-23/27, f(6)) ⊆ f2(0..1)
+    @test f1(-1..1) ⊆ f(ii)
+    @test diam(f1(-1..1)) < diam(f2(0..1))
 
+    # An example from Makino's thesis
+    ii = 0..1
+    t = Taylor1(5)
+    g(x) = 1 - x^4 + x^5
+    gt = g(t)
+    g1 = normalize_taylor(gt, 0..1, true)
+    @test Interval(g(4/5),1) ⊆ g(ii)
+    @test Interval(g(4/5),1) ⊆ gt(ii)
+    @test Interval(g(4/5),1) ⊆ g1(-1..1)
+    @test g1(-1..1) ⊂ g(ii)
+    @test diam(g1(-1..1)) < diam(gt(ii))
 end
