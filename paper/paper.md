@@ -63,7 +63,7 @@ We present three examples to show the use of `TaylorSeries.jl`. Other
 examples as well as a detailed user guide can be found in the
 [documentation](http://www.juliadiff.org/TaylorSeries.jl/stable/).
 
-As a first example we describe how to generate the [Hermite polynomials][@HermitePols]
+As a first example we describe how to generate the [Hermite polynomials][@HermitePols_wikipedia]
 ("physicists" version), up to a maximum order. We begin exploiting directly
 the recurrence relation satisfied by the polynomials.
 
