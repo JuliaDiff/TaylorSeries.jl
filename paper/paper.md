@@ -104,10 +104,9 @@ In this case, the coefficients will be larger than `2^63-1`, so the modular
 be generated with `generate_hermite_polynomials(BigInt, 100)` to ensure
 using extended integer precision.
 
-As a second example, we shall describe a *numeric* form of obtaining the
-Hermite polynomials from the generating function. The n-th Hermite polynomial
-corresponds to the n-th derivative of the Taylor expansion with respect to `t`
-of the function `exp(2t*x-t^2)`.
+As a second example, we describe a *numeric* way of obtaining the
+Hermite polynomials from its generating function. The n-th Hermite polynomial
+corresponds to the n-th derivative of the function `exp(2t*x-t^2)`.
 
 ```julia
 julia> 𝒢(x,t) = exp(2*t*x-t^2); # generating function; 𝒢 is typed as \scrG<TAB>
@@ -118,7 +117,7 @@ julia> x = xn[1];
 
 julia> t = Taylor1([zero(x),one(x)], 10); # Taylor1{TaylorN{Float64}}
 
-julia> gf = 𝒢(0*t+x, t+0*x); # Taylor expansion of 𝒢
+julia> gf = 𝒢(x, t); # Taylor1 expansion of 𝒢
 
 julia> Hnn(n::Int) = derivative(n, gf); # n-th derivative of `gf`
 
@@ -127,9 +126,8 @@ julia> Hnn(6)
 ```
 
 This example shows that the calculations are performed numerically and not
-simbolically, manifested by the fact that the last coefficient is not an
-integer. This example is aimed to describe the possibility offered
-by `TaylorSeries.jl` as a polynomial manipulator.
+symbolically, which is manifested by the fact that the last coefficient of `Hnn(6)` is not identical to an integer. The point is that it is possible
+to use `TaylorSeries.jl` as a polynomial manipulator.
 
 --
 ## Acknowledgements
