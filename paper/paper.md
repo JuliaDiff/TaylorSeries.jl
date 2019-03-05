@@ -63,71 +63,75 @@ We present three examples to show the use of `TaylorSeries.jl`. Other
 examples as well as a detailed user guide can be found in the
 [documentation](http://www.juliadiff.org/TaylorSeries.jl/stable/).
 
+
 As a first example we describe how to generate the [Hermite polynomials][@HermitePols_wikipedia]
-("physicists" version), up to a maximum order. We begin exploiting directly
-the recurrence relation satisfied by the polynomials.
+("physicists" version), up to a maximum order. We begin by directly exploiting the recurrence relation satisfied by the polynomials.
 
 ```julia
 julia> using TaylorSeries
 
 julia> displayBigO(false);
 
-julia> function generate_hermite_polynomials(::Type{T}, nmax::Int) where {T<:Integer}
-  Hn = Vector{Taylor1{T}}(undef, nmax+1)
-  Hn[1] = one(T)+Taylor1(T, 0) # order 0
-  Hn[2] = 2*Taylor1(T, 1)      # order 1
-  for n in 2:nmax
-      x = Taylor1(Int128, n) # Taylor variable of n-th order
-      # Recursion formula for degree n
-      Hn[n+1] = 2*x*Hn[n] - 2*(n-1)*Hn[n-1]
-  end
-  return Hn
-end;
+julia> function hermite_polynomials(::Type{T}, nmax::Int) where {T <: Integer}
 
-julia> generate_hermite_polynomials(n) = generate_hermite_polynomials(Int, n);
+         x = Taylor1(T, nmax)    # Taylor variable
+         H = fill(x, nmax + 1)   # vector of Taylor series to be overwritten
 
-julia> Hn = generate_hermite_polynomials(10);
+         H[1] = 1   # order 0
+         H[2] = 2x  # order 1
 
-julia> function HermitePol(n::Int)
-    @assert 0 ≤ n ≤ length(Hn) "Not enough Hermite polynomials generated"
-    return Hn[n+1]
-end;
+         for n in 2:nmax
+             # recursion relation for order n:
+             H[n+1] = 2x * H[n] - 2(n-1) * H[n-1]
+         end
 
-julia> HermitePol(6)
+         return H
+     end;
+
+julia> hermite_polynomials(n) = hermite_polynomials(Int, n);
+
+julia> H = hermite_polynomials(10);
+
+julia> function hermite_polynomial(n::Int)
+    @assert 0 ≤ n ≤ length(H) "Not enough Hermite polynomials generated"
+    return H[n+1];
+end
+
+julia> hermite_polynomial(6)  # degree 6
 - 120 + 720 t² - 480 t⁴ + 64 t⁶
 
 ```
 
-The example above can be slightly modified to compute the 100th Hermite polynomial.
+The example above can be slightly modified to compute, for example, the 100th Hermite polynomial.
 In this case, the coefficients will be larger than `2^63-1`, so the modular
 `Int64` arithmetic will not suffice. In this case, the polynomials should
-be generated with `generate_hermite_polynomials(BigInt, 100)` to ensure
-using extended integer precision.
+be generated with `hermite_polynomials(BigInt, 100)` to ensure
+using arbitrary integer precision.
 
-As a second example, we describe a *numeric* way of obtaining the
-Hermite polynomials from its generating function. The n-th Hermite polynomial
-corresponds to the n-th derivative of the function `exp(2t*x-t^2)`.
+As a second example, we describe a numerical way of obtaining the
+Hermite polynomials from their generating function. The $n$th Hermite polynomial
+corresponds to the $n$th derivative of the function $\exp(2t \, x - t^2)$.
 
 ```julia
-julia> 𝒢(x,t) = exp(2*t*x-t^2); # generating function; 𝒢 is typed as \scrG<TAB>
+julia> 𝒢(x,t) = exp(2t * x - t^2); # generating function; 𝒢 is typed as \scrG<TAB>
 
 julia> xn = set_variables("x", numvars=1, order=10);
 
 julia> x = xn[1];
 
-julia> t = Taylor1([zero(x),one(x)], 10); # Taylor1{TaylorN{Float64}}
+julia> t = Taylor1([zero(x), one(x)], 10); # Taylor1{TaylorN{Float64}}
 
 julia> gf = 𝒢(x, t); # Taylor1 expansion of 𝒢
 
-julia> Hnn(n::Int) = derivative(n, gf); # n-th derivative of `gf`
+julia> HH(n::Int) = derivative(n, gf); # n-th derivative of `gf`
 
-julia> Hnn(6)
+julia> HH(6)
 - 120.0 + 720.0 x₁² - 480.0 x₁⁴ + 63.99999999999999 x₁⁶
 ```
 
 This example shows that the calculations are performed numerically and not
-symbolically, which is manifested by the fact that the last coefficient of `Hnn(6)` is not identical to an integer. The point is that it is possible
-to use `TaylorSeries.jl` as a polynomial manipulator.
+symbolically, using `TaylorSeries.jl` as a polynomial manipulator; this
+ is manifested by the fact that the last coefficient of `HH(6)` is not identical to an integer.
 
 --
 ## Acknowledgements
@@ -136,6 +140,6 @@ We are thankful for the additions of
 [all contributors](https://github.com/JuliaDiff/TaylorSeries.jl/graphs/contributors)
 to this project. We acknowledge financial support from PAPIME grants
 PE-105911 and PE-107114, and PAPIIT grants IG-101113, IG-100616
-and IN-117117. LB acknowledges support through a Cátedra Marcos Moshinsky (2013).
+and IN-117117. LB and DPS both acknowledge support through a Cátedra Marcos Moshinsky (2013 and 2018, respectively).
 
 # References
