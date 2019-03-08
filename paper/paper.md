@@ -103,7 +103,7 @@ julia> hermite_polynomial(6)  # degree 6
 ```
 
 The example above can be slightly modified to compute, for example, the 100th Hermite polynomial.
-In this case, the coefficients will be larger than `2^62-1`, so the modular
+In this case, the coefficients will be larger than `2^63-1`, so the modular
 behavior under overflow of the standard `Int64` type will not suffice. Rather, the polynomials should
 be generated with `hermite_polynomials(BigInt, 100)` to ensure
 the use of arbitrary length integers.
