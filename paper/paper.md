@@ -25,7 +25,7 @@ bibliography: paper.bib
 The purpose of `TaylorSeries.jl` is to provide a framework to exploit
 Taylor polynomials in one and more variables
 in the [Julia programming language](https://julialang.org) [@julia]. In
-certain cases, it provides a very primitive CAS (computer algebra system),
+certain cases, it provides a primitive CAS (computer algebra system),
 which works numerically and not symbolically.
 The package allows to manipulate polynomials of a specified maximum
 degree, including power and composition, as well as series expansions
@@ -36,23 +36,23 @@ integration are also implemented.
 
 Two basic immutable types are defined, `Taylor1` and `TaylorN`,
 which represent the series expansions in one or several variables,
-respectively. These structures are essentially vectors of coefficients
-ordered increasingly by its degree. In the case of `TaylorN`, the
+respectively. These are essentially vectors of coefficients,
+ordered by increasing degree. In the case of `TaylorN`, the
 coefficients are `HomogeneousPolynomials`, which in turn are vectors
-of coefficients representing all monomials of given number of variables
+of coefficients representing all monomials with a given number of variables
 and order (total degree), in some lexicographical order.
-The package allows to work with different `Number` formats
-for the coefficients of the series, including complex numbers,
-arbitrary precision `BigFloat`s [@MPFR],
-`Interval`s [@ValidatedNumerics.jl], `ArbFloat`s [@ArbFloats.jl],
-as well as `Taylor1` and `TaylorN` objects.
 
-`TaylorSeries.jl` is a core component of
+Julia's parametrized type system allows the construction of Taylor series whose coefficient type is any subtype of the `Number` abstract type. Use cases include complex numbers,
+arbitrary precision `BigFloat`s [@MPFR],
+`Interval`s [@IntervalArithmetic.jl], `ArbFloat`s [@ArbFloats.jl],
+as well as `Taylor1` and `TaylorN` objects themselves.
+
+`TaylorSeries.jl` is the main component of
 [`TaylorIntegration.jl`](https://github.com/PerezHz/TaylorIntegration.jl)
 [@TaylorIntegration.jl], whose aim is to perform accurate integration
 of ODEs using the Taylor method, including jet transport techniques,
 where a small region around an initial condition is integrated.
-It is also an important component of
+It is also a key component of
 [`TaylorModels.jl`](https://github.com/JuliaIntervals/TaylorModels.jl)
 [@TaylorModels.jl], whose aim is to construct rigorous polynomial
 approximations of functions.
@@ -60,12 +60,12 @@ approximations of functions.
 # Examples
 
 We present three examples to show the use of `TaylorSeries.jl`. Other
-examples as well as a detailed user guide can be found in the
-[documentation](http://www.juliadiff.org/TaylorSeries.jl/stable/).
+examples, as well as a detailed user guide, can be found in the
+[documentation](http://www.juliadiff.org/TaylorSeries.jl/stable).
 
 
 As a first example we describe how to generate the [Hermite polynomials][@HermitePols_wikipedia]
-("physicists" version), up to a maximum order. We begin by directly exploiting the recurrence relation satisfied by the polynomials.
+("physicist's" version) up to a given maximum order. Firstly we directly exploit the recurrence relation satisfied by the polynomials.
 
 ```julia
 julia> using TaylorSeries
@@ -103,13 +103,13 @@ julia> hermite_polynomial(6)  # degree 6
 ```
 
 The example above can be slightly modified to compute, for example, the 100th Hermite polynomial.
-In this case, the coefficients will be larger than `2^63-1`, so the modular
-`Int64` arithmetic will not suffice. In this case, the polynomials should
+In this case, the coefficients will be larger than `2^62-1`, so the modular
+behavior under overflow of the standard `Int64` type will not suffice. Rather, the polynomials should
 be generated with `hermite_polynomials(BigInt, 100)` to ensure
-using arbitrary integer precision.
+the use of arbitrary length integers.
 
 As a second example, we describe a numerical way of obtaining the
-Hermite polynomials from their generating function. The $n$th Hermite polynomial
+Hermite polynomials from their generating function: the $n$th Hermite polynomial
 corresponds to the $n$th derivative of the function $\exp(2t \, x - t^2)$.
 
 ```julia
@@ -133,6 +133,10 @@ This example shows that the calculations are performed numerically and not
 symbolically, using `TaylorSeries.jl` as a polynomial manipulator; this
  is manifested by the fact that the last coefficient of `HH(6)` is not identical to an integer.
 
+ ## Taylor method for ODEs
+
+
+
 --
 ## Acknowledgements
 
@@ -140,6 +144,6 @@ We are thankful for the additions of
 [all contributors](https://github.com/JuliaDiff/TaylorSeries.jl/graphs/contributors)
 to this project. We acknowledge financial support from PAPIME grants
 PE-105911 and PE-107114, and PAPIIT grants IG-101113, IG-100616
-and IN-117117. LB and DPS both acknowledge support through a Cátedra Marcos Moshinsky (2013 and 2018, respectively).
+and IN-117117. LB and DPS acknowledge support via the Cátedra Marcos Moshinsky (2013 and 2018, respectively).
 
 # References
