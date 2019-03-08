@@ -131,6 +131,10 @@ using LinearAlgebra, SparseArrays
     @test (1+y)/one(t) == 1 + y
     @test typeof(y+t) == TaylorN{Taylor1{Float64}}
 
+    x32 = Float32.(x)
+    @test typeof(x32) == TaylorN{Taylor1{Float32}}
+    @test eltype(x32) == Taylor1{Float32}
+
     # See #92 and #94
     δx, δy = set_variables("δx δy")
     xx = 1+Taylor1(δx,5)
@@ -150,6 +154,10 @@ using LinearAlgebra, SparseArrays
     @test xx*δx + Taylor1(typeof(δx),5) == δx + δx^2 + Taylor1(typeof(δx),5)
     @test xx/(1+δx) == one(xx)
     @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
+
+    xx32 = Float32.(xx)
+    @test typeof(xx32) == Taylor1{TaylorN{Float32}}
+    @test eltype(xx32) == TaylorN{Float32}
 
     #testing evaluate and function-like behavior of Taylor1, TaylorN for mixtures:
     t = Taylor1(25)

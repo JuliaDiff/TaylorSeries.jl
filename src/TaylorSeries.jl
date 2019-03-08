@@ -43,6 +43,9 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     power_by_squaring,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 
+import .Broadcast: broadcasted
+
+
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
 export getcoeff, derivative, integrate, differentiate,

@@ -190,9 +190,9 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-# Base.iterate(a::HomogeneousPolynomial, state=1) = state > a.order, nothing : (a.coeffs[state+1], state+1)
+iterate(a::HomogeneousPolynomial, state=1) = state > a.order, nothing : (a.coeffs[state+1], state+1)
 # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
-# Base.eachindex(a::HomogeneousPolynomial) = firstindex(a):lastindex(a)
+eachindex(a::HomogeneousPolynomial) = firstindex(a):lastindex(a)
 eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
 length(a::HomogeneousPolynomial) = size_table[a.order+1]#length(a.coeffs)
 size(a::HomogeneousPolynomial) = (length(a),)
@@ -261,3 +261,35 @@ linear_polynomial(a::TaylorN) = TaylorN([a[1]])
 linear_polynomial(a::Vector{T}) where {T<:Number} = a[1]
 
 linear_polynomial(a::Number) = a
+
+
+
+
+function broadcasted(f, a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    R = typeof(f.(constant_term(a)))
+    v = Array{R,1}(undef, a.order+1)
+    @inbounds for ind in eachindex(v)
+        v[ind] = f.(a.coeffs[ind])
+    end
+    return Taylor1(v, a.order)
+end
+
+
+function broadcasted(f, a::HomogeneousPolynomial)
+    R = typeof(f.(a[1]))
+    cc = Array{R,1}(undef, length(a))
+    @inbounds for ind in eachindex(cc)
+        cc[ind] = f.(a.coeffs[ind])
+    end
+    return HomogeneousPolynomial(cc, a.order)
+end
+
+
+function broadcasted(f, a::TaylorN)
+    R = typeof(f.(constant_term(a)))
+    hh = Array{HomogeneousPolynomial{R},1}(undef, a.order+1)
+    @inbounds for ord in eachindex(hh)
+        hh[ord] = f.(a.coeffs[ord])
+    end
+    return TaylorN(hh)
+end

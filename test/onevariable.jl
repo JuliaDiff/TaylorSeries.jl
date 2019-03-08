@@ -505,6 +505,16 @@ eeuler = Base.MathConstants.e
     @test norm(binv*b - I_t1_5, Inf) ≤ 1e-12
 end
 
+@testset "Test broadcasting for Taylor1" begin
+    t64 = Taylor1(3)
+    t32 = Float32.(t64)
+    @test typeof(t32) == Taylor1{Float32}
+    @test eltype(t32) == Float32
+    @test t32 == Taylor1(Float32[0.0,1.0,0.0,0.0])
+    @test rationalize.(exp(t64)) == Taylor1([1//1, 1//1, 1//2, 1//6])
+    @test exp.(t64) == Taylor1(exp.([0, 1, 0, 0]))
+end
+
 @testset "Matrix multiplication for Taylor1" begin
     order = 30
     n1 = 100

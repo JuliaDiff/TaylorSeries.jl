@@ -653,6 +653,23 @@ eeuler = Base.MathConstants.e
     @test yT[0] == xT[0]*(180/pi)
 end
 
+@testset "Test broadcasting on HomogeneousPolynomial and TaylorN" begin
+    set_variables("x", order=6, numvars=2)
+    hh = HomogeneousPolynomial(randn(3))
+    hh32 = Float32.(hh)
+    @test typeof(hh32) == HomogeneousPolynomial{Float32}
+    @test eltype(hh32) == Float32
+    @test hh32[1] == Float32(hh[1])
+
+    xx = TaylorN(1, order=3)
+    ee = exp(-xx)
+    ee32 = Float32.(ee)
+    @test typeof(ee32) == TaylorN{Float32}
+    @test eltype(ee32) == Float32
+    @test (exp.(xx))[1][1] == exp(1.0)
+    @test (exp.(xx))[2] == HomogeneousPolynomial([1.0, 1.0, 1.0], 2)
+end
+
 @testset "Integrate for several variables" begin
 
     t, x, y = set_variables("t x y")
@@ -664,4 +681,5 @@ end
     @test integrate(x, 2) == 0.5*x^2
     @test integrate(y, 2) == x * y
 
+    set_variables("x", order=6, numvars=2)
 end
