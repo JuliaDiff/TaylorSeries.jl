@@ -101,8 +101,7 @@ end
 julia> hermite_polynomial(6)  # degree 6
 ```
 
-![Output of `hermite_polynomial(6)` constructed directly from the recursion relation.](Fig1.pdf)
-
+![Output of `hermite_polynomial(6)` constructed directly from the recursion relation.](Fig1.pdf){width=130%}  
 The example above can be slightly modified to compute, for example, the 100th Hermite polynomial.
 In this case, the coefficients will be larger than $2^{63}-1$, so the modular
 behavior under overflow of the standard `Int64` type will not suffice. Rather, the polynomials should
@@ -130,8 +129,7 @@ julia> HH(n::Int) = derivative(n, gf)  # n-th derivative of `gf`
 julia> HH(6)
 ```
 
-![Output of `HH(6)` constructed from the generating function](Fig2.pdf){width=120%}
-
+![Output of `HH(6)` constructed from the generating function.](Fig2.pdf){width=130%}  
 This example shows that the calculations are performed numerically and not
 symbolically, using `TaylorSeries.jl` as a polynomial manipulator; this
  is manifested by the fact that the last coefficient of `HH(6)` is not
