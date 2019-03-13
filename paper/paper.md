@@ -180,7 +180,6 @@ from the same expansion is $4.53 \times 10^{-14}$.
 This indicates that a proper treatment should try to estimate what size step
 should be taken as a function of the behavior of the solution.
 
---
 ## Acknowledgements
 
 We are thankful for the additions of
