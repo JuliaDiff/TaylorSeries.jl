@@ -66,6 +66,7 @@ examples, as well as a detailed user guide, can be found in the
 ## Hermite polynomials
 As a first example we describe how to generate the [Hermite polynomials][@HermitePols_wikipedia]
 ("physicist's" version) up to a given maximum order. Firstly we directly exploit the recurrence relation satisfied by the polynomials.
+The output of the last command is displayed in Figure 1.
 
 ```julia
 julia> using TaylorSeries
@@ -100,7 +101,7 @@ end
 julia> hermite_polynomial(6)  # degree 6
 ```
 
-![Output of `hermite_polynomial(6)` constructed directly from the recursion relation](Fig1.pdf){ width=70% }
+![Output of `hermite_polynomial(6)` constructed directly from the recursion relation.](Fig1.pdf)
 
 The example above can be slightly modified to compute, for example, the 100th Hermite polynomial.
 In this case, the coefficients will be larger than $2^{63}-1$, so the modular
@@ -129,7 +130,7 @@ julia> HH(n::Int) = derivative(n, gf)  # n-th derivative of `gf`
 julia> HH(6)
 ```
 
-![Output of `HH(6)` constructed from the generating function](Fig2.pdf){ width=70% }
+![Output of `HH(6)` constructed from the generating function](Fig2.pdf){width=120%}
 
 This example shows that the calculations are performed numerically and not
 symbolically, using `TaylorSeries.jl` as a polynomial manipulator; this
