@@ -98,9 +98,9 @@ julia> function hermite_polynomial(n::Int)
 end
 
 julia> hermite_polynomial(6)  # degree 6
-- 120 + 720 t² - 480 t⁴ + 64 t⁶
-
 ```
+
+![Output of `hermite_polynomial(6)` constructed directly from the recursion relation](Fig1.pdf){ width=70% }
 
 The example above can be slightly modified to compute, for example, the 100th Hermite polynomial.
 In this case, the coefficients will be larger than $2^{63}-1$, so the modular
@@ -127,8 +127,9 @@ julia> gf = 𝒢(x, t)  # Taylor1 expansion of 𝒢
 julia> HH(n::Int) = derivative(n, gf)  # n-th derivative of `gf`
 
 julia> HH(6)
-- 120.0 + 720.0 x₁² - 480.0 x₁⁴ + 63.99999999999999 x₁⁶
 ```
+
+![Output of `HH(6)` constructed from the generating function](Fig2.pdf){ width=70% }
 
 This example shows that the calculations are performed numerically and not
 symbolically, using `TaylorSeries.jl` as a polynomial manipulator; this
