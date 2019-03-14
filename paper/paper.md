@@ -72,7 +72,7 @@ examples, as well as a detailed user guide, can be found in the
 As a first example we describe how to generate the [Hermite polynomials][@HermitePols_wikipedia]
 ("physicist's" version) up to a given maximum order. Firstly we directly exploit the recurrence relation satisfied by the polynomials.
 
-![Code to generate Hermite polynomials directly from the recursion relation; the last line displays the 6th Hermite polynomial.](Fig1.pdf){width=130%}  
+![Code to generate Hermite polynomials directly from the recursion relation; the last line displays the 6th Hermite polynomial.](Fig1.pdf){width=110%}  
 The example above can be slightly modified to compute, for example, the 100th Hermite polynomial.
 In this case, the coefficients will be larger than $2^{63}-1$, so the modular
 behavior, under overflow of the standard `Int64` type, will not suffice. Rather, the polynomials should
@@ -84,7 +84,7 @@ As a second example, we describe a numerical way of obtaining the
 Hermite polynomials from their generating function: the $n$-th Hermite polynomial
 corresponds to the $n$-th derivative of the function $\exp(2t \, x - t^2)$.
 
-![Code to generate Hermite polynomials from the generating function $\exp(2t \, x - t^2)$; the last line displaays the result for the 6th Hermite polynomial.](Fig2.pdf){width=130%}  
+![Code to generate Hermite polynomials from the generating function $\exp(2t \, x - t^2)$; the last line displaays the result for the 6th Hermite polynomial.](Fig2.pdf){width=110%}  
 This example shows that the calculations are performed numerically and not
 symbolically, using `TaylorSeries.jl` as a polynomial manipulator; this
 is manifested by the fact that the last coefficient of `HH(6)` is not
@@ -99,7 +99,7 @@ We consider the initial-value problem $\dot{x} = x$,
 with initial condition $x(0) = 1$. One step of the integration corresponds
 to constructing the Taylor series of the solution $x(t)$ in powers of $t$:
 
-![Code to implement Picard iteration to integrate the initial value problem $\dot{x} = x$, $x(0) = 1$, using a 20th order local Taylor expansion.](Fig3.pdf){width=130%}  
+![Code to implement Picard iteration to integrate the initial value problem $\dot{x} = x$, $x(0) = 1$, using a 20th order local Taylor expansion.](Fig3.pdf){width=110%}  
 Thus this Taylor expansion of order 20 around $t_0=0$
 suffices to obtain the exact solution at $t=1$, while the error at time $t=2$
 from the same expansion is $4.53 \times 10^{-14}$.
