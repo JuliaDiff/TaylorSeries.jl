@@ -27,7 +27,7 @@ in the [Julia programming language](https://julialang.org) [@julia].
 It can be thought of as providing a primitive CAS (computer algebra system),
 which works numerically and not symbolically.
 The package allows the user to define dense polynomials $p(x)$ of one variable and $p(\mathbf{x})$ of several variables with a specified maximum degree, and perform operations on them, including powers and composition, as well as series expansions
-for elementary functions of polynomials, for example $\exp[p(x)]`,
+for elementary functions of polynomials, for example $\exp[p(x)]$,
 where techniques of automatic differentiation are used
 [@Tucker:ValidatedNumerics; @HaroEtAl:ParameterizMeth]. Differentiation and
 integration are also implemented.
