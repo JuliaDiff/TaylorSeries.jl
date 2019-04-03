@@ -65,7 +65,8 @@ examples, as well as a detailed user guide, can be found in the
 [documentation](http://www.juliadiff.org/TaylorSeries.jl/stable).
 
 ## Hermite polynomials
-As a first example we describe how to generate the [Hermite polynomials][@HermitePols_wikipedia]
+As a first example we describe how to generate the
+[Hermite polynomials](https://en.wikipedia.org/wiki/Hermite_polynomials)
 ("physicist's" version) up to a given maximum order. Firstly we directly exploit the recurrence relation satisfied by the polynomials.
 
 ![Code to generate Hermite polynomials directly from the recursion relation; the last line displays the 6th Hermite polynomial.](Fig1.pdf){width=110%}  
