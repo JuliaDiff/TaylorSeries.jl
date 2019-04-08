@@ -3,14 +3,15 @@
 A [Julia](http://julialang.org) package for Taylor polynomial expansions in one or more
 independent variables.
 
-[![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.6.svg)](http://pkg.julialang.org/?pkg=TaylorSeries)
-[![TaylorSeries](http://pkg.julialang.org/badges/TaylorSeries_0.7.svg)](http://pkg.julialang.org/?pkg=TaylorSeries)
 [![Build Status](https://api.travis-ci.org/JuliaDiff/TaylorSeries.jl.svg)](https://travis-ci.org/JuliaDiff/TaylorSeries.jl)
-
 [![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/latest)
+
+[![DOI](http://joss.theoj.org/papers/10.21105/joss.01043/status.svg)](https://doi.org/10.21105/joss.01043)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2601941.svg)](https://zenodo.org/record/2601941)
+
 
 #### Authors
 - [Luis Benet](http://www.cicc.unam.mx/~benet/), Instituto de Ciencias Físicas,
