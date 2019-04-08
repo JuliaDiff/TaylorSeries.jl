@@ -9,7 +9,7 @@ independent variables.
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/latest)
 
-<!-- [![DOI]()][()] -->
+[![DOI](http://joss.theoj.org/papers/10.21105/joss.01043/status.svg)](https://doi.org/10.21105/joss.01043)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2601941.svg)](https://zenodo.org/record/2601941)
 
 
