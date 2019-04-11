@@ -236,7 +236,8 @@ end
     constant_term(a)
 
 Return the constant value (zero order coefficient) for `Taylor1`
-and `TaylorN`.
+and `TaylorN`. The fallback behavior is to return `a` itself if
+`a::Number`, or `a[1]` when `a::Vector`.
 """
 constant_term(a::Taylor1) = a[0]
 
@@ -245,3 +246,18 @@ constant_term(a::TaylorN) = a[0][1]
 constant_term(a::Vector{T}) where {T<:Number}= a[1]
 
 constant_term(a::Number) = a
+
+"""
+    linear_polynomial(a)
+
+Return the linear part of `a` as a polynomial (`Taylor1`
+or `TaylorN`). The fallback behavior is to return `a` itself if
+`a::Number`, or `a[1]` when `a::Vector`.
+"""
+linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]])
+
+linear_polynomial(a::TaylorN) = TaylorN([a[1]])
+
+linear_polynomial(a::Vector{T}) where {T<:Number} = a[1]
+
+linear_polynomial(a::Number) = a

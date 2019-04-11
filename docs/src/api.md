@@ -64,6 +64,7 @@ make_inverse_dict
 resize_coeffs1!
 resize_coeffsHP!
 constant_term
+linear_polynomial
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)
 mul!(::Vector{Taylor1{T}}, ::Union{Matrix{T},SparseMatrixCSC{T}},::Vector{Taylor1{T}}) where {T<:Number}
