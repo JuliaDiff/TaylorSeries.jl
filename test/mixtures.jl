@@ -23,6 +23,11 @@ using LinearAlgebra, SparseArrays
     @test string(tN + 3Taylor1(Int, 2)) == " ( 4.0 + 𝒪(‖x‖¹)) t + 𝒪(t⁴)"
     @test string(xH * tN) == " ( 1.0 x₁ + 𝒪(‖x‖²)) t + 𝒪(t⁴)"
 
+    @test constant_term(xH) == xH
+    @test constant_term(tN) == zero(TaylorN([xH]))
+    @test linear_polynomial(xH) == xH
+    @test linear_polynomial(tN) == tN
+
     tN = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 3)
     @test typeof(tN) == Taylor1{TaylorN{Float64}}
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖⁷) + 𝒪(t⁴)"

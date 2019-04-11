@@ -98,6 +98,14 @@ eeuler = Base.MathConstants.e
     @test TaylorSeries.fixorder(xH,yH) == (xH,yH)
     @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
 
+    @test constant_term(xT) == 0
+    @test constant_term(uT) == 1.0
+    @test constant_term(xT) == constant_term(yT)
+    @test constant_term(xH) == xH
+    @test linear_polynomial(xT) == xT
+    @test linear_polynomial(xT+yT) == xT+yT
+    @test linear_polynomial(uT) == zero(yT)
+
     @test get_order(zeroT) == 1
     @test xT[1][1] == 1
     @test yH[2] == 1
