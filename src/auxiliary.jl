@@ -178,27 +178,29 @@ setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
 ## eltype, length, get_order ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        iterate(a::$T, state=0) = state > a.order ? nothing : (a.coeffs[state+1], state+1)
-        eachindex(a::$T) = firstindex(a):lastindex(a)
+        @inline iterate(a::$T, state=0) = state > a.order ? nothing : (a.coeffs[state+1], state+1)
+        @inline eachindex(a::$T) = firstindex(a):lastindex(a)
         # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
-        eltype(::$T{S}) where {S<:Number} = S
-        length(a::$T) = length(a.coeffs)
-        size(a::$T) = (length(a),)
-        firstindex(a::$T) = 0
-        lastindex(a::$T) = a.order
-        get_order(a::$T) = a.order
+        @inline eltype(::$T{S}) where {S<:Number} = S
+        @inline length(a::$T) = length(a.coeffs)
+        @inline size(a::$T) = (length(a),)
+        @inline firstindex(a::$T) = 0
+        @inline lastindex(a::$T) = a.order
+        @inline get_order(a::$T) = a.order
+        @inline axes(a::$T) = axes(a.coeffs)
     end
 end
 
 # Base.iterate(a::HomogeneousPolynomial, state=1) = state > a.order, nothing : (a.coeffs[state+1], state+1)
 # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
 # Base.eachindex(a::HomogeneousPolynomial) = firstindex(a):lastindex(a)
-eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
-length(a::HomogeneousPolynomial) = size_table[a.order+1]#length(a.coeffs)
-size(a::HomogeneousPolynomial) = (length(a),)
-firstindex(a::HomogeneousPolynomial) = 1
-lastindex(a::HomogeneousPolynomial) = length(a)
-get_order(a::HomogeneousPolynomial) = a.order
+@inline eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
+@inline length(a::HomogeneousPolynomial) = size_table[a.order+1]#length(a.coeffs)
+@inline size(a::HomogeneousPolynomial) = (length(a),)
+@inline firstindex(a::HomogeneousPolynomial) = 1
+@inline lastindex(a::HomogeneousPolynomial) = length(a)
+@inline get_order(a::HomogeneousPolynomial) = a.order
+# @inline axes(a::HomogeneousPolynomial) = axes(a.coeffs)
 
 
 ## fixorder ##
