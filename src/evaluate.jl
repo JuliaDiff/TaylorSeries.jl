@@ -126,7 +126,7 @@ function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:Number}
 end
 
 evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
-    evaluate.(p, x)
+    evaluate.([p], x)
 
 #function-like behavior for Taylor1
 (p::Taylor1)(x) = evaluate(p, x)

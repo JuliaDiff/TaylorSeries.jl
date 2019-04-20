@@ -22,7 +22,7 @@ find_taylor(a::Taylor1, rest) = a
 find_taylor(::Any, rest) = find_taylor(rest)
 
 # Extend Base.similar
-@eval function Base.similar(bc::Broadcasted{Style{Taylor1}}, ::Type{T}) where {T}
+function Base.similar(bc::Broadcasted{Style{Taylor1}}, ::Type{T}) where {T}
     # Proper promotion
     R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
     # Scan the inputs for the Taylor1:
