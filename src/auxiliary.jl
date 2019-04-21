@@ -19,7 +19,7 @@ function resize_coeffs1!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     resize!(coeffs, order+1)
     if order > lencoef-1
         z = zero(coeffs[1])
-        @__dot__ coeffs[lencoef+1:order+1] = z
+        coeffs[lencoef+1:order+1] .= z
     end
     return nothing
 end
@@ -38,7 +38,7 @@ function resize_coeffsHP!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     num_coeffs == lencoef && return nothing
     resize!(coeffs, num_coeffs)
     z = zero(coeffs[1])
-    @__dot__ coeffs[lencoef+1:num_coeffs] = z
+    coeffs[lencoef+1:num_coeffs] .= z
     return nothing
 end
 
@@ -200,7 +200,7 @@ end
 @inline firstindex(a::HomogeneousPolynomial) = 1
 @inline lastindex(a::HomogeneousPolynomial) = length(a)
 @inline get_order(a::HomogeneousPolynomial) = a.order
-# @inline axes(a::HomogeneousPolynomial) = axes(a.coeffs)
+@inline axes(a::HomogeneousPolynomial) = axes(a.coeffs)
 
 
 ## fixorder ##
@@ -233,6 +233,18 @@ function Base.findlast(a::Taylor1{T}) where {T<:Number}
     isa(last, Nothing) && return -1
     return last-1
 end
+
+
+## similar ##
+similar(a::Taylor1) = Taylor1(similar(a.coeffs), a.order)
+function similar(a::Array{Taylor1{T},1}) where {T}
+    ret = Vector{Taylor1{T}}(undef, size(a,1))
+    a1 = a[1].coeffs
+    fill!(ret, similar(a1))
+    return ret
+end
+
+
 
 """
     constant_term(a)
