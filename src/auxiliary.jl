@@ -183,7 +183,7 @@ for T in (:Taylor1, :TaylorN)
         # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
         @inline eltype(::$T{S}) where {S<:Number} = S
         @inline length(a::$T) = length(a.coeffs)
-        @inline size(a::$T) = (length(a),)
+        @inline size(a::$T) = size(a.coeffs)
         @inline firstindex(a::$T) = 0
         @inline lastindex(a::$T) = a.order
         @inline get_order(a::$T) = a.order
@@ -196,7 +196,7 @@ end
 # Base.eachindex(a::HomogeneousPolynomial) = firstindex(a):lastindex(a)
 @inline eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
 @inline length(a::HomogeneousPolynomial) = size_table[a.order+1]#length(a.coeffs)
-@inline size(a::HomogeneousPolynomial) = (length(a),)
+@inline size(a::HomogeneousPolynomial) = size(a.coeffs)
 @inline firstindex(a::HomogeneousPolynomial) = 1
 @inline lastindex(a::HomogeneousPolynomial) = length(a)
 @inline get_order(a::HomogeneousPolynomial) = a.order
@@ -241,6 +241,28 @@ function similar(a::Array{Taylor1{T},1}) where {T}
     ret = Vector{Taylor1{T}}(undef, size(a,1))
     a1 = a[1].coeffs
     fill!(ret, similar(a1))
+    return ret
+end
+similar(a::Array{Taylor1{T},1}, R::Type) where {T} =
+    convert(Array{Taylor1{R},1}, similar(a))
+
+similar(a::HomogeneousPolynomial) = HomogeneousPolynomial(similar(a.coeffs), a.order)
+function similar(a::Array{HomogeneousPolynomial{T},1}) where {T}
+    ret = Vector{HomogeneousPolynomial{T}}(undef, size(a,1))
+    @simd for i in eachindex(a)
+        @inbounds ret[i] = similar(a[i])
+    end
+    return ret
+end
+similar(a::Array{HomogeneousPolynomial{T},1}, R::Type{<:NumberNotSeriesN}) where {T} =
+    convert(Array{HomogeneousPolynomial{R},1}, similar(a))
+
+similar(a::TaylorN) = TaylorN(similar(a.coeffs), a.order)
+function similar(a::Array{TaylorN{T},1}) where {T}
+    ret = Vector{TaylorN{T}}(undef, size(a,1))
+    @simd for i in eachindex(a)
+        @inbounds ret[i] = similar(a[i])
+    end
     return ret
 end
 
