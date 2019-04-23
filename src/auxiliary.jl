@@ -248,7 +248,7 @@ function similar(a::Array{Taylor1{T},1}) where {T}
     return ret
 end
 similar(a::Array{Taylor1{T},1}, R::Type) where {T} =
-    convert(Array{Taylor1{R},1}, similar(a))
+    convert(Vector{promote_type(Taylor1{T},R)}, similar(a))
 
 similar(a::HomogeneousPolynomial) = HomogeneousPolynomial(similar(a.coeffs), a.order)
 function similar(a::Array{HomogeneousPolynomial{T},1}) where {T}
