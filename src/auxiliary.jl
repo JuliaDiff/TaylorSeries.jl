@@ -191,7 +191,7 @@ for T in (:Taylor1, :TaylorN)
         @inline firstindex(a::$T) = 0
         @inline lastindex(a::$T) = a.order
         @inline get_order(a::$T) = a.order
-        @inline axes(a::$T) = axes(a.coeffs)
+        @inline axes(a::$T) = ()
     end
 end
 
@@ -204,7 +204,7 @@ end
 @inline firstindex(a::HomogeneousPolynomial) = 1
 @inline lastindex(a::HomogeneousPolynomial) = length(a)
 @inline get_order(a::HomogeneousPolynomial) = a.order
-@inline axes(a::HomogeneousPolynomial) = axes(a.coeffs)
+@inline axes(a::HomogeneousPolynomial) = ()
 
 
 ## fixorder ##
@@ -240,35 +240,37 @@ end
 
 
 ## similar ##
-similar(a::Taylor1) = Taylor1(similar(a.coeffs), a.order)
-function similar(a::Array{Taylor1{T},1}) where {T}
-    ret = Vector{Taylor1{T}}(undef, size(a,1))
-    a1 = a[1].coeffs
-    fill!(ret, similar(a1))
-    return ret
-end
-similar(a::Array{Taylor1{T},1}, R::Type) where {T} =
-    convert(Vector{promote_type(Taylor1{T},R)}, similar(a))
+# similar(a::Taylor1) = Taylor1(similar(a.coeffs), a.order)
+# function similar(a::Array{Taylor1{T},1}) where {T}
+#     ret = Vector{Taylor1{T}}(undef, size(a,1))
+#     a1 = a[1].coeffs
+#     fill!(ret, similar(a1))
+#     return ret
+# end
+# similar(a::Array{Taylor1{T},1}, R::Type) where {T} =
+#     convert(Vector{promote_type(Taylor1{T},R)}, similar(a))
 
-similar(a::HomogeneousPolynomial) = HomogeneousPolynomial(similar(a.coeffs), a.order)
-function similar(a::Array{HomogeneousPolynomial{T},1}) where {T}
-    ret = Vector{HomogeneousPolynomial{T}}(undef, size(a,1))
-    @simd for i in eachindex(a)
-        @inbounds ret[i] = similar(a[i])
-    end
-    return ret
-end
-similar(a::Array{HomogeneousPolynomial{T},1}, R::Type{<:NumberNotSeriesN}) where {T} =
-    convert(Array{HomogeneousPolynomial{R},1}, similar(a))
+# similar(a::HomogeneousPolynomial) = HomogeneousPolynomial(similar(a.coeffs), a.order)
+# function similar(a::Array{HomogeneousPolynomial{T},1}) where {T}
+#     ret = Vector{HomogeneousPolynomial{T}}(undef, size(a,1))
+#     @simd for i in eachindex(a)
+#         @inbounds ret[i] = similar(a[i])
+#     end
+#     return ret
+# end
+# similar(a::Array{HomogeneousPolynomial{T},1}, R::Type{<:NumberNotSeriesN}) where {T} =
+#     convert(Array{HomogeneousPolynomial{R},1}, similar(a))
 
-similar(a::TaylorN) = TaylorN(similar(a.coeffs), a.order)
-function similar(a::Array{TaylorN{T},1}) where {T}
-    ret = Vector{TaylorN{T}}(undef, size(a,1))
-    @simd for i in eachindex(a)
-        @inbounds ret[i] = similar(a[i])
-    end
-    return ret
-end
+# similar(a::TaylorN) = TaylorN(similar(a.coeffs), a.order)
+# function similar(a::Array{TaylorN{T},1}) where {T}
+#     ret = Vector{TaylorN{T}}(undef, size(a,1))
+#     @simd for i in eachindex(a)
+#         @inbounds ret[i] = similar(a[i])
+#     end
+#     return ret
+# end
+# similar(a::Array{taylor_expand{T},1}, R::Type) where {T} =
+#     convert(Vector{promote_type(TaylorN{T},R)}, similar(a))
 
 
 

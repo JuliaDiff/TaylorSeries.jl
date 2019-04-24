@@ -569,7 +569,7 @@ eeuler = Base.MathConstants.e
     @test a[2] ≈ a[2]
     @test a[3] ≈ a[3]
     @test a ≈ a
-    # @test a .≈ a
+    @test a .≈ a
     b = deepcopy(a)
     b[2][3] = Inf
     @test !isfinite(b)

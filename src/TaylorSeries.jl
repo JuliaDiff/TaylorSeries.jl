@@ -32,7 +32,7 @@ end
 import Base: ==, +, -, *, /, ^
 
 import Base: iterate, size, eachindex, firstindex, lastindex,
-    eltype, length, getindex, setindex!, axes, similar
+    eltype, length, getindex, setindex!, axes#, similar
 
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, show,
