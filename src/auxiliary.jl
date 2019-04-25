@@ -240,17 +240,17 @@ end
 
 
 ## similar ##
-# similar(a::Taylor1) = Taylor1(similar(a.coeffs), a.order)
-# function similar(a::Array{Taylor1{T},1}) where {T}
-#     ret = Vector{Taylor1{T}}(undef, size(a,1))
-#     a1 = a[1].coeffs
-#     fill!(ret, similar(a1))
-#     return ret
-# end
+similar(a::Taylor1) = Taylor1(similar(a.coeffs), a.order)
+function similar(a::Array{Taylor1{T},1}) where {T}
+    ret = Vector{Taylor1{T}}(undef, size(a,1))
+    fill!(ret, similar(a[1].coeffs))
+    return ret
+end
+# similar(a::Taylor1, R::Type) = Taylor1(similar(a.coeffs, R), a.order)
 # similar(a::Array{Taylor1{T},1}, R::Type) where {T} =
 #     convert(Vector{promote_type(Taylor1{T},R)}, similar(a))
 
-# similar(a::HomogeneousPolynomial) = HomogeneousPolynomial(similar(a.coeffs), a.order)
+similar(a::HomogeneousPolynomial) = HomogeneousPolynomial(similar(a.coeffs), a.order)
 # function similar(a::Array{HomogeneousPolynomial{T},1}) where {T}
 #     ret = Vector{HomogeneousPolynomial{T}}(undef, size(a,1))
 #     @simd for i in eachindex(a)
@@ -261,7 +261,7 @@ end
 # similar(a::Array{HomogeneousPolynomial{T},1}, R::Type{<:NumberNotSeriesN}) where {T} =
 #     convert(Array{HomogeneousPolynomial{R},1}, similar(a))
 
-# similar(a::TaylorN) = TaylorN(similar(a.coeffs), a.order)
+similar(a::TaylorN) = TaylorN(similar(a.coeffs), a.order)
 # function similar(a::Array{TaylorN{T},1}) where {T}
 #     ret = Vector{TaylorN{T}}(undef, size(a,1))
 #     @simd for i in eachindex(a)
@@ -272,6 +272,31 @@ end
 # similar(a::Array{taylor_expand{T},1}, R::Type) where {T} =
 #     convert(Vector{promote_type(TaylorN{T},R)}, similar(a))
 
+
+
+## copyto! ##
+# Inspired from base/abstractarray.jl, line 665
+function copyto!(dst::Taylor1{T}, src::Taylor1{T}) where {T}
+    length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
+    destiter = eachindex(dst)
+    y = iterate(destiter)
+    for x in src
+        dst[y[1]] = x
+        y = iterate(destiter, y[2])
+    end
+    return dst
+end
+
+function copyto!(dst::TaylorN{T}, src::TaylorN{T}) where {T}
+    length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
+    destiter = eachindex(dst)
+    y = iterate(destiter)
+    for x in src
+        dst[y[1]] = x
+        y = iterate(destiter, y[2])
+    end
+    return dst
+end
 
 
 """

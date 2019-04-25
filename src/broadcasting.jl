@@ -88,23 +88,20 @@ end
 
 
 # Adapted from Base.Broadcast.copyto!, base/broadcasting.jl, line 832
-# @inline function Base.copyto!(dest::Taylor1{T}, bc::Broadcasted) where {T}
-#     axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
-#     # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
-#     if bc.f === identity && bc.args isa Tuple{AbstractArray} # only a single input argument to broadcast!
-#         A = bc.args[1]
-#         if axes(dest) == axes(A)
-#             return copyto!(dest, A)
-#         end
-#     end
-#     bc′ = Base.Broadcast.preprocess(dest, bc)
-#     # I is the coefficients index
-#     @simd for I in eachindex(bc′)
-#         @inbounds dest[I-1] = getcoeff(bc′[I], I-1)
-#     end
-#     return dest
-# end
-#
+@inline function Base.copyto!(dest::Taylor1{T}, bc::Broadcasted) where {T}
+    axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
+    # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
+    if bc.f === identity && bc.args isa Tuple{Taylor1{T}} # only a single input argument to broadcast!
+        A = bc.args[1]
+        if axes(dest) == axes(A)
+            return copyto!(dest, A)
+        end
+    end
+    bc′ = Base.Broadcast.preprocess(dest, bc)
+    copyto!(dest, bc′[1])
+    return dest
+end
+
 # @inline function Base.copyto!(dest::HomogeneousPolynomial{T}, bc::Broadcasted) where {T<:NumberNotSeries}
 #     axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
 #     # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
@@ -122,23 +119,24 @@ end
 #     end
 #     return dest
 # end
-#
-# @inline function Base.copyto!(dest::TaylorN{T}, bc::Broadcasted) where {T<:NumberNotSeries}
-#     axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
-#     # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
-#     if bc.f === identity && bc.args isa Tuple{AbstractArray} # only a single input argument to broadcast!
-#         A = bc.args[1]
-#         if axes(dest) == axes(A)
-#             return copyto!(dest, A)
-#         end
-#     end
-#     bc′ = Base.Broadcast.preprocess(dest.coeffs, bc)
-#     # I is the coefficients index
-#     @simd for I in eachindex(bc′)
-#         @inbounds dest[I] = getcoeff(bc′[I], I)
-#     end
-#     return dest
-# end
+
+@inline function Base.copyto!(dest::TaylorN{T}, bc::Broadcasted) where {T<:NumberNotSeries}
+    axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
+    # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
+    if bc.f === identity && bc.args isa Tuple{TaylorN{T}} # only a single input argument to broadcast!
+        A = bc.args[1]
+        if axes(dest) == axes(A)
+            return copyto!(dest, A)
+        end
+    end
+    bc′ = Base.Broadcast.preprocess(dest.coeffs, bc)
+    # I is the coefficients index
+    @simd for I in eachindex(bc′.args)
+        @show(I, bc′.args[I], dest[I])
+        @inbounds dest[I] = getcoeff(bc′[I], I)
+    end
+    return dest
+end
 
 
 # Broadcasted extensions

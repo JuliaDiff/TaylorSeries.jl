@@ -28,7 +28,8 @@ eeuler = Base.MathConstants.e
     @test iterate(t) == (0.0, 1)
     @test iterate(t, 1) == (1.0, 2)
     @test iterate(t, 16) == nothing
-
+    @test axes(t) == ()
+    @test axes([t]) == (Base.OneTo(1),)
 
     v = [1,2]
     @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing

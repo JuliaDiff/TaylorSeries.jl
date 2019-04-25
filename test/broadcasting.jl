@@ -37,7 +37,12 @@ end
 
     @test xH .== xH
     @test yH .≈ yH
+    @test xH .== xH
     @test x[2] .== y[2]
+
+    @test 1 .* xH == xH
+    @test 1 .* [xH] == [xH]
+    @test [1] .* xH == [xH]
 
     @test x .== x
     @test y .≈ y
@@ -50,7 +55,7 @@ end
     @test typeof(1.0 .+ [y]) == Vector{TaylorN{Float64}}
     @test 1.0 .+ [x, 2y] == [1.0 + x, 1.0 + 2y]
     @test [1.0,2.0] .+ [x 2y] == [1.0+x 1.0+2y; 2.0+x 2.0+2y]
-    @test [1.0] .+ x == [1.0 + x]
+    @test [1.0] .+ x == x .+ [1.0] == [1.0 + x]
     @test 1.0 .* y == y
     @test typeof(1.0 .* x .* y) == TaylorN{Float64}
     #
@@ -70,21 +75,27 @@ end
 
 @testset "Broadcasting for nested Taylor1's" begin
     t = Taylor1(Int, 3)
-    # @test typeof(similar(t)) == Taylor1{Int}
-    @test get_order(t) == 3
+    ts = similar(t);
+    @test get_order(t) == get_order(ts) == 3
+    @test typeof(ts) == Taylor1{Int}
+    @. ts = 3 * t^2 - 1
+    @test ts == 3 * t^2 - 1
 
-    tt = Taylor1([zero(t), one(t), zero(t)])
-    # @test typeof(similar(tt)) == Taylor1{Taylor1{Int}}
-    # @test get_order(tt) == get_order(similar(tt)) == 2
+    tt = Taylor1([zero(t), one(t)], 2)
+    tts = similar(tt);
+    @test typeof(tts) == Taylor1{Taylor1{Int}}
+    @test get_order(tt) == get_order(tts) == 2
     @test tt .== tt
+    @. tts = 3 * tt^2 - 1
+    @test tts == 3 * tt^2 - 1
+    @test eltype(similar(1.0*tt)) == Taylor1{Float64}
 
     ttt = Taylor1([zero(tt), one(tt)])
-    # @test typeof(similar(ttt)) == Taylor1{Taylor1{Taylor1{Int}}}
-    # @test get_order(ttt) == get_order(similar(ttt)) == 1
+    ttts = similar(ttt);
+    @test typeof(ttts) == Taylor1{Taylor1{Taylor1{Int}}}
+    @test get_order(ttt) == get_order(ttts) == 1
     @test ttt .≈ ttt
+    @. ttts = 3 * ttt^2 - 1
+    @test ttts == -1
 
-    tf = Taylor1([zero(1.0*t), one(t)])
-    # @test typeof(similar(tf)) == Taylor1{Taylor1{Float64}}
-    # @test get_order(tf) == get_order(similar(tf)) == 1
-    @test tf .== tt
 end
