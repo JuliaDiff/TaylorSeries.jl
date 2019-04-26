@@ -32,27 +32,20 @@ using Test
 
     # Nested Taylor1 tests
     t = Taylor1(Int, 3)
-    ts = similar(t);
-    @test get_order(t) == get_order(ts) == 3
-    @test typeof(ts) == Taylor1{Int}
+    ts = zero(t)
     ts .= t
     @test ts == t
     @. ts = 3 * t^2 - 1
     @test ts == 3 * t^2 - 1
 
     tt = Taylor1([zero(t), one(t)], 2)
-    tts = similar(tt);
-    @test typeof(tts) == Taylor1{Taylor1{Int}}
-    @test get_order(tt) == get_order(tts) == 2
+    tts = zero(tt)
     @test tt .== tt
     @. tts = 3 * tt^2 - 1
     @test tts == 3 * tt^2 - 1
-    @test eltype(similar(1.0*tt)) == Taylor1{Float64}
 
     ttt = Taylor1([zero(tt), one(tt)])
-    ttts = similar(ttt);
-    @test typeof(ttts) == Taylor1{Taylor1{Taylor1{Int}}}
-    @test get_order(ttt) == get_order(ttts) == 1
+    ttts = zero(ttt)
     @test ttt .≈ ttt
     @. ttts = 3 * ttt^2 - 1
     @test ttts == -1
@@ -68,9 +61,7 @@ end
     @test xH .== xH
     @test x[2] .== y[2]
 
-    xHs = similar(xH)
-    @test typeof(xHs) == typeof(xH)
-    @test get_order(xHs) == get_order(xH)
+    xHs = zero(xH)
     xHs .= xH
     @test xHs == xH
     @. xHs = 2 * xH + yH
@@ -84,9 +75,7 @@ end
     @test y .≈ y
     @test x .!= (1 + x)
 
-    p = similar(x)
-    @test typeof(p) == typeof(x)
-    @test get_order(p) == get_order(x)
+    p = zero(x)
     p .= x
     @test p == x
     @. p = 1 + 2*x + 3x^2 - x * y
@@ -122,9 +111,7 @@ end
     @test 1.0 .* tN == 1.0 * tN
     @test typeof(1.0 .* tN) == Taylor1{TaylorN{Float64}}
 
-    tNs = similar(tN);
-    @test get_order(tN) == get_order(tNs) == 3
-    @test typeof(tNs) == Taylor1{TaylorN{Float64}}
+    tNs = zero(tN)
     tNs .= tN
     @test tNs == tN
     @. tNs = y[1] * tN^2 - 1
@@ -154,9 +141,7 @@ end
     @test 1.0 .* tN1 == tN1
     @test typeof(1.0 .* tN1) == TaylorN{Taylor1{Float64}}
 
-    tN1s = similar(tN1);
-    @test get_order(tN1) == get_order(tN1s) == 2
-    @test typeof(tN1s) == TaylorN{Taylor1{Float64}}
+    tN1s = zero(tN1)
     tN1s .= tN1
     @test tN1s == tN1
     @. tN1s = t * tN1^2 - 1

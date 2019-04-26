@@ -236,36 +236,18 @@ function Base.findlast(a::Taylor1{T}) where {T<:Number}
 end
 
 
-## similar and copyto! ##
+## copyto! ##
+# Inspired from base/abstractarray.jl, line 665
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval begin
-        ## similar ##
-        similar(a::$T) = $T(similar(a.coeffs), a.order)
-        # similar(a::$T, R::Type) = $T(similar(a.coeffs, R), a.order)
-        function similar(a::Array{$T{T},1}) where {T}
-            ret = Vector{$T{T}}(undef, size(a,1))
-            if $T == Taylor1
-                fill!(ret, similar(a[1].coeffs))
-            else
-                @simd for i in eachindex(a)
-                    @inbounds ret[i] = zero(a[i]) # avoid `undef`s
-                end
-            end
-            return ret
+    @eval function copyto!(dst::$T{T}, src::$T{T}) where {T}
+        length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
+        destiter = eachindex(dst)
+        y = iterate(destiter)
+        for x in src
+            dst[y[1]] = x
+            y = iterate(destiter, y[2])
         end
-
-        ## copyto! ##
-        # Inspired from base/abstractarray.jl, line 665
-        function copyto!(dst::$T{T}, src::$T{T}) where {T}
-            length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
-            destiter = eachindex(dst)
-            y = iterate(destiter)
-            for x in src
-                dst[y[1]] = x
-                y = iterate(destiter, y[2])
-            end
-            return dst
-        end
+        return dst
     end
 end
 
