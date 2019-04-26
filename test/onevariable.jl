@@ -114,11 +114,11 @@ eeuler = Base.MathConstants.e
     @test constant_term(2.0) == 2.0
     @test constant_term(t) == 0
     @test constant_term(tim) == complex(0, 0)
-    @test constant_term([zt, t]) == zt
+    @test constant_term([zt, t]) == [0, 0]
     @test linear_polynomial(2) == 2
     @test linear_polynomial(t) == t
     @test linear_polynomial(tim^2) == zero(tim)
-    @test linear_polynomial([zero(tim), tim]) == zero(tim)
+    @test linear_polynomial([zero(tim), tim]) == [zero(tim), tim]
 
     @test ot == 1
     @test 0.0 == zt

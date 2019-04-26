@@ -236,37 +236,22 @@ function Base.findlast(a::Taylor1{T}) where {T<:Number}
 end
 
 
-## similar ##
-# similar(a::Taylor1, R::Type) = Taylor1(similar(a.coeffs, R), a.order)
-# similar(a::Array{Taylor1{T},1}, R::Type) where {T} =
-#     convert(Vector{promote_type(Taylor1{T},R)}, similar(a))
-
-# similar(a::Array{HomogeneousPolynomial{T},1}, R::Type{<:NumberNotSeriesN}) where {T} =
-#     convert(Array{HomogeneousPolynomial{R},1}, similar(a))
-
-# similar(a::Array{taylor_expand{T},1}, R::Type) where {T} =
-#     convert(Vector{promote_type(TaylorN{T},R)}, similar(a))
-
-
-
+## similar and copyto! ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval begin
         ## similar ##
         similar(a::$T) = $T(similar(a.coeffs), a.order)
-        if $T == Taylor1
-            function similar(a::Array{$T{T},1}) where {T}
-                ret = Vector{$T{T}}(undef, size(a,1))
+        # similar(a::$T, R::Type) = $T(similar(a.coeffs, R), a.order)
+        function similar(a::Array{$T{T},1}) where {T}
+            ret = Vector{$T{T}}(undef, size(a,1))
+            if $T == Taylor1
                 fill!(ret, similar(a[1].coeffs))
-                return ret
-            end
-        else
-            function similar(a::Array{$T{T},1}) where {T}
-                ret = Vector{$T{T}}(undef, size(a,1))
+            else
                 @simd for i in eachindex(a)
-                    @inbounds ret[i] = similar(a[i])
+                    @inbounds ret[i] = zero(a[i]) # avoid `undef`s
                 end
-                return ret
             end
+            return ret
         end
 
         ## copyto! ##
@@ -296,7 +281,7 @@ constant_term(a::Taylor1) = a[0]
 
 constant_term(a::TaylorN) = a[0][1]
 
-constant_term(a::Vector{T}) where {T<:Number}= a[1]
+constant_term(a::Vector{T}) where {T<:Number} = constant_term.(a)
 
 constant_term(a::Number) = a
 
@@ -311,6 +296,6 @@ linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]])
 
 linear_polynomial(a::TaylorN) = TaylorN([a[1]])
 
-linear_polynomial(a::Vector{T}) where {T<:Number} = a[1]
+linear_polynomial(a::Vector{T}) where {T<:Number} = linear_polynomial.(a)
 
 linear_polynomial(a::Number) = a

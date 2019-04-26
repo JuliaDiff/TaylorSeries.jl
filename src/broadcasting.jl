@@ -66,13 +66,10 @@ find_taylor(::AbstractArray, rest) = find_taylor(rest)
 
 # function similar(bc::Broadcasted{HomogeneousPolynomialStyle{S}}, ::Type{T}) where {S, T}
 #     # Proper promotion
-#     @show(Base.Broadcast.eltypes(bc.args))
 #     # combine_eltypes(f, args::Tuple) = Base._return_type(f, eltypes(args))
 #     R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
-#     @show(bc.f, bc.args)
 #     # Scan the inputs for the HomogeneousPolynomial:
 #     A = find_taylor(bc)
-#     @show(A, R)
 #     # Create the output
 #     return HomogeneousPolynomial(similar(A.coeffs, R), A.order)
 # end
