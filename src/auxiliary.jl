@@ -179,32 +179,29 @@ setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
 
 
-## eltype, length, get_order ##
-for T in (:Taylor1, :TaylorN)
+## eltype, length, get_order, etc ##
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval begin
-        @inline iterate(a::$T, state=0) = state > a.order ? nothing : (a.coeffs[state+1], state+1)
+        if $T == HomogeneousPolynomial
+            @inline iterate(a::$T, state=1) = state > length(a) ? nothing : (a.coeffs[state], state+1)
+            # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
+            @inline length(a::$T) = size_table[a.order+1]
+            @inline firstindex(a::$T) = 1
+            @inline lastindex(a::$T) = length(a)
+        else
+            @inline iterate(a::$T, state=0) = state > a.order ? nothing : (a.coeffs[state+1], state+1)
+            # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
+            @inline length(a::$T) = length(a.coeffs)
+            @inline firstindex(a::$T) = 0
+            @inline lastindex(a::$T) = a.order
+        end
         @inline eachindex(a::$T) = firstindex(a):lastindex(a)
-        # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
         @inline eltype(::$T{S}) where {S<:Number} = S
-        @inline length(a::$T) = length(a.coeffs)
         @inline size(a::$T) = size(a.coeffs)
-        @inline firstindex(a::$T) = 0
-        @inline lastindex(a::$T) = a.order
         @inline get_order(a::$T) = a.order
         @inline axes(a::$T) = ()
     end
 end
-
-# Base.iterate(a::HomogeneousPolynomial, state=1) = state > a.order, nothing : (a.coeffs[state+1], state+1)
-# Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
-# Base.eachindex(a::HomogeneousPolynomial) = firstindex(a):lastindex(a)
-@inline eltype(::HomogeneousPolynomial{S}) where {S<:Number} = S
-@inline length(a::HomogeneousPolynomial) = size_table[a.order+1]#length(a.coeffs)
-@inline size(a::HomogeneousPolynomial) = size(a.coeffs)
-@inline firstindex(a::HomogeneousPolynomial) = 1
-@inline lastindex(a::HomogeneousPolynomial) = length(a)
-@inline get_order(a::HomogeneousPolynomial) = a.order
-@inline axes(a::HomogeneousPolynomial) = ()
 
 
 ## fixorder ##
@@ -240,62 +237,51 @@ end
 
 
 ## similar ##
-similar(a::Taylor1) = Taylor1(similar(a.coeffs), a.order)
-function similar(a::Array{Taylor1{T},1}) where {T}
-    ret = Vector{Taylor1{T}}(undef, size(a,1))
-    fill!(ret, similar(a[1].coeffs))
-    return ret
-end
 # similar(a::Taylor1, R::Type) = Taylor1(similar(a.coeffs, R), a.order)
 # similar(a::Array{Taylor1{T},1}, R::Type) where {T} =
 #     convert(Vector{promote_type(Taylor1{T},R)}, similar(a))
 
-similar(a::HomogeneousPolynomial) = HomogeneousPolynomial(similar(a.coeffs), a.order)
-# function similar(a::Array{HomogeneousPolynomial{T},1}) where {T}
-#     ret = Vector{HomogeneousPolynomial{T}}(undef, size(a,1))
-#     @simd for i in eachindex(a)
-#         @inbounds ret[i] = similar(a[i])
-#     end
-#     return ret
-# end
 # similar(a::Array{HomogeneousPolynomial{T},1}, R::Type{<:NumberNotSeriesN}) where {T} =
 #     convert(Array{HomogeneousPolynomial{R},1}, similar(a))
 
-similar(a::TaylorN) = TaylorN(similar(a.coeffs), a.order)
-# function similar(a::Array{TaylorN{T},1}) where {T}
-#     ret = Vector{TaylorN{T}}(undef, size(a,1))
-#     @simd for i in eachindex(a)
-#         @inbounds ret[i] = similar(a[i])
-#     end
-#     return ret
-# end
 # similar(a::Array{taylor_expand{T},1}, R::Type) where {T} =
 #     convert(Vector{promote_type(TaylorN{T},R)}, similar(a))
 
 
 
-## copyto! ##
-# Inspired from base/abstractarray.jl, line 665
-function copyto!(dst::Taylor1{T}, src::Taylor1{T}) where {T}
-    length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
-    destiter = eachindex(dst)
-    y = iterate(destiter)
-    for x in src
-        dst[y[1]] = x
-        y = iterate(destiter, y[2])
-    end
-    return dst
-end
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    @eval begin
+        ## similar ##
+        similar(a::$T) = $T(similar(a.coeffs), a.order)
+        if $T == Taylor1
+            function similar(a::Array{$T{T},1}) where {T}
+                ret = Vector{$T{T}}(undef, size(a,1))
+                fill!(ret, similar(a[1].coeffs))
+                return ret
+            end
+        else
+            function similar(a::Array{$T{T},1}) where {T}
+                ret = Vector{$T{T}}(undef, size(a,1))
+                @simd for i in eachindex(a)
+                    @inbounds ret[i] = similar(a[i])
+                end
+                return ret
+            end
+        end
 
-function copyto!(dst::TaylorN{T}, src::TaylorN{T}) where {T}
-    length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
-    destiter = eachindex(dst)
-    y = iterate(destiter)
-    for x in src
-        dst[y[1]] = x
-        y = iterate(destiter, y[2])
+        ## copyto! ##
+        # Inspired from base/abstractarray.jl, line 665
+        function copyto!(dst::$T{T}, src::$T{T}) where {T}
+            length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
+            destiter = eachindex(dst)
+            y = iterate(destiter)
+            for x in src
+                dst[y[1]] = x
+                y = iterate(destiter, y[2])
+            end
+            return dst
+        end
     end
-    return dst
 end
 
 

@@ -54,97 +54,82 @@ find_taylor(a::HomogeneousPolynomial, rest) = a
 find_taylor(a::TaylorN, rest) = a
 find_taylor(::AbstractArray, rest) = find_taylor(rest)
 
-# Extend Base.similar
-function Base.similar(bc::Broadcasted{Taylor1Style{S}}, ::Type{T}) where {S, T}
-    # Proper promotion
-    R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
-    # Scan the inputs for the Taylor1:
-    A = find_taylor(bc)
-    # Create the output
-    return Taylor1(similar(A.coeffs, R), A.order)
-end
+# Extend similar
+# function similar(bc::Broadcasted{Taylor1Style{S}}, ::Type{T}) where {S, T}
+#     # Proper promotion
+#     R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
+#     # Scan the inputs for the Taylor1:
+#     A = find_taylor(bc)
+#     # Create the output
+#     return Taylor1(similar(A.coeffs, R), A.order)
+# end
 
-function Base.similar(bc::Broadcasted{HomogeneousPolynomialStyle{S}}, ::Type{T}) where {S, T}
-    # Proper promotion
-    @show(Base.Broadcast.eltypes(bc.args))
-    # combine_eltypes(f, args::Tuple) = Base._return_type(f, eltypes(args))
-    R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
-    @show(bc.f, bc.args)
-    # Scan the inputs for the HomogeneousPolynomial:
-    A = find_taylor(bc)
-    @show(A, R)
-    # Create the output
-    return HomogeneousPolynomial(similar(A.coeffs, R), A.order)
-end
+# function similar(bc::Broadcasted{HomogeneousPolynomialStyle{S}}, ::Type{T}) where {S, T}
+#     # Proper promotion
+#     @show(Base.Broadcast.eltypes(bc.args))
+#     # combine_eltypes(f, args::Tuple) = Base._return_type(f, eltypes(args))
+#     R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
+#     @show(bc.f, bc.args)
+#     # Scan the inputs for the HomogeneousPolynomial:
+#     A = find_taylor(bc)
+#     @show(A, R)
+#     # Create the output
+#     return HomogeneousPolynomial(similar(A.coeffs, R), A.order)
+# end
 
-function Base.similar(bc::Broadcasted{TaylorNStyle{S}}, ::Type{T}) where {S, T}
-    # Proper promotion
-    R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
-    # Scan the inputs for the TaylorN:
-    A = find_taylor(bc)
-    # Create the output
-    return TaylorN(similar(A.coeffs, R), A.order)
-end
+# function similar(bc::Broadcasted{TaylorNStyle{S}}, ::Type{T}) where {S, T}
+#     # Proper promotion
+#     R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
+#     # Scan the inputs for the TaylorN:
+#     A = find_taylor(bc)
+#     # Create the output
+#     return TaylorN(similar(A.coeffs, R), A.order)
+# end
 
 
 # Adapted from Base.Broadcast.copyto!, base/broadcasting.jl, line 832
-@inline function Base.copyto!(dest::Taylor1{T}, bc::Broadcasted) where {T}
-    axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
-    # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
-    if bc.f === identity && bc.args isa Tuple{Taylor1{T}} # only a single input argument to broadcast!
-        A = bc.args[1]
-        if axes(dest) == axes(A)
-            return copyto!(dest, A)
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    @eval begin
+        @inline function copyto!(dest::$T{T}, bc::Broadcasted) where {T}
+            axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
+            # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
+            if bc.f === identity && bc.args isa Tuple{$T{T}} # only a single input argument to broadcast!
+                A = bc.args[1]
+                if axes(dest) == axes(A)
+                    return copyto!(dest, A)
+                end
+            end
+            bc′ = Base.Broadcast.preprocess(dest, bc)
+            copyto!(dest, bc′[1])
+            return dest
         end
     end
-    bc′ = Base.Broadcast.preprocess(dest, bc)
-    copyto!(dest, bc′[1])
-    return dest
-end
-
-# @inline function Base.copyto!(dest::HomogeneousPolynomial{T}, bc::Broadcasted) where {T<:NumberNotSeries}
-#     axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
-#     # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
-#     if bc.f === identity && bc.args isa Tuple{AbstractArray} # only a single input argument to broadcast!
-#         A = bc.args[1]
-#         if axes(dest) == axes(A)
-#             return copyto!(dest, A)
-#         end
-#     end
-#     bc′= Base.Broadcast.preprocess(dest.coeffs, bc)
-#     # I is the coefficients index
-#     @simd for I in eachindex(bc′)
-#         # @inbounds dest[I] = getcoeff(bc′[I], I)
-#         @inbounds dest[I] = bc′[I].coeffs[I]
-#     end
-#     return dest
-# end
-
-@inline function Base.copyto!(dest::TaylorN{T}, bc::Broadcasted) where {T<:NumberNotSeries}
-    axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
-    # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
-    if bc.f === identity && bc.args isa Tuple{TaylorN{T}} # only a single input argument to broadcast!
-        A = bc.args[1]
-        if axes(dest) == axes(A)
-            return copyto!(dest, A)
-        end
-    end
-    bc′ = Base.Broadcast.preprocess(dest.coeffs, bc)
-    # I is the coefficients index
-    @simd for I in eachindex(bc′.args)
-        @show(I, bc′.args[I], dest[I])
-        @inbounds dest[I] = getcoeff(bc′[I], I)
-    end
-    return dest
 end
 
 
 # Broadcasted extensions
-# This prevents broadcasting being applied to `a` and `b`
+# This prevents broadcasting being applied to the Taylor1/TaylorN params
 # for the mutating functions, and to act only in `k`
-function broadcasted(::Taylor1Style{T}, f!, a::Taylor1{T}, b::Taylor1{T}, k) where {T}
-    @inbounds for i in eachindex(k)
-        f!(a, b, k[i])
-    end
-    nothing
-end
+# for (T, TS) in ((:Taylor1, :Taylor1Style), (:TaylorN, :TaylorNStyle))
+#     for f in (add!, subst!, sqr!, sqrt!, exp!, log!, identity!, zero!,
+#         one!, abs!, abs2!, deg2rad!, rad2deg!)
+#         @eval begin
+#             @inline function broadcasted(::$TS{T}, fn::typeof($f), r::$T{T}, a::$T{T}, k) where {T}
+#                 @inbounds for i in eachindex(k)
+#                     fn(r, a, k[i])
+#                 end
+#                 nothing
+#             end
+#         end
+#     end
+#     for f in (sincos!, tan!, asin!, acos!, atan!, sinhcosh!, tanh!)
+#         @eval begin
+#             @inline function broadcasted(::$TS{T}, fn::typeof($f), r::$T{T}, a::$T{T}, b::Taylor1{T}, k) where {T}
+#                 @inbounds for i in eachindex(k)
+#                     fn(r, a, b, k[i])
+#                 end
+#                 nothing
+#             end
+#         end
+#     end
+# end

@@ -469,22 +469,22 @@ eeuler = Base.MathConstants.e
     TaylorSeries.deg2rad!(b, a, 0)
     @test a == c
     @test a[0]*(pi/180) == b[0]
-    TaylorSeries.deg2rad!.(b, a, [0,1,2])
-    @test a == c
-    for i in 0:2
-        @test a[i]*(pi/180) == b[i]
-    end
+    # TaylorSeries.deg2rad!.(b, a, [0,1,2])
+    # @test a == c
+    # for i in 0:2
+    #     @test a[i]*(pi/180) == b[i]
+    # end
     a = Taylor1(rand(10))
     b = Taylor1(rand(10))
     c = deepcopy(a)
     TaylorSeries.rad2deg!(b, a, 0)
     @test a == c
     @test a[0]*(180/pi) == b[0]
-    TaylorSeries.rad2deg!.(b, a, [0,1,2])
-    @test a == c
-    for i in 0:2
-        @test a[i]*(180/pi) == b[i]
-    end
+    # TaylorSeries.rad2deg!.(b, a, [0,1,2])
+    # @test a == c
+    # for i in 0:2
+    #     @test a[i]*(180/pi) == b[i]
+    # end
 
     # Test additional Taylor1 constructors
     @test Taylor1{Float64}(true) == Taylor1([1.0])
