@@ -29,6 +29,9 @@ BroadcastStyle(::Type{<:TaylorN{T}}) where {T} = TaylorNStyle{T}()
 BroadcastStyle(::TaylorNStyle{T}, ::Base.Broadcast.DefaultArrayStyle{0}) where {T} = TaylorNStyle{T}()
 BroadcastStyle(::TaylorNStyle{T}, ::Base.Broadcast.DefaultArrayStyle{1}) where {T} = Base.Broadcast.DefaultArrayStyle{1}()
 
+# Precedence rules for mixtures
+BroadcastStyle(::TaylorNStyle{Taylor1{T}}, ::Taylor1Style{T}) where {T} = TaylorNStyle{Taylor1{T}}()
+BroadcastStyle(::Taylor1Style{TaylorN{T}}, ::TaylorNStyle{T}) where {T} = Taylor1Style{TaylorN{T}}()
 
 # Extend eltypes so things like [1.0] .+ t work
 Base.Broadcast.eltypes(t::Tuple{Taylor1,AbstractArray}) =
@@ -44,17 +47,18 @@ Base.Broadcast.eltypes(t::Tuple{TaylorN,AbstractArray}) =
 Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
     Tuple{Base.Broadcast._broadcast_getindex_eltype(t[1]), Base.Broadcast._broadcast_getindex_eltype([t[2]])}
 
-# We follow https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration-1
-"`A = find_taylor(As)` returns the first Taylor1 among the arguments."
-find_taylor(bc::Broadcasted) = find_taylor(bc.args)
-find_taylor(args::Tuple) = find_taylor(find_taylor(args[1]), Base.tail(args))
-find_taylor(x) = x
-find_taylor(a::Taylor1, rest) = a
-find_taylor(a::HomogeneousPolynomial, rest) = a
-find_taylor(a::TaylorN, rest) = a
-find_taylor(::AbstractArray, rest) = find_taylor(rest)
 
-# Extend similar
+# # We follow https://docs.julialang.org/en/v1/manual/interfaces/#man-interface-iteration-1
+# "`A = find_taylor(As)` returns the first Taylor1 among the arguments."
+# find_taylor(bc::Broadcasted) = find_taylor(bc.args)
+# find_taylor(args::Tuple) = find_taylor(find_taylor(args[1]), Base.tail(args))
+# find_taylor(x) = x
+# find_taylor(a::Taylor1, rest) = a
+# find_taylor(a::HomogeneousPolynomial, rest) = a
+# find_taylor(a::TaylorN, rest) = a
+# find_taylor(::AbstractArray, rest) = find_taylor(rest)
+#
+# # Extend similar
 # function similar(bc::Broadcasted{Taylor1Style{S}}, ::Type{T}) where {S, T}
 #     # Proper promotion
 #     R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
@@ -63,7 +67,7 @@ find_taylor(::AbstractArray, rest) = find_taylor(rest)
 #     # Create the output
 #     return Taylor1(similar(A.coeffs, R), A.order)
 # end
-
+#
 # function similar(bc::Broadcasted{HomogeneousPolynomialStyle{S}}, ::Type{T}) where {S, T}
 #     # Proper promotion
 #     # combine_eltypes(f, args::Tuple) = Base._return_type(f, eltypes(args))
@@ -73,7 +77,7 @@ find_taylor(::AbstractArray, rest) = find_taylor(rest)
 #     # Create the output
 #     return HomogeneousPolynomial(similar(A.coeffs, R), A.order)
 # end
-
+#
 # function similar(bc::Broadcasted{TaylorNStyle{S}}, ::Type{T}) where {S, T}
 #     # Proper promotion
 #     R = Base.Broadcast.combine_eltypes(bc.f, bc.args)
