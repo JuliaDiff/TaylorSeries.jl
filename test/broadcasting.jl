@@ -30,6 +30,10 @@ using Test
     @test st(pi/3) == evaluate.(st, pi/3)
     @test st.([0.0, pi/3]) == evaluate(st, [0.0, pi/3])
 
+    @test typeof(Float32.(t)) == Taylor1{Float32}
+    @test (Float32.(t))[1] == Float32(1.0)
+    @test_throws MethodError Float32(t)
+
     # Nested Taylor1 tests
     t = Taylor1(Int, 3)
     ts = zero(t)
@@ -74,6 +78,10 @@ end
     @test x .== x
     @test y .≈ y
     @test x .!= (1 + x)
+
+    @test typeof(Float32.(x)) == TaylorN{Float32}
+    @test (Float32.(x))[1] == HomogeneousPolynomial(Float32[1.0, 0.0])
+    @test_throws MethodError Float32(x)
 
     p = zero(x)
     p .= x

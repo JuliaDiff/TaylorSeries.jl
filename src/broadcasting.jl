@@ -109,8 +109,13 @@ end
 
 
 # Broadcasted extensions
-# This prevents broadcasting being applied to the Taylor1/TaylorN params
-# for the mutating functions, and to act only in `k`
+@inline broadcasted(::Taylor1Style{T}, ::Type{Float32}, a::Taylor1{T}) where {T} =
+    Taylor1(Float32.(a.coeffs), a.order)
+@inline broadcasted(::TaylorNStyle{T}, ::Type{Float32}, a::TaylorN{T}) where {T} =
+    convert(TaylorN{Float32}, a)
+
+# # This prevents broadcasting being applied to the Taylor1/TaylorN params
+# # for the mutating functions, and to act only in `k`
 # for (T, TS) in ((:Taylor1, :Taylor1Style), (:TaylorN, :TaylorNStyle))
 #     for f in (add!, subst!, sqr!, sqrt!, exp!, log!, identity!, zero!,
 #         one!, abs!, abs2!, deg2rad!, rad2deg!)
