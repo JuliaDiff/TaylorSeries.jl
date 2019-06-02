@@ -45,7 +45,10 @@ eeuler = Base.MathConstants.e
 
     x, y = set_variables("x y", order=6)
     @test size(x) == (7,)
+    @test size(x[1]) == (2,)
+    @test size(x[2]) == (3,)
     @test firstindex(x) == 0
+    @test firstindex(x[end]) == 1
     @test lastindex(y) == get_order()
     @test eachindex(x) == 0:6
     @test iterate(x) == (HomogeneousPolynomial([0.0], 0), 1)
@@ -320,6 +323,10 @@ eeuler = Base.MathConstants.e
     q[end-2:2:end] = [0.0, 0.0]
     @test q[end-2] == 0.0
     @test_throws AssertionError q[end-2:2:end] = [0.0, 0.0, 0.0]
+    q[end-2:2:end] = pol.coeffs[end-2:2:end]
+    @test q[end-2] == pol[end-2]
+    q[end-2:2:end] = pol.coeffs[end-2:2:end]
+    @test_throws AssertionError q[end-2:2:end] = pol.coeffs[end-1:2:end]
 
     @test_throws AssertionError yT^(-2)
     @test_throws AssertionError yT^(-2.0)
