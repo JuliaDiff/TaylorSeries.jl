@@ -71,10 +71,16 @@ eeuler = Base.MathConstants.e
     @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
-    HomogeneousPolynomial(v)[3] = 3
+    hpol_v = HomogeneousPolynomial(v)
+    hpol_v[3] = 3
     @test v == [1,2,3]
-    HomogeneousPolynomial(v)[1:3] = 3
+    hpol_v[1:3] = 3
     @test v == [3,3,3]
+    hpol_v[1:2:2] = 0
+    @test v == [0,3,3]
+    hpol_v[1:1:2] = [1,2]
+    @test all(hpol_v[1:1:2] .== [1,2])
+    @test v == [1,2,3]
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
@@ -241,6 +247,9 @@ eeuler = Base.MathConstants.e
     rv = a[end][1:end]
     @test a[end][1:end] == rv
     @test a[end][1:end] != b[end][1:end]
+    @test a[0:2:end] == a.coeffs[1:2:end]
+    a[0:1:end] = 0.0
+    @test a == zero(a)
 
     hp = HomogeneousPolynomial(1)^8
     rv1 = rand( length(hp) )
@@ -257,6 +266,7 @@ eeuler = Base.MathConstants.e
     @test hp[end-1:end] == rv1[end-1:end]
     hp[:] = 0.0
     @test hp[:] == zero(rv1)
+    @test all(hp[end-1:1:end] .== 0.0)
 
     pol = sin(xT+yT*xT)+yT^2-(1-xT)^3
     q = deepcopy(pol)
@@ -295,7 +305,7 @@ eeuler = Base.MathConstants.e
     q[:] = pol.coeffs
     q[1:end-1] = zeros(q.order+1)[2:end-1]
     @test q != pol
-    @test q[:] != pol[:]
+    @test all(q[1:1:end-1] .== 0.0)
     @test q[1:end-1] == zeros(q.order+1)[2:end-1]
     @test q[0] == pol[0]
     @test q[end] == pol[end]
@@ -305,6 +315,11 @@ eeuler = Base.MathConstants.e
     @test q[0:1] == pol[0:1]
     @test q[2:end-2] == pol2[2:end-2]
     @test q[end-1:end] == pol[end-1:end]
+    @test q[2:2:end-2] == pol2[2:2:end-2]
+    @test q[end-1:1:end] == pol[end-1:1:end]
+    q[end-2:2:end] = [0.0, 0.0]
+    @test q[end-2] == 0.0
+    @test_throws AssertionError q[end-2:2:end] = [0.0, 0.0, 0.0]
 
     @test_throws AssertionError yT^(-2)
     @test_throws AssertionError yT^(-2.0)

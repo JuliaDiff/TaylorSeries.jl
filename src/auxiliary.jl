@@ -74,14 +74,15 @@ Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
 getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
 getindex(a::Taylor1, n::Int) = a.coeffs[n+1]
-getindex(a::Taylor1, u::UnitRange) = view(a.coeffs, u .+ 1 )
+getindex(a::Taylor1, u::UnitRange{Int}) = view(a.coeffs, u .+ 1 )
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
+getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
+    view(a.coeffs, u[:] .+ 1)
 
 setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
-setindex!(a::Taylor1{T}, x::T, u::UnitRange) where {T<:Number} =
+setindex!(a::Taylor1{T}, x::T, u::UnitRange{Int}) where {T<:Number} =
     a.coeffs[u .+ 1] .= x
-function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
-    # a.coeffs[u .+ 1] .= x
+function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange{Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
         a.coeffs[u[ind]+1] = x[ind]
@@ -89,6 +90,14 @@ function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
 end
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] .= x
 setindex!(a::Taylor1{T}, x::Array{T,1}, c::Colon) where {T<:Number} = a.coeffs[c] .= x
+setindex!(a::Taylor1{T}, x::T, u::StepRange{Int,Int}) where {T<:Number} =
+    a.coeffs[u[:] .+ 1] .= x
+function setindex!(a::Taylor1{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T<:Number}
+    @assert length(u) == length(x)
+    for ind in eachindex(x)
+        a.coeffs[u[ind]+1] = x[ind]
+    end
+end
 
 
 """
@@ -107,19 +116,25 @@ end
 getcoeff(a::HomogeneousPolynomial, v::Array{Int,1}) = getcoeff(a, (v...,))
 
 getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
-getindex(a::HomogeneousPolynomial, n::UnitRange) = view(a.coeffs, n)
+getindex(a::HomogeneousPolynomial, n::UnitRange{Int}) = view(a.coeffs, n)
 getindex(a::HomogeneousPolynomial, c::Colon) = view(a.coeffs, c)
+getindex(a::HomogeneousPolynomial, u::StepRange{Int,Int}) where {T<:Number} =
+    view(a.coeffs, u[:])
 
 setindex!(a::HomogeneousPolynomial{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n] = x
-setindex!(a::HomogeneousPolynomial{T}, x::T, n::UnitRange) where {T<:Number} =
+setindex!(a::HomogeneousPolynomial{T}, x::T, n::UnitRange{Int}) where {T<:Number} =
     a.coeffs[n] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, n::UnitRange) where {T<:Number} =
+setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, n::UnitRange{Int}) where {T<:Number} =
     a.coeffs[n] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::T, c::Colon) where {T<:Number} =
     a.coeffs[c] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, c::Colon) where {T<:Number} =
     a.coeffs[c] = x
+setindex!(a::HomogeneousPolynomial{T}, x::T, u::StepRange{Int,Int}) where {T<:Number} =
+    a.coeffs[u[:]] .= x
+setindex!(a::HomogeneousPolynomial{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T<:Number} =
+    a.coeffs[u[:]] .= x[:]
 
 
 """
@@ -137,8 +152,10 @@ end
 getcoeff(a::TaylorN, v::Array{Int,1}) = getcoeff(a, (v...,))
 
 getindex(a::TaylorN, n::Int) = a.coeffs[n+1]
-getindex(a::TaylorN, u::UnitRange) = view(a.coeffs, u .+ 1)
+getindex(a::TaylorN, u::UnitRange{Int}) = view(a.coeffs, u .+ 1)
 getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
+getindex(a::TaylorN, u::StepRange{Int,Int}) where {T<:Number} =
+    view(a.coeffs, u[:] .+ 1)
 
 function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
         {T<:Number}
@@ -147,21 +164,19 @@ function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
 end
 setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n+1] = HomogeneousPolynomial(x, n)
-function setindex!(a::TaylorN{T}, x::T, u::UnitRange) where {T<:Number}
+function setindex!(a::TaylorN{T}, x::T, u::UnitRange{Int}) where {T<:Number}
     for ind in u
         a[ind] = x
     end
     a[u]
 end
-function setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, u::UnitRange) where {T<:Number}
-    # a[u[:]] .= x[:]
+function setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, u::UnitRange{Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
         a[u[ind]] = x[ind]
     end
 end
-function setindex!(a::TaylorN{T}, x::Array{T,1}, u::UnitRange) where {T<:Number}
-    # a[u] .= x
+function setindex!(a::TaylorN{T}, x::Array{T,1}, u::UnitRange{Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
         a[u[ind]] = x[ind]
@@ -173,6 +188,25 @@ setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, ::Colon) where
     {T<:Number} = (a[0:end] = x; a[:])
 setindex!(a::TaylorN{T}, x::Array{T,1}, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
+function setindex!(a::TaylorN{T}, x::T, u::StepRange{Int,Int}) where {T<:Number}
+    for ind in u
+        a[ind] = x
+    end
+    a[u]
+end
+function setindex!(a::TaylorN{T}, x::Array{HomogeneousPolynomial{T},1}, u::StepRange{Int,Int}) where {T<:Number}
+    # a[u[:]] .= x[:]
+    @assert length(u) == length(x)
+    for ind in eachindex(x)
+        a[u[ind]] = x[ind]
+    end
+end
+function setindex!(a::TaylorN{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T<:Number}
+    @assert length(u) == length(x)
+    for ind in eachindex(x)
+        a[u[ind]] = x[ind]
+    end
+end
 
 
 ## eltype, length, get_order ##
