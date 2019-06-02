@@ -43,14 +43,20 @@ eeuler = Base.MathConstants.e
     TaylorSeries.resize_coeffs1!(v,3)
     setindex!(Taylor1(v),3,2)
     @test v == [1,0,3,0]
-    @test Taylor1(v)[:] == [1,0,3,0]
-    @test Taylor1(v)[:] == Taylor1(v).coeffs[:]
-    setindex!(Taylor1(v),0,0:2)
+    pol_int = Taylor1(v)
+    @test pol_int[:] == [1,0,3,0]
+    @test pol_int[:] == pol_int.coeffs[:]
+    @test pol_int[1:2:3] == pol_int.coeffs[2:2:4]
+    setindex!(pol_int,0,0:2)
     @test v == zero(v)
-    setindex!(Taylor1(v),1,:)
+    setindex!(pol_int,1,:)
     @test v == ones(Int, 4)
-    Taylor1(v)[:] = 0
+    pol_int[:] .= 0
     @test v == zero(v)
+    pol_int[0:2:end] = 2
+    @test all(v[1:2:end] .== 2)
+    pol_int[0:2:3] = [0, 1]
+    @test all(v[1:2:3] .== [0, 1])
     rv = [rand(0:3) for i in 1:4]
     @test Taylor1(rv)[:] == rv
     y = sin(Taylor1(16))
@@ -60,16 +66,16 @@ eeuler = Base.MathConstants.e
     @test y[:] == cos(Taylor1(16))[:]
     y = sin(Taylor1(16))
     rv = rand(5)
-    y[0:4] = rv
+    y[0:4] .= rv
     @test y[0:4] == rv
     @test y[5:end] == y.coeffs[6:end]
     rv = rand( length(y.coeffs) )
-    y[:] = rv
+    y[:] .= rv
     @test y[:] == rv
-    y[:] = cos(Taylor1(16)).coeffs
+    y[:] .= cos(Taylor1(16)).coeffs
     @test y == cos(Taylor1(16))
     @test y[:] == cos(Taylor1(16))[:]
-    y[:] = 0.0
+    y[:] .= 0.0
     @test y[:] == zero(y[:])
     y = sin(Taylor1(16))
     rv = rand.(length(0:4))
@@ -77,8 +83,13 @@ eeuler = Base.MathConstants.e
     @test y[0:4] == rv
     @test y[6:end] == sin(Taylor1(16))[6:end]
     rv = rand.(length(y))
-    y[:] = rv
+    y[:] .= rv
     @test y[:] == rv
+    y[0:4:end] .= 1.0
+    @test all(y.coeffs[1:4:end] .== 1.0)
+    y[0:2:8] .= rv[1:5]
+    @test y.coeffs[1:2:9] == rv[1:5]
+    @test_throws AssertionError y[0:2:3] = rv
 
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test getcoeff(Taylor1(Complex{Float64},3),1) == complex(1.0,0.0)

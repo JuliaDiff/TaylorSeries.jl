@@ -45,7 +45,10 @@ eeuler = Base.MathConstants.e
 
     x, y = set_variables("x y", order=6)
     @test size(x) == (7,)
+    @test size(x[1]) == (2,)
+    @test size(x[2]) == (3,)
     @test firstindex(x) == 0
+    @test firstindex(x[end]) == 1
     @test lastindex(y) == get_order()
     @test eachindex(x) == 0:6
     @test iterate(x) == (HomogeneousPolynomial([0.0], 0), 1)
@@ -71,10 +74,16 @@ eeuler = Base.MathConstants.e
     @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
     @test v == [1,2,0]
     @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
-    HomogeneousPolynomial(v)[3] = 3
+    hpol_v = HomogeneousPolynomial(v)
+    hpol_v[3] = 3
     @test v == [1,2,3]
-    HomogeneousPolynomial(v)[1:3] = 3
+    hpol_v[1:3] = 3
     @test v == [3,3,3]
+    hpol_v[1:2:2] = 0
+    @test v == [0,3,3]
+    hpol_v[1:1:2] = [1,2]
+    @test all(hpol_v[1:1:2] .== [1,2])
+    @test v == [1,2,3]
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
@@ -241,32 +250,36 @@ eeuler = Base.MathConstants.e
     rv = a[end][1:end]
     @test a[end][1:end] == rv
     @test a[end][1:end] != b[end][1:end]
+    @test a[0:2:end] == a.coeffs[1:2:end]
+    a[0:1:end] .= 0.0
+    @test a == zero(a)
 
     hp = HomogeneousPolynomial(1)^8
     rv1 = rand( length(hp) )
     hp[:] = rv1
     @test rv1 == hp[:]
     rv2 = rand( length(hp)-2 )
-    hp[1:end-2] = rv2
+    hp[1:end-2] .= rv2
     @test hp[1:end-2] == rv2
     @test hp[end-1:end] == rv1[end-1:end]
-    hp[3:4] = 0.0
+    hp[3:4] .= 0.0
     @test hp[1:2] == rv2[1:2]
     @test hp[3:4] == zeros(2)
     @test hp[5:end-2] == rv2[5:end]
     @test hp[end-1:end] == rv1[end-1:end]
     hp[:] = 0.0
     @test hp[:] == zero(rv1)
+    @test all(hp[end-1:1:end] .== 0.0)
 
     pol = sin(xT+yT*xT)+yT^2-(1-xT)^3
     q = deepcopy(pol)
     q[:] = 0.0
     @test get_order.(q[:]) == collect(0:q.order)
     @test q[:] == zero(q[:])
-    q[:] = pol.coeffs
+    q[:] .= pol.coeffs
     @test q == pol
     @test q[:] == pol[:]
-    q[2:end-1] = 0.0
+    q[2:end-1] .= 0.0
     @test q[2:end-1] == zero.(q[2:end-1])
     @test q[1] == pol[1]
     @test q[end] == pol[end]
@@ -275,36 +288,45 @@ eeuler = Base.MathConstants.e
     q[:] = 1.0
     @test q[1] == HomogeneousPolynomial([1,0])
     @test q[2] == HomogeneousPolynomial([1,0,0])
-    q[:] = pol.coeffs
+    q[:] .= pol.coeffs
     q[2:end-1] = one.(q[2:end-1])
     @test q[2:end-1] == one.(q[2:end-1])
     @test q[2] == HomogeneousPolynomial([1,1,1])
     @test q[1] == pol[1]
     @test q[end] == pol[end]
-    q[:] = pol.coeffs
+    q[:] .= pol.coeffs
     zHall = zeros(HomogeneousPolynomial{Float64}, q.order)
-    q[:] = zHall
+    q[:] .= zHall
     @test q[:] == zHall
-    q[:] = pol.coeffs
+    q[:] .= pol.coeffs
     q[1:end-1] .= zHall[2:end-1]
     @test q[1:end-1] == zHall[2:end-1]
-    q[:] = pol.coeffs
+    q[:] .= pol.coeffs
     @test q[:] != zeros(q.order+1)
-    q[:] = zeros(q.order+1)
+    q[:] .= zeros(q.order+1)
     @test q[:] == zeros(q.order+1)
-    q[:] = pol.coeffs
-    q[1:end-1] = zeros(q.order+1)[2:end-1]
+    q[:] .= pol.coeffs
+    q[1:end-1] .= zeros(q.order+1)[2:end-1]
     @test q != pol
-    @test q[:] != pol[:]
+    @test all(q[1:1:end-1] .== 0.0)
     @test q[1:end-1] == zeros(q.order+1)[2:end-1]
     @test q[0] == pol[0]
     @test q[end] == pol[end]
-    q[:] = pol.coeffs
+    q[:] .= pol.coeffs
     pol2 = cos(sin(xT)-yT^3*xT)-3yT^2+sqrt(1-xT)
     q[2:end-2] .= pol2.coeffs[3:end-2]
     @test q[0:1] == pol[0:1]
     @test q[2:end-2] == pol2[2:end-2]
     @test q[end-1:end] == pol[end-1:end]
+    @test q[2:2:end-2] == pol2[2:2:end-2]
+    @test q[end-1:1:end] == pol[end-1:1:end]
+    q[end-2:2:end] .= [0.0, 0.0]
+    @test q[end-2] == 0.0
+    @test_throws AssertionError q[end-2:2:end] = [0.0, 0.0, 0.0]
+    q[end-2:2:end] .= pol.coeffs[end-2:2:end]
+    @test q[end-2] == pol[end-2]
+    q[end-2:2:end] .= pol.coeffs[end-2:2:end]
+    @test_throws AssertionError q[end-2:2:end] = pol.coeffs[end-1:2:end]
 
     @test_throws AssertionError yT^(-2)
     @test_throws AssertionError yT^(-2.0)
