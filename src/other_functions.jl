@@ -13,7 +13,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @eval ($f)(a::$T) = $T(($f).(a.coeffs), a.order)
     end
 
-    @eval adjoint(a::$T) = conj.(a)
+    @eval adjoint(a::$T) = conj(a)
 
     ## isinf and isnan ##
     @eval isinf(a::$T) = any( isinf.(a.coeffs) )

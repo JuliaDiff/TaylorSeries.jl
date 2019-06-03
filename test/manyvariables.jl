@@ -44,6 +44,8 @@ eeuler = Base.MathConstants.e
     @test length(get_variables()) == get_numvars()
 
     x, y = set_variables("x y", order=6)
+    @test axes(x) == axes(y) == ()
+    @test axes(x[1]) == axes(y[2]) == ()
     @test size(x) == (7,)
     @test size(x[1]) == (2,)
     @test size(x[2]) == (3,)
@@ -92,6 +94,9 @@ eeuler = Base.MathConstants.e
     yT = TaylorN(Int, 2, order=17)
     zeroT = zero( TaylorN([xH],1) )
     @test zeroT.coeffs == zeros(HomogeneousPolynomial{Int}, 1)
+    @test size(xH) == (2,)
+    @test firstindex(xH) == 1
+    @test lastindex(yH) == 2
     @test length(zeros(HomogeneousPolynomial{Int}, 1)) == 2
     @test one(HomogeneousPolynomial(1,1)) == HomogeneousPolynomial([1,1])
     uT = one(convert(TaylorN{Float64},yT))
@@ -657,16 +662,16 @@ eeuler = Base.MathConstants.e
     q = zero(p)
     TaylorSeries.deg2rad!(q, p, 0)
     @test q[0] == p[0]*(pi/180)
-    TaylorSeries.deg2rad!.(q, p, [1,3,5])
-    for i in [0,1,3,5]
-        @test q[i] == p[i]*(pi/180)
-    end
+    # TaylorSeries.deg2rad!.(q, p, [1,3,5])
+    # for i in [0,1,3,5]
+    #     @test q[i] == p[i]*(pi/180)
+    # end
     TaylorSeries.rad2deg!(q, p, 0)
     @test q[0] == p[0]*(180/pi)
-    TaylorSeries.rad2deg!.(q, p, [1,3,5])
-    for i in [0,1,3,5]
-        @test q[i] == p[i]*(180/pi)
-    end
+    # TaylorSeries.rad2deg!.(q, p, [1,3,5])
+    # for i in [0,1,3,5]
+    #     @test q[i] == p[i]*(180/pi)
+    # end
     xT = 5+TaylorN(Int, 1, order=10)
     yT = TaylorN(2, order=10)
     TaylorSeries.deg2rad!(yT, xT, 0)

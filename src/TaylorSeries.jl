@@ -32,7 +32,7 @@ end
 import Base: ==, +, -, *, /, ^
 
 import Base: iterate, size, eachindex, firstindex, lastindex,
-    eltype, length, getindex, setindex!
+    eltype, length, getindex, setindex!, axes, copyto!
 
 import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, show,
@@ -67,6 +67,7 @@ include("other_functions.jl")
 include("evaluate.jl")
 include("calculus.jl")
 include("dictmutfunct.jl")
+include("broadcasting.jl")
 include("printing.jl")
 
 function __init__()

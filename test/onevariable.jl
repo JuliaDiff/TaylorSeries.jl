@@ -28,12 +28,8 @@ eeuler = Base.MathConstants.e
     @test iterate(t) == (0.0, 1)
     @test iterate(t, 1) == (1.0, 2)
     @test iterate(t, 16) == nothing
-
-    # ta = Taylor1([1,2,3,4,5])
-    # vT = [h for h in ta]
-    # voT = [h.order for h in Taylor1([1,2,3,4,5])]
-    # @test vT == [Taylor1(1,0), Taylor1(2,1), Taylor1(3,2), Taylor1(4,3), Taylor1(5,4)]
-    # @test voT == [0, 1, 2, 3, 4]
+    @test axes(t) == ()
+    @test axes([t]) == (Base.OneTo(1),)
 
     v = [1,2]
     @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
@@ -129,11 +125,11 @@ eeuler = Base.MathConstants.e
     @test constant_term(2.0) == 2.0
     @test constant_term(t) == 0
     @test constant_term(tim) == complex(0, 0)
-    @test constant_term([zt, t]) == zt
+    @test constant_term([zt, t]) == [0, 0]
     @test linear_polynomial(2) == 2
     @test linear_polynomial(t) == t
     @test linear_polynomial(tim^2) == zero(tim)
-    @test linear_polynomial([zero(tim), tim]) == zero(tim)
+    @test linear_polynomial([zero(tim), tim]) == [zero(tim), tim]
 
     @test ot == 1
     @test 0.0 == zt
@@ -257,15 +253,15 @@ eeuler = Base.MathConstants.e
     @test a.() == [p(), q()]
     @test a.() == a()
     vr = rand(2)
-    @test p.(vr) == evaluate.(p, vr)
+    @test p.(vr) == evaluate.([p], vr)
     Mr = rand(3,3,3)
-    @test p.(Mr) == evaluate.(p, Mr)
+    @test p.(Mr) == evaluate.([p], Mr)
     mytaylor1 = Taylor1(rand(20))
     vr = rand(5)
     @test p(vr) == p.(vr)
-    @test p(vr) == evaluate.(p,vr)
+    @test p(vr) == evaluate.([p],vr)
     @test p(Mr) == p.(Mr)
-    @test p(Mr) == evaluate.(p,Mr)
+    @test p(Mr) == evaluate.([p], Mr)
     taylor_a = Taylor1(Int,10)
     taylor_x = exp(Taylor1(Float64,13))
     @test taylor_x(taylor_a) == evaluate(taylor_x, taylor_a)
@@ -484,22 +480,22 @@ eeuler = Base.MathConstants.e
     TaylorSeries.deg2rad!(b, a, 0)
     @test a == c
     @test a[0]*(pi/180) == b[0]
-    TaylorSeries.deg2rad!.(b, a, [0,1,2])
-    @test a == c
-    for i in 0:2
-        @test a[i]*(pi/180) == b[i]
-    end
+    # TaylorSeries.deg2rad!.(b, a, [0,1,2])
+    # @test a == c
+    # for i in 0:2
+    #     @test a[i]*(pi/180) == b[i]
+    # end
     a = Taylor1(rand(10))
     b = Taylor1(rand(10))
     c = deepcopy(a)
     TaylorSeries.rad2deg!(b, a, 0)
     @test a == c
     @test a[0]*(180/pi) == b[0]
-    TaylorSeries.rad2deg!.(b, a, [0,1,2])
-    @test a == c
-    for i in 0:2
-        @test a[i]*(180/pi) == b[i]
-    end
+    # TaylorSeries.rad2deg!.(b, a, [0,1,2])
+    # @test a == c
+    # for i in 0:2
+    #     @test a[i]*(180/pi) == b[i]
+    # end
 
     # Test additional Taylor1 constructors
     @test Taylor1{Float64}(true) == Taylor1([1.0])
