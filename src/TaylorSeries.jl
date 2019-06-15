@@ -23,11 +23,6 @@ using Markdown
 using Requires
 
 import LinearAlgebra: norm, mul!
-if VERSION ≥ v"1.0.0"
-    # export gradient
-else
-    import LinearAlgebra: gradient
-end
 
 import Base: ==, +, -, *, /, ^
 
