@@ -200,6 +200,10 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     end
 end
 
++(a::Taylor1{T}, b::TaylorN{S}) where {T<:NumberNotSeries,S<:NumberNotSeries} =
+    +(promote(a,b)...)
+-(a::Taylor1{T}, b::TaylorN{S}) where {T<:NumberNotSeries,S<:NumberNotSeries} =
+    -(promote(a,b)...)
 
 
 ## Multiplication ##
