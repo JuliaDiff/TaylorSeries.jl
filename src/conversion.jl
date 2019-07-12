@@ -200,3 +200,6 @@ promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries, T<:AbstractSeries}
 
 promote_rule(::Type{S}, ::Type{T}) where
     {S<:AbstractIrrational, T<:AbstractSeries} = promote_rule(T,S)
+
+promote_rule(::Type{Taylor1{T}}, ::Type{TaylorN{S}}) where {T<:NumberNotSeries, S<:NumberNotSeries} =
+    throw(ArgumentError("There is no reasonable promotion among `Taylor1{$T}` and `TaylorN{$S}` types"))

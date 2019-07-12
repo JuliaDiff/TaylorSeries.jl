@@ -273,4 +273,9 @@ using LinearAlgebra, SparseArrays
     Qv = convert.(Taylor1{TaylorN{Float64}}, Pv)
 
     @test TaylorSeries.jacobian(Pv) == TaylorSeries.jacobian(Qv)
+
+    @test_throws ArgumentError Taylor1(2) + TaylorN(1)
+    @test_throws ArgumentError Taylor1(2) - TaylorN(1)
+    @test_throws ArgumentError Taylor1(2) * TaylorN(1)
+    @test_throws ArgumentError TaylorN(2) / Taylor1(1)
 end
