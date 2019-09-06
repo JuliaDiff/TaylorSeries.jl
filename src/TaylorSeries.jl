@@ -23,10 +23,12 @@ using Markdown
 using Requires
 
 using LinearAlgebra: norm, mul!,
-    lu, istriu, triu!, istril, tril!, UpperTriangular, LowerTriangular,
-    LinearAlgebra.inv!, LinearAlgebra.checksquare
+    lu, lu!, LinearAlgebra.lutype, LinearAlgebra.copy_oftype,
+    LinearAlgebra.issuccess
+    # istriu, triu!, istril, tril!, UpperTriangular, LowerTriangular,
+    # LinearAlgebra.inv!, LinearAlgebra.checksquare
 
-import LinearAlgebra: norm, mul!
+import LinearAlgebra: norm, mul!, lu
 
 import Base: ==, +, -, *, /, ^
 

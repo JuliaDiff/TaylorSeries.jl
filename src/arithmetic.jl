@@ -566,18 +566,34 @@ end
 # licensed under MIT "Expat".
 # Specialize a method of `inv` for Matrix{Taylor1{T}}. Simply, avoid pivoting,
 # since the polynomial field is not an ordered one.
-function Base.inv(A::StridedMatrix{Taylor1{T}}) where T
-    checksquare(A)
-    S = Taylor1{typeof((one(T)*zero(T) + one(T)*zero(T))/one(T))}
-    AA = convert(AbstractArray{S}, A)
-    if istriu(AA)
-        Ai = triu!(parent(inv(UpperTriangular(AA))))
-    elseif istril(AA)
-        Ai = tril!(parent(inv(LowerTriangular(AA))))
+# function Base.inv(A::StridedMatrix{Taylor1{T}}) where T
+#     checksquare(A)
+#     S = Taylor1{typeof((one(T)*zero(T) + one(T)*zero(T))/one(T))}
+#     AA = convert(AbstractArray{S}, A)
+#     if istriu(AA)
+#         Ai = triu!(parent(inv(UpperTriangular(AA))))
+#     elseif istril(AA)
+#         Ai = tril!(parent(inv(LowerTriangular(AA))))
+#     else
+#         # Do not use pivoting !!
+#         Ai = inv!(lu(AA, Val(false)))
+#         Ai = convert(typeof(parent(Ai)), Ai)
+#     end
+#     return Ai
+# end
+
+# Adapted from (Julia v1.2) stdlib/v1.2/LinearAlgebra/src/lu.jl#240-253
+# and (Julia v1.4.0-dev) stdlib/LinearAlgebra/v1.4/src/lu.jl#270-274,
+# licensed under MIT "Expat".
+# Specialize a method of `lu` for Matrix{Taylor1{T}}, which avoids pivoting,
+# since the polynomial field is not an ordered one.
+# We can't assume an ordered field so we first try without pivoting
+function lu(A::AbstractMatrix{Taylor1{T}}; check::Bool = true) where T
+    S = Taylor1{lutype(T)}
+    F = lu!(copy_oftype(A, S), Val(false); check = false)
+    if issuccess(F)
+        return F
     else
-        # Do not use pivoting !!
-        Ai = inv!(lu(AA, Val(false)))
-        Ai = convert(typeof(parent(Ai)), Ai)
+        return lu!(copy_oftype(A, S), Val(true); check = check)
     end
-    return Ai
 end

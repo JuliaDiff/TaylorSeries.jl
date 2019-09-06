@@ -506,22 +506,30 @@ end
 
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
     t = Taylor1(5)
-
     a = Diagonal(rand(0:10,3)) + rand(3, 3)
+    ainv = inv(a)
     b = Taylor1.(a, 5)
     binv = inv(b)
-    @test norm(binv - inv(a), Inf) ≤ 1e-11
-    @test norm(b*binv - I, Inf) ≤ 1e-11
-    @test norm(binv*b - I, Inf) ≤ 1e-11
-    @test norm(triu(b)*inv(UpperTriangular(b)) - I, Inf) ≤ 1e-11
-    @test norm(inv(LowerTriangular(b))*tril(b) - I, Inf) ≤ 1e-11
+    tol = 1.0e-11
 
-    b .= b .+ t
-    binv = inv(b)
-    @test norm(b*binv - I, Inf) ≤ 1e-11
-    @test norm(binv*b - I, Inf) ≤ 1e-11
-    @test norm(triu(b)*inv(triu(b)) - I, Inf) ≤ 1e-11
-    @test norm(inv(tril(b))*tril(b) - I, Inf) ≤ 1e-11
+    for its = 1:10
+        a .= Diagonal(rand(2:12,3)) + rand(3, 3)
+        ainv .= inv(a)
+        b .= Taylor1.(a, 5)
+        binv .= inv(b)
+        @test norm(binv - ainv, Inf) ≤ tol
+        @test norm(b*binv - I, Inf) ≤ tol
+        @test norm(binv*b - I, Inf) ≤ tol
+        @test norm(triu(b)*inv(UpperTriangular(b)) - I, Inf) ≤ tol
+        @test norm(inv(LowerTriangular(b))*tril(b) - I, Inf) ≤ tol
+
+        b .= b .+ t
+        binv .= inv(b)
+        @test norm(b*binv - I, Inf) ≤ tol
+        @test norm(binv*b - I, Inf) ≤ tol
+        @test norm(triu(b)*inv(triu(b)) - I, Inf) ≤ tol
+        @test norm(inv(tril(b))*tril(b) - I, Inf) ≤ tol
+    end
 end
 
 @testset "Matrix multiplication for Taylor1" begin
