@@ -502,14 +502,34 @@ eeuler = Base.MathConstants.e
     @test Taylor1{Float64}(false) == Taylor1([0.0])
     @test Taylor1{Int}(true) == Taylor1([1])
     @test Taylor1{Int}(false) == Taylor1([0])
+end
 
-    # Test use of `inv` for computation of matrix inverse of `Matrix{Taylor1{Float64}}`
-    a = rand(3, 3)
+@testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
+    t = Taylor1(5)
+    a = Diagonal(rand(0:10,3)) + rand(3, 3)
+    ainv = inv(a)
     b = Taylor1.(a, 5)
     binv = inv(b)
-    I_t1_5 = Taylor1.(Matrix{Float64}(I, size(b)), 5) # 5x5 Taylor1{Float64} identity matrix, order 5
-    @test norm(b*binv - I_t1_5, Inf) ≤ 1e-12
-    @test norm(binv*b - I_t1_5, Inf) ≤ 1e-12
+    tol = 1.0e-11
+
+    for its = 1:10
+        a .= Diagonal(rand(2:12,3)) + rand(3, 3)
+        ainv .= inv(a)
+        b .= Taylor1.(a, 5)
+        binv .= inv(b)
+        @test norm(binv - ainv, Inf) ≤ tol
+        @test norm(b*binv - I, Inf) ≤ tol
+        @test norm(binv*b - I, Inf) ≤ tol
+        @test norm(triu(b)*inv(UpperTriangular(b)) - I, Inf) ≤ tol
+        @test norm(inv(LowerTriangular(b))*tril(b) - I, Inf) ≤ tol
+
+        b .= b .+ t
+        binv .= inv(b)
+        @test norm(b*binv - I, Inf) ≤ tol
+        @test norm(binv*b - I, Inf) ≤ tol
+        @test norm(triu(b)*inv(triu(b)) - I, Inf) ≤ tol
+        @test norm(inv(tril(b))*tril(b) - I, Inf) ≤ tol
+    end
 end
 
 @testset "Matrix multiplication for Taylor1" begin
