@@ -22,6 +22,10 @@ using SparseArrays: SparseMatrixCSC
 using Markdown
 using Requires
 
+using LinearAlgebra: norm, mul!,
+    lu, istriu, triu!, istril, tril!, UpperTriangular, LowerTriangular,
+    LinearAlgebra.inv!, LinearAlgebra.checksquare
+
 import LinearAlgebra: norm, mul!
 
 import Base: ==, +, -, *, /, ^

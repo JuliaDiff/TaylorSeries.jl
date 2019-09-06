@@ -560,3 +560,24 @@ function mul!(y::Vector{Taylor1{T}},
 
     return y
 end
+
+
+# Adapted from (Julia v1.2) stdlib/v1.2/LinearAlgebra/src/dense.jl#721-734,
+# licensed under MIT "Expat".
+# Specialize a method of `inv` for Matrix{Taylor1{T}}. Simply, avoid pivoting,
+# since the polynomial field is not an ordered one.
+function Base.inv(A::StridedMatrix{Taylor1{T}}) where T
+    checksquare(A)
+    S = Taylor1{typeof((one(T)*zero(T) + one(T)*zero(T))/one(T))}
+    AA = convert(AbstractArray{S}, A)
+    if istriu(AA)
+        Ai = triu!(parent(inv(UpperTriangular(AA))))
+    elseif istril(AA)
+        Ai = tril!(parent(inv(LowerTriangular(AA))))
+    else
+        # Do not use pivoting !!
+        Ai = inv!(lu(AA, Val(false)))
+        Ai = convert(typeof(parent(Ai)), Ai)
+    end
+    return Ai
+end
