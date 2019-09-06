@@ -506,21 +506,22 @@ end
 
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
     t = Taylor1(5)
-    a = rand(3, 3)
-    b = a .+ zero(t)
-    binv = inv(b)
-    I_t_5 = UniformScaling(one(Taylor1(5))) # 3x3 Taylor1{Float64} identity matrix, order 5
-    @test norm(b*binv - I_t_5, Inf) ≤ 1e-11
-    @test norm(binv*b - I_t_5, Inf) ≤ 1e-11
-    @test norm(triu(b)*inv(UpperTriangular(b)) - I_t_5, Inf) ≤ 1e-11
-    @test norm(inv(LowerTriangular(b))*tril(b) - I_t_5, Inf) ≤ 1e-11
 
-    b = a .+ t
+    a = Diagonal(rand(0:10,3)) + rand(3, 3)
+    b = Taylor1.(a, 5)
     binv = inv(b)
-    @test norm(b*binv - I_t_5, Inf) ≤ 1e-11
-    @test norm(binv*b - I_t_5, Inf) ≤ 1e-11
-    @test norm(triu(b)*inv(triu(b)) - I_t_5, Inf) ≤ 1e-11
-    @test norm(inv(tril(b))*tril(b) - I_t_5, Inf) ≤ 1e-11
+    @test norm(binv - inv(a), Inf) ≤ 1e-11
+    @test norm(b*binv - I, Inf) ≤ 1e-11
+    @test norm(binv*b - I, Inf) ≤ 1e-11
+    @test norm(triu(b)*inv(UpperTriangular(b)) - I, Inf) ≤ 1e-11
+    @test norm(inv(LowerTriangular(b))*tril(b) - I, Inf) ≤ 1e-11
+
+    b .= b .+ t
+    binv = inv(b)
+    @test norm(b*binv - I, Inf) ≤ 1e-11
+    @test norm(binv*b - I, Inf) ≤ 1e-11
+    @test norm(triu(b)*inv(triu(b)) - I, Inf) ≤ 1e-11
+    @test norm(inv(tril(b))*tril(b) - I, Inf) ≤ 1e-11
 end
 
 @testset "Matrix multiplication for Taylor1" begin
