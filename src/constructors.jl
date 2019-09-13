@@ -155,8 +155,9 @@ struct TaylorN{T<:Number} <: AbstractSeries{T}
         coeffs = zeros(HomogeneousPolynomial{T}, order)
         @inbounds for i in eachindex(v)
             ord = v[i].order
-            ord > order && continue
-            coeffs[ord+1] += v[i]
+            if ord ≤ order
+                coeffs[ord+1] += v[i]
+            end
         end
         new{T}(coeffs, order)
     end
