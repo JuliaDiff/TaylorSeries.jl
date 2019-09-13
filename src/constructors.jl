@@ -69,8 +69,8 @@ julia> Taylor1(Rational{Int}, 4)
  1//1 t + 𝒪(t⁵)
 ```
 """
-Taylor1(::Type{T}, order::Int=1) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
-Taylor1(order::Int=1) = Taylor1(Float64, order)
+Taylor1(::Type{T}, order::Int) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
+Taylor1(order::Int) = Taylor1(Float64, order)
 
 
 ######################### HomogeneousPolynomial

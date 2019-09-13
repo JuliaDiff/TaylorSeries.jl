@@ -243,9 +243,11 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         @inline function fixorder(a::$T, b::$T)
             a.order == b.order && return a, b
-            a.order < b.order &&
-                return $T(copy(a.coeffs), b.order), $T(copy(b.coeffs), b.order)
-            return $T(copy(a.coeffs), a.order), $T(copy(b.coeffs), a.order)
+            minorder, maxorder = minmax(a.order, b.order)
+            if minorder ≤ 0
+                minorder = maxorder
+            end
+            return $T(copy(a.coeffs), minorder), $T(copy(b.coeffs), minorder)
         end
     end
 end

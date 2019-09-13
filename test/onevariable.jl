@@ -107,7 +107,8 @@ eeuler = Base.MathConstants.e
     @test eltype(promote(1.0+im, zt)[1]) == Complex{Float64}
 
     @test length(Taylor1(10)) == 11
-    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
+    @test length.( TaylorSeries.fixorder(zt, Taylor1([1])) ) == (16, 16)
+    @test length.( TaylorSeries.fixorder(zt, Taylor1([1], 1)) ) == (2, 2)
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(t^2) == 2
