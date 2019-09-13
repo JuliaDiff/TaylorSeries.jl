@@ -12,6 +12,7 @@ eeuler = Base.MathConstants.e
     @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
     @test TaylorN{Float64} <: AbstractSeries{Float64}
 
+    set_variables("x", numvars=2, order=6)
     _taylorNparams = TaylorSeries.ParamsTaylorN(6, 2, String["x₁", "x₂"])
     @test _taylorNparams.order == get_order()
     @test _taylorNparams.num_vars == get_numvars()
@@ -141,7 +142,7 @@ eeuler = Base.MathConstants.e
     @test promote(xH, yT)[1] == xT
     @test promote(xT, [xH,yH])[2] == xT+yT
     @test typeof(promote(im*xT,[xH,yH])[2]) == TaylorN{Complex{Int}}
-    # @test TaylorSeries.fixorder(TaylorN(1, order=1),17) == xT
+
     @test iszero(zeroT.coeffs)
     @test iszero(zero(xH))
     @test !iszero(uT)

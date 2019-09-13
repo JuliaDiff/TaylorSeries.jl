@@ -20,7 +20,7 @@ using LinearAlgebra, SparseArrays
     @test tN.order == 3
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖¹) + 𝒪(t⁴)"
     @test string(tN) == " ( 1.0 + 𝒪(‖x‖¹)) t + 𝒪(t⁴)"
-    @test string(tN + 3Taylor1(Int, 2)) == " ( 4.0 + 𝒪(‖x‖¹)) t + 𝒪(t⁴)"
+    @test string(tN + 3Taylor1(Int, 2)) == " ( 4.0 + 𝒪(‖x‖¹)) t + 𝒪(t³)"
     @test string(xH * tN) == " ( 1.0 x₁ + 𝒪(‖x‖²)) t + 𝒪(t⁴)"
 
     @test constant_term(xH) == xH
@@ -34,8 +34,7 @@ using LinearAlgebra, SparseArrays
     @test string(tN) == " ( 1.0 + 𝒪(‖x‖⁷)) t + 𝒪(t⁴)"
     @test string(Taylor1([xH+yH])) == "  1 x₁ + 1 x₂ + 𝒪(t¹)"
     @test string(Taylor1([zero(xH), xH*yH])) == " ( 1 x₁ x₂) t + 𝒪(t²)"
-    @test string(tN * Taylor1([0,TaylorN([xH+yH])])) ==
-        " ( 1.0 x₁ + 1.0 x₂ + 𝒪(‖x‖⁷)) t² + 𝒪(t⁴)"
+    @test string(tN * Taylor1([0,TaylorN([xH+yH])])) == "  0.0 + 𝒪(‖x‖⁷) + 𝒪(t²)"
 
     t = Taylor1(3)
     xHt = HomogeneousPolynomial(typeof(t), 1)
@@ -53,7 +52,7 @@ using LinearAlgebra, SparseArrays
     @test (xHt+yHt)(1, 1) == 1+t
     @test (xHt+yHt)([1, 1]) == (xHt+yHt)((1, 1))
 
-    tN1 = TaylorN([HomogeneousPolynomial([t]),xHt,yHt^2])
+    tN1 = TaylorN([HomogeneousPolynomial([t]), xHt, yHt^2])
     @test tN1[0] == HomogeneousPolynomial([t])
     @test tN1(t,one(t)) == 2t+t^2
     @test tN1([t,one(t)]) == tN1((t,one(t)))
