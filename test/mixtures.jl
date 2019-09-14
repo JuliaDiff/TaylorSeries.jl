@@ -278,3 +278,14 @@ using LinearAlgebra, SparseArrays
     @test_throws ArgumentError Taylor1(2) * TaylorN(1)
     @test_throws ArgumentError TaylorN(2) / Taylor1(1)
 end
+
+@testset "Tests with nested Taylor1s" begin
+    ti = Taylor1(3)
+    to = Taylor1([zero(ti), one(ti)], 9)
+    @test string(to) == " ( 1.0 + 𝒪(t⁴)) t + 𝒪(t¹⁰)"
+    @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
+    @test ti + to == Taylor1([ti, one(ti)], 10)
+    @test ti * to == Taylor1([zero(ti), ti], 10)
+    @test ti^2-to^2 == (ti+to)*(ti-to)
+    @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 10)
+end
