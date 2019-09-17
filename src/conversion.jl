@@ -12,20 +12,14 @@ convert(::Type{Taylor1{T}}, a::Taylor1) where {T<:Number} =
 
 convert(::Type{Taylor1{T}}, a::Taylor1{T}) where {T<:Number} = a
 
-function convert(::Type{Taylor1{Rational{T}}}, a::Taylor1{S}) where
-        {T<:Integer, S<:AbstractFloat}
-
-    la = length(a.coeffs)
-    v = Array{Rational{T}}(undef, la)
-    v .= rationalize.(a[0:la-1])
-    return Taylor1(v)
-end
+convert(::Type{Taylor1{Rational{T}}}, a::Taylor1{S}) where
+        {T<:Integer, S<:AbstractFloat} = Taylor1(rationalize.(a[:]), a.order)
 
 convert(::Type{Taylor1{T}}, b::Array{T,1}) where {T<:Number} =
     Taylor1(b, length(b)-1)
 
 convert(::Type{Taylor1{T}}, b::Array{S,1}) where {T<:Number, S<:Number} =
-    Taylor1(convert(Array{T,1},b))
+    Taylor1(convert(Array{T,1},b), length(b)-1)
 
 convert(::Type{Taylor1{T}}, b::S)  where {T<:Number, S<:Number} =
     Taylor1([convert(T,b)], 0)
@@ -91,7 +85,7 @@ convert(::Type{TaylorN{T}}, b::T) where {T<:Number} =
 convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 0)
 
 
-function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:Number}
+function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
 
     orderN = get_order()
     r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
@@ -110,7 +104,7 @@ function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:
     return TaylorN(r)
 end
 
-function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:Number}
+function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
 
     ordert = 0
     for ordHP in eachindex(s)
@@ -136,21 +130,21 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
 end
 
 function convert(::Type{Array{TaylorN{Taylor1{T}},N}},
-        s::Array{Taylor1{TaylorN{T}},N}) where {T<:Number, N}
+        s::Array{Taylor1{TaylorN{T}},N}) where {T<:NumberNotSeries, N}
 
     v = Array{TaylorN{Taylor1{T}}}(undef, size(s))
-    for ind in eachindex(s)
-        v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
+    @simd for ind in eachindex(s)
+        @inbounds v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
     end
     return v
 end
 
 function convert(::Type{Array{Taylor1{TaylorN{T}},N}},
-        s::Array{TaylorN{Taylor1{T}},N}) where {T<:Number, N}
+        s::Array{TaylorN{Taylor1{T}},N}) where {T<:NumberNotSeries, N}
 
     v = Array{Taylor1{TaylorN{T}}}(undef, size(s))
-    for ind in eachindex(s)
-        v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
+    @simd for ind in eachindex(s)
+        @inbounds v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
     end
     return v
 end
