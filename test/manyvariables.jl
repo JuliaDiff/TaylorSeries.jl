@@ -87,9 +87,30 @@ eeuler = Base.MathConstants.e
     hpol_v[1:1:2] = [1,2]
     @test all(hpol_v[1:1:2] .== [1,2])
     @test v == [1,2,3]
+    hpol_v[:] = zeros(Int, 3)
+    @test hpol_v == 0
+
+    tn_v = TaylorN(HomogeneousPolynomial(zeros(Int, 3)))
+    tn_v[0] = 1
+    @test tn_v == 1
+    tn_v[0:1] = [0, 1]
+    @test tn_v[0] == 0 && tn_v[1] == HomogeneousPolynomial(1, 1)
+    tn_v[0:1] = [HomogeneousPolynomial(0, 0), HomogeneousPolynomial([0,1])]
+    @test tn_v[0] == 0 && tn_v[1] == HomogeneousPolynomial([0,1], 1)
+    tn_v[:] = [HomogeneousPolynomial(1, 0), HomogeneousPolynomial(0, 1), hpol_v]
+    @test tn_v == 1
+    tn_v[:] = 0
+    @test tn_v == 0
+    tn_v[:] = [3,1,0]
+    @test tn_v == TaylorN([HomogeneousPolynomial(3, 0), HomogeneousPolynomial(1, 1)], 2)
+    tn_v[0:2] = [HomogeneousPolynomial(3, 0), HomogeneousPolynomial(1, 1), HomogeneousPolynomial(0, 2)]
+    @test tn_v == TaylorN([HomogeneousPolynomial(3, 0), HomogeneousPolynomial(1, 1)], 2)
+    tn_v[0:2:2] = [0,0]
+    @test tn_v == TaylorN(HomogeneousPolynomial(1, 1), 2)
 
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
+    @test xH == convert(HomogeneousPolynomial{Float64},xH)
     @test HomogeneousPolynomial(0,0)  == 0
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
@@ -102,6 +123,7 @@ eeuler = Base.MathConstants.e
     @test one(HomogeneousPolynomial(1,1)) == HomogeneousPolynomial([1,1])
     uT = one(convert(TaylorN{Float64},yT))
     @test uT == one(HomogeneousPolynomial)
+    @test uT == convert(TaylorN{Float64},uT)
     @test zeroT[0] == HomogeneousPolynomial(0, 0)
     @test uT[0] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
@@ -112,6 +134,7 @@ eeuler = Base.MathConstants.e
     @test !isnan(uT)
     @test TaylorSeries.fixorder(xH,yH) == (xH,yH)
     @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
+
 
     @test constant_term(xT) == 0
     @test constant_term(uT) == 1.0

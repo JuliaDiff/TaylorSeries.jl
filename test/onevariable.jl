@@ -47,6 +47,10 @@ eeuler = Base.MathConstants.e
     @test v == zero(v)
     setindex!(pol_int,1,:)
     @test v == ones(Int, 4)
+    setindex!(pol_int, v, :)
+    @test v == ones(Int, 4)
+    setindex!(pol_int, zeros(Int, 4), 0:3)
+    @test v == zeros(Int, 4)
     pol_int[:] .= 0
     @test v == zero(v)
     pol_int[0:2:end] = 2
