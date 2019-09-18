@@ -47,7 +47,9 @@ t = shift_taylor(0.0) # Independent variable `t`
 ```
 
 Note that the information about the maximum order considered is displayed
-using a big-𝒪 notation. In some cases, it is desirable to not display
+using a big-𝒪 notation. The convention followed when different orders are
+combined is consistent with the mathematics and the big-𝒪 notation, that is,
+to propagate the lowest order. In some cases, it is desirable to not display
 the big-𝒪 notation. The function [`displayBigO`](@ref) allows to
 control whether it is displayed or not.
 ```@repl userguide
@@ -69,9 +71,9 @@ t
 ```
 
 The definition of `shift_taylor(a)` uses the method
-[`Taylor1([::Type{Float64}], [order::Int=1])`](@ref), which is a
+[`Taylor1([::Type{Float64}], order::Int)`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,
-of given type and order (defaults are `Float64` and `order=1`).
+of given type and order (the default is `Float64`).
 This is one of the easiest ways to work with the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
@@ -87,10 +89,11 @@ t*(t^2-4)/(t+2)
 tI = im*t
 (1-t)^3.2
 (1+t)^t
+Taylor1(3) + Taylor1(5) == 2Taylor1(3)  # big-𝒪 convention applies
 t^6  # t is of order 5
 ```
 
-If no valid Taylor expansion can be computed, an error is thrown, for instance
+If no valid Taylor expansion can be computed an error is thrown, for instance,
 when a derivative is not defined (or simply diverges):
 
 ```@repl userguide
@@ -104,11 +107,11 @@ are computed recursively. At the moment of this writing, these functions
 are `exp`, `log`, `sqrt`, the trigonometric functions
 `sin`, `cos` and `tan`, their inverses, as well as the hyperbolic functions
 `sinh`, `cosh` and `tanh` and their inverses;
-more will be added in the future. Note that this way of obtaining the
-Taylor coefficients is not the *laziest* way, in particular for many independent
+more functions will be added in the future. Note that this way of obtaining the
+Taylor coefficients is not a *lazy* way, in particular for many independent
 variables. Yet, it is quite efficient, especially for the integration of
 ordinary differential equations, which is among the applications we have in
-mind (see also
+mind (see
 [TaylorIntegration.jl](https://github.com/PerezHz/TaylorIntegration.jl)).
 
 ```@repl userguide
@@ -144,7 +147,7 @@ functions return the corresponding [`Taylor1`](@ref) expansions.
 The last coefficient of a derivative is set to zero to keep the
 same order as the original polynomial; for the integral, an
 integration constant may be set by the user (the default is zero). The
-order of the resulting polynomial is not changed. The value of the
+order of the resulting polynomial is kept unchanged. The value of the
 ``n``-th (``n \ge 0``)
 derivative is obtained using `derivative(n,a)`, where `a` is a Taylor series.
 
@@ -173,7 +176,7 @@ eBig = evaluate( exp(tBig), one(BigFloat) )
 ℯ - eBig
 ```
 
-Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it were a function, i.e., `p(x)`:
+Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it was a function, i.e., `p(x)`:
 
 ```@repl userguide
 t = Taylor1(15)
@@ -186,13 +189,12 @@ p() == p(0.0) # p() is a shortcut to obtain the 0-th order coefficient of `p`
 ```
 
 Note that the syntax `p(x)` is equivalent to `evaluate(p, x)`, whereas `p()` is
-equivalent to `evaluate(p)`. For more details about function-like behavior for a
-given type in Julia, see the [Function-like objects](https://docs.julialang.org/en/stable/manual/methods/#Function-like-objects-1)
-section of the Julia manual.
+equivalent to `evaluate(p)`.
 
-Useful shortcuts are [`taylor_expand`](@ref) are [`update!`](@ref).
+Useful shortcuts are [`taylor_expand`](@ref) and [`update!`](@ref).
 The former returns
-the expansion of a function around a given value `t0`. In turn, `update!`
+the expansion of a function around a given value `t0`, mimicking the use
+of `shift_taylor` above. In turn, `update!`
 provides an in-place update of a given Taylor polynomial, that is, it shifts
 it further by the provided amount.
 
@@ -237,7 +239,7 @@ one can specify the variables using a vector of symbols.
 set_variables([:x, :y], order=10)
 ```
 
-Similarly, numbered variables are also available by specifying a single
+Similarly, subindexed variables are also available by specifying a single
 variable name and the optional keyword argument `numvars`:
 
 ```@repl userguide
@@ -245,7 +247,7 @@ set_variables("α", numvars=3)
 ```
 
 Alternatively to `set_variables`, [`get_variables`](@ref) can be used if one
-doesn't want to change internal dictionaries. `get_variables` returns a vector
+does not want to change internal dictionaries. `get_variables` returns a vector
 of `TaylorN` independent variables of a desired `order`
 (lesser than `get_order` so the
 internals doesn't have to change) with the length and variable names defined
@@ -300,13 +302,14 @@ the corresponding independent variable, i.e. ``x \to x+a``.
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
 have been extended to work with [`TaylorN`](@ref) objects, including the
-appropriate
-promotions to deal with numbers. (Some of the arithmetic operations have
-been extended for
+appropriate promotions to deal with numbers.
+Note that some of the arithmetic operations have been extended for
 [`HomogeneousPolynomial`](@ref), whenever the result is a
-[`HomogeneousPolynomial`](@ref); division, for instance, is not extended.)
+[`HomogeneousPolynomial`](@ref); division, for instance, is not extended.
+The same convention used for `Taylor1` objects is used when combining
+`TaylorN` polynomials of different order.
 
-Also, the elementary functions have been
+The elementary functions have also been
 implemented, again by computing their coefficients recursively:
 
 ```@repl userguide
