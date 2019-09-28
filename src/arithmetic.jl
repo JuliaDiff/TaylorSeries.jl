@@ -494,8 +494,9 @@ term of the denominator.
         return nothing
     end
 
-    @inbounds for i = 0:k-1
-        k+ordfact-i > b.order && continue
+    imin = max(0, k+ordfact-b.order)
+    c[k] = c[imin] * b[k+ordfact-imin]
+    @inbounds for i = imin+1:k-1
         c[k] += c[i] * b[k+ordfact-i]
     end
     if k+ordfact ≤ b.order
