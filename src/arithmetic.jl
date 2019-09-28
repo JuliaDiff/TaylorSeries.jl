@@ -495,7 +495,7 @@ term of the denominator.
     end
 
     imin = max(0, k+ordfact-b.order)
-    c[k] = c[imin] * b[k+ordfact-imin]
+    @inbounds c[k] = c[imin] * b[k+ordfact-imin]
     @inbounds for i = imin+1:k-1
         c[k] += c[i] * b[k+ordfact-i]
     end
