@@ -290,7 +290,6 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T}
 
-        # c[k] = zero( a[k] )
         if $T == Taylor1
             @inbounds c[k] = a[0] * b[k]
         else
