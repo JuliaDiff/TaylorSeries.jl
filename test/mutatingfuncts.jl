@@ -48,7 +48,7 @@ using Test
     TaylorSeries.subst!(res, 1, t2, 2)
     @test res[2] == -1.0
 
-    res = zero(t1)
+    res[3] = rand()
     TaylorSeries.mul!(res, t1, t2, 3)
     @test res[3] == 1.0
     TaylorSeries.mul!(res, res, 2, 3)
@@ -56,10 +56,10 @@ using Test
     TaylorSeries.mul!(res, 0.5, res, 3)
     @test res[3] == 1.0
 
-    res = zero(t1)
     TaylorSeries.div!(res, t2-1, 1+t1, 0)
     TaylorSeries.div!(res, t2-1, 1+t1, 1)
-    @test res == t1-1
+    @test res[0] == (t1-1)[0]
+    @test res[1] == (t1-1)[1]
     TaylorSeries.div!(res, res, 2, 0)
     @test res[0] == -0.5
 
