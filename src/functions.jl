@@ -191,8 +191,12 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[0] = exp(constant_term(a))
                 return nothing
             end
-
-            @inbounds for i = 0:k-1
+            if $T == Taylor1
+                @inbounds c[k] = k * a[k] * c[0]
+            else
+                @inbounds mul!(c[k], k * a[k], c[0])
+            end
+            @inbounds for i = 1:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * a[k-i] * c[i]
                 else
@@ -200,7 +204,6 @@ for T in (:Taylor1, :TaylorN)
                 end
             end
             @inbounds c[k] = c[k] / k
-
             return nothing
         end
 
@@ -208,9 +211,17 @@ for T in (:Taylor1, :TaylorN)
             if k == 0
                 @inbounds c[0] = log(constant_term(a))
                 return nothing
+            elseif k == 1
+                @inbounds c[1] = a[1] / constant_term(a)
+                return nothing
             end
 
-            @inbounds for i = 1:k-1
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * a[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1)*a[1], c[k-1])
+            end
+            @inbounds for i = 2:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * a[i] * c[k-i]
                 else
@@ -218,7 +229,6 @@ for T in (:Taylor1, :TaylorN)
                 end
             end
             @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
-
             return nothing
         end
 
@@ -229,7 +239,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            @inbounds for i = 1:k
+            x = a[1]
+            if $T == Taylor1
+                @inbounds s[k] = x * c[k-1]
+                @inbounds c[k] = -x * s[k-1]
+            else
+                mul!(s[k], x, c[k-1])
+                mul!(c[k], -x, s[k-1])
+            end
+            @inbounds for i = 2:k
                 x = i * a[i]
                 if $T == Taylor1
                     s[k] += x * c[k-i]
@@ -253,7 +271,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            @inbounds for i = 0:k-1
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * a[k-1] * c2[1]
+            else
+                @inbounds mul!(c[k], (k-1) * a[k-1], c2[1])
+            end
+            @inbounds for i = 1:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * a[k-i] * c2[i]
                 else
@@ -274,7 +297,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            @inbounds for i in 1:k-1
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
@@ -294,7 +322,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            @inbounds for i in 1:k-1
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
@@ -314,7 +347,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            @inbounds for i in 1:k-1
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
@@ -333,7 +371,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            @inbounds for i = 1:k
+            x = a[1]
+            if $T == Taylor1
+                @inbounds s[k] = x * c[k-1]
+                @inbounds c[k] = x * s[k-1]
+            else
+                @inbounds mul!(s[k], x, c[k-1])
+                @inbounds mul!(c[k], x, s[k-1])
+            end
+            @inbounds for i = 2:k
                 x = i * a[i]
                 if $T == Taylor1
                     s[k] += x * c[k-i]
@@ -356,7 +402,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
 
-            @inbounds for i = 0:k-1
+            if $T == Taylor1
+                @inbounds c[k] = k * a[k] * c2[0]
+            else
+                @inbounds mul!(c[k], k * a[k], c2[0])
+            end
+            @inbounds for i = 1:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * a[k-i] * c2[i]
                 else
