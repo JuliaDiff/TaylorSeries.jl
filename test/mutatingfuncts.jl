@@ -56,7 +56,9 @@ using Test
     TaylorSeries.mul!(res, 0.5, res, 3)
     @test res[3] == 1.0
 
+    res[0] = rand()
     TaylorSeries.div!(res, t2-1, 1+t1, 0)
+    res[1] = rand()
     TaylorSeries.div!(res, t2-1, 1+t1, 1)
     @test res[0] == (t1-1)[0]
     @test res[1] == (t1-1)[1]
