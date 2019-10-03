@@ -200,6 +200,12 @@ coefficient of `a`.
         return nothing
     end
 
+    # Relevant for positive integer r, to avoid round-off errors
+    if isinteger(r) && (k-l0 > r*findlast(a) > 0)
+        @inbounds c[k-l0] = zero(c[0])
+        return nothing
+    end
+
     imin = max(0,k-a.order)
     aux = r*(k-imin) - imin
     @inbounds c[k-l0] = aux * a[k-imin] * c[imin]
