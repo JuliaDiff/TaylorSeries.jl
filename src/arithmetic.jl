@@ -290,8 +290,12 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T}
 
-        # c[k] = zero( a[k] )
-        @inbounds for i = 0:k
+        if $T == Taylor1
+            @inbounds c[k] = a[0] * b[k]
+        else
+            @inbounds mul!(c[k], a[0], b[k])
+        end
+        @inbounds for i = 1:k
             if $T == Taylor1
                 c[k] += a[i] * b[k-i]
             else
@@ -489,8 +493,9 @@ term of the denominator.
         return nothing
     end
 
-    @inbounds for i = 0:k-1
-        k+ordfact-i > b.order && continue
+    imin = max(0, k+ordfact-b.order)
+    @inbounds c[k] = c[imin] * b[k+ordfact-imin]
+    @inbounds for i = imin+1:k-1
         c[k] += c[i] * b[k+ordfact-i]
     end
     if k+ordfact ≤ b.order

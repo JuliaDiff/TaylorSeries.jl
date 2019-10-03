@@ -207,8 +207,9 @@ coefficient of `a`.
     end
 
     imin = max(0,k-a.order)
-    for i = imin:k-l0-1
-        # k-i > a.order && continue
+    aux = r*(k-imin) - imin
+    @inbounds c[k-l0] = aux * a[k-imin] * c[imin]
+    for i = imin+1:k-l0-1
         aux = r*(k-i) - i
         @inbounds c[k-l0] += aux * a[k-i] * c[i]
     end
@@ -438,8 +439,10 @@ coefficient, which must be even.
 
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
-    @inbounds for i = k0+1:k0+kend
-        (k+k0-i > a.order) || (i > a.order) && continue
+    imax = min(k0+kend, a.order)
+    imin = max(k0+1, k+k0-a.order)
+    imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
+    @inbounds for i = imin+1:imax
         c[k] += c[i] * c[k+k0-i]
     end
     if k+k0 ≤ a.order
