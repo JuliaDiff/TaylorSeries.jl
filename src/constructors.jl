@@ -48,7 +48,6 @@ Taylor1(x::Taylor1{T}) where {T<:Number} = x
 Taylor1(coeffs::Array{T,1}, order::Int) where {T<:Number} = Taylor1{T}(coeffs, order)
 Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1(coeffs, length(coeffs)-1)
 function Taylor1(x::T, order::Int) where {T<:Number}
-    # v = zeros(T, order+1)
     v = fill(zero(x), order+1)
     v[1] = x
     return Taylor1(v, order)
@@ -69,8 +68,8 @@ julia> Taylor1(Rational{Int}, 4)
  1//1 t + 𝒪(t⁵)
 ```
 """
-Taylor1(::Type{T}, order::Int=1) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
-Taylor1(order::Int=1) = Taylor1(Float64, order)
+Taylor1(::Type{T}, order::Int) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
+Taylor1(order::Int) = Taylor1(Float64, order)
 
 
 ######################### HomogeneousPolynomial
@@ -153,26 +152,31 @@ struct TaylorN{T<:Number} <: AbstractSeries{T}
     order   :: Int
 
     function TaylorN{T}(v::Array{HomogeneousPolynomial{T},1}, order::Int) where T<:Number
-        m = maxorderH(v)
-        order = max( m, order )
         coeffs = zeros(HomogeneousPolynomial{T}, order)
-        @simd for i in eachindex(v)
-            @inbounds ord = v[i].order
-            @inbounds coeffs[ord+1] += v[i]
+        @inbounds for i in eachindex(v)
+            ord = v[i].order
+            if ord ≤ order
+                coeffs[ord+1] += v[i]
+            end
         end
         new{T}(coeffs, order)
     end
 end
 
 TaylorN(x::TaylorN{T}) where T<:Number = x
-TaylorN(x::Array{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number} =
-    TaylorN{T}(x, order)
-TaylorN(x::Array{HomogeneousPolynomial{T},1}) where {T<:Number} = TaylorN(x,0)
-TaylorN(x::HomogeneousPolynomial{T},order::Int) where {T<:Number} =
-    TaylorN([x], order)
-TaylorN(x::HomogeneousPolynomial{T}) where {T<:Number} = TaylorN([x], x.order)
+function TaylorN(x::Array{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number}
+    if order == 0
+        order = maxorderH(x)
+    end
+    return TaylorN{T}(x, order)
+end
+TaylorN(x::Array{HomogeneousPolynomial{T},1}) where {T<:Number} =
+    TaylorN(x, maxorderH(x))
+TaylorN(x::HomogeneousPolynomial{T}, order::Int) where {T<:Number} =
+    TaylorN( [x], order )
+TaylorN(x::HomogeneousPolynomial{T}) where {T<:Number} = TaylorN(x, x.order)
 TaylorN(x::T, order::Int) where {T<:Number} =
-    TaylorN([HomogeneousPolynomial([x], 0)], order)
+    TaylorN(HomogeneousPolynomial([x], 0), order)
 
 # Shortcut to define TaylorN independent variables
 """
@@ -192,8 +196,10 @@ julia> TaylorN(Rational{Int},2)
 ```
 """
 TaylorN(::Type{T}, nv::Int; order::Int=get_order()) where {T<:Number} =
-    return TaylorN( [HomogeneousPolynomial(T, nv)], order )
+    TaylorN( HomogeneousPolynomial(T, nv), order )
 TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
+
+
 
 # A `Number` which is not an `AbstractSeries`
 const NumberNotSeries = Union{setdiff(subtypes(Number), [AbstractSeries])...}

@@ -47,6 +47,10 @@ eeuler = Base.MathConstants.e
     @test v == zero(v)
     setindex!(pol_int,1,:)
     @test v == ones(Int, 4)
+    setindex!(pol_int, v, :)
+    @test v == ones(Int, 4)
+    setindex!(pol_int, zeros(Int, 4), 0:3)
+    @test v == zeros(Int, 4)
     pol_int[:] .= 0
     @test v == zero(v)
     pol_int[0:2:end] = 2
@@ -107,7 +111,8 @@ eeuler = Base.MathConstants.e
     @test eltype(promote(1.0+im, zt)[1]) == Complex{Float64}
 
     @test length(Taylor1(10)) == 11
-    @test length(TaylorSeries.fixorder(zt,Taylor1([1]))[2]) == 16
+    @test length.( TaylorSeries.fixorder(zt, Taylor1([1])) ) == (16, 16)
+    @test length.( TaylorSeries.fixorder(zt, Taylor1([1], 1)) ) == (2, 2)
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
     @test TaylorSeries.findfirst(t^2) == 2

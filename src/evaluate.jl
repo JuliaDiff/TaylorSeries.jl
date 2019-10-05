@@ -38,37 +38,10 @@ representing the dependent variables of an ODE, at *time* δt. Note that the
 syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
 is equivalent to `evaluate(x)`.
 """
-function evaluate(x::Union{Array{Taylor1{T},1}, SubArray{Taylor1{T},1}}, δt::S) where {T<:Number, S<:Number}
-    R = promote_type(T,S)
-    return evaluate(convert(Array{Taylor1{R},1},x), convert(R,δt))
-end
-function evaluate(x::Array{Taylor1{T},1}, δt::T) where {T<:Number}
-    xnew = Array{T}(undef, length(x) )
-    evaluate!(x, δt, xnew)
-    return xnew
-end
-
-evaluate(a::Array{Taylor1{T},1}) where {T<:Number} = evaluate(a, zero(T))
-evaluate(a::SubArray{Taylor1{T},1}) where {T<:Number} = evaluate(a, zero(T))
-
-function evaluate(A::Union{Array{Taylor1{T},2}, SubArray{Taylor1{T},2}}, δt::S) where {T<:Number, S<:Number}
-    R = promote_type(T,S)
-    return evaluate(convert(Array{Taylor1{R},2},A), convert(R,δt))
-end
-function evaluate(A::Array{Taylor1{T},2}, δt::T) where {T<:Number}
-    n,m = size(A)
-    Anew = Array{T}(undef, n, m )
-    xnew = Array{T}(undef, n )
-
-    for i in 1:m
-        evaluate!(A[:,i], δt, xnew)
-        Anew[:,i] = xnew
-    end
-
-    return Anew
-end
-evaluate(A::Array{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
-evaluate(A::SubArray{Taylor1{T},2}) where {T<:Number} = evaluate.(A)
+evaluate(x::Union{Array{Taylor1{T}}, SubArray{Taylor1{T}}}, δt::S) where
+    {T<:Number, S<:Number} = evaluate.(x, δt)
+evaluate(a::Union{Array{Taylor1{T}}, SubArray{Taylor1{T}}}) where {T<:Number} =
+    evaluate.(a, zero(T))
 
 """
     evaluate!(x, δt, x0)
@@ -134,16 +107,10 @@ evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
 (p::Taylor1)() = evaluate(p)
 
 #function-like behavior for Vector{Taylor1}
-(p::Array{Taylor1{T},1})(x) where {T<:Number} = evaluate(p, x)
-(p::SubArray{Taylor1{T},1})(x) where {T<:Number} = evaluate(p, x)
-(p::Array{Taylor1{T},1})() where {T<:Number} = evaluate.(p)
-(p::SubArray{Taylor1{T},1})() where {T<:Number} = evaluate.(p)
-
-#function-like behavior for Matrix{Taylor1}
-(p::Array{Taylor1{T},2})(x) where {T<:Number} = evaluate(p, x)
-(p::SubArray{Taylor1{T},2})(x) where {T<:Number} = evaluate(p, x)
-(p::Array{Taylor1{T},2})() where {T<:Number} = evaluate.(p)
-(p::SubArray{Taylor1{T},2})() where {T<:Number} = evaluate.(p)
+(p::Array{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
+(p::SubArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
+(p::Array{Taylor1{T}})() where {T<:Number} = evaluate.(p)
+(p::SubArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
 
 ## Evaluation of multivariable
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{T,1},
