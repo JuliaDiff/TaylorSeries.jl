@@ -4,6 +4,27 @@
 
 
 """
+    ParamsTaylor1
+
+DataType holding the current variable name for `Taylor1`.
+
+**Field:**
+
+- `var_name   :: String`  Names of the variables
+
+These parameters can be changed using [`set_taylor1_varname`](@ref)
+"""
+mutable struct ParamsTaylor1
+    var_name   :: String
+end
+
+const _params_Taylor1_ = ParamsTaylor1("t")
+
+set_taylor1_varname(var::String) = _params_Taylor1_.var_name = strip(var)
+
+
+
+"""
     ParamsTaylorN
 
 DataType holding the current parameters for `TaylorN` and
@@ -13,7 +34,7 @@ DataType holding the current parameters for `TaylorN` and
 
 - `order            :: Int`  Order (degree) of the polynomials
 - `num_vars         :: Int`  Number of variables
-- `variable_names   :: Vector{String}` Names of the variables
+- `variable_names   :: Vector{String}`  Names of the variables
 - `variable_symbols :: Vector{Symbol}`  Symbols of the variables
 
 These parameters can be changed using [`set_variables`](@ref)

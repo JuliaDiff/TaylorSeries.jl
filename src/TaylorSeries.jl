@@ -25,8 +25,6 @@ using Requires
 using LinearAlgebra: norm, mul!,
     lu, lu!, LinearAlgebra.lutype, LinearAlgebra.copy_oftype,
     LinearAlgebra.issuccess
-    # istriu, triu!, istril, tril!, UpperTriangular, LowerTriangular,
-    # LinearAlgebra.inv!, LinearAlgebra.checksquare
 
 import LinearAlgebra: norm, mul!, lu
 
@@ -47,7 +45,7 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
 
 export getcoeff, derivative, integrate, differentiate,
-    evaluate, evaluate!, inverse,
+    evaluate, evaluate!, inverse, set_taylor1_varname,
     show_params_TaylorN, show_monomials, displayBigO, use_show_default,
     get_order, get_numvars,
     set_variables, get_variables,
