@@ -20,6 +20,11 @@ end
 
 const _params_Taylor1_ = ParamsTaylor1("t")
 
+"""
+    set_taylor1_varname(var::String)
+
+Change the displayed variable for `Taylor1` objects.
+"""
 set_taylor1_varname(var::String) = _params_Taylor1_.var_name = strip(var)
 
 
@@ -63,11 +68,7 @@ function lookupvar(s::Symbol)
     return ind
 end
 
-function set_variable_names(varnames::Vector{T}) where {T<:AbstractString}
-    _params_TaylorN_.variable_names = varnames
-    _params_TaylorN_.variable_symbols = Symbol.(varnames)
-    nothing
-end
+
 """
     get_variables(T::Type, [order::Int=get_order()])
 
