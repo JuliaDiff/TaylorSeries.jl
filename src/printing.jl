@@ -21,16 +21,17 @@ end
 
 function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
     z = zero(a[0])
+    var = _params_Taylor1_.var_name
     space = string(" ")
     bigO = bigOnotation[end] ?
-        string("+ 𝒪(t", superscriptify(a.order+1), ")") :
+        string("+ 𝒪(", var, superscriptify(a.order+1), ")") :
         string("")
     iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a)
-        monom::String = i==0 ? string("") : i==1 ? string(" t") :
-            string(" t", superscriptify(i))
+        monom::String = i==0 ? string("") : i==1 ? string(" ", var) :
+            string(" ", var, superscriptify(i))
         @inbounds c = a[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)
@@ -43,16 +44,17 @@ end
 
 function pretty_print(a::Taylor1{T} where {T <: AbstractSeries{S}}) where {S<:Number}
     z = zero(a[0])
+    var = _params_Taylor1_.var_name
     space = string(" ")
     bigO = bigOnotation[end] ?
-        string("+ 𝒪(t", superscriptify(a.order+1), ")") :
+        string("+ 𝒪(", var, superscriptify(a.order+1), ")") :
         string("")
     iszero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a)
-        monom::String = i==0 ? string("") : i==1 ? string(" t") :
-            string(" t", superscriptify(i))
+        monom::String = i==0 ? string("") : i==1 ? string(" ", var) :
+            string(" ", var, superscriptify(i))
         @inbounds c = a[i]
         c == z && continue
         cadena = numbr2str(c, ifirst)

@@ -4,6 +4,32 @@
 
 
 """
+    ParamsTaylor1
+
+DataType holding the current variable name for `Taylor1`.
+
+**Field:**
+
+- `var_name   :: String`  Names of the variables
+
+These parameters can be changed using [`set_taylor1_varname`](@ref)
+"""
+mutable struct ParamsTaylor1
+    var_name   :: String
+end
+
+const _params_Taylor1_ = ParamsTaylor1("t")
+
+"""
+    set_taylor1_varname(var::String)
+
+Change the displayed variable for `Taylor1` objects.
+"""
+set_taylor1_varname(var::String) = _params_Taylor1_.var_name = strip(var)
+
+
+
+"""
     ParamsTaylorN
 
 DataType holding the current parameters for `TaylorN` and
@@ -13,7 +39,7 @@ DataType holding the current parameters for `TaylorN` and
 
 - `order            :: Int`  Order (degree) of the polynomials
 - `num_vars         :: Int`  Number of variables
-- `variable_names   :: Vector{String}` Names of the variables
+- `variable_names   :: Vector{String}`  Names of the variables
 - `variable_symbols :: Vector{Symbol}`  Symbols of the variables
 
 These parameters can be changed using [`set_variables`](@ref)
@@ -42,11 +68,7 @@ function lookupvar(s::Symbol)
     return ind
 end
 
-function set_variable_names(varnames::Vector{T}) where {T<:AbstractString}
-    _params_TaylorN_.variable_names = varnames
-    _params_TaylorN_.variable_symbols = Symbol.(varnames)
-    nothing
-end
+
 """
     get_variables(T::Type, [order::Int=get_order()])
 

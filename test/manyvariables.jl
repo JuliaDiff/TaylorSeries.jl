@@ -59,7 +59,7 @@ eeuler = Base.MathConstants.e
     @test iterate(x, 7) == nothing
 
     @test x.order == 6
-    @test TaylorSeries.set_variable_names(["x","y"]) == nothing
+    @test TaylorSeries.name_taylorNvar(1) == " x"
     @test TaylorSeries._params_TaylorN_.variable_names == ["x","y"]
     @test TaylorSeries._params_TaylorN_.variable_symbols == [:x, :y]
     @test get_variable_symbols() == [:x, :y]
