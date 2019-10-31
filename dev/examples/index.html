@@ -79,10 +79,10 @@ julia&gt; function fateman1(degree::Int)
            s * ( s + one(T) )
        end
 fateman1 (generic function with 1 method)</code></pre><p>(In the following lines, which are run when the documentation is built, by some reason the timing appears before the command executed.)</p><pre><code class="language-julia-repl">julia&gt; @time fateman1(0);
-  0.860155 seconds (1.37 M allocations: 101.466 MiB, 16.08% gc time)
+  0.759387 seconds (1.37 M allocations: 101.471 MiB, 13.90% gc time)
 
 julia&gt; @time f1 = fateman1(20);
-  2.181702 seconds (2.89 k allocations: 49.880 MiB, 0.53% gc time)</code></pre><p>Another implementation of the same, but exploiting optimizations related to <code>^2</code> yields:</p><pre><code class="language-julia-repl">julia&gt; function fateman2(degree::Int)
+  2.232473 seconds (2.89 k allocations: 49.880 MiB, 0.39% gc time)</code></pre><p>Another implementation of the same, but exploiting optimizations related to <code>^2</code> yields:</p><pre><code class="language-julia-repl">julia&gt; function fateman2(degree::Int)
            T = Int128
            s = one(T) + x + y + z + w
            s = s^degree
@@ -93,7 +93,7 @@ fateman2 (generic function with 1 method)
 julia&gt; fateman2(0);
 
 julia&gt; @time f2 = fateman2(20); # the timing appears above
-  1.106357 seconds (3.09 k allocations: 54.033 MiB, 0.36% gc time)</code></pre><p>We note that the above functions use expansions in <code>Int128</code>. This is actually required, since some coefficients are larger than <code>typemax(Int)</code>:</p><pre><code class="language-julia-repl">julia&gt; getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
+  1.101475 seconds (3.09 k allocations: 54.033 MiB, 0.27% gc time)</code></pre><p>We note that the above functions use expansions in <code>Int128</code>. This is actually required, since some coefficients are larger than <code>typemax(Int)</code>:</p><pre><code class="language-julia-repl">julia&gt; getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
 128358585324486316800
 
 julia&gt; ans &gt; typemax(Int)
