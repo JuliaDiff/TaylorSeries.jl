@@ -83,7 +83,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
     if a.order != x.order
         a, x = fixorder(a, x)
     end
-    @inbounds suma = a[end]
+    @inbounds suma = a[end]*one(x)
     @inbounds for k = a.order-1:-1:0
         suma = suma*x + a[k]
     end
@@ -91,7 +91,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
 end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:Number}
-    @inbounds suma = a[end]
+    @inbounds suma = a[end]*one(x)
     @inbounds for k = a.order-1:-1:0
         suma = suma*x + a[k]
     end
