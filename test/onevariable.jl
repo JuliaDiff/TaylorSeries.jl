@@ -229,6 +229,8 @@ eeuler = Base.MathConstants.e
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*eeuler
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
+    @test evaluate(exp(Taylor1(BigFloat, 15)), t^2) == exp(Taylor1(BigFloat, 15)^2)
+    @test evaluate(exp(Taylor1(BigFloat, 15)), t^2) isa Taylor1{BigFloat}
     #Test function-like behavior for Taylor1s
     t17 = Taylor1([0,1],17)
     myexpfun = exp(t17)
