@@ -229,6 +229,8 @@ eeuler = Base.MathConstants.e
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*eeuler
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
+    @test evaluate(exp(Taylor1(BigFloat, 15)), t^2) == exp(Taylor1(BigFloat, 15)^2)
+    @test evaluate(exp(Taylor1(BigFloat, 15)), t^2) isa Taylor1{BigFloat}
     #Test function-like behavior for Taylor1s
     t17 = Taylor1([0,1],17)
     myexpfun = exp(t17)
@@ -257,6 +259,7 @@ eeuler = Base.MathConstants.e
     @test a.() == evaluate.([p, q])
     @test a.() == [p(), q()]
     @test a.() == a()
+    @test view(a, 1:1)() == [a[1]()]
     vr = rand(2)
     @test p.(vr) == evaluate.([p], vr)
     Mr = rand(3,3,3)
@@ -264,7 +267,7 @@ eeuler = Base.MathConstants.e
     mytaylor1 = Taylor1(rand(20))
     vr = rand(5)
     @test p(vr) == p.(vr)
-    @test p(vr) == evaluate.([p],vr)
+    @test view(a, 1:1)(vr) == evaluate.([p],vr)
     @test p(Mr) == p.(Mr)
     @test p(Mr) == evaluate.([p], Mr)
     taylor_a = Taylor1(Int,10)
@@ -374,6 +377,10 @@ eeuler = Base.MathConstants.e
     vv = Vector{Float64}(undef, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
+    @test evaluate!(v, 0.0, vv) == nothing
+    @test vv == [0.0,1.0]
+    @test evaluate!(v, 0.0, view(vv, 1:2)) == nothing
+    @test vv == [0.0,1.0]
     @test evaluate(v) == vv
     @test evaluate(v, complex(0.0,0.2)) ==
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]
@@ -479,9 +486,9 @@ eeuler = Base.MathConstants.e
     @test t ≈ t+sqrt(eps())
     @test isapprox(p, q, atol=eps())
 
-    t = Taylor1(35)
-    @test Taylor1([180.0, rad2deg(1.0)], 35) == rad2deg(pi+t)
-    @test sin(pi/2+deg2rad(1.0)t) == sin(deg2rad(90+t))
+    tf = Taylor1(35)
+    @test Taylor1([180.0, rad2deg(1.0)], 35) == rad2deg(pi+tf)
+    @test sin(pi/2+deg2rad(1.0)tf) == sin(deg2rad(90+tf))
     a = Taylor1(rand(10))
     b = Taylor1(rand(10))
     c = deepcopy(a)

@@ -288,4 +288,8 @@ end
     @test ti * to == Taylor1([zero(ti), ti], 10)
     @test ti^2-to^2 == (ti+to)*(ti-to)
     @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 10)
+    @test to(1 + ti) == 1 + ti
+    @test to(1 + ti) isa Taylor1{Float64}
+    @test ti(1 + to) == 1 + to
+    @test ti(1 + to) isa Taylor1{Taylor1{Float64}}
 end
