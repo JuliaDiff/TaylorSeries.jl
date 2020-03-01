@@ -165,7 +165,7 @@ c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} \big(r(k-j) -j\big)a_{k-j} c_j.
 ```
 
 For `Taylor1` polynomials, a similar formula is implemented which
-computes `k_0` which is the order of the first non-zero coefficient of `a`.
+exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
