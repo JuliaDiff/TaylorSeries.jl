@@ -319,14 +319,18 @@ eeuler = Base.MathConstants.e
     iind, cind = TaylorSeries.divfactorization(ut, ut)
     @test iind == 1
     @test cind == 1.0
-    TaylorSeries.div!(tt, ut, ut, 0, iind)
+    TaylorSeries.div!(tt, ut, ut, 0)
     @test tt[0] == cind
     TaylorSeries.div!(tt, 1+ut, 1+ut, 0)
     @test tt[0] == 1.0
     TaylorSeries.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0, 0)
+    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0)
     @test tt[0] == 1.0
+    TaylorSeries.pow!(tt, 0.0*t, 1.5, 0)
+    @test tt[0] == 0.0
+    TaylorSeries.pow!(tt, 0.0+t, 18, 0)
+    @test tt[0] == 0.0
     TaylorSeries.pow!(tt, 1.0+t, 1.5, 0)
     @test tt[0] == 1.0
     TaylorSeries.pow!(tt, 1.0+t, 0.5, 1)

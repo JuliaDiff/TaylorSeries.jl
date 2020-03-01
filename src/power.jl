@@ -117,22 +117,9 @@ function ^(a::Taylor1, r::S) where {S<:Real}
     r == 2 && return square(aa)
     r == 1/2 && return sqrt(aa)
 
-    # First non-zero coefficient
-    l0nz = findfirst(a)
-    l0nz < 0 && return Taylor1(zero(aux), a.order)
-
-    # The first non-zero coefficient of the result; must be integer
-    !isinteger(r*l0nz) && throw(ArgumentError(
-        """The 0th order Taylor1 coefficient must be non-zero
-        to raise the Taylor1 polynomial to a non-integer exponent."""))
-    lnull = trunc(Int, r*l0nz )
-    lnull > a.order && return Taylor1(zero(aux), a.order)
-
-    k0 = lnull+l0nz
     c = Taylor1( zero(aux), a.order)
-    @inbounds c[lnull] = ( a[l0nz] )^r
-    for k = k0+1:a.order+l0nz
-        pow!(c, aa, r, k, l0nz)
+    for k = 0:a.order
+        pow!(c, aa, r, k)
     end
 
     return c
@@ -166,7 +153,7 @@ end
 
 # Homogeneous coefficients for real power
 @doc doc"""
-    pow!(c, a, r::Real, k::Int, k0::Int=0)
+    pow!(c, a, r::Real, k::Int)
 
 Update the `k`-th expansion coefficient `c[k]` of `c = a^r`, for
 both `c` and `a` either `Taylor1` or `TaylorN`.
@@ -177,12 +164,12 @@ The coefficients are given by
 c_k = \frac{1}{k a_0} \sum_{j=0}^{k-1} \big(r(k-j) -j\big)a_{k-j} c_j.
 ```
 
-For `Taylor1` polynomials, `k0` is the order of the first non-zero
-coefficient of `a`.
+For `Taylor1` polynomials, a similar formula is implemented which
+exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int, l0::Int=0) where
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int) where
         {T<:Number, S<:Real}
 
     if r == 0
@@ -195,27 +182,47 @@ coefficient of `a`.
         return sqrt!(c, a, k)
     end
 
-    if k == l0
-        @inbounds c[0] = ( a[l0] )^r
+    # First non-zero coefficient
+    l0 = findfirst(a)
+    if l0 < 0
+        c[k] = zero(a[0])
+        return nothing
+    end
+
+    # The first non-zero coefficient of the result; must be integer
+    !isinteger(r*l0) && throw(ArgumentError(
+        """The 0th order Taylor1 coefficient must be non-zero
+        to raise the Taylor1 polynomial to a non-integer exponent."""))
+    lnull = trunc(Int, r*l0 )
+    kprime = k-lnull
+    if (kprime < 0) || (lnull > a.order)
+        @inbounds c[k] = zero(a[0])
         return nothing
     end
 
     # Relevant for positive integer r, to avoid round-off errors
-    if isinteger(r) && (k-l0 > r*findlast(a) > 0)
-        @inbounds c[k-l0] = zero(c[0])
+    if isinteger(r) && (k > r*findlast(a))
+        @inbounds c[k] = zero(a[0])
         return nothing
     end
 
-    imin = max(0,k-a.order)
-    aux = r*(k-imin) - imin
-    @inbounds c[k-l0] = aux * a[k-imin] * c[imin]
-    for i = imin+1:k-l0-1
-        aux = r*(k-i) - i
-        @inbounds c[k-l0] += aux * a[k-i] * c[i]
+    if k == lnull
+        @inbounds c[k] = (a[l0])^r
+        return nothing
     end
-    aux = k - l0*(r+1)
-    @inbounds c[k-l0] = c[k-l0] / (aux * a[l0])
 
+    # The recursion formula
+    if l0+kprime ≤ a.order
+        @inbounds c[k] = r * kprime * c[lnull] * a[l0+kprime]
+    else
+        @inbounds c[k] = zero(a[0])
+    end
+    for i = 1:k-lnull-1
+        ((i +lnull) > a.order || (l0+kprime-i > a.order)) && continue
+        aux = r*(kprime-i) - i
+        @inbounds c[k] += aux * c[i+lnull] * a[l0+kprime-i]
+    end
+    @inbounds c[k] = c[k] / (kprime * a[l0])
     return nothing
 end
 

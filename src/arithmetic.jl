@@ -422,7 +422,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
 
     c = Taylor1(cdivfact, a.order)
     for ord in eachindex(c)
-        div!(c, a, b, ord, ordfact) # updates c[ord]
+        div!(c, a, b, ord) # updates c[ord]
     end
 
     return c
@@ -449,7 +449,7 @@ function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
 end
 
 
-function divfactorization(a1::Taylor1, b1::Taylor1)
+@inline function divfactorization(a1::Taylor1, b1::Taylor1)
     # order of first factorized term; a1 and b1 assumed to be of the same order
     a1nz = findfirst(a1)
     b1nz = findfirst(b1)
@@ -472,7 +472,7 @@ end
 
 # Homogeneous coefficient for the division
 @doc doc"""
-    div!(c, a, b, k::Int, ordfact::Int=0)
+    div!(c, a, b, k::Int)
 
 Compute the `k-th` expansion coefficient `c[k]` of `c = a / b`,
 where all `c`, `a` and `b` are either `Taylor1` or `TaylorN`.
@@ -483,13 +483,16 @@ The coefficients are given by
 c_k =  \frac{1}{b_0} \big(a_k - \sum_{j=0}^{k-1} c_j b_{k-j}\big).
 ```
 
-For `Taylor1` polynomials, `ordfact` is the order of the factorized
-term of the denominator.
+For `Taylor1` polynomials, a similar formula is implemented which
+exploits `k_0`, the order of the first non-zero coefficient of `a`.
 """ div!
 
-@inline function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int, ordfact::Int=0)
+@inline function div!(c::Taylor1, a::Taylor1, b::Taylor1, k::Int)
+
+    # order and coefficient of first factorized term
+    ordfact, cdivfact = divfactorization(a, b)
     if k == 0
-        @inbounds c[0] = a[ordfact] / b[ordfact]
+        @inbounds c[0] = cdivfact
         return nothing
     end
 
