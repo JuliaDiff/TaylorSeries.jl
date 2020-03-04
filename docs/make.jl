@@ -18,5 +18,6 @@ deploydocs(
     repo   = "github.com/JuliaDiff/TaylorSeries.jl.git",
     target = "build",
     deps   = nothing,
-    make   = nothing
+    make   = nothing,
+    push_preview = true
 )

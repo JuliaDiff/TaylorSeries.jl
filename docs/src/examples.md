@@ -10,14 +10,11 @@ CurrentModule = TaylorSeries
 
 The first example shows that the four-square identity holds:
 ```math
-\begin{eqnarray}
-(a_1+a_2+a_3+a_4)\cdot(b_1+b_2+b_3+b_4) & = &
-     (a_1 b_1 - a_2 b_2 - a_3 b_3 -a_4 b_4)^2 + \qquad \nonumber \\
-\label{eq:Euler}
-  & & (a_1 b_2 - a_2 b_1 - a_3 b_4 -a_4 b_3)^2 + \\
-  & & (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 + \nonumber \\
-  & & (a_1 b_4 - a_2 b_3 - a_3 b_2 -a_4 b_1)^2, \nonumber
-\end{eqnarray}
+(a_1+a_2+a_3+a_4)\cdot(b_1+b_2+b_3+b_4) = \\
+  \qquad (a_1 b_1 - a_2 b_2 - a_3 b_3 -a_4 b_4)^2 +
+  (a_1 b_2 - a_2 b_1 - a_3 b_4 -a_4 b_3)^2 + \\
+  \qquad (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 +
+  (a_1 b_4 - a_2 b_3 - a_3 b_2 -a_4 b_1)^2,
 ```
 which was originally proved by Euler. The code can also be found in
 [this test](https://github.com/JuliaDiff/TaylorSeries.jl/blob/master/test/identities_Euler.jl) of the package.
@@ -66,7 +63,7 @@ The identity is satisfied. ``\square``
 
 Richard J. Fateman, from Berkley, proposed as a stringent test
 of polynomial multiplication
-the evaluation of ``s*(s+1)``, where ``s = (1+x+y+z+w)^{20}``. This is
+the evaluation of ``s\cdot(s+1)``, where ``s = (1+x+y+z+w)^{20}``. This is
 implemented in
 the function `fateman1` below. We shall also consider the form
 ``s^2+s`` in `fateman2`,
