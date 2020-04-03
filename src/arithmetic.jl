@@ -205,6 +205,10 @@ end
 -(a::Taylor1{T}, b::TaylorN{S}) where {T<:NumberNotSeries,S<:NumberNotSeries} =
     -(promote(a,b)...)
 
+@inline +(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(add_tuples(a.coeffs, b.coeffs))
+@inline -(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(sub_tuples(a.coeffs, b.coeffs))
+@inline -(partials::STaylor1) = STaylor1(minus_tuple(partials.values))
+
 
 ## Multiplication ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
@@ -222,6 +226,24 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         end
 
         *(b::$T, a::T) where {T<:NumberNotSeries} = a * b
+    end
+end
+
+@generated function Base.:*(p1::STaylor1{N, T}, p2::STaylor1{N, T}) where {N, T<:Number}
+    exprs = Any[nothing for i in 1:N]
+    for i in 0 : N-1   # order is N-1
+        for j in 0:N-1
+            k = i + j + 1  # setindex does not have offset
+            if exprs[k] === nothing
+                exprs[k] = :(p1[$i] * p2[$j])
+            else
+                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
+            end
+        end
+    end
+    return quote
+        Base.@_inline_meta
+        STaylor1{N,T}(tuple($(exprs...)))
     end
 end
 

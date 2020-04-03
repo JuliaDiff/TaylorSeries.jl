@@ -523,6 +523,15 @@ eeuler = Base.MathConstants.e
     @test Taylor1{Int}(false) == Taylor1([0])
 end
 
+@testset "Tests for STaylor1 expansions" begin
+
+    @test STaylor1 <: AbstractSeries
+    @test STaylor1{1,Float64} <: AbstractSeries{Float64}
+    @test STaylor1([1.0, 2.0]) == STaylor1((1.0, 2.0))
+    @test STaylor1(STaylor1((1.0, 2.0))) == STaylor1((1.0, 2.0))
+    @test STaylor1(1.0, Val(2)) == STaylor1((1.0, 0.0, 0.0))
+end
+
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
     t = Taylor1(5)
     a = Diagonal(rand(0:10,3)) + rand(3, 3)

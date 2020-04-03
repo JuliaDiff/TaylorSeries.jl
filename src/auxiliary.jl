@@ -317,3 +317,46 @@ linear_polynomial(a::TaylorN) = TaylorN([a[1]])
 linear_polynomial(a::Vector{T}) where {T<:Number} = linear_polynomial.(a)
 
 linear_polynomial(a::Number) = a
+
+
+#=
+Tuple operations taken from ForwardDiff.jl
+
+Copyright (c) 2015: Jarrett Revels, Theodore Papamarkou, Miles Lubin, and other contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+=#
+function tupexpr(f, N)
+    ex = Expr(:tuple, [f(i) for i=1:N]...)
+    return quote
+        $(Expr(:meta, :inline))
+        @inbounds return $ex
+    end
+end
+
+@generated function scale_tuple(tup::NTuple{N}, x) where N
+    return tupexpr(i -> :(tup[$i] * x), N)
+end
+
+@generated function div_tuple_by_scalar(tup::NTuple{N}, x) where N
+    return tupexpr(i -> :(tup[$i] / x), N)
+end
+
+@generated function add_tuples(a::NTuple{N}, b::NTuple{N})  where N
+    return tupexpr(i -> :(a[$i] + b[$i]), N)
+end
+
+@generated function sub_tuples(a::NTuple{N}, b::NTuple{N})  where N
+    return tupexpr(i -> :(a[$i] - b[$i]), N)
+end
+
+@generated function minus_tuple(tup::NTuple{N}) where N
+    return tupexpr(i -> :(-tup[$i]), N)
+end
+
+@generated function mul_tuples(a::NTuple{N}, b::NTuple{N}, afactor, bfactor) where N
+    return tupexpr(i -> :((afactor * a[$i]) + (bfactor * b[$i])), N)
+end
