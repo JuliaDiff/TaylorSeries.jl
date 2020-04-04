@@ -104,6 +104,12 @@ function setindex!(a::Taylor1{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T
 end
 
 
+# getindex STaylor1
+getindex(a::STaylor1, n::Int) = a.coeffs[n+1]
+getindex(a::STaylor1, u::UnitRange{Int}) = a.coeffs[u .+ 1]
+getindex(a::STaylor1, c::Colon) = a.coeffs[c]
+getindex(a::STaylor1, u::StepRange{Int,Int}) = a.coeffs[u .+ 1]
+
 """
     getcoeff(a, v)
 
@@ -296,6 +302,8 @@ and `TaylorN`. The fallback behavior is to return `a` itself if
 `a::Number`, or `a[1]` when `a::Vector`.
 """
 constant_term(a::Taylor1) = a[0]
+
+constant_term(a::STaylor1) = a[0]
 
 constant_term(a::TaylorN) = a[0][1]
 

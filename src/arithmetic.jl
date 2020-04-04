@@ -229,22 +229,28 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 
-@generated function Base.:*(p1::STaylor1{N, T}, p2::STaylor1{N, T}) where {N, T<:Number}
-    exprs = Any[nothing for i in 1:N]
-    for i in 0 : N-1   # order is N-1
-        for j in 0:N-1
-            k = i + j + 1  # setindex does not have offset
-            if exprs[k] === nothing
-                exprs[k] = :(p1[$i] * p2[$j])
-            else
-                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
-            end
-        end
-    end
-    return quote
-        Base.@_inline_meta
-        STaylor1{N,T}(tuple($(exprs...)))
-    end
+@generated function *(x::STaylor1{N,T}, y::STaylor1{N,T}) where {T<:Number,N}
+     ex_calc = quote end
+     append!(ex_calc.args, Any[nothing for i in 1:N])
+     syms = Symbol[Symbol("c$i") for i in 1:N]
+     for j = 1:N
+         ex_line = :(x.coeffs[1]*y.coeffs[$j])
+         for k = 2:j
+             ex_line = :($ex_line + x.coeffs[$k]*y.coeffs[$(j-k+1)])
+         end
+         sym = syms[j]
+         ex_line = :($sym = $ex_line)
+         ex_calc.args[j] = ex_line
+     end
+     exout = :(($(syms[1]),))
+     for i = 2:N
+         push!(exout.args, syms[i])
+     end
+     return quote
+                Base.@_inline_meta
+                $ex_calc
+                return STaylor1{N,T}($exout)
+             end
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
