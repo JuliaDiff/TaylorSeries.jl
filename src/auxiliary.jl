@@ -242,6 +242,15 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @inline axes(a::$T) = ()
     end
 end
+@inline iterate(a::STaylor1{N,T}, state=0) where {N, T<:Number} = state > N-1 ? nothing : (a.coeffs[state+1], state+1)
+@inline firstindex(a::STaylor1) = 0
+@inline lastindex(a::STaylor1{N,T}) where {N, T<:Number} = N-1
+@inline eachindex(s::STaylor1{N,T}) where {N, T<:Number} = UnitRange(0, N-1)
+@inline size(s::STaylor1{N,T}) where {N, T<:Number} = N
+@inline length(s::STaylor1{N,T}) where {N, T<:Number} = N
+@inline get_order(s::STaylor1{N,T}) where {N, T<:Number} = N - 1
+@inline eltype(s::STaylor1{N,T}) where {N, T<:Number} = T
+@inline axes(a::STaylor1) = ()
 
 
 ## fixorder ##
