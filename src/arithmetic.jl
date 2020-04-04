@@ -216,6 +216,43 @@ end
 @inline +(a::STaylor1) = a
 @inline -(a::STaylor1) = STaylor1(minus_tuple(a.coeffs))
 
+@generated function add_first_tuple(tup::NTuple{N,T}, x::T) where {N, T<:Number}
+    ex = :((tup[1] + x),)
+    append!(ex.args, Any[:(tup[$i]) for i in 2:N])
+    return quote
+        Base.@_inline_meta
+        @inbounds return $ex
+    end
+end
+
+@generated function sub_first_tuple(tup::NTuple{N,T}, x::T) where {N, T<:Number}
+    ex = :((tup[1] - x),)
+    append!(ex.args, Any[:(tup[$i]) for i in 2:N])
+    return quote
+        Base.@_inline_meta
+        @inbounds return $ex
+    end
+end
+
+function +(a::STaylor1{N,T}, b::T) where {N, T<:Number}
+    STaylor1{N,T}(add_first_tuple(a.coeffs, b))
+end
+function +(b::T, a::STaylor1{N,T}) where {N, T<:Number}
+    STaylor1{N,T}(add_first_tuple(a.coeffs, b))
+end
+function -(a::STaylor1{N,T}, b::T) where {N, T<:Number}
+    STaylor1{N,T}(sub_first_tuple(a.coeffs, b))
+end
+-(b::T, a::STaylor1{N,T}) where {N, T<:Number}  = b + (-a)
+
++(a::STaylor1{N,T}, b::STaylor1{N,S}) where {N, T<:Number, S<:Number} = +(promote(a,b)...)
++(a::STaylor1{N,T}, b::S) where {N, T<:Number, S<:Number} = +(promote(a,b)...)
++(b::S, a::STaylor1{N,T}) where {N, T<:Number, S<:Number} = +(promote(b,a)...)
+
+-(a::STaylor1{N,T}, b::STaylor1{N,S}) where {N, T<:Number, S<:Number} = -(promote(a,b)...)
+-(a::STaylor1{N,T}, b::S) where {N, T<:Number, S<:Number} = -(promote(a,b)...)
+-(b::S, a::STaylor1{N,T}) where {N, T<:Number, S<:Number} = -(promote(b,a)...)
+
 
 ## Multiplication ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)

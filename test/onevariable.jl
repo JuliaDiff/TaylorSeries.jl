@@ -530,6 +530,30 @@ end
     @test STaylor1([1.0, 2.0]) == STaylor1((1.0, 2.0))
     @test STaylor1(STaylor1((1.0, 2.0))) == STaylor1((1.0, 2.0))
     @test STaylor1(1.0, Val(2)) == STaylor1((1.0, 0.0, 0.0))
+
+    @test +STaylor1([1.0, 2.0, 3.0]) == STaylor1([1.0, 2.0, 3.0])
+    @test -STaylor1([1.0, 2.0, 3.0]) == -STaylor1([1.0, 2.0, 3.0])
+    @test STaylor1([1.0, 2.0, 3.0]) + STaylor1([3.0, 2.0, 3.0]) == STaylor1([4.0, 4.0, 6.0])
+    @test STaylor1([1.0, 2.0, 3.0]) - STaylor1([3.0, 2.0, 4.0]) == STaylor1([-2.0, 0.0, -1.0])
+    @test STaylor1([1.0, 2.0, 3.0]) + 2.0 == STaylor1([3.0, 2.0, 3.0])
+    @test STaylor1([1.0, 2.0, 3.0]) - 2.0 == STaylor1([-1.0, 2.0, 3.0])
+    @test 2.0 + STaylor1([1.0, 2.0, 3.0]) == STaylor1([3.0, 2.0, 3.0])
+    @test 2.0 - STaylor1([1.0, 2.0, 3.0]) == STaylor1([1.0, -2.0, -3.0])
+    @test 2 - STaylor1([1.0, 2.0, 3.0]) == STaylor1([1.0, -2.0, -3.0])
+    @test STaylor1([1.0, 2.0, 3.0]) - 2 == STaylor1([-1.0, 2.0, 3.0])
+    @test STaylor1([1.0, 2.0, 3.0]) + 2 == STaylor1([3.0, 2.0, 3.0])
+    @test 2 + STaylor1([1.0, 2.0, 3.0]) == STaylor1([3.0, 2.0, 3.0])
+
+    @test zero(STaylor1([1.0, 2.0, 3.0])) == STaylor1([0.0, 0.0, 0.0])
+    @test one(STaylor1([1.0, 2.0, 3.0])) == STaylor1([1.0, 0.0, 0.0])
+    @test isinf(STaylor1([Inf, 2.0, 3.0])) && ~isinf(STaylor1([0.0, 0.0, 0.0]))
+    @test isnan(STaylor1([NaN, 2.0, 3.0])) && ~isnan(STaylor1([1.0, 0.0, 0.0]))
+    @test iszero(STaylor1([0.0, 0.0, 0.0])) && ~iszero(STaylor1([0.0, 1.0, 0.0]))
+
+    @test length(STaylor1([0.0, 0.0, 0.0])) == 3
+    @test size(STaylor1([0.0, 0.0, 0.0])) == 3
+    @test firstindex(STaylor1([0.0, 0.0, 0.0])) == 0
+    @test lastindex(STaylor1([0.0, 0.0, 0.0])) == 2
 end
 
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin

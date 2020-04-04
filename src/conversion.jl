@@ -187,13 +187,11 @@ promote_rule(::Type{Taylor1{Taylor1{T}}}, ::Type{Taylor1{T}}) where {T<:Number} 
     Taylor1{Taylor1{T}}
 
 promote_rule(::Type{STaylor1{N,T}}, ::Type{STaylor1{N,T}}) where {N, T<:Number} = STaylor1{N,T}
-promote_rule(::Type{STaylor1{N,T}}, ::Type{Taylor1{N,S}}) where {N, T<:Number, S<:Number} = STaylor1{N, promote_type(T,S)}
+promote_rule(::Type{STaylor1{N,T}}, ::Type{STaylor1{N,S}}) where {N, T<:Number, S<:Number} = STaylor1{N, promote_type(T,S)}
 promote_rule(::Type{STaylor1{N,T}}, ::Type{Array{T,1}}) where {N, T<:Number} = STaylor1{N,T}
 promote_rule(::Type{STaylor1{N,T}}, ::Type{Array{S,1}}) where {N, T<:Number, S<:Number} = STaylor1{N,promote_type(T,S)}
 promote_rule(::Type{STaylor1{N,T}}, ::Type{T}) where {N, T<:Number} = STaylor1{N,T}
 promote_rule(::Type{STaylor1{N,T}}, ::Type{S}) where {N, T<:Number, S<:Number} = STaylor1{N,promote_type(T,S)}
-promote_rule(::Type{STaylor1{N,T}{STaylor1{Q,R}}}, ::Type{STaylor1{Q,R}}) where {N, Q, R<:Number, T<:Number} = STaylor1{N,T}{STaylor1{Q,R}}
-
 
 promote_rule(::Type{HomogeneousPolynomial{T}},
     ::Type{HomogeneousPolynomial{S}}) where {T<:Number, S<:Number} =
