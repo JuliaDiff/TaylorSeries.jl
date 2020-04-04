@@ -23,6 +23,9 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
+==(a::STaylor1{N,T}, b::STaylor1{N,S}) where {N, T<:Number, S<:Number} = ==(promote(a,b)...)
+==(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = (a.coeffs == b.coeffs)
+
 function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     a.order == b.order && return a.coeffs == b.coeffs
     return iszero(a.coeffs) && iszero(b.coeffs)
@@ -31,11 +34,14 @@ end
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval iszero(a::$T) = iszero(a.coeffs)
 end
+iszero(a::STaylor1) = iszero(a.coeffs)
 
 ## zero and one ##
 for T in (:Taylor1, :TaylorN), f in (:zero, :one)
     @eval ($f)(a::$T) = $T(($f)(a[0]), a.order)
 end
+zero(a::STaylor1{N,T}) where {N, T<:Number} = STaylor1(zero(T),Val(N))
+one(a::STaylor1{N,T}) where {N, T<:Number} = STaylor1(one(T),Val(N))
 
 function zero(a::HomogeneousPolynomial{T}) where {T<:Number}
     v = zero.(a.coeffs)
@@ -207,6 +213,7 @@ end
 
 @inline +(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(add_tuples(a.coeffs, b.coeffs))
 @inline -(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(sub_tuples(a.coeffs, b.coeffs))
+@inline +(a::STaylor1) = a
 @inline -(a::STaylor1) = STaylor1(minus_tuple(a.coeffs))
 
 
