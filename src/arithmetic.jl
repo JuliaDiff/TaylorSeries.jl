@@ -207,7 +207,7 @@ end
 
 @inline +(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(add_tuples(a.coeffs, b.coeffs))
 @inline -(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(sub_tuples(a.coeffs, b.coeffs))
-@inline -(partials::STaylor1) = STaylor1(minus_tuple(partials.values))
+@inline -(a::STaylor1) = STaylor1(minus_tuple(a.coeffs))
 
 
 ## Multiplication ##
