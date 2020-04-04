@@ -20,7 +20,13 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 
     @eval isnan(a::$T) = any( isnan.(a.coeffs) )
 end
+for f in (:real, :imag, :conj)
+    @eval ($f)(a::STaylor1{N,T}) where {N,T<:Number} = STaylor1(($f).(a.coeffs), Val(N))
+end
 
+adjoint(a::STaylor1) = conj(a)
+isinf(a::STaylor1) = any(isinf.(a.coeffs))
+isnan(a::STaylor1) = any(isnan.(a.coeffs))
 
 ## Division functions: rem and mod ##
 for op in (:mod, :rem)
