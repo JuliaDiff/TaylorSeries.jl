@@ -10,9 +10,10 @@
 """
     evaluate(a, [dx])
 
-Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
-ommitted, its value is considered as zero. Note that the syntax `a(dx)` is
-equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
+Evaluate a `Taylor1` (or `STaylor1{N,T}`) polynomial using Horner's rule (hand
+coded). If `dx` is ommitted, its value is considered as zero. Note that the
+syntax `a(dx)` is equivalent to `evaluate(a,dx)`, and `a()` is equivalent
+to `evaluate(a)`.
 """
 function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     @inbounds suma = a[end]
@@ -30,18 +31,41 @@ function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
 end
 evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
+function evaluate(a::STaylor1{N,T}, dx::T) where {N, T<:Number}
+    @inbounds suma = a[N-1]
+    @inbounds for k in (N-1):-1:0
+        suma = suma*dx + a[k]
+    end
+    suma
+end
+#=
+function evaluate(a::STaylor1{N,T}, dx::S) where {N, T<:Number, S<:Number}
+    suma = a[N-1]*one(dx)
+    @inbounds for k in (N-1):-1:0
+        suma = suma*dx + a[k]
+    end
+    suma
+end
+=#
+evaluate(a::STaylor1{N,T}) where {N, T<:Number} = a[0]
+
 """
     evaluate(x, δt)
 
-Evaluates each element of `x::Union{ Vector{Taylor1{T}}, Matrix{Taylor1{T}} }`,
-representing the dependent variables of an ODE, at *time* δt. Note that the
-syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
-is equivalent to `evaluate(x)`.
+Evaluates each element of `x::Union{Vector{Taylor1{T}}, Matrix{Taylor1{T}},
+Vector{STaylor1{N,T}}, Matrix{STaylor1{N,T}}}`, representing the dependent
+variables of an ODE, at *time* δt. Note that the syntax `x(δt)` is equivalent
+to `evaluate(x, δt)`, and `x()` is equivalent to `evaluate(x)`.
 """
 evaluate(x::Union{Array{Taylor1{T}}, SubArray{Taylor1{T}}}, δt::S) where
     {T<:Number, S<:Number} = evaluate.(x, δt)
 evaluate(a::Union{Array{Taylor1{T}}, SubArray{Taylor1{T}}}) where {T<:Number} =
     evaluate.(a, zero(T))
+evaluate(x::Union{Array{STaylor1{N,T}}, SubArray{STaylor1{N,T}}}, δt::S) where
+        {N, T<:Number, S<:Number} = evaluate.(x, δt)
+evaluate(a::Union{Array{STaylor1{N,T}}, SubArray{STaylor1{N,T}}}) where
+        {N, T<:Number} = evaluate.(a, zero(T))
+
 
 """
     evaluate!(x, δt, x0)
@@ -110,14 +134,21 @@ evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
 
 #function-like behavior for Taylor1
 (p::Taylor1)(x) = evaluate(p, x)
-
 (p::Taylor1)() = evaluate(p)
+
+(p::STaylor1)(x) = evaluate(p, x)
+(p::STaylor1)() = evaluate(p)
 
 #function-like behavior for Vector{Taylor1}
 (p::Array{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
 (p::SubArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
 (p::Array{Taylor1{T}})() where {T<:Number} = evaluate.(p)
 (p::SubArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
+
+(p::Array{STaylor1{N,T}})(x) where {N,T<:Number} = evaluate.(p, x)
+(p::SubArray{STaylor1{N,T}})(x) where {N,T<:Number} = evaluate.(p, x)
+(p::Array{STaylor1{N,T}})() where {N,T<:Number} = evaluate.(p)
+(p::SubArray{STaylor1{N,T}})() where {N,T<:Number} = evaluate.(p)
 
 ## Evaluation of multivariable
 function evaluate!(x::Array{TaylorN{T},1}, δx::Array{T,1},

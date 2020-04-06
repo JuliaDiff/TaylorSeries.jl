@@ -566,6 +566,17 @@ end
     @test firstindex(STaylor1([0.0, 0.0, 0.0])) == 0
     @test lastindex(STaylor1([0.0, 0.0, 0.0])) == 2
 
+    st1 = STaylor1([1.0, 2.0, 3.0])
+    @test st1(2.0) == 41.0
+    @test st1() == 1.00
+    st2 = typeof(st1)[st1; st1]
+    @test st2(2.0)[1] == st2(2.0)[2] == 41.0
+    @test st2()[1] == st2()[2] == 1.0
+    @test evaluate(st1,2.0) == 41.0
+    @test evaluate(st1) == 1.00
+    @test evaluate(st2,2.0)[1] == evaluate(st2,2.0)[2] == 41.0
+    @test evaluate(st2)[1] == evaluate(st2)[2] == 1.0
+
     # check that STaylor1 and Taylor yeild same result
     t1 = STaylor1([1.1, 2.1, 3.1])
     t2 = Taylor1([1.1, 2.1, 3.1])
