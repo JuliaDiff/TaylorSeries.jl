@@ -7,6 +7,7 @@ using Test
 using LinearAlgebra, SparseArrays
 eeuler = Base.MathConstants.e
 
+#=
 @testset "Tests for Taylor1 expansions" begin
     ta(a) = Taylor1([a,one(a)],15)
     t = Taylor1(Int,15)
@@ -522,6 +523,7 @@ eeuler = Base.MathConstants.e
     @test Taylor1{Int}(true) == Taylor1([1])
     @test Taylor1{Int}(false) == Taylor1([0])
 end
+=#
 
 function test_vs_Taylor1(x,y)
     flag = true
@@ -542,6 +544,7 @@ end
     @test STaylor1(STaylor1((1.0, 2.0))) == STaylor1((1.0, 2.0))
     @test STaylor1(1.0, Val(2)) == STaylor1((1.0, 0.0, 0.0))
 
+
     @test +STaylor1([1.0, 2.0, 3.0]) == STaylor1([1.0, 2.0, 3.0])
     @test -STaylor1([1.0, 2.0, 3.0]) == -STaylor1([1.0, 2.0, 3.0])
     @test STaylor1([1.0, 2.0, 3.0]) + STaylor1([3.0, 2.0, 3.0]) == STaylor1([4.0, 4.0, 6.0])
@@ -553,6 +556,7 @@ end
 
     @test zero(STaylor1([1.0, 2.0, 3.0])) == STaylor1([0.0, 0.0, 0.0])
     @test one(STaylor1([1.0, 2.0, 3.0])) == STaylor1([1.0, 0.0, 0.0])
+
     @test isinf(STaylor1([Inf, 2.0, 3.0])) && ~isinf(STaylor1([0.0, 0.0, 0.0]))
     @test isnan(STaylor1([NaN, 2.0, 3.0])) && ~isnan(STaylor1([1.0, 0.0, 0.0]))
     @test iszero(STaylor1([0.0, 0.0, 0.0])) && ~iszero(STaylor1([0.0, 1.0, 0.0]))
@@ -568,6 +572,7 @@ end
     @test test_vs_Taylor1(exp(t1), exp(t2))
 end
 
+#=
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
     t = Taylor1(5)
     a = Diagonal(rand(0:10,3)) + rand(3, 3)
@@ -637,3 +642,4 @@ end
         @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
     end
 end
+=#
