@@ -523,6 +523,17 @@ eeuler = Base.MathConstants.e
     @test Taylor1{Int}(false) == Taylor1([0])
 end
 
+function test_vs_Taylor1(x,y)
+    flag = true
+    for i in 0:2
+        if x[i] !== y[i]
+            flag = false
+            break
+        end
+    end
+    flag
+end
+
 @testset "Tests for STaylor1 expansions" begin
 
     @test STaylor1 <: AbstractSeries
@@ -539,10 +550,6 @@ end
     @test STaylor1([1.0, 2.0, 3.0]) - 2.0 == STaylor1([-1.0, 2.0, 3.0])
     @test 2.0 + STaylor1([1.0, 2.0, 3.0]) == STaylor1([3.0, 2.0, 3.0])
     @test 2.0 - STaylor1([1.0, 2.0, 3.0]) == STaylor1([1.0, -2.0, -3.0])
-    @test 2 - STaylor1([1.0, 2.0, 3.0]) == STaylor1([1.0, -2.0, -3.0])
-    @test STaylor1([1.0, 2.0, 3.0]) - 2 == STaylor1([-1.0, 2.0, 3.0])
-    @test STaylor1([1.0, 2.0, 3.0]) + 2 == STaylor1([3.0, 2.0, 3.0])
-    @test 2 + STaylor1([1.0, 2.0, 3.0]) == STaylor1([3.0, 2.0, 3.0])
 
     @test zero(STaylor1([1.0, 2.0, 3.0])) == STaylor1([0.0, 0.0, 0.0])
     @test one(STaylor1([1.0, 2.0, 3.0])) == STaylor1([1.0, 0.0, 0.0])
@@ -554,6 +561,11 @@ end
     @test size(STaylor1([0.0, 0.0, 0.0])) == 3
     @test firstindex(STaylor1([0.0, 0.0, 0.0])) == 0
     @test lastindex(STaylor1([0.0, 0.0, 0.0])) == 2
+
+    # check that STaylor1 and Taylor yeild same result
+    t1 = STaylor1([1.1, 2.1, 3.1])
+    t2 = Taylor1([1.1, 2.1, 3.1])
+    @test test_vs_Taylor1(exp(t1), exp(t2))
 end
 
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin

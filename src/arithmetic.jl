@@ -245,13 +245,13 @@ function -(a::STaylor1{N,T}, b::T) where {N, T<:Number}
 end
 -(b::T, a::STaylor1{N,T}) where {N, T<:Number}  = b + (-a)
 
-+(a::STaylor1{N,T}, b::STaylor1{N,S}) where {N, T<:Number, S<:Number} = +(promote(a,b)...)
-+(a::STaylor1{N,T}, b::S) where {N, T<:Number, S<:Number} = +(promote(a,b)...)
-+(b::S, a::STaylor1{N,T}) where {N, T<:Number, S<:Number} = +(promote(b,a)...)
+#+(a::STaylor1{N,T}, b::STaylor1{N,S}) where {N, T<:NumberNotSeries, S<:NumberNotSeries} = +(promote(a,b)...)
+#+(a::STaylor1{N,T}, b::S) where {N, T<:NumberNotSeries, S<:NumberNotSeries} = +(promote(a,b)...)
+#+(b::S, a::STaylor1{N,T}) where {N, T<:NumberNotSeries, S<:NumberNotSeries} = +(promote(b,a)...)
 
--(a::STaylor1{N,T}, b::STaylor1{N,S}) where {N, T<:Number, S<:Number} = -(promote(a,b)...)
--(a::STaylor1{N,T}, b::S) where {N, T<:Number, S<:Number} = -(promote(a,b)...)
--(b::S, a::STaylor1{N,T}) where {N, T<:Number, S<:Number} = -(promote(b,a)...)
+#-(a::STaylor1{N,T}, b::STaylor1{N,S}) where {N, T<:NumberNotSeries, S<:NumberNotSeries} = -(promote(a,b)...)
+#-(a::STaylor1{N,T}, b::S) where {N, T<:NumberNotSeries, S<:NumberNotSeries} = -(promote(a,b)...)
+#-(b::S, a::STaylor1{N,T}) where {N, T<:NumberNotSeries, S<:NumberNotSeries} = -(promote(b,a)...)
 
 
 ## Multiplication ##

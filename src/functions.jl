@@ -147,6 +147,38 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
+# Functions for StaticTaylor
+@generated function exp(a::STaylor1{N,T}) where {N, T <: Number}
+    ex_calc = quote end
+    append!(ex_calc.args, Any[nothing for i in 1:N])
+    syms = Symbol[Symbol("c$i") for i in 1:N]
+
+    sym = syms[1]
+    ex_line = :($(syms[1]) = exp(a[0]))
+    ex_calc.args[1] = ex_line
+
+    for k in 1:(N-1)
+        kT = convert(T,k)
+        sym = syms[k+1]
+        ex_line = :($kT * a[$k] * $(syms[1]))
+        @inbounds for i = 1:k-1
+            ex_line = :($ex_line + $(kT-i) * a[$(k-i)] * $(syms[i+1]))
+        end
+        ex_line = :(($ex_line)/$kT)
+        ex_line = :($sym = $ex_line)
+        ex_calc.args[k+1] = ex_line
+    end
+
+    exout = :(($(syms[1]),))
+    for i = 2:N
+        push!(exout.args, syms[i])
+    end
+    return quote
+               Base.@_inline_meta
+               $ex_calc
+               return STaylor1{N,T}($exout)
+            end
+end
 
 # Recursive functions (homogeneous coefficients)
 for T in (:Taylor1, :TaylorN)
@@ -421,7 +453,6 @@ for T in (:Taylor1, :TaylorN)
         end
     end
 end
-
 
 @doc doc"""
     inverse(f)

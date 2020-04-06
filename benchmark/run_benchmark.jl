@@ -9,4 +9,4 @@ results = judge("TaylorSeries", tag)
 show(results)
 =#
 
-export_markdown("..\\results.md", results)
+export_markdown("results.md", results)
