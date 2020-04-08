@@ -47,7 +47,10 @@ for i in dims
     S["STaylor1{$i,Float64} + STaylor1{$i,Float64}"] = @benchmarkable f(+, $q, $q2, $n)
     S["Taylor1{$i,Float64} - Taylor1{$i,Float64}"] = @benchmarkable f(-, $x, $x2, $n)
     S["STaylor1{$i,Float64} - STaylor1{$i,Float64}"] = @benchmarkable f(-, $q, $q2, $n)
-
+    S["Taylor1{$i,Float64} * Taylor1{$i,Float64}"] = @benchmarkable f(*, $x, $x2, $n)
+    S["STaylor1{$i,Float64} * STaylor1{$i,Float64}"] = @benchmarkable f(*, $q, $q2, $n)
+    S["Taylor1{$i,Float64} / Taylor1{$i,Float64}"] = @benchmarkable f(/, $x, $x2, $n)
+    S["STaylor1{$i,Float64} / STaylor1{$i,Float64}"] = @benchmarkable f(/, $q, $q2, $n)
 end
 
 S = SUITE["functions"] = BenchmarkGroup()
@@ -56,22 +59,9 @@ for i in dims
     x = Taylor1(r)
     q = STaylor1(r)
     y = rand()
-    S["exp(Taylor1{Float64}), len = $i"] = @benchmarkable f(exp, $x, $n)
-    S["exp(STaylor1{$i,Float64}),"] = @benchmarkable f(exp, $q, $n)
-    S["zero(Taylor1{Float64}), len = $i"] = @benchmarkable f(zero, $x, $n)
-    S["zero(STaylor1{$i,Float64}),"] = @benchmarkable f(zero, $q, $n)
-    S["one(Taylor1{Float64}), len = $i"] = @benchmarkable f(one, $x, $n)
-    S["one(STaylor1{$i,Float64}),"] = @benchmarkable f(one, $q, $n)
-    S["iszero(Taylor1{Float64}), len = $i"] = @benchmarkable f(iszero, $x, $n)
-    S["iszero(STaylor1{$i,Float64}),"] = @benchmarkable f(iszero, $q, $n)
+    for g in (exp, abs, zero, one, real, imag, conj, adjoint, iszero, isnan,
+              isinf, deg2rad, rad2deg)
+        S["$(Symbol(g))(Taylor1{Float64}), len = $i"] = @benchmarkable f($g, $x, $n)
+        S["$(Symbol(g))(STaylor1{$i,Float64}),"] = @benchmarkable f($g, $q, $n)
+    end
 end
-
-#=
-S = SUITE["STaylor1 Arithmetic"] = BenchmarkGroup()
-for i in (5,10,5)
-    S["STaylor1{$i,Float64} Scalar Addition"]
-    S["STaylor1{$i,Float64} Scalar Multiplication"]
-    S["STaylor1{$i,Float64} Addition"]
-    S["STaylor1{$i,Float64} Multiplication"]
-end
-=#

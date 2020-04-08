@@ -520,6 +520,45 @@ function /(a::STaylor1{N,T}, b::T) where {N, T<:Number}
     STaylor1{N,T}(div_tuple_by_scalar(a.coeffs, b))
 end
 
+@generated function /(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N,T<:Number}
+
+    ex_calc = quote end
+    append!(ex_calc.args, Any[nothing for i in 1:N])
+    syms = Symbol[Symbol("c$i") for i in 1:N]
+
+    # add error
+    ex_line = quote
+                  if iszero(b[0])
+                      throw(ArgumentError("""The 0th order STaylor1 coefficient
+                                             must be non-zero for b, (a/b)(x) is
+                                             not differentiable at x=0)."""))
+                  end
+              end
+    ex_calc.args[1] = ex_line
+
+    # add recursion relation
+    for j = 0:(N-1)
+        ex_line = :(a[$(j)])
+        for k = 1:j
+            sym = syms[j-k+1]
+            ex_line = :($ex_line - $sym*b[$k])
+        end
+        sym = syms[j+1]
+        ex_line = :($sym = ($ex_line)/b[0])
+        ex_calc.args[j+2] = ex_line
+    end
+
+    exout = :(($(syms[1]),))
+    for i = 2:N
+        push!(exout.args, syms[i])
+    end
+    return quote
+               Base.@_inline_meta
+               $ex_calc
+               return STaylor1{N,T}($exout)
+            end
+end
+
 /(a::TaylorN{T}, b::TaylorN{S}) where
     {T<:NumberNotSeriesN, S<:NumberNotSeriesN} = /(promote(a,b)...)
 

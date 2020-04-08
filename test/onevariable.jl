@@ -580,11 +580,34 @@ end
     # check that STaylor1 and Taylor yeild same result
     t1 = STaylor1([1.1, 2.1, 3.1])
     t2 = Taylor1([1.1, 2.1, 3.1])
-    @test test_vs_Taylor1(exp(t1), exp(t2))
+    for f in (exp, abs)
+        @test test_vs_Taylor1(f(t1), f(t2))
+    end
+    t1a = STaylor1([2.1, 2.1, 3.1])
+    t2a = Taylor1([2.1, 2.1, 3.1])
+    @test isapprox((t1/t1a)[0], (t2/t2a)[0], atol=1E-10)
+    @test isapprox((t1/t1a)[1], (t2/t2a)[1], atol=1E-10)
+    @test isapprox((t1/t1a)[2], (t2/t2a)[2], atol=1E-10)
+
+    @test isapprox((t1*t1a)[0], (t2*t2a)[0], atol=1E-10)
+    @test isapprox((t1*t1a)[1], (t2*t2a)[1], atol=1E-10)
+    @test isapprox((t1*t1a)[2], (t2*t2a)[2], atol=1E-10)
 
     a = STaylor1([0.0, 1.2, 2.3, 4.5, 0.0])
     @test findfirst(a) == 1
     @test findlast(a) == 3
+
+    a = STaylor1([5.0, 1.2, 2.3, 4.5, 0.0])
+    @test isapprox(deg2rad(a)[0], 0.087266, atol=1E-5)
+    @test isapprox(deg2rad(a)[2], 0.040142, atol=1E-5)
+    @test isapprox(rad2deg(a)[0], 286.4788975, atol=1E-5)
+    @test isapprox(rad2deg(a)[2], 131.7802928, atol=1E-5)
+    @test real(a) == STaylor1([5.0, 1.2, 2.3, 4.5, 0.0])
+    @test imag(a) == STaylor1([0.0, 0.0, 0.0, 0.0, 0.0])
+    @test adjoint(a) == STaylor1([5.0, 1.2, 2.3, 4.5, 0.0])
+    @test conj(a) == STaylor1([5.0, 1.2, 2.3, 4.5, 0.0])
+    @test a == abs(a)
+    @test a == abs(-a)
 end
 
 #=
