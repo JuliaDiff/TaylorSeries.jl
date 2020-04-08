@@ -305,6 +305,14 @@ end
              end
 end
 
+
+function *(a::STaylor1{N,T}, b::T) where {N, T<:Number}
+    STaylor1{N,T}(scale_tuple(a.coeffs, b))
+end
+function *(b::T, a::STaylor1{N,T}) where {N, T<:Number}
+    STaylor1{N,T}(scale_tuple(a.coeffs, b))
+end
+
 for T in (:HomogeneousPolynomial, :TaylorN)
 
     @eval begin
@@ -506,6 +514,10 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     end
 
     return c
+end
+
+function /(a::STaylor1{N,T}, b::T) where {N, T<:Number}
+    STaylor1{N,T}(div_tuple_by_scalar(a.coeffs, b))
 end
 
 /(a::TaylorN{T}, b::TaylorN{S}) where

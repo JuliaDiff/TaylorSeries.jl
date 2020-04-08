@@ -581,6 +581,10 @@ end
     t1 = STaylor1([1.1, 2.1, 3.1])
     t2 = Taylor1([1.1, 2.1, 3.1])
     @test test_vs_Taylor1(exp(t1), exp(t2))
+
+    a = STaylor1([0.0, 1.2, 2.3, 4.5, 0.0])
+    @test findfirst(a) == 1
+    @test findlast(a) == 3
 end
 
 #=
