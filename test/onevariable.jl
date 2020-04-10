@@ -7,7 +7,6 @@ using Test
 using LinearAlgebra, SparseArrays
 eeuler = Base.MathConstants.e
 
-#=
 @testset "Tests for Taylor1 expansions" begin
     ta(a) = Taylor1([a,one(a)],15)
     t = Taylor1(Int,15)
@@ -523,7 +522,6 @@ eeuler = Base.MathConstants.e
     @test Taylor1{Int}(true) == Taylor1([1])
     @test Taylor1{Int}(false) == Taylor1([0])
 end
-=#
 
 function test_vs_Taylor1(x,y)
     flag = true
@@ -610,7 +608,6 @@ end
     @test a == abs(-a)
 end
 
-#=
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
     t = Taylor1(5)
     a = Diagonal(rand(0:10,3)) + rand(3, 3)
@@ -680,4 +677,3 @@ end
         @test_throws DimensionMismatch mul!(Y[1:end-1],A,B)
     end
 end
-=#
