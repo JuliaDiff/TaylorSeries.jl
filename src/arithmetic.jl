@@ -212,7 +212,7 @@ end
     -(promote(a,b)...)
 
 @inline +(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(a.coeffs .+ b.coeffs)
-@inline -(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(a.coeffs .+ b.coeffs)
+@inline -(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(a.coeffs .- b.coeffs)
 @inline +(a::STaylor1) = a
 @inline -(a::STaylor1) = STaylor1(minus_tuple(a.coeffs))
 
