@@ -33,16 +33,8 @@ end
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval iszero(a::$T) = iszero(a.coeffs)
 end
-function iszero(a::STaylor1)
-    flag = true
-    for i in eachindex(a)
-        flag &= iszero(a[i])
-        if ~flag
-            break
-        end
-    end
-    flag
-end
+
+iszero(a::STaylor1) = all(iszero, a.coeffs)
 
 ## zero and one ##
 for T in (:Taylor1, :TaylorN), f in (:zero, :one)
@@ -219,37 +211,19 @@ end
 -(a::Taylor1{T}, b::TaylorN{S}) where {T<:NumberNotSeries,S<:NumberNotSeries} =
     -(promote(a,b)...)
 
-@inline +(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(add_tuples(a.coeffs, b.coeffs))
-@inline -(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(sub_tuples(a.coeffs, b.coeffs))
+@inline +(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(a.coeffs .+ b.coeffs)
+@inline -(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N, T<:Number} = STaylor1(a.coeffs .+ b.coeffs)
 @inline +(a::STaylor1) = a
 @inline -(a::STaylor1) = STaylor1(minus_tuple(a.coeffs))
 
-@generated function add_first_tuple(tup::NTuple{N,T}, x::T) where {N, T<:Number}
-    ex = :((tup[1] + x),)
-    append!(ex.args, Any[:(tup[$i]) for i in 2:N])
-    return quote
-        Base.@_inline_meta
-        @inbounds return $ex
-    end
-end
-
-@generated function sub_first_tuple(tup::NTuple{N,T}, x::T) where {N, T<:Number}
-    ex = :((tup[1] - x),)
-    append!(ex.args, Any[:(tup[$i]) for i in 2:N])
-    return quote
-        Base.@_inline_meta
-        @inbounds return $ex
-    end
-end
-
 function +(a::STaylor1{N,T}, b::T) where {N, T<:Number}
-    STaylor1{N,T}(add_first_tuple(a.coeffs, b))
+    STaylor1{N,T}(ntuple(i -> i == 1 ? a.coeffs[1] + b : a.coeffs[i], N))
 end
 function +(b::T, a::STaylor1{N,T}) where {N, T<:Number}
-    STaylor1{N,T}(add_first_tuple(a.coeffs, b))
+    STaylor1{N,T}(ntuple(i -> i == 1 ? a.coeffs[1] + b : a.coeffs[i], N))
 end
 function -(a::STaylor1{N,T}, b::T) where {N, T<:Number}
-    STaylor1{N,T}(sub_first_tuple(a.coeffs, b))
+    STaylor1{N,T}(ntuple(i -> i == 1 ? a.coeffs[1] - b : a.coeffs[i], N))
 end
 -(b::T, a::STaylor1{N,T}) where {N, T<:Number}  = b + (-a)
 
@@ -307,10 +281,10 @@ end
 
 
 function *(a::STaylor1{N,T}, b::T) where {N, T<:Number}
-    STaylor1{N,T}(scale_tuple(a.coeffs, b))
+    STaylor1{N,T}(b .* a.coeffs)
 end
 function *(b::T, a::STaylor1{N,T}) where {N, T<:Number}
-    STaylor1{N,T}(scale_tuple(a.coeffs, b))
+    STaylor1{N,T}(b .* a.coeffs)
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
@@ -517,7 +491,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
 end
 
 function /(a::STaylor1{N,T}, b::T) where {N, T<:Number}
-    STaylor1{N,T}(div_tuple_by_scalar(a.coeffs, b))
+    STaylor1{N,T}(a.coeffs ./ b)
 end
 
 @generated function /(a::STaylor1{N,T}, b::STaylor1{N,T}) where {N,T<:Number}
