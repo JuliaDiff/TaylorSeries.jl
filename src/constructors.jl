@@ -98,13 +98,16 @@ Shortcut to define the independent variable of a `STaylor1{N,T}` polynomial of
 given `N` with constant term equal to `x`.
 """
 @generated function STaylor1(x::T, v::Val{N}) where {N,T<:Number}
-    y = Any[zero(T) for i=1:N]
+    y = Any[:(zero($T)) for i=1:N]
     tup = :((x,))
     push!(tup.args, y...)
     return quote
         Base.@_inline_meta
         STaylor1{(N+1),T}($tup)
     end
+end
+function STaylor1(coeffs::Vector{T}, l::Val{L}, v::Val{N}) where {L,N,T<:Number}
+    STaylor1{(N+1),T}(ntuple(i -> (i > L+1) ? coeffs[i] : zero(T),  N+1))
 end
 @inline function STaylor1(coeffs::Vector{T}) where {T<:Number}
     STaylor1{length(coeffs),T}(tuple(coeffs...))

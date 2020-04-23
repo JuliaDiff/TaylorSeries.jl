@@ -41,7 +41,7 @@ function convert(::Type{STaylor1{N,T}}, b::Array{S,1}) where {N,T<:Number, S<:Nu
     STaylor1{N,T}(convert(Array{T,1},b))
 end
 convert(::Type{STaylor1{N,T}}, a::STaylor1{N,T}) where {N,T<:Number} = a
-convert(::Type{STaylor1{N,T}}, b::S)  where {N,T<:Number, S<:Number} = STaylor1(b, Val(N))
+convert(::Type{STaylor1{N,T}}, b::S)  where {N, T<:Number, S<:Number} = STaylor1(convert(T,b), Val(N))
 convert(::Type{STaylor1{N,T}}, b::T)  where {N, T<:Number} = STaylor1(b, Val(N))
 
 convert(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) where {T<:Number} =
