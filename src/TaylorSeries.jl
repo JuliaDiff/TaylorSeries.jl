@@ -42,7 +42,7 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     power_by_squaring,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 
-export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
+export Taylor1, TaylorN, STaylor1, HomogeneousPolynomial, AbstractSeries
 
 export getcoeff, derivative, integrate, differentiate,
     evaluate, evaluate!, inverse, set_taylor1_varname,

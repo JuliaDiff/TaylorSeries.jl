@@ -12,7 +12,7 @@ import .Broadcast: BroadcastStyle, Broadcasted, broadcasted
 
 # BroadcastStyle definitions and basic precedence rules
 struct Taylor1Style{T} <: Base.Broadcast.AbstractArrayStyle{0} end
-Taylor1Style{T}(::Val{N}) where {T, N}= Base.Broadcast.DefaultArrayStyle{N}()
+Taylor1Style{T}(::Val{N}) where {T, N} = Base.Broadcast.DefaultArrayStyle{N}()
 BroadcastStyle(::Type{<:Taylor1{T}}) where {T} = Taylor1Style{T}()
 BroadcastStyle(::Taylor1Style{T}, ::Base.Broadcast.DefaultArrayStyle{0}) where {T} = Taylor1Style{T}()
 BroadcastStyle(::Taylor1Style{T}, ::Base.Broadcast.DefaultArrayStyle{1}) where {T} = Base.Broadcast.DefaultArrayStyle{1}()
