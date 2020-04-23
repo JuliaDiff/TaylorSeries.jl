@@ -147,7 +147,7 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-# Functions for StaticTaylor
+# Functions for STaylor1
 @generated function exp(a::STaylor1{N,T}) where {N, T <: Number}
     ex_calc = quote end
     append!(ex_calc.args, Any[nothing for i in 1:N])
@@ -175,6 +175,40 @@ end
     end
     return quote
                Base.@_inline_meta
+               $ex_calc
+               return STaylor1{N,T}($exout)
+            end
+end
+
+@generated function log(a::STaylor1{N,T}) where {N, T <: Number}
+    ex_calc = quote end
+    append!(ex_calc.args, Any[nothing for i in 1:N])
+    syms = Symbol[Symbol("c$i") for i in 1:N]
+
+    (N >= 1) && (ex_calc.args[1] = :($(syms[1]) = log(constant_term(a))))
+    (N >= 2) && (ex_calc.args[2] = :($(syms[2]) = a[1]/constant_term(a)))
+
+    for k in 2:(N-1)
+        ex_line = :($(k-1)*a[1]*$(syms[k]))
+        @inbounds for i = 2:k-1
+            ex_line = :($ex_line + $(k-i)*a[$i] * $(syms[k+1-i]))
+        end
+        ex_line = :((a[$k] - ($ex_line)/$(convert(T,k)))/constant_term(a))
+        ex_line = :($(syms[k+1]) = $ex_line)
+        ex_calc.args[k+1] = ex_line
+    end
+
+    exout = :(($(syms[1]),))
+    for i = 2:N
+        push!(exout.args, syms[i])
+    end
+
+    return quote
+               Base.@_inline_meta
+               iszero(constant_term(a)) && throw(ArgumentError("""
+                       The 0-th order `STaylor1` coefficient must be non-zero
+                       in order to expand `log` around 0.
+                       """))
                $ex_calc
                return STaylor1{N,T}($exout)
             end
