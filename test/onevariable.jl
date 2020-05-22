@@ -5,7 +5,13 @@ using TaylorSeries
 
 using Test
 using LinearAlgebra, SparseArrays
-eeuler = Base.MathConstants.e
+const eeuler = Base.MathConstants.e
+
+# This is used to check the fallack of pretty_print
+struct SymbNumber <: Number
+    s :: Symbol
+end
+Base.iszero(::SymbNumber) = false
 
 @testset "Tests for Taylor1 expansions" begin
     ta(a) = Taylor1([a,one(a)],15)
@@ -523,10 +529,6 @@ eeuler = Base.MathConstants.e
     @test Taylor1{Int}(false) == Taylor1([0])
 
     # Test fallback pretty_print
-    struct SymbNumber <: Number
-        s :: Symbol
-    end
-    Base.iszero(::SymbNumber) = false
     st = Taylor1([SymbNumber(:x₀), SymbNumber(:x₁)])
     @test string(st) == " SymbNumber(:x₀) + SymbNumber(:x₁) t + 𝒪(t²)"
 end
