@@ -521,6 +521,14 @@ eeuler = Base.MathConstants.e
     @test Taylor1{Float64}(false) == Taylor1([0.0])
     @test Taylor1{Int}(true) == Taylor1([1])
     @test Taylor1{Int}(false) == Taylor1([0])
+
+    # Test fallback pretty_print
+    struct SymbNumber <: Number
+        s :: Symbol
+    end
+    Base.iszero(::SymbNumber) = false
+    st = Taylor1([SymbNumber(:x₀), SymbNumber(:x₁)])
+    @test string(st) == " SymbNumber(:x₀) + SymbNumber(:x₁) t + 𝒪(t²)"
 end
 
 @testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
