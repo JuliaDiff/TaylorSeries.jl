@@ -119,6 +119,12 @@ for T in (:Taylor1, :TaylorN)
             return c
         end
 
+        function atan(a::$T, b::$T)
+            c = atan(a/b)
+            c[0] = atan(constant_term(a), constant_term(b))
+            return c
+        end
+
         sinh(a::$T) = sinhcosh(a)[1]
         cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)
@@ -363,6 +369,32 @@ for T in (:Taylor1, :TaylorN)
             @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
             return nothing
         end
+
+        # @inline function atan!(c::$T{T}, a::$T{T}, b::$T{T}, r::$T{T}, k::Int) where {T}
+        #     if k == 0
+        #         a0 = constant_term(a)
+        #         b0 = constant_term(b)
+        #         @inbounds c[0] = atan( a0, b0 )
+        #         @inbounds r[0] = 1 + a0^2
+        #         return nothing
+        #     end
+
+        #     if $T == Taylor1
+        #         @inbounds c[k] = (k-1) * r[1] * c[k-1]
+        #     else
+        #         @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
+        #     end
+        #     @inbounds for i in 2:k-1
+        #         if $T == Taylor1
+        #             c[k] += (k-i) * r[i] * c[k-i]
+        #         else
+        #             mul!(c[k], (k-i) * r[i], c[k-i])
+        #         end
+        #     end
+        #     @inbounds sqr!(r, a, k)
+        #     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+        #     return nothing
+        # end
 
         @inline function sinhcosh!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T}
             if k == 0

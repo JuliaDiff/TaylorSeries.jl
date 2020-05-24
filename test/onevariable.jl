@@ -290,6 +290,10 @@ Base.iszero(::SymbNumber) = false
     @test sin(asin(tsquare)) == tsquare
     @test tan(atan(tsquare)) == tsquare
     @test atan(tan(tsquare)) == tsquare
+    @test atan(sin(tsquare)/cos(tsquare)) == atan(sin(tsquare), cos(tsquare))
+    @test constant_term(atan(sin(3pi/4+tsquare), cos(3pi/4+tsquare))) == 3pi/4
+    @test atan(sin(3pi/4+tsquare)/cos(3pi/4+tsquare)) - atan(sin(3pi/4+tsquare), cos(3pi/4+tsquare)) == -pi
+
     @test asin(t) + acos(t) == pi/2
     @test derivative(acos(t)) == - 1/sqrt(1-t^2)
 
