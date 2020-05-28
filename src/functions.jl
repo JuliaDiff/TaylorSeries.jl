@@ -119,6 +119,12 @@ for T in (:Taylor1, :TaylorN)
             return c
         end
 
+        function atan(a::$T, b::$T)
+            c = atan(a/b)
+            c[0] = atan(constant_term(a), constant_term(b))
+            return c
+        end
+
         sinh(a::$T) = sinhcosh(a)[1]
         cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)

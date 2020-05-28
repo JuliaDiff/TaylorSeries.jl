@@ -408,6 +408,8 @@ eeuler = Base.MathConstants.e
     @test evaluate(asin(sin(xT+yT)), [1.0,0.5]) == 1.5
     @test tan(atan(xT+yT)) == xT+yT
     @test atan(tan(xT+yT)) == xT+yT
+    @test atan(sin(1+xT+yT), cos(1+xT+yT)) == atan(sin(1+xT+yT)/cos(1+xT+yT))
+    @test constant_term(atan(sin(3pi/4+xT+yT), cos(3pi/4+xT+yT))) == 3pi/4
     @test asin(xT+yT) + acos(xT+yT) == pi/2
 
     @test -sinh(xT+yT) + cosh(xT+yT) == exp(-(xT+yT))
