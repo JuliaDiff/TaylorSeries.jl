@@ -216,7 +216,7 @@ eeuler = Base.MathConstants.e
     @test evaluate(xH) == zero(eltype(xH))
     @test xH() == zero(eltype(xH))
     @test xH([1,1]) == evaluate(xH, [1,1])
-    @test xH((1,1)) == 1
+    @test xH((1,1)) == xH(1, 1.0) == evaluate(xH, (1, 1.0)) == 1
     hp = -5.4xH+6.89yH
     @test hp([1,1]) == evaluate(hp, [1,1])
     vr = rand(2)
@@ -376,6 +376,8 @@ eeuler = Base.MathConstants.e
     @test exy(0.1im, 0.01im) == exp(0.11im)
     @test evaluate(exy,(0.1im, 0.01im)) == exp(0.11im)
     @test exy((0.1im, 0.01im)) == exp(0.11im)
+    @test evaluate(exy, (0.1im, 0.01im), sorting=false) == exy((0.1im, 0.01im), false)
+    @test evaluate(exy, (0.1im, 0.01im), sorting=false) == exy(0.1im, 0.01im, false)
     @test evaluate(exy,[0.1im, 0.01im]) == exp(0.11im)
     @test exy([0.1im, 0.01im]) == exp(0.11im)
     @test isapprox(evaluate(exy, (1,1)), eeuler^2)
@@ -393,6 +395,8 @@ eeuler = Base.MathConstants.e
     @test evaluate(ptxy, :x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
+    @test v == ones(2)
+    @test evaluate!([xT, yT][1:2], ones(Int, 2), v) == nothing
     @test v == ones(2)
     A_TN = [xT 2xT 3xT; yT 2yT 3yT]
     @test evaluate(A_TN, ones(2)) == [1.0 2.0 3.0; 1.0 2.0 3.0]
