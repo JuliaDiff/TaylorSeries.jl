@@ -67,8 +67,9 @@ Compute recursively the `Taylor1` polynomial of the n-th derivative of
 `a::Taylor1`.
 """
 function derivative(a::Taylor1{T}, n::Int) where {T <: Number}
-    @assert a.order ≥ n ≥ 0
-    if n==0
+    if n > a.order
+        return Taylor1(T, 0)
+    elseif n==0
         return a
     else
         res = deepcopy(a)
