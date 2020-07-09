@@ -16,10 +16,9 @@ The last coefficient is set to zero.
 The function `differentiate` is an exact synonym of `derivative`.
 """
 function derivative(a::Taylor1)
-    res = zero(a)
-    @inbounds for ord in eachindex(a)
+    res = Taylor1(zero(a[0]), get_order(a)-1)
+    @inbounds for ord in eachindex(res)
         derivative!(res, a, ord)
-        # ord == a.order-1 && break
     end
     return res
 end
@@ -35,15 +34,12 @@ const differentiate = derivative
     derivative!(res, a) --> nothing
 
 In-place version of `derivative`. Compute the `Taylor1` polynomial of the
-differential of `a::Taylor1` and save it into `res`. The last coefficient is
-set to zero.
+differential of `a::Taylor1` and return it as `res`
 """
 function derivative!(res::Taylor1, a::Taylor1)
     @inbounds for ord in eachindex(a)
         derivative!(res, a, ord)
-        # ord == a.order-1 && break
     end
-    res[a.order] = zero(a[0])
     nothing
 end
 
@@ -60,7 +56,8 @@ p_k = (k+1)a_{k+1}.
 ```
 
 """
-derivative!(p::Taylor1, a::Taylor1, k::Int) = k < a.order ? p[k] = (k+1)*a[k+1] : nothing
+derivative!(p::Taylor1, a::Taylor1, k::Int) =
+    k < a.order ? p[k] = (k+1)*a[k+1] : nothing
 
 
 """
@@ -77,6 +74,7 @@ function derivative(a::Taylor1{T}, n::Int) where {T <: Number}
         res = deepcopy(a)
         for i in 1:n
             derivative!(res, res)
+            res = Taylor1(res[0:res.order-1])
         end
         return res
     end

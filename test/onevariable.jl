@@ -318,7 +318,8 @@ Base.iszero(::SymbNumber) = false
     @test sinh(acosh(t_complex)) ≈ sqrt(t_complex^2 - 1)
 
     @test asin(t) + acos(t) == pi/2
-    @test derivative(acos(t)) == - 1/sqrt(1-t^2)
+    @test derivative(acos(t)) == - 1/sqrt(1-Taylor1(t.order-1)^2)
+    @test get_order(derivative(acos(t))) == t.order-1
 
     @test - sinh(t) + cosh(t) == exp(-t)
     @test  sinh(t) + cosh(t) == exp(t)
@@ -429,12 +430,16 @@ Base.iszero(::SymbNumber) = false
     @test evaluate!(m, m0, mres) == nothing
     @test mres == mres_expected
 
-    @test differentiate(exp(ta(1.0)), 0) == exp(ta(1.0))
-    expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0))[0:10]))
+    ee_ta = exp(ta(1.0))
+    @test differentiate(ee_ta, 0) == ee_ta
+    @test get_order(differentiate(ee_ta, 0)) == 15
+    @test get_order(differentiate(ee_ta, 1)) == 14
+    expected_result_approx = Taylor1(ee_ta[0:10])
     @test derivative(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
-    expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0pi))[0:12]),15)
-    @test derivative(exp(ta(1.0pi)), 3) ≈ expected_result_approx atol=eps(16.0) rtol=0.0
-    expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0pi))[0:5]),15)
+    ee_ta = exp(ta(1.0pi))
+    expected_result_approx = Taylor1(ee_ta[0:12])
+    @test derivative(ee_ta, 3) ≈ expected_result_approx atol=eps(16.0) rtol=0.0
+    expected_result_approx = Taylor1(ee_ta[0:5])
     @test derivative(exp(ta(1.0pi)), 10) ≈ expected_result_approx atol=eps(64.0) rtol=0.0
 
 
