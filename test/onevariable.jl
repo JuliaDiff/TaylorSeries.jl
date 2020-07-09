@@ -439,7 +439,7 @@ Base.iszero(::SymbNumber) = false
     @test derivative(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
     expected_result_approx = Taylor1(zero(ee_ta),0)
     @test differentiate(ee_ta, 16) == Taylor1(zero(ee_ta),0)
-    @test eltype(differentiate(ee_ta, 16)) == eltype(ee)
+    @test eltype(differentiate(ee_ta, 16)) == eltype(ee_ta)
     ee_ta = exp(ta(1.0pi))
     expected_result_approx = Taylor1(ee_ta[0:12])
     @test derivative(ee_ta, 3) ≈ expected_result_approx atol=eps(16.0) rtol=0.0
