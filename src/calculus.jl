@@ -11,7 +11,7 @@
     derivative(a)
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
-The last coefficient is set to zero.
+The order of the result is `a.order-1`.
 
 The function `differentiate` is an exact synonym of `derivative`.
 """
@@ -64,7 +64,7 @@ derivative!(p::Taylor1, a::Taylor1, k::Int) =
     derivative(a, n)
 
 Compute recursively the `Taylor1` polynomial of the n-th derivative of
-`a::Taylor1`.
+`a::Taylor1`. The order of the result is `a.order-n`.
 """
 function derivative(a::Taylor1{T}, n::Int) where {T <: Number}
     if n > a.order

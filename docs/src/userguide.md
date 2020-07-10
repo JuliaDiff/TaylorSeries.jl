@@ -142,22 +142,24 @@ rationalize(expon[3])
 
 Differentiating and integrating is straightforward for polynomial expansions in
 one variable, using [`derivative`](@ref) and [`integrate`](@ref). (The
-function [`differentiate`](@ref) is an exact synonym of `derivative`.) These
-functions return the corresponding [`Taylor1`](@ref) expansions.
-The last coefficient of a derivative is set to zero to keep the
-same order as the original polynomial; for the integral, an
-integration constant may be set by the user (the default is zero). The
-order of the resulting polynomial is kept unchanged. The value of the
-``n``-th (``n \ge 0``)
-derivative is obtained using `derivative(n,a)`, where `a` is a Taylor series.
+function [`differentiate`](@ref) is a synonym of `derivative`.) These
+functions return the corresponding [`Taylor1`](@ref) expansions. Note that
+the order of the derivative of a `Taylor1` corresponds to the order of the
+original polynomial *minus 1*. For the integral, an integration constant may be
+set by the user (the default is zero); the order of the integrated polynomial
+for the integral is *kept unchanged*. The *value* of the ``n``-th (``n \ge 0``)
+derivative is obtained using `derivative(n,a)`, where `a` is a Taylor series;
+likewise, the `Taylor1` polynomial of the ``n``-th derivative is obtained as
+`derivative(a,n)`; the resulting polynomial is of order `get_order(a)-1`.
 
 ```@repl userguide
-derivative(exp(t))
-integrate(exp(t))
+derivative(exp(t)) # exp(t) is of order 5; the derivative is of order 4
+integrate(exp(t))  # the resulting TaylorSeries is of order 5
 integrate( exp(t), 1.0)
 integrate( derivative( exp(-t)), 1.0 ) == exp(-t)
 derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
-differentiate(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
+differentiate(5, exp(shift_taylor(1.0))) == exp(1.0)    # 5-th derivative of `exp(1+t)`
+differentiate(exp(1+t), 3)    # Taylor1 polynomial of the 3-rd derivative of `exp(1+t)`
 ```
 
 To evaluate a Taylor series at a given point, Horner's rule is used via the
@@ -168,10 +170,10 @@ is evaluated at ``t = t_0 + dt``. Omitting `dt` corresponds to ``dt = 0``;
 see [`evaluate`](@ref).
 
 ```@repl userguide
-evaluate(exp(shift_taylor(1.0))) - ℯ # exp(t) around t0=1 (order 5), evaluated there (dt=0)
-evaluate(exp(t), 1) - ℯ # exp(t) around t0=0 (order 5), evaluated at t=1
-evaluate(exp( Taylor1(17) ), 1) - ℯ # exp(t) around t0=0, order 17
-tBig = Taylor1(BigFloat, 50) # Independent variable with BigFloats, order 50
+evaluate(exp(shift_taylor(1.0))) - ℯ    # exp(t) around t0=1 (order 5), evaluated there (dt=0)
+evaluate(exp(t), 1) - ℯ                 # exp(t) around t0=0 (order 5), evaluated at t=1
+evaluate(exp( Taylor1(17) ), 1) - ℯ     # exp(t) around t0=0, order 17
+tBig = Taylor1(BigFloat, 50)            # Independent variable with BigFloats, order 50
 eBig = evaluate( exp(tBig), one(BigFloat) )
 ℯ - eBig
 ```
