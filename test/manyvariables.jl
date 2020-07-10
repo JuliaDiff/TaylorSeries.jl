@@ -112,6 +112,7 @@ using LinearAlgebra
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
     @test xH == convert(HomogeneousPolynomial{Float64},xH)
+    @test HomogeneousPolynomial(xH) == xH
     @test HomogeneousPolynomial(0,0)  == 0
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)

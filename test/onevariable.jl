@@ -26,6 +26,8 @@ Base.iszero(::SymbNumber) = false
     @test Taylor1{Float64} <: AbstractSeries{Float64}
 
     @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3])
+    @test Taylor1(t[0:3]) == Taylor1(t[0:get_order(t)], 4)
+    @test get_order(t) == 15
     @test get_order(Taylor1([1,2,3,4,5], 2)) == 2
 
     @test size(t) == (16,)
