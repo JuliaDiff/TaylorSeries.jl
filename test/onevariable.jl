@@ -171,16 +171,19 @@ Base.iszero(::SymbNumber) = false
     @test zero(t)/t == zero(t)
     @test one(t)/one(t) == 1.0
     @test tsquare/t == t
+    @test get_order(tsquare/t) == get_order(tsquare)-1
     @test t/(t*3) == (1/3)*ot
     @test t/3im == -tim/3
     @test 1/(1-t) == Taylor1(ones(t.order+1))
     @test Taylor1([0,1,1])/t == t+1
+    @test get_order(Taylor1([0,1,1])/t) == 1
     @test (t+im)^2 == tsquare+2im*t-1
     @test (t+im)^3 == Taylor1([-1im,-3,3im,1],15)
     @test (t+im)^4 == Taylor1([1,-4im,-6,4im,1],15)
     @test imag(tsquare+2im*t-1) == 2t
     @test (Rational(1,2)*tsquare)[2] == 1//2
     @test t^2/tsquare == ot
+    @test get_order(t^2/tsquare) == get_order(t)-2
     @test ((1+t)^(1/3))[2]+1/9 ≤ tol1
     @test (1.0-tsquare)^3 == (1.0-t)^3*(1.0+t)^3
     @test (1-tsquare)^2 == (1+t)^2.0 * (1-t)^2.0

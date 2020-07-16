@@ -295,7 +295,13 @@ end
     @test string(to) == " ( 1.0 + 𝒪(t⁴)) t + 𝒪(t¹⁰)"
     @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
     @test ti + to == Taylor1([ti, one(ti)], 9)
-    @test ti * to == Taylor1([zero(ti), ti], 9)
+    tito = ti * to
+    @test tito == Taylor1([zero(ti), ti], 9)
+    @test tito / to == ti
+    @test get_order(tito/to) == get_order(to)-1
+    @test tito / ti == to
+    @test get_order(tito/ti) == get_order(to)
+    # @test get_order((tito/ti)[1]) == get_order(ti)-1
     @test ti^2-to^2 == (ti+to)*(ti-to)
     @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
     @test to(1 + ti) == 1 + ti
