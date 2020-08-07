@@ -204,9 +204,12 @@ Base.iszero(::SymbNumber) = false
     # These tests involve some sort of factorization
     @test t/(t+t^2) == 1/(1+t)
     @test sqrt(t^2+t^3) == t*sqrt(1+t)
+    @test get_order(sqrt(t^2+t^3)) == get_order(t) >> 1
+    @test get_order(t*sqrt(1+t)) == get_order(t)
     @test (t^3+t^4)^(1/3) ≈ t*(1+t)^(1/3)
     @test norm((t^3+t^4)^(1/3) - t*(1+t)^(1/3), Inf) < eps()
-    @test ((t^3+t^4)^(1/3))[15] ≈ -8617640/1162261467
+    @test get_order((t^3+t^4)^(1/3)) == 5
+    @test ((t^3+t^4)^(1/3))[5] == -10/243
 
     trational = ta(0//1)
     @inferred ta(0//1) == Taylor1{Rational{Int}}
