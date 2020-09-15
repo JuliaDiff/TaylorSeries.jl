@@ -1,27 +1,15 @@
 using .IntervalArithmetic
 
 function evaluate(a::Taylor1, dx::Interval)
-    dx == (-1..1) && return _evaluate(a, dx, Val(true))
-    # Usual Horner rule
+    order = a.order
     uno = one(dx)
-    @inbounds begin
-        suma = a[end]*uno
-        for k in a.order-1:-1:0
-            suma = suma*dx + a[k]
-        end
-    end
-    return suma
-end
-
-function _evaluate(a::Taylor1, dx::Interval{T}, ::Val{true}) where {T}
-    uno = Interval{T}(1, 1)
-    dx2 = Interval{T}(0, 1)
-    if iseven(a.order)
-        kend = a.order-2
+    dx2 = dx^2
+    if iseven(order)
+        kend = order-2
         @inbounds sum_even = a[end]*uno
-        @inbounds sum_odd = a[end-1]*Interval{T}(0, 0)
+        @inbounds sum_odd = a[end-1]*zero(dx)
     else
-        kend = a.order-3
+        kend = order-3
         @inbounds sum_odd = a[end]*uno
         @inbounds sum_even = a[end-1]*uno
     end
@@ -31,8 +19,6 @@ function _evaluate(a::Taylor1, dx::Interval{T}, ::Val{true}) where {T}
     end
     return sum_even + sum_odd*dx
 end
-
-_evaluate(a::Taylor1, dx::Interval, ::Val{false}) = a(dx)
 
 
 function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {N,T}
