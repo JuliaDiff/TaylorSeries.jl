@@ -150,7 +150,6 @@ function ^(a::TaylorN, r::S) where {S<:Real}
     return c
 end
 
-
 # Homogeneous coefficients for real power
 @doc doc"""
     pow!(c, a, r::Real, k::Int)
@@ -283,42 +282,8 @@ function square(a::HomogeneousPolynomial)
     return res
 end
 
-@generated function square(a::STaylor1{N,T}) where {N,T}
-    ex_calc = quote end
-    append!(ex_calc.args, Any[nothing for i in 1:N])
-    syms = Symbol[Symbol("c$i") for i in 1:N]
-
-    sym = syms[1]
-    ex_line = :($(syms[1]) = a[0]^2)
-    ex_calc.args[1] = ex_line
-
-    for k in 1:(N-1)
-        two = convert(T,2)
-        kodd = k%2
-        kend = div(k - 2 + kodd, 2)
-        ex_line = :(a[0] * a[$k])
-        @inbounds for i = 1:kend
-            ex_line = :($ex_line + a[$i] * a[$(k-i)])
-        end
-        ex_line = :($two*($ex_line))
-        if kodd !== 1
-            ex_line = :($ex_line + a[$(div(k,2))]^2)
-        end
-        ex_line = :($(syms[k+1]) = $ex_line)
-        ex_calc.args[k+1] = ex_line
-    end
-
-    exout = :(($(syms[1]),))
-    for i = 2:N
-        push!(exout.args, syms[i])
-    end
-    return quote
-               Base.@_inline_meta
-               $ex_calc
-               return STaylor1{N,T}($exout)
-            end
-end
-
+#two(x::T) = convert(T, x)
+square(x::T) where {T <: Real} = x^2
 
 # Homogeneous coefficients for square
 @doc doc"""

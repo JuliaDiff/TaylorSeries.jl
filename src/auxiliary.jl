@@ -103,13 +103,6 @@ function setindex!(a::Taylor1{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T
     end
 end
 
-
-# getindex STaylor1
-getindex(a::STaylor1, n::Int) = a.coeffs[n+1]
-getindex(a::STaylor1, u::UnitRange{Int}) = a.coeffs[u .+ 1]
-getindex(a::STaylor1, c::Colon) = a.coeffs[c]
-getindex(a::STaylor1, u::StepRange{Int,Int}) = a.coeffs[u .+ 1]
-
 """
     getcoeff(a, v)
 
@@ -242,16 +235,6 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @inline axes(a::$T) = ()
     end
 end
-@inline iterate(a::STaylor1{N,T}, state=0) where {N, T<:Number} = state > N-1 ? nothing : (a.coeffs[state+1], state+1)
-@inline firstindex(a::STaylor1) = 0
-@inline lastindex(a::STaylor1{N,T}) where {N, T<:Number} = N-1
-@inline eachindex(s::STaylor1{N,T}) where {N, T<:Number} = UnitRange(0, N-1)
-@inline size(s::STaylor1{N,T}) where {N, T<:Number} = N
-@inline length(s::STaylor1{N,T}) where {N, T<:Number} = N
-@inline get_order(s::STaylor1{N,T}) where {N, T<:Number} = N - 1
-@inline eltype(s::STaylor1{N,T}) where {N, T<:Number} = T
-@inline axes(a::STaylor1) = ()
-
 
 ## fixorder ##
 for T in (:Taylor1, :TaylorN)
@@ -286,19 +269,6 @@ function Base.findlast(a::Taylor1{T}) where {T<:Number}
     return last-1
 end
 
-function Base.findfirst(a::STaylor1{N,T}) where {N, T<:Number}
-    first = findfirst(x->!iszero(x), a.coeffs)
-    isa(first, Nothing) && return -1
-    return first-1
-end
-# Finds the last non-zero entry; extended to Taylor1
-function Base.findlast(a::STaylor1{N,T}) where {N, T<:Number}
-    last = findlast(x->!iszero(x), a.coeffs)
-    isa(last, Nothing) && return -1
-    return last-1
-end
-
-
 ## copyto! ##
 # Inspired from base/abstractarray.jl, line 665
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
@@ -323,8 +293,6 @@ and `TaylorN`. The fallback behavior is to return `a` itself if
 `a::Number`, or `a[1]` when `a::Vector`.
 """
 constant_term(a::Taylor1) = a[0]
-
-constant_term(a::STaylor1) = a[0]
 
 constant_term(a::TaylorN) = a[0][1]
 

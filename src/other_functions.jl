@@ -20,13 +20,6 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 
     @eval isnan(a::$T) = any( isnan.(a.coeffs) )
 end
-for f in (:real, :imag, :conj)
-    @eval ($f)(a::STaylor1{N,T}) where {N,T<:Number} = STaylor1{N,T}(($f).(a.coeffs))
-end
-
-adjoint(a::STaylor1) = conj(a)
-isinf(a::STaylor1) = any(isinf.(a.coeffs))
-isnan(a::STaylor1) = any(isnan.(a.coeffs))
 
 ## Division functions: rem and mod ##
 for op in (:mod, :rem)
@@ -98,18 +91,6 @@ for T in (:Taylor1, :TaylorN)
         end
 
         abs2(a::$T) = a^2
-    end
-end
-
-function abs(a::STaylor1{N,T}) where {N,T<:Real}
-    if a[0] > zero(T)
-        return a
-    elseif a[0] < zero(T)
-        return -a
-    else
-        throw(ArgumentError(
-        """The 0th order Taylor1 coefficient must be non-zero
-        (abs(x) is not differentiable at x=0)."""))
     end
 end
 
@@ -296,12 +277,6 @@ for T in (:Taylor1, :TaylorN)
     @eval rad2deg(z::$T{T}) where {T<:AbstractFloat} = z * (180 / convert(T, pi))
     @eval rad2deg(z::$T{T}) where {T<:Real} = z * (180 / convert(float(T), pi))
 end
-
-deg2rad(z::STaylor1{N, T}) where {N, T<:AbstractFloat} = z * (convert(T, pi) / 180)
-deg2rad(z::STaylor1{N, T}) where {N, T<:Real} = z * (convert(float(T), pi) / 180)
-
-rad2deg(z::STaylor1{N, T}) where {N, T<:AbstractFloat} = z * (180 / convert(T, pi))
-rad2deg(z::STaylor1{N, T}) where {N, T<:Real} = z * (180 / convert(float(T), pi))
 
 # Internal mutating deg2rad!, rad2deg! functions
 for T in (:Taylor1, :TaylorN)

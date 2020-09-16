@@ -146,3 +146,5 @@ function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {N,T}
     end
     return a(x)
 end
+
+square(x::Interval{T}) where {T <: Real} = pow(x,2)
