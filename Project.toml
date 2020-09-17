@@ -1,7 +1,7 @@
 name = "TaylorSeries"
 uuid = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 repo = "https://github.com/JuliaDiff/TaylorSeries.jl.git"
-version = "0.10.6"
+version = "0.10.7"
 
 [deps]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -11,7 +11,7 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-IntervalArithmetic = "0.15, 0.16"
+IntervalArithmetic = "0.15, 0.16, 0.17"
 Requires = "0.5.2, 1.0"
 julia = "1"
 
