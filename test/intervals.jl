@@ -53,6 +53,12 @@ eeuler = Base.MathConstants.e
     @test evaluate(x*y^2, (-1..1)×(-1..1)) == (-1..1)
     @test evaluate(x^2*y^2, (-1..1)×(-1..1)) == (0..1)
 
+    ii = -1..1
+    t = Taylor1(1)
+    @test 0..2 ⊆ (1+t)(ii)
+    t = Taylor1(2)
+    @test 0..4 ⊆ ((1+t)^2)(ii)
+
     ii = 0..6
     t = Taylor1(4)
     f(x) = 0.1 * x^3 - 0.5*x^2 + 1
