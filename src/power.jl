@@ -27,15 +27,6 @@ function ^(a::Taylor1{T}, n::Integer) where {T<:Number}
     return a^float(n)
 end
 
-# Method used for Taylor1{Interval{T}}^n
-function ^(a::Taylor1{T}, n::Integer) where {T<:Real}
-    n == 0 && return one(a)
-    n == 1 && return copy(a)
-    n == 2 && return square(a)
-    n < 0 && return a^float(n)
-    return power_by_squaring(a, n)
-end
-
 function ^(a::Taylor1{T}, n::Integer) where {T<:AbstractFloat}
     n == 0 && return one(a)
     n == 1 && return copy(a)

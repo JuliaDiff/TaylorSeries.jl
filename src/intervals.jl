@@ -1,5 +1,16 @@
 using .IntervalArithmetic
 
+# Method used for Taylor1{Interval{T}}^n
+function ^(a::Taylor1{T}, n::Integer) where {T<:Interval}
+    n == 0 && return one(a)
+    n == 1 && return copy(a)
+    n == 2 && return square(a)
+    n < 0 && return a^float(n)
+    return power_by_squaring(a, n)
+end
+
+
+
 function evaluate(a::Taylor1, dx::Interval)
     order = a.order
     uno = one(dx)
