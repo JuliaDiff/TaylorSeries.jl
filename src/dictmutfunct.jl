@@ -60,7 +60,7 @@ const _dict_binary_ops = Dict(
     :- => [:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)],
     :* => [:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)],
     :/ => [:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)],
-    :^ => [:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ _arg2)],
+    :^ => [:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ float(_arg2))],
 );
 
 """

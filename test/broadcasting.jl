@@ -42,7 +42,9 @@ using Test
     @. ts = 3 * t^2 - 1
     @test ts == 3 * t^2 - 1
 
-    tt = Taylor1([zero(t), one(t)], 2)
+    #  `tt` has to be `Taylor1{Taylor1{Float64}}` (instead of `Taylor1{Taylor1{Int}}`)
+    # since the method a^n (n integer) is equivalent to `a^float(n).`
+    tt = Taylor1([zero(1.0*t), one(t)], 2)
     tts = zero(tt)
     @test tt .== tt
     @. tts = 3 * tt^2 - 1
@@ -51,8 +53,10 @@ using Test
     ttt = Taylor1([zero(tt), one(tt)])
     ttts = zero(ttt)
     @test ttt .≈ ttt
-    @. ttts = 3 * ttt^2 - 1
-    @test ttts == -1
+    @. ttts = 3 * ttt^1 - 1
+    @test ttts == 3 * ttt^1 - 1
+    @. ttts = 3 * ttt^3 - 1
+    @test ttts == - 1.0
 end
 
 @testset "Broadcasting with HomogeneousPolynomial and TaylorN" begin

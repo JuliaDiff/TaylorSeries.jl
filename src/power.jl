@@ -15,34 +15,11 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     return power_by_squaring(a, n)
 end
 
-#= The following three methods are coded like that, to use
-preferentially a^float(n), but for cases like Taylor1{Interval{T}}^n
-power_by_squaring is used. The latter is important when the
-0-th order coefficient is/contains zero.
+#= The following method computes `a^float(n)` (except for cases like 
+Taylor1{Interval{T}}^n, where `power_by_squaring` is used), to 
+use internally `pow!`.
 =#
-function ^(a::Taylor1{T}, n::Integer) where {T<:Number}
-    n == 0 && return one(a)
-    n == 1 && return copy(a)
-    n == 2 && return square(a)
-    return a^float(n)
-end
-
-# Method used for Taylor1{Interval{T}}^n
-function ^(a::Taylor1{T}, n::Integer) where {T<:Real}
-    n == 0 && return one(a)
-    n == 1 && return copy(a)
-    n == 2 && return square(a)
-    n < 0 && return a^float(n)
-    return power_by_squaring(a, n)
-end
-
-function ^(a::Taylor1{T}, n::Integer) where {T<:AbstractFloat}
-    n == 0 && return one(a)
-    n == 1 && return copy(a)
-    n == 2 && return square(a)
-    return a^float(n)
-end
-
+^(a::Taylor1, n::Integer) = a^float(n)
 
 function ^(a::TaylorN{T}, n::Integer) where {T<:Number}
     n == 0 && return one(a)
