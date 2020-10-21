@@ -37,7 +37,7 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     convert, promote_rule, promote, show,
     real, imag, conj, adjoint,
     rem, mod, mod2pi, abs, abs2,
-    sqrt, exp, log, sin, cos, tan,
+    sqrt, exp, log, sin, cos, sincos, tan,
     asin, acos, atan, sinh, cosh, tanh,
     power_by_squaring,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
