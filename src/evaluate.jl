@@ -114,8 +114,15 @@ evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
 (p::Taylor1)() = evaluate(p)
 
 #function-like behavior for Vector{Taylor1}
-(p::AbstractArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
-(p::AbstractArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
+if VERSION > v"1.1"
+    (p::AbstractArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
+    (p::AbstractArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
+else
+    (p::Array{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
+    (p::SubArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
+    (p::Array{Taylor1{T}})() where {T<:Number} = evaluate.(p)
+    (p::SubArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
+end
 
 ## Evaluation of multivariable
 function evaluate!(x::AbstractArray{TaylorN{T},N}, δx::Array{T,1},
@@ -324,5 +331,12 @@ evaluate(A::AbstractArray{TaylorN{T},N}) where {T<:Number, N} = evaluate.(A)
 (p::TaylorN)(x, v...) = evaluate(p, (x, v...,))
 
 #function-like behavior for AbstractArray{TaylorN{T}}
-(p::AbstractArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
-(p::AbstractArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
+if VERSION > v"1.1"
+    (p::AbstractArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
+    (p::AbstractArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
+else
+    (p::Array{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
+    (p::SubArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
+    (p::Array{TaylorN{T}})() where {T<:Number} = evaluate(p)
+    (p::SubArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
+end
