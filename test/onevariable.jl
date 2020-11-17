@@ -270,7 +270,6 @@ Base.iszero(::SymbNumber) = false
     @test p.(vr) == evaluate.([p], vr)
     Mr = rand(3,3,3)
     @test p.(Mr) == evaluate.([p], Mr)
-    mytaylor1 = Taylor1(rand(20))
     vr = rand(5)
     @test p(vr) == p.(vr)
     @test view(a, 1:1)(vr) == evaluate.([p],vr)
@@ -398,6 +397,12 @@ Base.iszero(::SymbNumber) = false
     @test evaluate(v) == vv
     @test evaluate(v, complex(0.0,0.2)) ==
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]
+    m = [sin(t) exp(-t); cos(t) exp(t)]
+    m0 = 0.5
+    mres = Matrix{Float64}(undef, 2, 2)
+    mres_expected = [sin(m0) exp(-m0); cos(m0) exp(m0)]
+    @test evaluate!(m, m0, mres) == nothing
+    @test mres == mres_expected
 
     @test differentiate(exp(ta(1.0)), 0) == exp(ta(1.0))
     expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0))[0:10]))

@@ -60,11 +60,11 @@ function evaluate!(x::Array{Taylor1{T},1}, δt::T,
     end
     nothing
 end
-function evaluate!(x::Array{Taylor1{T},1}, δt::S,
-        x0::Union{Array{T,1},SubArray{T,1}}) where {T<:Number, S<:Number}
+function evaluate!(x::AbstractArray{Taylor1{T},N}, δt::S,
+        x0::AbstractArray{T,N}) where {T<:Number, S<:Number, N}
 
     # @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x)
+    @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δt )
     end
     nothing
