@@ -304,38 +304,17 @@ evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:Number, S<:NumberNotSeriesN
 
 evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
 
-#Vector evaluation
-function evaluate(x::AbstractVector{TaylorN{T}}, δx::Vector{S}) where {T<:Number, S<:Number}
+#High-dim array evaluation
+function evaluate(A::AbstractArray{TaylorN{T},N}, δx::Vector{S}) where {T<:Number, S<:Number, N}
     R = promote_type(T,S)
-    return evaluate(convert(Vector{TaylorN{R}},x), convert(Vector{R},δx))
+    return evaluate(convert(Array{TaylorN{R},N},A), convert(Vector{R},δx))
 end
-
-function evaluate(x::AbstractVector{TaylorN{T}}, δx::Vector{T}) where {T<:Number}
-    x0 = Array{T}(undef, length(x) )
-    evaluate!( x, δx, x0 )
-    return x0
-end
-
-evaluate(x::AbstractVector{TaylorN{T}}) where {T<:Number} = evaluate.(x)
-
-#Matrix evaluation
-function evaluate(A::AbstractMatrix{TaylorN{T}}, δx::Vector{S}) where {T<:Number, S<:Number}
-    R = promote_type(T,S)
-    return evaluate(convert(Array{TaylorN{R},2},A), convert(Vector{R},δx))
-end
-function evaluate(A::Matrix{TaylorN{T}}, δx::Vector{T}) where {T<:Number}
-    n,m = size(A)
-    Anew = Array{T}(undef, n, m )
-    xnew = Array{T}(undef, n )
-
-    for i in 1:m
-        evaluate!(A[:,i], δx, xnew)
-        Anew[:,i] = xnew
-    end
-
+function evaluate(A::Array{TaylorN{T},N}, δx::Vector{T}) where {T<:Number, N}
+    Anew = Array{T}(undef, size(A)...)
+    evaluate!(A, δx, Anew)
     return Anew
 end
-evaluate(A::AbstractMatrix{TaylorN{T}}) where {T<:Number} = evaluate.(A)
+evaluate(A::AbstractArray{TaylorN{T},N}) where {T<:Number, N} = evaluate.(A)
 
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)
@@ -344,10 +323,6 @@ evaluate(A::AbstractMatrix{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 (p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
 (p::TaylorN)(x, v...) = evaluate(p, (x, v...,))
 
-#function-like behavior for Vector{TaylorN}
-(p::AbstractVector{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
-(p::AbstractVector{TaylorN{T}})() where {T<:Number} = evaluate(p)
-
-#function-like behavior for Matrix{TaylorN}
-(p::AbstractMatrix{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
-(p::AbstractMatrix{TaylorN{T}})() where {T<:Number} = evaluate.(p)
+#function-like behavior for AbstractArray{TaylorN{T}}
+(p::AbstractArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
+(p::AbstractArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
