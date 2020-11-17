@@ -33,26 +33,26 @@ evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 """
     evaluate(x, δt)
 
-Evaluates each element of `x::AbstractArray{Taylor1{T},N}`,
+Evaluates each element of `x::AbstractArray{Taylor1{T}}`,
 representing the dependent variables of an ODE, at *time* δt. Note that the
 syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
 is equivalent to `evaluate(x)`.
 """
-evaluate(x::AbstractArray{Taylor1{T},N}, δt::S) where
-    {T<:Number, S<:Number, N} = evaluate.(x, δt)
-evaluate(a::AbstractArray{Taylor1{T},N}) where {T<:Number, N} =
+evaluate(x::AbstractArray{Taylor1{T}}, δt::S) where
+    {T<:Number, S<:Number} = evaluate.(x, δt)
+evaluate(a::AbstractArray{Taylor1{T}}) where {T<:Number} =
     evaluate.(a, zero(T))
 
 """
     evaluate!(x, δt, x0)
 
-Evaluates each element of `x::AbstractArray{Taylor1{T},N}`,
+Evaluates each element of `x::AbstractArray{Taylor1{T}}`,
 representing the Taylor expansion for the dependent variables
 of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
-function evaluate!(x::AbstractArray{Taylor1{T},N}, δt::T,
-        x0::AbstractArray{T,N}) where {T<:Number, N}
+function evaluate!(x::AbstractArray{Taylor1{T}}, δt::T,
+        x0::AbstractArray{T}) where {T<:Number}
 
     # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
@@ -60,8 +60,8 @@ function evaluate!(x::AbstractArray{Taylor1{T},N}, δt::T,
     end
     nothing
 end
-function evaluate!(x::AbstractArray{Taylor1{T},N}, δt::S,
-        x0::AbstractArray{T,N}) where {T<:Number, S<:Number, N}
+function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
+        x0::AbstractArray{T}) where {T<:Number, S<:Number}
 
     # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
@@ -125,8 +125,8 @@ else
 end
 
 ## Evaluation of multivariable
-function evaluate!(x::AbstractArray{TaylorN{T},N}, δx::Array{T,1},
-        x0::AbstractArray{T,N}) where {T<:Number, N}
+function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{T,1},
+        x0::AbstractArray{T}) where {T<:Number}
 
     # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
@@ -135,8 +135,8 @@ function evaluate!(x::AbstractArray{TaylorN{T},N}, δx::Array{T,1},
     nothing
 end
 
-function evaluate!(x::AbstractArray{TaylorN{T},N}, δx::Array{Taylor1{T},1},
-        x0::AbstractArray{Taylor1{T},N}) where {T<:NumberNotSeriesN, N}
+function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{Taylor1{T},1},
+        x0::AbstractArray{Taylor1{T}}) where {T<:NumberNotSeriesN}
 
     # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
@@ -145,8 +145,8 @@ function evaluate!(x::AbstractArray{TaylorN{T},N}, δx::Array{Taylor1{T},1},
     nothing
 end
 
-function evaluate!(x::AbstractArray{TaylorN{T},N}, δx::Array{TaylorN{T},1},
-        x0::AbstractArray{TaylorN{T},N}) where {T<:NumberNotSeriesN, N}
+function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
+        x0::AbstractArray{TaylorN{T}}) where {T<:NumberNotSeriesN}
 
     # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
@@ -155,8 +155,8 @@ function evaluate!(x::AbstractArray{TaylorN{T},N}, δx::Array{TaylorN{T},1},
     nothing
 end
 
-function evaluate!(x::AbstractArray{TaylorN{T},N}, δt::T,
-        x0::AbstractArray{TaylorN{T},N}) where {T<:Number, N}
+function evaluate!(x::AbstractArray{TaylorN{T}}, δt::T,
+        x0::AbstractArray{TaylorN{T}}) where {T<:Number}
 
     # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
@@ -316,12 +316,12 @@ function evaluate(A::AbstractArray{TaylorN{T},N}, δx::Vector{S}) where {T<:Numb
     R = promote_type(T,S)
     return evaluate(convert(Array{TaylorN{R},N},A), convert(Vector{R},δx))
 end
-function evaluate(A::Array{TaylorN{T},N}, δx::Vector{T}) where {T<:Number, N}
+function evaluate(A::Array{TaylorN{T}}, δx::Vector{T}) where {T<:Number}
     Anew = Array{T}(undef, size(A)...)
     evaluate!(A, δx, Anew)
     return Anew
 end
-evaluate(A::AbstractArray{TaylorN{T},N}) where {T<:Number, N} = evaluate.(A)
+evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)
