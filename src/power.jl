@@ -15,8 +15,8 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     return power_by_squaring(a, n)
 end
 
-#= The following method computes `a^float(n)` (except for cases like 
-Taylor1{Interval{T}}^n, where `power_by_squaring` is used), to 
+#= The following method computes `a^float(n)` (except for cases like
+Taylor1{Interval{T}}^n, where `power_by_squaring` is used), to
 use internally `pow!`.
 =#
 ^(a::Taylor1, n::Integer) = a^float(n)
@@ -250,12 +250,10 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function square(a::HomogeneousPolynomial)
-    T = eltype(a)
-
     order = 2*a.order
-    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
+    order > get_order() && return HomogeneousPolynomial([zero(a[1])], get_order())
 
-    res = HomogeneousPolynomial([zero(T)], order)
+    res = HomogeneousPolynomial([zero(a[1])], order)
     sqr!(res, a)
     return res
 end

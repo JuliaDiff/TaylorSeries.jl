@@ -33,8 +33,9 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 ## zero and one ##
-for T in (:Taylor1, :TaylorN), f in (:zero, :one)
-    @eval ($f)(a::$T) = $T(($f)(a[0]), a.order)
+for T in (:Taylor1, :TaylorN)
+    @eval one(a::$T) = $T(one(a[0]), a.order)
+    @eval zero(a::$T) = $T(zero.(a.coeffs))
 end
 
 function zero(a::HomogeneousPolynomial{T}) where {T<:Number}
@@ -42,11 +43,11 @@ function zero(a::HomogeneousPolynomial{T}) where {T<:Number}
     return HomogeneousPolynomial(v, a.order)
 end
 
-function zeros(::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 && return [HomogeneousPolynomial([zero(T)], 0)]
+function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
+    order == 0 && return [HomogeneousPolynomial([zero(a[1])], 0)]
     v = Array{HomogeneousPolynomial{T}}(undef, order+1)
     @simd for ord in eachindex(v)
-        @inbounds v[ord] = HomogeneousPolynomial([zero(T)], ord-1)
+        @inbounds v[ord] = HomogeneousPolynomial([zero(a[1])], ord-1)
     end
     return v
 end
@@ -278,9 +279,9 @@ function *(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where
 
     order = a.order + b.order
 
-    order > get_order() && return HomogeneousPolynomial(zero(T), get_order())
+    order > get_order() && return HomogeneousPolynomial(zero(a[1]), get_order())
 
-    res = HomogeneousPolynomial(zero(T), order)
+    res = HomogeneousPolynomial(zero(a[1]), order)
     mul!(res, a, b)
     return res
 end
