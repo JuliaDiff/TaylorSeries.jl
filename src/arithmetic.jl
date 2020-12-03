@@ -34,8 +34,12 @@ end
 
 ## zero and one ##
 for T in (:Taylor1, :TaylorN)
-    @eval one(a::$T) = $T(one(a[0]), a.order)
     @eval zero(a::$T) = $T(zero.(a.coeffs))
+    @eval function one(a::$T)
+        b = zero(a)
+        b[0] = one(b[0])
+        return b
+    end
 end
 
 function zero(a::HomogeneousPolynomial{T}) where {T<:Number}

@@ -76,10 +76,14 @@ using LinearAlgebra, SparseArrays
     @test tN1+t == t+tN1
     @test tN1-t == -t+tN1
     zeroN1 = zero(tN1)
+    oneN1 = one(tN1)
     @test tN1-tN1 == zeroN1
     @test zero(zeroN1) == zeroN1
+    @test zeroN1 == zero.(tN1)
+    @test oneN1[0] == one(tN1[0])
+    @test oneN1[1:end] == zero.(tN1[1:end])
     for i in eachindex(tN1.coeffs)
-        @test tN1.coeffs[i].order == zeroN1.coeffs[i].order
+        @test tN1.coeffs[i].order == zeroN1.coeffs[i].order == oneN1.coeffs[i].order
     end
     @test string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + ( 2.0 x₂² + 𝒪(‖x‖³)) t³ + 𝒪(t⁴)"
