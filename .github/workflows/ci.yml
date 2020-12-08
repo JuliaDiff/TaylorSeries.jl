@@ -7,10 +7,10 @@ on:
       - 'README.md'
     branches:
       - master
-    pull_request:
-      branches:
-        - master
-      tags: '*'
+  pull_request:
+    branches:
+      - master
+    tags: '*'
 
 jobs:
   test:
@@ -35,6 +35,7 @@ jobs:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
       - name: "Run tests"
+        continue-on-error: ${{ matrix.julia-version == 'nightly' }}
         run: |
           julia --project=@. -e "using Pkg; Pkg.instantiate();"
           julia --project=@. -e "using Pkg; Pkg.test(\"TaylorSeries\");"
