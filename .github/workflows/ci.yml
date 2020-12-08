@@ -39,7 +39,7 @@ jobs:
         run: |
           julia --project=@. -e "using Pkg; Pkg.instantiate();"
           julia --project=@. -e "using Pkg; Pkg.test(\"TaylorSeries\");"
-      - name: "Coveralls"
-        uses: julia-actions/julia-uploadcoveralls@v1
-        env:
-          COVERALLS_TOKEN: ${{ secrets.DOCUMENTER_KEY }}
+      # - name: "Coveralls"
+      #   uses: julia-actions/julia-uploadcoveralls@v1
+      #   env:
+      #     COVERALLS_TOKEN: ${{ secrets.DOCUMENTER_KEY }}
