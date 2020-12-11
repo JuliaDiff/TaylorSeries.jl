@@ -3,7 +3,7 @@
 A [Julia](http://julialang.org) package for Taylor polynomial expansions in one or more
 independent variables.
 
-[![Build Status](https://api.travis-ci.org/JuliaDiff/TaylorSeries.jl.svg?branch=master)](https://travis-ci.org/JuliaDiff/TaylorSeries.jl)
+[![CI](https://github.com/JuliaDiff/TaylorSeries.jl/workflows/CI/badge.svg)](https://github.com//JuliaDiff/TaylorSeries.jl/actions)
 [![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/stable)
