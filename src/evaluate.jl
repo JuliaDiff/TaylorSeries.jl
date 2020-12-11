@@ -172,7 +172,6 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
         {T<:Number, S<:Number, N}
 
     ct = coeff_table[a.order+1]
-    R = promote_type(T,S)
     suma = zero(a[1])*vals[1]
 
     for (i,a_coeff) in enumerate(a.coeffs)
@@ -247,7 +246,7 @@ function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number}
 end
 
 function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
-        {T<:Number, S<:NumberNotSeries, N}
+        {T<:NumberNotSeries, S<:NumberNotSeries, N}
 
     @assert N == get_numvars()
 
@@ -288,8 +287,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N, TaylorN{S}}) where
 
     @assert length(vals) == get_numvars()
 
-    R = promote_type(T,eltype(S))
-    suma = zero(TaylorN{R})
+    suma = zero(constant_term(a))*vals[1]
 
     for homPol in length(a):-1:1
         suma += evaluate(a.coeffs[homPol], vals)
