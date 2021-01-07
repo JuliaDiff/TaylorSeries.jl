@@ -5,9 +5,10 @@ using TaylorSeries
 
 using Test
 using LinearAlgebra
-eeuler = Base.MathConstants.e
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
+    eeuler = Base.MathConstants.e
+    
     @test HomogeneousPolynomial <: AbstractSeries
     @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
     @test TaylorN{Float64} <: AbstractSeries{Float64}
@@ -376,8 +377,6 @@ eeuler = Base.MathConstants.e
     @test exy(0.1im, 0.01im) == exp(0.11im)
     @test evaluate(exy,(0.1im, 0.01im)) == exp(0.11im)
     @test exy((0.1im, 0.01im)) == exp(0.11im)
-    @test evaluate(exy, (0.1im, 0.01im), sorting=false) == exy((0.1im, 0.01im), false)
-    @test evaluate(exy, (0.1im, 0.01im), sorting=false) == exy(0.1im, 0.01im, false)
     @test evaluate(exy,[0.1im, 0.01im]) == exp(0.11im)
     @test exy([0.1im, 0.01im]) == exp(0.11im)
     @test isapprox(evaluate(exy, (1,1)), eeuler^2)
