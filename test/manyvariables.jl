@@ -8,7 +8,7 @@ using LinearAlgebra
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
     eeuler = Base.MathConstants.e
-    
+
     @test HomogeneousPolynomial <: AbstractSeries
     @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
     @test TaylorN{Float64} <: AbstractSeries{Float64}
@@ -377,6 +377,9 @@ using LinearAlgebra
     @test exy(0.1im, 0.01im) == exp(0.11im)
     @test evaluate(exy,(0.1im, 0.01im)) == exp(0.11im)
     @test exy((0.1im, 0.01im)) == exp(0.11im)
+    @test exy(true, (0.1im, 0.01im)) == exp(0.11im)
+    @test evaluate(exy, (0.1im, 0.01im), sorting=false) == exy(false, (0.1im, 0.01im))
+    @test evaluate(exy, (0.1im, 0.01im), sorting=false) == exy(false, 0.1im, 0.01im)
     @test evaluate(exy,[0.1im, 0.01im]) == exp(0.11im)
     @test exy([0.1im, 0.01im]) == exp(0.11im)
     @test isapprox(evaluate(exy, (1,1)), eeuler^2)

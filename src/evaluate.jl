@@ -234,7 +234,7 @@ evaluate(a::TaylorN, vals; sorting::Bool=true) = _evaluate(a, (vals...,), Val(so
 evaluate(a::TaylorN, v, vals...; sorting::Bool=true) =
     _evaluate(a, (v, vals...,), Val(sorting))
 
-function _evaluate(a::TaylorN{T}, vals::NTuple) where {T<:Number}
+function _evaluate(a::TaylorN{T}, vals) where {T<:Number}
     @assert get_numvars() == length(vals)
     R = promote_type(T,typeof(vals[1]))
     a_length = length(a)
@@ -340,6 +340,8 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 (p::TaylorN)(s::Symbol, x) = evaluate(p, s, x)
 (p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
 (p::TaylorN)(x, v...) = evaluate(p, (x, v...,))
+(p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
+(p::TaylorN)(b::Bool, x, v...) = evaluate(p, (x, v...,), sorting=b)
 
 #function-like behavior for AbstractArray{TaylorN{T}}
 if VERSION > v"1.1"

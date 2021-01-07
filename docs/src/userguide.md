@@ -412,23 +412,23 @@ exy(:x, 0.0)
 
 Internally, `evaluate` for `TaylorN` considers separately
 the contributions of all `HomogeneousPolynomial`s by `order`,
-which are finally added up *after* sorting them (in place)
+which are finally added up *after* sorting them in place (which is the default)
 in increasing order by `abs2`. This is done in order to
 use as many significant figures as possible of all terms
 in the final sum, which then should yield a more
 accurate result. This default can be changed to a non-sorting
 sum thought, which may be more performant or useful for
-certain subtypes of `Number` which do not have `isless`
+certain subtypes of `Number` which, for instance, do not have `isless`
 defined. See
 [this issue](https://github.com/JuliaDiff/TaylorSeries.jl/issues/242)
 for a motivating example. This can be done using the keyword
 `sorting` in `evaluate`, which expects a `Bool`, or using a
-that boolean as the last argument in the function-like evaluation.
+that boolean as the *first* argument in the function-like evaluation.
 
 ```@repl userguide
 exy([.1,.02]) # default is `sorting=true`
 evaluate(exy, [.1,.02]; sorting=false)
-exy([.1,.02], false)
+exy(false, [.1,.02])
 ```
 
 In the examples shown above, the first entry corresponds to the
