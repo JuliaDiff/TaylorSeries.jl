@@ -51,14 +51,6 @@ representing the Taylor expansion for the dependent variables
 of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
-function evaluate!(x::AbstractArray{Taylor1{T}}, δt::T,
-        x0::AbstractArray{T}) where {T<:Number}
-
-    @inbounds for i in eachindex(x, x0)
-        x0[i] = evaluate( x[i], δt )
-    end
-    nothing
-end
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
         x0::AbstractArray{T}) where {T<:Number, S<:Number}
 
