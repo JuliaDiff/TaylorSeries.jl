@@ -51,19 +51,9 @@ representing the Taylor expansion for the dependent variables
 of an ODE at *time* `δt`. It updates the vector `x0` with the
 computed values.
 """
-function evaluate!(x::AbstractArray{Taylor1{T}}, δt::T,
-        x0::AbstractArray{T}) where {T<:Number}
-
-    # @assert length(x) == length(x0)
-    @inbounds for i in eachindex(x, x0)
-        x0[i] = evaluate( x[i], δt )
-    end
-    nothing
-end
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
         x0::AbstractArray{T}) where {T<:Number, S<:Number}
 
-    # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δt )
     end
@@ -110,7 +100,6 @@ evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
 
 #function-like behavior for Taylor1
 (p::Taylor1)(x) = evaluate(p, x)
-
 (p::Taylor1)() = evaluate(p)
 
 #function-like behavior for Vector{Taylor1}
@@ -146,11 +135,10 @@ function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{Taylor1{T},1},
 end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
-        x0::AbstractArray{TaylorN{T}}) where {T<:NumberNotSeriesN}
+        x0::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
 
-    # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
-        x0[i] = evaluate( x[i], δx )
+        x0[i] = _evaluate( x[i], δx, Val(sorting) )
     end
     nothing
 end
@@ -202,7 +190,7 @@ evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
 
 evaluate(a::HomogeneousPolynomial, v, vals...) = evaluate(a, (v, vals...,))
 
-evaluate(a::HomogeneousPolynomial, v) = evaluate(a, v...)
+evaluate(a::HomogeneousPolynomial, v) = evaluate(a, [v...])
 
 function evaluate(a::HomogeneousPolynomial)
     a.order == 0 && return a[1]
@@ -217,31 +205,46 @@ end
 (p::HomogeneousPolynomial)() = evaluate(p)
 
 """
-    evaluate(a, [vals])
+    evaluate(a, [vals]; sorting::Bool=true)
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.
-If `vals` is ommitted, it's evaluated at zero.
-Note that the syntax `a(vals)` is equivalent to `evaluate(a, vals)`; and `a()`
-is equivalent to `evaluate(a)`.
+If `vals` is ommitted, it's evaluated at zero. The
+keyword parameter `sorting` can be used to avoid
+sorting (in increasing order by `abs2`) the
+terms that are added.
+
+Note that the syntax `a(vals)` is equivalent to
+`evaluate(a, vals)`; and `a()` is equivalent to
+`evaluate(a)`. No extension exists that incorporates
+`sorting`.
 """
-function evaluate(a::TaylorN{T}, vals::NTuple{N,S}) where
-        {T<:Number,S<:NumberNotSeries, N}
+evaluate(a::TaylorN{T}, vals::NTuple; sorting::Bool=true) where {T<:Number} =
+    _evaluate(a, vals, Val(sorting))
 
-    @assert N == get_numvars()
+evaluate(a::TaylorN, vals; sorting::Bool=true) = _evaluate(a, (vals...,), Val(sorting))
 
-    R = promote_type(T,S)
+evaluate(a::TaylorN, v, vals...; sorting::Bool=true) =
+    _evaluate(a, (v, vals...,), Val(sorting))
+
+function _evaluate(a::TaylorN{T}, vals) where {T<:Number}
+    @assert get_numvars() == length(vals)
+    R = promote_type(T,typeof(vals[1]))
     a_length = length(a)
     suma = zeros(R, a_length)
     @inbounds for homPol in length(a):-1:1
         suma[homPol] = evaluate(a.coeffs[homPol], vals)
     end
-
-    return sum( sort!(suma, by=abs2) )
+    return suma
 end
 
-evaluate(a::TaylorN, vals) = evaluate(a, (vals...,))
-
-evaluate(a::TaylorN, v, vals...) = evaluate(a, (v, vals...,))
+function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:Number}
+    suma = _evaluate(a, vals)
+    return sum( sort!(suma, by=abs2) )
+end
+function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number}
+    suma = _evaluate(a, vals)
+    return sum( suma )
+end
 
 function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
         {T<:Number, S<:NumberNotSeries, N}
@@ -329,6 +332,8 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 (p::TaylorN)(s::Symbol, x) = evaluate(p, s, x)
 (p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
 (p::TaylorN)(x, v...) = evaluate(p, (x, v...,))
+(p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
+(p::TaylorN)(b::Bool, x, v...) = evaluate(p, (x, v...,), sorting=b)
 
 #function-like behavior for AbstractArray{TaylorN{T}}
 if VERSION > v"1.1"

@@ -181,7 +181,6 @@ function homogPol2str(a::HomogeneousPolynomial{Taylor1{T}}) where {T<:Number}
 end
 
 function numbr2str(zz, ifirst::Bool=false)
-    iszero(zz) && return string( zz )
     plusmin = ifelse( ifirst, string(""), string("+ ") )
     return string(plusmin, zz)
 end
