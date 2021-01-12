@@ -1,7 +1,7 @@
 name = "TaylorSeries"
 uuid = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 repo = "https://github.com/JuliaDiff/TaylorSeries.jl.git"
-version = "0.10.9"
+version = "0.10.10"
 
 [deps]
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
