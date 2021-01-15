@@ -388,6 +388,7 @@ Base.iszero(::SymbNumber) = false
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
+    @show(t)
     vv = Vector{Float64}(undef, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
@@ -396,8 +397,8 @@ Base.iszero(::SymbNumber) = false
     @test evaluate!(v, 0.0, view(vv, 1:2)) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv
-    @test evaluate(v, complex(0.0,0.2)) ==
-        [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))]
+    @test isapprox(evaluate(v, complex(0.0,0.2)),
+        [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))], atol=eps(), rtol=0.0)
     m = [sin(t) exp(-t); cos(t) exp(t)]
     m0 = 0.5
     mres = Matrix{Float64}(undef, 2, 2)
