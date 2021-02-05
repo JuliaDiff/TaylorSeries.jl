@@ -294,6 +294,18 @@ Base.iszero(::SymbNumber) = false
     @test constant_term(atan(sin(3pi/4+tsquare), cos(3pi/4+tsquare))) == 3pi/4
     @test atan(sin(3pi/4+tsquare)/cos(3pi/4+tsquare)) - atan(sin(3pi/4+tsquare), cos(3pi/4+tsquare)) == -pi
 
+    @test sinh(asinh(tsquare)) ≈ tsquare
+    @test tanh(atanh(tsquare)) ≈ tsquare
+    @test atanh(tanh(tsquare)) ≈ tsquare
+    @test asinh(t) ≈ log(t + sqrt(t^2 + 1))
+    @test cosh(asinh(t)) ≈ sqrt(t^2 + 1)
+
+    t_complex = Taylor1(Complex{Int}, 15) # for use with acosh, which in the Reals is only defined for x ≥ 1
+    @test cosh(acosh(t_complex)) ≈ t_complex
+    @test derivative(acosh(t_complex)) ≈ 1/sqrt(t_complex^2 - 1)
+    @test acosh(t_complex) ≈ log(t_complex + sqrt(t_complex^2 - 1))
+    @test sinh(acosh(t_complex)) ≈ sqrt(t_complex^2 - 1)
+
     @test asin(t) + acos(t) == pi/2
     @test derivative(acos(t)) == - 1/sqrt(1-t^2)
 

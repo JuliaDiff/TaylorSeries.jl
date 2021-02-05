@@ -150,6 +150,64 @@ for T in (:Taylor1, :TaylorN)
             end
             return c
         end
+
+
+        function asinh(a::$T)
+            order = a.order
+            a0 = constant_term(a)
+            aux = asinh(a0)
+            aa = one(aux) * a
+            c = $T( aux, order )
+            r = $T( sqrt(a0^2 + 1), order )
+            iszero(constant_term(r)) && throw(ArgumentError(
+                    """
+                    Recursion formula has a pole.
+                    """))
+            for k in eachindex(a)
+                asinh!(c, aa, r, k)
+            end
+            return c
+        end
+
+        function acosh(a::$T)
+            a0 = constant_term(a)
+            a0^2 == one(a0) && throw(ArgumentError(
+                """
+                Recursion formula diverges due to vanishing `sqrt`
+                in the denominator.
+                """))
+
+            order = a.order
+            aux = acosh(a0)
+            aa = one(aux) * a
+            c = $T( aux, order )
+            r = $T( sqrt(a0^2 - 1), order )
+            for k in eachindex(a)
+                acosh!(c, aa, r, k)
+            end
+            return c
+        end
+
+        function atanh(a::$T)
+            order = a.order
+            a0 = constant_term(a)
+            aux = atanh(a0)
+            aa = one(aux) * a
+            c = $T( aux, order)
+            r = $T(one(aux) - a0^2, order)
+            iszero(constant_term(r)) && throw(ArgumentError(
+                    """
+                    Recursion formula has a pole.
+                    """))
+
+            for k in eachindex(a)
+                atanh!(c, aa, r, k)
+            end
+            return c
+        end
+
+
+
     end
 end
 
@@ -299,7 +357,7 @@ for T in (:Taylor1, :TaylorN)
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = asin( a0 )
-                @inbounds r[0] = sqrt( 1 - a0^2)
+                @inbounds r[0] = sqrt( 1 - a0^2 )
                 return nothing
             end
 
@@ -324,7 +382,7 @@ for T in (:Taylor1, :TaylorN)
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = acos( a0 )
-                @inbounds r[0] = sqrt( 1 - a0^2)
+                @inbounds r[0] = sqrt( 1 - a0^2 )
                 return nothing
             end
 
@@ -425,6 +483,83 @@ for T in (:Taylor1, :TaylorN)
 
             return nothing
         end
+
+        @inline function asinh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = asinh( a0 )
+                @inbounds r[0] = sqrt( a0^2 + 1 )
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            end
+            sqrt!(r, a^2+1, k)
+            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+            return nothing
+        end
+
+        @inline function acosh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = acosh( a0 )
+                @inbounds r[0] = sqrt( a0^2 - 1 )
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            end
+            sqrt!(r, a^2-1, k)
+            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+            return nothing
+        end
+
+        @inline function atanh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = atanh( a0 )
+                @inbounds r[0] = 1 - a0^2
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            end
+            @inbounds sqr!(r, a, k)
+            @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
+            return nothing
+        end
+
+
     end
 end
 
