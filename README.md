@@ -6,8 +6,8 @@ independent variables.
 [![CI](https://github.com/JuliaDiff/TaylorSeries.jl/workflows/CI/badge.svg)](https://github.com//JuliaDiff/TaylorSeries.jl/actions)
 [![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/stable)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](http://www.juliadiff.org/TaylorSeries.jl/latest)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliadiff.org/TaylorSeries.jl/stable)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliadiff.org/TaylorSeries.jl/latest)
 
 [![DOI](http://joss.theoj.org/papers/10.21105/joss.01043/status.svg)](https://doi.org/10.21105/joss.01043)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2601941.svg)](https://zenodo.org/record/2601941)
