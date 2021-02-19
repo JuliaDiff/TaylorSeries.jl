@@ -78,7 +78,7 @@ convention for the arguments of the functions and the calling pattern
 is to use `:_res` for the (mutated) result, `:_arg1`, for the required
 argument, possibly `:_aux` when there is an auxiliary expression
 needed, and `:_k` for the computed order of `:_res`. When an auxiliary
-expression is required, and `Expr` defining its calling pattern is
+expression is required, an `Expr` defining its calling pattern is
 added as the last entry of the vector.
 
 """
@@ -115,6 +115,12 @@ const _dict_unary_ops = Dict(
         :(_aux = sinh(_arg1))],
     :tanh => [:tanh!, (:_res, :_arg1, :_aux, :_k), :(_res = tanh(_arg1)),
         :(_aux = tanh(_arg1)^2)],
+    :asinh => [:asinh!, (:_res, :_arg1, :_aux, :_k), :(_res = asinh(_arg1)),
+        :(_aux = sqrt(_arg1^2 + 1))],
+    :acosh => [:acosh!, (:_res, :_arg1, :_aux, :_k), :(_res = acosh(_arg1)),
+        :(_aux = sqrt(_arg1^2 - 1))],
+    :atanh => [:atanh!, (:_res, :_arg1, :_aux, :_k), :(_res = atanh(_arg1)),
+        :(_aux = 1 - _arg1^2)],
 );
 
 
