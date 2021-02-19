@@ -115,11 +115,11 @@ const _dict_unary_ops = Dict(
         :(_aux = sinh(_arg1))],
     :tanh => [:tanh!, (:_res, :_arg1, :_aux, :_k), :(_res = tanh(_arg1)),
         :(_aux = tanh(_arg1)^2)],
-    :asinh => [:asin!, (:_res, :_arg1, :_aux, :_k), :(_res = asinh(_arg1)),
+    :asinh => [:asinh!, (:_res, :_arg1, :_aux, :_k), :(_res = asinh(_arg1)),
         :(_aux = sqrt(_arg1^2 + 1))],
-    :acosh => [:acos!, (:_res, :_arg1, :_aux, :_k), :(_res = acosh(_arg1)),
+    :acosh => [:acosh!, (:_res, :_arg1, :_aux, :_k), :(_res = acosh(_arg1)),
         :(_aux = sqrt(_arg1^2 - 1))],
-    :atanh => [:atan!, (:_res, :_arg1, :_aux, :_k), :(_res = atanh(_arg1)),
+    :atanh => [:atanh!, (:_res, :_arg1, :_aux, :_k), :(_res = atanh(_arg1)),
         :(_aux = 1 - _arg1^2)],
 );
 
