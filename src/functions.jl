@@ -67,8 +67,7 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(ArgumentError(
                 """
-                Recursion formula diverges due to vanishing `sqrt`
-                in the denominator.
+                Series expansion of asin(x) diverges at x = ±1
                 """))
 
             order = a.order
@@ -86,8 +85,7 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(ArgumentError(
                 """
-                Recursion formula diverges due to vanishing `sqrt`
-                in the denominator.
+                Series expansion of acos(x) diverges at x = ±1
                 """))
 
             order = a.order
@@ -109,9 +107,9 @@ for T in (:Taylor1, :TaylorN)
             c = $T( aux, order)
             r = $T(one(aux) + a0^2, order)
             iszero(constant_term(r)) && throw(ArgumentError(
-                    """
-                    Recursion formula has a pole.
-                    """))
+                """
+                Series expansion of atan(x) diverges at x = ±im
+                """))
 
             for k in eachindex(a)
                 atan!(c, aa, r, k)
@@ -160,9 +158,9 @@ for T in (:Taylor1, :TaylorN)
             c = $T( aux, order )
             r = $T( sqrt(a0^2 + 1), order )
             iszero(constant_term(r)) && throw(ArgumentError(
-                    """
-                    Recursion formula has a pole.
-                    """))
+                """
+                Series expansion of asinh(x) diverges at x = ±im
+                """))
             for k in eachindex(a)
                 asinh!(c, aa, r, k)
             end
@@ -173,8 +171,7 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(ArgumentError(
                 """
-                Recursion formula diverges due to vanishing `sqrt`
-                in the denominator.
+                Series expansion of acosh(x) diverges at x = ±1
                 """))
 
             order = a.order
@@ -196,9 +193,9 @@ for T in (:Taylor1, :TaylorN)
             c = $T( aux, order)
             r = $T(one(aux) - a0^2, order)
             iszero(constant_term(r)) && throw(ArgumentError(
-                    """
-                    Recursion formula has a pole.
-                    """))
+                """
+                Series expansion of atanh(x) diverges at x = ±1
+                """))
 
             for k in eachindex(a)
                 atanh!(c, aa, r, k)
