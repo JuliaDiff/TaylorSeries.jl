@@ -760,3 +760,54 @@ c_k = a_k - \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} p_j.
 ```
 
 """ tanh!
+
+
+
+@doc doc"""
+    asinh!(c, a, r, k)
+
+Update the `k-th` expansion coefficients `c[k+1]` of `c = asinh(a)`,
+for `c` and `a` either `Taylor1` or `TaylorN`; `r = sqrt(1-c^2)` and
+is passed as an argument for efficiency.
+
+```math
+\begin{equation*}
+c_k = \frac{1}{ \sqrt{r_0} }
+    \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big).
+\end{equation*}
+```
+
+""" asinh!
+
+
+@doc doc"""
+    acosh!(c, a, r, k)
+
+Update the `k-th` expansion coefficients `c[k+1]` of `c = acosh(a)`,
+for `c` and `a` either `Taylor1` or `TaylorN`; `r = sqrt(c^2-1)` and
+is passed as an argument for efficiency.
+
+```math
+\begin{equation*}
+c_k = \frac{1}{ r_0 }
+    \big( a_k - \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j \big).
+\end{equation*}
+```
+
+""" acosh!
+
+
+@doc doc"""
+    atanh!(c, a, r, k)
+
+Update the `k-th` expansion coefficients `c[k+1]` of `c = atanh(a)`,
+for `c` and `a` either `Taylor1` or `TaylorN`; `r = 1-a^2` and
+is passed as an argument for efficiency.
+
+```math
+\begin{equation*}
+c_k = \frac{1}{r_0}\big(a_k + \frac{1}{k} \sum_{j=1}^{k-1} j r_{k-j} c_j\big).
+\end{equation*}
+```
+
+""" atanh!
