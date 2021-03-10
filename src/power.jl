@@ -115,7 +115,7 @@ function ^(a::TaylorN, r::S) where {S<:Real}
     isinteger(r) && return aa^round(Int,r)
 
     # @assert !iszero(a0)
-    iszero(a0) && throw(ArgumentError(
+    iszero(a0) && throw(DomainError(a,
         """The 0-th order TaylorN coefficient must be non-zero
         in order to expand `^` around 0."""))
 
@@ -167,7 +167,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     end
 
     # The first non-zero coefficient of the result; must be integer
-    !isinteger(r*l0) && throw(ArgumentError(
+    !isinteger(r*l0) && throw(DomainError(a, 
         """The 0th order Taylor1 coefficient must be non-zero
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0 )
@@ -357,7 +357,7 @@ function sqrt(a::Taylor1)
     if l0nz < 0
         return Taylor1(aux, a.order)
     elseif l0nz%2 == 1 # l0nz must be pair
-        throw(ArgumentError(
+        throw(DomainError(a,
         """First non-vanishing Taylor1 coefficient must correspond
         to an **even power** in order to expand `sqrt` around 0."""))
     end
@@ -377,7 +377,7 @@ end
 function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( constant_term(a) )
     if iszero(p0)
-        throw(ArgumentError(
+        throw(DomainError(a, 
         """The 0-th order TaylorN coefficient must be non-zero
         in order to expand `sqrt` around 0."""))
     end

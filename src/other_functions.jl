@@ -85,7 +85,7 @@ for T in (:Taylor1, :TaylorN)
             elseif constant_term(a) < 0
                 return -a
             else
-                throw(ArgumentError(
+                throw(DomainError(a, 
                 """The 0th order Taylor1 coefficient must be non-zero
                 (abs(x) is not differentiable at x=0)."""))
             end
@@ -113,7 +113,7 @@ function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
     elseif constant_term(a)[0] < 0
         return -a
     else
-        throw(ArgumentError(
+        throw(DomainError(a,
         """The 0th order TaylorN{Taylor1{T}} coefficient must be non-zero
         (abs(x) is not differentiable at x=0)."""))
     end
@@ -125,7 +125,7 @@ function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
     elseif constant_term(a[0]) < 0
         return -a
     else
-        throw(ArgumentError(
+        throw(DomainError(a,
         """The 0th order Taylor1{TaylorN{T}} coefficient must be non-zero
         (abs(x) is not differentiable at x=0)."""))
     end

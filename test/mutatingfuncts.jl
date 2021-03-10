@@ -80,7 +80,7 @@ using Test
     res = zero(t1)
     TaylorSeries.abs!(res, -1-t2, 2)
     @test res[2] == 1.0
-    @test_throws ArgumentError TaylorSeries.abs!(res, t2, 2)
+    @test_throws DomainError TaylorSeries.abs!(res, t2, 2)
 
     res = zero(t1)
     TaylorSeries.abs2!(res, 1-t1, 1)

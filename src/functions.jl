@@ -22,10 +22,8 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function log(a::$T)
-            iszero(constant_term(a)) && throw(ArgumentError("""
-                    The 0-th order `TaylorN` coefficient must be non-zero
-                    in order to expand `log` around 0.
-                    """))
+            iszero(constant_term(a)) && throw(DomainError(a, 
+                    """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
 
             order = a.order
             aux = log(constant_term(a))
@@ -65,10 +63,8 @@ for T in (:Taylor1, :TaylorN)
 
         function asin(a::$T)
             a0 = constant_term(a)
-            a0^2 == one(a0) && throw(ArgumentError(
-                """
-                Series expansion of asin(x) diverges at x = ±1
-                """))
+            a0^2 == one(a0) && throw(DomainError(a, 
+                """Series expansion of asin(x) diverges at x = ±1."""))
 
             order = a.order
             aux = asin(a0)
@@ -83,10 +79,8 @@ for T in (:Taylor1, :TaylorN)
 
         function acos(a::$T)
             a0 = constant_term(a)
-            a0^2 == one(a0) && throw(ArgumentError(
-                """
-                Series expansion of acos(x) diverges at x = ±1
-                """))
+            a0^2 == one(a0) && throw(DomainError(a, 
+            """Series expansion of asin(x) diverges at x = ±1."""))
 
             order = a.order
             aux = acos(a0)
@@ -106,10 +100,8 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T( aux, order)
             r = $T(one(aux) + a0^2, order)
-            iszero(constant_term(r)) && throw(ArgumentError(
-                """
-                Series expansion of atan(x) diverges at x = ±im
-                """))
+            iszero(constant_term(r)) && throw(DomainError(a, 
+                """Series expansion of atan(x) diverges at x = ±im."""))
 
             for k in eachindex(a)
                 atan!(c, aa, r, k)
@@ -157,10 +149,8 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T( aux, order )
             r = $T( sqrt(a0^2 + 1), order )
-            iszero(constant_term(r)) && throw(ArgumentError(
-                """
-                Series expansion of asinh(x) diverges at x = ±im
-                """))
+            iszero(constant_term(r)) && throw(DomainError(a,
+                """Series expansion of asinh(x) diverges at x = ±im."""))
             for k in eachindex(a)
                 asinh!(c, aa, r, k)
             end
@@ -169,10 +159,8 @@ for T in (:Taylor1, :TaylorN)
 
         function acosh(a::$T)
             a0 = constant_term(a)
-            a0^2 == one(a0) && throw(ArgumentError(
-                """
-                Series expansion of acosh(x) diverges at x = ±1
-                """))
+            a0^2 == one(a0) && throw(DomainError(a,
+                """Series expansion of acosh(x) diverges at x = ±1."""))
 
             order = a.order
             aux = acosh(a0)
@@ -192,10 +180,8 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T( aux, order)
             r = $T(one(aux) - a0^2, order)
-            iszero(constant_term(r)) && throw(ArgumentError(
-                """
-                Series expansion of atanh(x) diverges at x = ±1
-                """))
+            iszero(constant_term(r)) && throw(DomainError(a,
+                """Series expansion of atanh(x) diverges at x = ±1."""))
 
             for k in eachindex(a)
                 atanh!(c, aa, r, k)
@@ -238,7 +224,7 @@ for T in (:Taylor1, :TaylorN)
             elseif constant_term(constant_term(a)) < constant_term(z)
                 return subst!(c, a, k)
             else
-                throw(ArgumentError(
+                throw(DomainError(a,
                 """The 0th order coefficient must be non-zero
                 (abs(x) is not differentiable at x=0)."""))
             end
@@ -566,7 +552,7 @@ end
 
 Return the Taylor expansion of ``f^{-1}(t)``, of order `N = f.order`,
 for `f::Taylor1` polynomial if the first coefficient of `f` is zero.
-Otherwise, an `ArgumentError` is thrown.
+Otherwise, a `DomainError` is thrown.
 
 The algorithm implements Lagrange inversion at ``t=0`` if ``f(0)=0``:
 ```math
@@ -581,7 +567,7 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
 
 function inverse(f::Taylor1{T}) where {T<:Number}
     if f[0] != zero(T)
-        throw(ArgumentError(
+        throw(DomainError(f,
         """
         Evaluation of Taylor1 series at 0 is non-zero. For high accuracy, revert
         a Taylor1 series with first coefficient 0 and re-expand about f(0).
