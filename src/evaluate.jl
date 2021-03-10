@@ -103,7 +103,7 @@ evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number, S<:Number} =
 (p::Taylor1)() = evaluate(p)
 
 #function-like behavior for Vector{Taylor1}
-if VERSION > v"1.1"
+if VERSION >= v"1.3"
     (p::AbstractArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
     (p::AbstractArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
 else
