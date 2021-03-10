@@ -446,17 +446,17 @@ Base.iszero(::SymbNumber) = false
     @test norm(inverse(t*exp(t))[1:end]./cfs .- 1) < 4tol1
 
     @test_throws ArgumentError Taylor1([1,2,3], -2)
-    @test_throws ArgumentError abs(ta(big(0)))
+    @test_throws DomainError abs(ta(big(0)))
     @test_throws ArgumentError 1/t
     @test_throws ArgumentError zt/zt
-    @test_throws ArgumentError t^1.5
+    @test_throws DomainError t^1.5
     @test_throws ArgumentError t^(-2)
-    @test_throws ArgumentError sqrt(t)
-    @test_throws ArgumentError log(t)
+    @test_throws DomainError sqrt(t)
+    @test_throws DomainError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
     @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
-    @test_throws ArgumentError inverse(exp(t))
-    @test_throws ArgumentError abs(t)
+    @test_throws DomainError inverse(exp(t))
+    @test_throws DomainError abs(t)
 
     use_show_default(true)
     aa = sqrt(2)+Taylor1(2)

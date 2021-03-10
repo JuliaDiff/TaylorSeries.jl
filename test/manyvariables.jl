@@ -599,12 +599,12 @@ using LinearAlgebra
     @test string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
     @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
 
-    @test_throws ArgumentError abs(xT)
+    @test_throws DomainError abs(xT)
     @test_throws AssertionError 1/x
     @test_throws AssertionError zero(x)/zero(x)
-    @test_throws ArgumentError sqrt(x)
+    @test_throws DomainError sqrt(x)
     @test_throws AssertionError x^(-2)
-    @test_throws ArgumentError log(x)
+    @test_throws DomainError log(x)
     @test_throws AssertionError cos(x)/sin(y)
     @test_throws BoundsError xH[20]
     @test_throws BoundsError xT[20]

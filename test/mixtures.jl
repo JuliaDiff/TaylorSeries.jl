@@ -96,8 +96,8 @@ using LinearAlgebra, SparseArrays
 
     @test abs(tN1+1) == 1+tN1
     @test abs(tN1-1) == 1-tN1
-    @test_throws ArgumentError abs(tN1)
-    @test_throws ArgumentError abs(t1N)
+    @test_throws DomainError abs(tN1)
+    @test_throws DomainError abs(t1N)
 
     @test convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) == [t1N, t1N]
     @test convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) == [t1N t1N]
