@@ -10,14 +10,14 @@ julia&gt; # Define the variables α₁, ..., α₄, β₁, ..., β₄
 make_variable (generic function with 1 method)
 
 julia&gt; variable_names = [make_variable(&quot;α&quot;, i) for i in 1:4]
-4-element Array{String,1}:
+4-element Vector{String}:
  &quot;α₁&quot;
  &quot;α₂&quot;
  &quot;α₃&quot;
  &quot;α₄&quot;
 
 julia&gt; append!(variable_names, [make_variable(&quot;β&quot;, i) for i in 1:4])
-8-element Array{String,1}:
+8-element Vector{String}:
  &quot;α₁&quot;
  &quot;α₂&quot;
  &quot;α₃&quot;
@@ -29,7 +29,7 @@ julia&gt; append!(variable_names, [make_variable(&quot;β&quot;, i) for i in 1:4
 
 julia&gt; # Create the TaylorN variables (order=4, numvars=8)
        a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4)
-8-element Array{TaylorN{Float64},1}:
+8-element Vector{TaylorN{Float64}}:
   1.0 α₁ + 𝒪(‖x‖⁵)
   1.0 α₂ + 𝒪(‖x‖⁵)
   1.0 α₃ + 𝒪(‖x‖⁵)
@@ -63,7 +63,7 @@ julia&gt; const order = 20
 20
 
 julia&gt; const x, y, z, w = set_variables(Int128, &quot;x&quot;, numvars=4, order=2order)
-4-element Array{TaylorN{Int128},1}:
+4-element Vector{TaylorN{Int128}}:
   1 x₁ + 𝒪(‖x‖⁴¹)
   1 x₂ + 𝒪(‖x‖⁴¹)
   1 x₃ + 𝒪(‖x‖⁴¹)
@@ -76,10 +76,10 @@ julia&gt; function fateman1(degree::Int)
            s * ( s + one(T) )
        end
 fateman1 (generic function with 1 method)</code></pre><p>(In the following lines, which are run when the documentation is built, by some reason the timing appears before the command executed.)</p><pre><code class="language-julia-repl">julia&gt; @time fateman1(0);
-  0.057260 seconds (86.20 k allocations: 37.562 MiB, 14.64% gc time)
+  0.066390 seconds (96.62 k allocations: 38.871 MiB, 13.59% gc time, 56.66% compilation time)
 
 julia&gt; @time f1 = fateman1(20);
-  1.905281 seconds (1.82 k allocations: 49.852 MiB, 0.23% gc time)</code></pre><p>Another implementation of the same, but exploiting optimizations related to <code>^2</code> yields:</p><pre><code class="language-julia-repl">julia&gt; function fateman2(degree::Int)
+  2.140762 seconds (1.82 k allocations: 49.852 MiB, 0.30% gc time)</code></pre><p>Another implementation of the same, but exploiting optimizations related to <code>^2</code> yields:</p><pre><code class="language-julia-repl">julia&gt; function fateman2(degree::Int)
            T = Int128
            s = one(T) + x + y + z + w
            s = s^degree
@@ -90,7 +90,7 @@ fateman2 (generic function with 1 method)
 julia&gt; fateman2(0);
 
 julia&gt; @time f2 = fateman2(20); # the timing appears above
-  0.974301 seconds (1.95 k allocations: 54.003 MiB, 0.31% gc time)</code></pre><p>We note that the above functions use expansions in <code>Int128</code>. This is actually required, since some coefficients are larger than <code>typemax(Int)</code>:</p><pre><code class="language-julia-repl">julia&gt; getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
+  1.017979 seconds (1.95 k allocations: 54.003 MiB, 0.32% gc time)</code></pre><p>We note that the above functions use expansions in <code>Int128</code>. This is actually required, since some coefficients are larger than <code>typemax(Int)</code>:</p><pre><code class="language-julia-repl">julia&gt; getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
 128358585324486316800
 
 julia&gt; ans &gt; typemax(Int)
@@ -100,4 +100,4 @@ julia&gt; length(f2)
 41
 
 julia&gt; sum(TaylorSeries.size_table)
-135751</code></pre><p>These examples show that <code>fateman2</code> is nearly twice as fast as <code>fateman1</code>, and that the series has 135751 monomials in 4 variables.</p><h3 id="Bechmarks"><a class="docs-heading-anchor" href="#Bechmarks">Bechmarks</a><a id="Bechmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Bechmarks" title="Permalink"></a></h3><p>The functions described above have been compared against Mathematica v11.1. The relevant files used for benchmarking can be found <a href="https://github.com/JuliaDiff/TaylorSeries.jl/tree/master/perf">here</a>. Running on a MacPro with Intel-Xeon processors 2.7GHz, we obtain that Mathematica requires on average (5 runs) 3.075957 seconds for the computation, while for <code>fateman1</code> and <code>fateman2</code> above we obtain 2.15408 and 1.08337, respectively.</p><p>Then, with the current version of <code>TaylorSeries.jl</code> and using Julia v0.7.0, our implementation of <code>fateman1</code> is about 30%-40% faster. (The original test by Fateman corresponds to <code>fateman1</code> above, which avoids some optimizations related to squaring; the implementation in Mathematica is done such that this optimization does not occur.)</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../userguide/">« User guide</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 13 January 2021 14:19">Wednesday 13 January 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+135751</code></pre><p>These examples show that <code>fateman2</code> is nearly twice as fast as <code>fateman1</code>, and that the series has 135751 monomials in 4 variables.</p><h3 id="Bechmarks"><a class="docs-heading-anchor" href="#Bechmarks">Bechmarks</a><a id="Bechmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Bechmarks" title="Permalink"></a></h3><p>The functions described above have been compared against Mathematica v11.1. The relevant files used for benchmarking can be found <a href="https://github.com/JuliaDiff/TaylorSeries.jl/tree/master/perf">here</a>. Running on a MacPro with Intel-Xeon processors 2.7GHz, we obtain that Mathematica requires on average (5 runs) 3.075957 seconds for the computation, while for <code>fateman1</code> and <code>fateman2</code> above we obtain 2.15408 and 1.08337, respectively.</p><p>Then, with the current version of <code>TaylorSeries.jl</code> and using Julia v0.7.0, our implementation of <code>fateman1</code> is about 30%-40% faster. (The original test by Fateman corresponds to <code>fateman1</code> above, which avoids some optimizations related to squaring; the implementation in Mathematica is done such that this optimization does not occur.)</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../userguide/">« User guide</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 5 April 2021 21:05">Monday 5 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
