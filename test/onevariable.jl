@@ -583,7 +583,7 @@ Base.iszero(::SymbNumber) = false
     @test string(st) == " SymbNumber(:x₀) + SymbNumber(:x₁) t + 𝒪(t²)"
 end
 
-@testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
+@testset "Test inv for Matrix{Taylor1{Float64}}" begin
     t = Taylor1(5)
     a = Diagonal(rand(0:10,3)) + rand(3, 3)
     ainv = inv(a)

@@ -46,12 +46,14 @@ shift_taylor(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial of order 5
 t = shift_taylor(0.0) # Independent variable `t`
 ```
 
-Note that the information about the maximum order considered is displayed
-using a big-𝒪 notation. The convention followed when different orders are
-combined is consistent with the mathematics and the big-𝒪 notation, that is,
-to propagate the lowest order. In some cases, it is desirable to not display
-the big-𝒪 notation. The function [`displayBigO`](@ref) allows to
-control whether it is displayed or not.
+!!! warning
+    The information about the maximum order considered is displayed using a big-𝒪 notation. 
+    The convention followed when different orders are combined, or when certain functions
+    are used that in a way reduce the order (like [`differentiate`](@ref)) is to be consistent 
+    with the mathematics and the big-𝒪 notation, i.e., to propagate the lowest order. 
+    
+In some cases, it is desirable to not display the big-𝒪 notation. The function [`displayBigO`](@ref) 
+allows to control whether it is displayed or not.
 ```@repl userguide
 displayBigO(false) # turn-off displaying big O notation
 t
@@ -59,7 +61,7 @@ displayBigO(true) # turn it on
 t
 ```
 
-Similarly, it is possible to control if the format of the
+Similarly, it is possible to control some aspects of the format of the
 displayed series through the function [`use_show_default`](@ref);
 `use_show_default(true)` uses the `Base.show_default`, while
 `use_show_default(false)` uses the custom display form (default).
@@ -140,12 +142,21 @@ getcoeff(expon, 0) == expon[0]
 rationalize(expon[3])
 ```
 
+Note that certain arithmetic operations, or the application of some functions, 
+may change the order of the result, as mentioned above.
+```@repl userguide
+t #  order 5 independent variable
+t^2/t # returns an order 4 series expansion
+sqrt(t^2) # returns an order 2 series expansion
+(t^4)^(1/4) # order 1 series
+```
+
 Differentiating and integrating is straightforward for polynomial expansions in
 one variable, using [`differentiate`](@ref) and [`integrate`](@ref). (The
 function [`derivative`](@ref) is a synonym of `differentiate`.) These
-functions return the corresponding [`Taylor1`](@ref) expansions. Note that
-the order of the derivative of a `Taylor1` corresponds to the order of the
-original polynomial *minus 1*. For the integral, an integration constant may be
+functions return the corresponding [`Taylor1`](@ref) expansions. 
+The order of the derivative of a `Taylor1` is reduced by 1.
+For the integral, an integration constant may be
 set by the user (the default is zero); the order of the integrated polynomial
 for the integral is *kept unchanged*. The *value* of the ``n``-th (``n \ge 0``)
 derivative is obtained using `differentiate(n,a)`, where `a` is a Taylor series;

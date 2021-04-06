@@ -85,6 +85,9 @@ acos!
 atan!
 sinhcosh!
 tanh!
+asinh!
+acosh!
+atanh!
 differentiate!
 _internalmutfunc_call
 _dict_unary_ops
