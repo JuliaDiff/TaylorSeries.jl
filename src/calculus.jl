@@ -8,85 +8,89 @@
 
 ## Differentiating ##
 """
-    derivative(a)
+    differentiate(a)
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
 The order of the result is `a.order-1`.
 
-The function `differentiate` is an exact synonym of `derivative`.
+The function `derivative` is an exact synonym of `differentiates`.
 """
-function derivative(a::Taylor1)
+function differentiate(a::Taylor1)
     res = Taylor1(zero(a[0]), get_order(a)-1)
-    @inbounds for ord in eachindex(res)
-        derivative!(res, a, ord)
+    for ord in eachindex(res)
+        differentiate!(res, a, ord)
     end
     return res
 end
 
 """
-    differentiate
+    derivative
 
-An exact synonym of [`derivative`](@ref).
+An exact synonym of [`differentiate`](@ref).
 """
-const differentiate = derivative
+const derivative = differentiate
 
 """
-    derivative!(res, a) --> nothing
+    differentiate!(res, a) --> nothing
 
-In-place version of `derivative`. Compute the `Taylor1` polynomial of the
-differential of `a::Taylor1` and return it as `res`
+In-place version of `differentiate`. Compute the `Taylor1` polynomial of the
+differential of `a::Taylor1` and return it as `res` (order of `res` remains 
+unchanged).
 """
-function derivative!(res::Taylor1, a::Taylor1)
-    @inbounds for ord in eachindex(a)
-        derivative!(res, a, ord)
+function differentiate!(res::Taylor1, a::Taylor1)
+    for ord in eachindex(res)
+        differentiate!(res, a, ord)
     end
     nothing
 end
 
 """
-    derivative!(p, a, k) --> nothing
+    differentiate!(p, a, k) --> nothing
 
-Update in-place the `k-th` expansion coefficient `p[k]` of `p = derivative(a)`
+Update in-place the `k-th` expansion coefficient `p[k]` of `p = differentiate(a)`
 for both `p` and `a` `Taylor1`.
 
 The coefficients are given by
 
 ```math
-p_k = (k+1)a_{k+1}.
+p_k = (k+1) a_{k+1}.
 ```
 
 """
-derivative!(p::Taylor1, a::Taylor1, k::Int) =
-    k < a.order ? p[k] = (k+1)*a[k+1] : nothing
+function differentiate!(p::Taylor1, a::Taylor1, k::Int)
+    if k < a.order
+        @inbounds p[k] = (k+1)*a[k+1]
+    end
+    return nothing
+end
 
 
 """
-    derivative(a, n)
+    differentiate(a, n)
 
-Compute recursively the `Taylor1` polynomial of the n-th derivative of
+Compute recursively the `Taylor1` polynomial of the n-th differential of
 `a::Taylor1`. The order of the result is `a.order-n`.
 """
-function derivative(a::Taylor1{T}, n::Int) where {T <: Number}
+function differentiate(a::Taylor1{T}, n::Int) where {T <: Number}
     if n > a.order
         return Taylor1(T, 0)
     elseif n==0
         return a
     else
-        res = deepcopy(a)
-        for i in 1:n
-            derivative!(res, res)
-            res = Taylor1(res[0:res.order-1])
+        res = differentiate(a)
+        for i = 2:n
+            differentiate!(res, res)
         end
-        return res
+        return Taylor1(view(res.coeffs, 1:a.order-n+1))
     end
 end
 
 """
-    derivative(n, a)
+    differentiate(n, a)
 
-Return the value of the `n`-th derivative of the polynomial `a`.
+Return the value of the `n`-th differentiate of the polynomial `a`.
 """
-function derivative(n::Int, a::Taylor1{T}) where {T<:Number}
+function differentiate(n::Int, a::Taylor1{T}) where {T<:Number}
     @assert a.order ≥ n ≥ 0
     factorial( widen(n) ) * a[n] :: T
 end
@@ -116,12 +120,12 @@ integrate(a::Taylor1{T}) where {T<:Number} = integrate(a, zero(a[0]))
 
 ## Differentiation ##
 """
-    derivative(a, r)
+    differentiate(a, r)
 
 Partial differentiation of `a::HomogeneousPolynomial` series with respect
 to the `r`-th variable.
 """
-function derivative(a::HomogeneousPolynomial, r::Int)
+function differentiate(a::HomogeneousPolynomial, r::Int)
     @assert 1 ≤ r ≤ get_numvars()
     # @show zero(a[1]) zero(eltype(a))
     T = eltype(a)
@@ -144,35 +148,35 @@ function derivative(a::HomogeneousPolynomial, r::Int)
 
     return HomogeneousPolynomial{T}(coeffs, a.order-1)
 end
-derivative(a::HomogeneousPolynomial, s::Symbol) = derivative(a, lookupvar(s))
+differentiate(a::HomogeneousPolynomial, s::Symbol) = differentiate(a, lookupvar(s))
 
 """
-    derivative(a, r)
+    differentiate(a, r)
 
 Partial differentiation of `a::TaylorN` series with respect
 to the `r`-th variable. The `r`-th variable may be also
 specified through its symbol.
 """
-function derivative(a::TaylorN, r=1::Int)
+function differentiate(a::TaylorN, r=1::Int)
     T = eltype(a)
     coeffs = Array{HomogeneousPolynomial{T}}(undef, a.order)
 
     @inbounds for ord = 1:a.order
-        coeffs[ord] = derivative( a[ord], r)
+        coeffs[ord] = differentiate( a[ord], r)
     end
     return TaylorN{T}( coeffs, a.order )
 end
-derivative(a::TaylorN, s::Symbol) = derivative(a, lookupvar(s))
+differentiate(a::TaylorN, s::Symbol) = differentiate(a, lookupvar(s))
 
 """
-    derivative(a::TaylorN{T}, ntup::NTuple{N,Int})
+    differentiate(a::TaylorN{T}, ntup::NTuple{N,Int})
 
 Return a `TaylorN` with the partial derivative of `a` defined
 by `ntup::NTuple{N,Int}`, where the first entry is the number
 of derivatives with respect to the first variable, the second is
 the number of derivatives with respect to the second, and so on.
 """
-function derivative(a::TaylorN, ntup::NTuple{N,Int}) where {N}
+function differentiate(a::TaylorN, ntup::NTuple{N,Int}) where {N}
 
     @assert N == get_numvars() && all(ntup .>= 0)
 
@@ -182,7 +186,7 @@ function derivative(a::TaylorN, ntup::NTuple{N,Int}) where {N}
     aa = copy(a)
     for nvar in 1:get_numvars()
         for numder in 1:ntup[nvar]
-            aa = derivative(aa, nvar)
+            aa = differentiate(aa, nvar)
         end
     end
 
@@ -190,13 +194,13 @@ function derivative(a::TaylorN, ntup::NTuple{N,Int}) where {N}
 end
 
 """
-    derivative(ntup::NTuple{N,Int}, a::TaylorN{T})
+    differentiate(ntup::NTuple{N,Int}, a::TaylorN{T})
 
 Returns the value of the coefficient of `a` specified by
 `ntup::NTuple{N,Int}`, multiplied by the corresponding
 factorials.
 """
-function derivative(ntup::NTuple{N,Int}, a::TaylorN) where {N}
+function differentiate(ntup::NTuple{N,Int}, a::TaylorN) where {N}
 
     @assert N == get_numvars() && all(ntup .>= 0)
 
@@ -223,7 +227,7 @@ function gradient(f::TaylorN)
     numVars = get_numvars()
     grad = Array{TaylorN{T}}(undef, numVars)
     @inbounds for nv = 1:numVars
-        grad[nv] = derivative(f, nv)
+        grad[nv] = differentiate(f, nv)
     end
     return grad
 end
@@ -301,7 +305,7 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1},
     @assert (numVars, numVars) == size(jac)
     for comp = 1:numVars
         @inbounds for nv = 1:numVars
-            jac[nv,comp] = evaluate(derivative(vf[nv], comp), vals)
+            jac[nv,comp] = evaluate(differentiate(vf[nv], comp), vals)
         end
     end
     nothing
@@ -398,7 +402,7 @@ function integrate(a::TaylorN, r::Int)
 end
 function integrate(a::TaylorN, r::Int, x0::TaylorN)
     # Check constant of integration is independent of re
-    @assert derivative(x0, r) == 0.0 """
+    @assert differentiate(x0, r) == 0.0 """
     The integration constant ($x0) must be independent of the
     $(_params_TaylorN_.variable_names[r]) variable"""
 

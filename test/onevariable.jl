@@ -321,13 +321,13 @@ Base.iszero(::SymbNumber) = false
 
     t_complex = Taylor1(Complex{Int}, 15) # for use with acosh, which in the Reals is only defined for x ≥ 1
     @test cosh(acosh(t_complex)) ≈ t_complex
-    @test derivative(acosh(t_complex)) ≈ 1/sqrt(t_complex^2 - 1)
+    @test differentiate(acosh(t_complex)) ≈ 1/sqrt(t_complex^2 - 1)
     @test acosh(t_complex) ≈ log(t_complex + sqrt(t_complex^2 - 1))
     @test sinh(acosh(t_complex)) ≈ sqrt(t_complex^2 - 1)
 
     @test asin(t) + acos(t) == pi/2
-    @test derivative(acos(t)) == - 1/sqrt(1-Taylor1(t.order-1)^2)
-    @test get_order(derivative(acos(t))) == t.order-1
+    @test differentiate(acos(t)) == - 1/sqrt(1-Taylor1(t.order-1)^2)
+    @test get_order(differentiate(acos(t))) == t.order-1
 
     @test - sinh(t) + cosh(t) == exp(-t)
     @test  sinh(t) + cosh(t) == exp(t)
@@ -420,7 +420,6 @@ Base.iszero(::SymbNumber) = false
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
-    @show(t)
     vv = Vector{Float64}(undef, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
@@ -444,27 +443,27 @@ Base.iszero(::SymbNumber) = false
     @test get_order(differentiate(ee_ta, 16)) == 0
     @test differentiate(ee_ta, 0) == ee_ta
     expected_result_approx = Taylor1(ee_ta[0:10])
-    @test derivative(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
+    @test differentiate(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
     expected_result_approx = Taylor1(zero(ee_ta),0)
     @test differentiate(ee_ta, 16) == Taylor1(zero(ee_ta),0)
     @test eltype(differentiate(ee_ta, 16)) == eltype(ee_ta)
     ee_ta = exp(ta(1.0pi))
     expected_result_approx = Taylor1(ee_ta[0:12])
-    @test derivative(ee_ta, 3) ≈ expected_result_approx atol=eps(16.0) rtol=0.0
+    @test differentiate(ee_ta, 3) ≈ expected_result_approx atol=eps(16.0) rtol=0.0
     expected_result_approx = Taylor1(ee_ta[0:5])
-    @test derivative(exp(ta(1.0pi)), 10) ≈ expected_result_approx atol=eps(64.0) rtol=0.0
+    @test differentiate(exp(ta(1.0pi)), 10) ≈ expected_result_approx atol=eps(64.0) rtol=0.0
 
 
 
-    @test derivative(exp(ta(1.0)), 5)() == exp(1.0)
-    @test derivative(exp(ta(1.0pi)), 3)() == exp(1.0pi)
+    @test differentiate(exp(ta(1.0)), 5)() == exp(1.0)
+    @test differentiate(exp(ta(1.0pi)), 3)() == exp(1.0pi)
     @test isapprox(derivative(exp(ta(1.0pi)), 10)() , exp(1.0pi) )
 
-    @test derivative(5, exp(ta(1.0))) == exp(1.0)
-    @test derivative(3, exp(ta(1.0pi))) == exp(1.0pi)
-    @test isapprox(derivative(10, exp(ta(1.0pi))) , exp(1.0pi) )
+    @test differentiate(5, exp(ta(1.0))) == exp(1.0)
+    @test differentiate(3, exp(ta(1.0pi))) == exp(1.0pi)
+    @test isapprox(differentiate(10, exp(ta(1.0pi))) , exp(1.0pi) )
 
-    @test integrate(derivative(exp(t)),1) == exp(t)
+    @test integrate(differentiate(exp(t)),1) == exp(t)
     @test integrate(cos(t)) == sin(t)
 
     @test promote(ta(0.0), t) == (ta(0.0),ta(0.0))
@@ -482,7 +481,7 @@ Base.iszero(::SymbNumber) = false
     @test_throws DomainError sqrt(t)
     @test_throws DomainError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
-    @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
+    @test_throws AssertionError differentiate(30, exp(ta(1.0pi)))
     @test_throws DomainError inverse(exp(t))
     @test_throws DomainError abs(t)
 

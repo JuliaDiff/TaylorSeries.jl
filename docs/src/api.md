@@ -35,8 +35,8 @@ evaluate
 evaluate!
 taylor_expand
 update!
-derivative
 differentiate
+derivative
 integrate
 gradient
 jacobian
@@ -85,7 +85,7 @@ acos!
 atan!
 sinhcosh!
 tanh!
-derivative!
+differentiate!
 _internalmutfunc_call
 _dict_unary_ops
 _dict_binary_calls

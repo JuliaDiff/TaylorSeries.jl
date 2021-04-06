@@ -141,25 +141,25 @@ rationalize(expon[3])
 ```
 
 Differentiating and integrating is straightforward for polynomial expansions in
-one variable, using [`derivative`](@ref) and [`integrate`](@ref). (The
-function [`differentiate`](@ref) is a synonym of `derivative`.) These
+one variable, using [`differentiate`](@ref) and [`integrate`](@ref). (The
+function [`derivative`](@ref) is a synonym of `differentiate`.) These
 functions return the corresponding [`Taylor1`](@ref) expansions. Note that
 the order of the derivative of a `Taylor1` corresponds to the order of the
 original polynomial *minus 1*. For the integral, an integration constant may be
 set by the user (the default is zero); the order of the integrated polynomial
 for the integral is *kept unchanged*. The *value* of the ``n``-th (``n \ge 0``)
-derivative is obtained using `derivative(n,a)`, where `a` is a Taylor series;
+derivative is obtained using `differentiate(n,a)`, where `a` is a Taylor series;
 likewise, the `Taylor1` polynomial of the ``n``-th derivative is obtained as
-`derivative(a,n)`; the resulting polynomial is of order `get_order(a)-1`.
+`differentiate(a,n)`; the resulting polynomial is of order `get_order(a)-n`.
 
 ```@repl userguide
-derivative(exp(t)) # exp(t) is of order 5; the derivative is of order 4
+differentiate(exp(t)) # exp(t) is of order 5; the derivative is of order 4
 integrate(exp(t))  # the resulting TaylorSeries is of order 5
 integrate( exp(t), 1.0)
-integrate( derivative( exp(-t)), 1.0 ) == exp(-t)
-derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
-differentiate(5, exp(shift_taylor(1.0))) == exp(1.0)    # 5-th derivative of `exp(1+t)`
-differentiate(exp(1+t), 3)    # Taylor1 polynomial of the 3-rd derivative of `exp(1+t)`
+integrate( differentiate( exp(-t)), 1.0 ) == exp(-t)
+differentiate(1, exp(shift_taylor(1.0))) == exp(1.0)
+differentiate(5, exp(shift_taylor(1.0))) == exp(1.0)    # 5-th differentiate of `exp(1+t)`
+derivative(exp(1+t), 3)    # Taylor1 polynomial of the 3-rd derivative of `exp(1+t)`
 ```
 
 To evaluate a Taylor series at a given point, Horner's rule is used via the
@@ -345,21 +345,21 @@ exy[8][6] # get the 6th coeff of the 8th order term
 ```
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,
-through the function [`derivative`](@ref), specifying the number
+through the function [`differentiate`](@ref), specifying the number
 of the variable, or its symbol, as the second argument.
 
 ```@repl userguide
 p = x^3 + 2x^2 * y - 7x + 2
 q = y - x^4
-derivative( p, 1 )   # partial derivative with respect to 1st variable
-derivative( q, :y )  # partial derivative with respect to :y
+differentiate( p, 1 )   # partial derivative with respect to 1st variable
+differentiate( q, :y )  # partial derivative with respect to :y
 ```
 
 If we ask for the partial derivative with respect to a non-defined variable,
 an error is thrown.
 
 ```@repl userguide
-derivative( q, 3 )   # error, since we are dealing with 2 variables
+differentiate( q, 3 )   # error, since we are dealing with 2 variables
 ```
 
 To obtain more specific partial derivatives we have two specialized methods
@@ -371,10 +371,10 @@ the specified tuple, normalized by the factorials defined by the tuple.
 The latter is in essence the 0-th order coefficient of the former.
 
 ```@repl userguide
-derivative(p, (2,1)) # two derivatives on :x and one on :y
-derivative((2,1), p) # 0-th order coefficient of the previous expression
-derivative(p, (1,1)) # one derivative on :x and one on :y
-derivative((1,1), p) # 0-th order coefficient of the previous expression
+differentiate(p, (2,1)) # two derivatives on :x and one on :y
+differentiate((2,1), p) # 0-th order coefficient of the previous expression
+differentiate(p, (1,1)) # one derivative on :x and one on :y
+differentiate((1,1), p) # 0-th order coefficient of the previous expression
 ```
 
 Integration with respect to the `r`-th variable for
@@ -385,10 +385,10 @@ be independent from the integrated variable. Again, the integration
 variable may be specified by its symbol.
 
 ```@repl userguide
-integrate( derivative( p, 1 ), 1) # integrate with respect to the first variable
-integrate( derivative( p, 1 ), :x, 2) # integration with respect to :x, constant of integration is 2
-integrate( derivative( q, 2 ), :y, -x^4) == q
-integrate( derivative( q, 2 ), 2, y)
+integrate( differentiate( p, 1 ), 1) # integrate with respect to the first variable
+integrate( differentiate( p, 1 ), :x, 2) # integration with respect to :x, constant of integration is 2
+integrate( differentiate( q, 2 ), :y, -x^4) == q
+integrate( differentiate( q, 2 ), 2, y)
 ```
 
 [`evaluate`](@ref) can also be used for [`TaylorN`](@ref) objects, using
