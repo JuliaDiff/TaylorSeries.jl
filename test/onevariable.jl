@@ -184,6 +184,8 @@ Base.iszero(::SymbNumber) = false
     @test Taylor1(BigFloat,5)/6 == 1im*Taylor1(5)/complex(0,BigInt(6))
     @test Taylor1(BigFloat,5)/(6*Taylor1(3)) == 1/BigInt(6)
     @test Taylor1(BigFloat,5)/(6im*Taylor1(3)) == -1im/BigInt(6)
+    @test isapprox((1+(1.5+t)/4)^(-2), inv(1+(1.5+t)/4)^2, rtol=eps(Float64))
+    @test isapprox((1+(big(1.5)+t)/4)^(-2), inv(1+(big(1.5)+t)/4)^2, rtol=eps(BigFloat))
 
     # These tests involve some sort of factorization
     @test t/(t+t^2) == 1/(1+t)
