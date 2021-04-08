@@ -57,7 +57,7 @@ function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
         monom::String = i==0 ? string("") : i==1 ? string(" ", var) :
             string(" ", var, superscriptify(i))
         @inbounds c = a[i]
-        c == z && continue
+        iszero(c) && continue
         cadena = numbr2str(c, ifirst)
         strout = string(strout, cadena, monom, space)
         ifirst = false
@@ -80,7 +80,7 @@ function pretty_print(a::Taylor1{T} where {T <: AbstractSeries{S}}) where {S<:Nu
         monom::String = i==0 ? string("") : i==1 ? string(" ", var) :
             string(" ", var, superscriptify(i))
         @inbounds c = a[i]
-        c == z && continue
+        iszero(c) && continue
         cadena = numbr2str(c, ifirst)
         ccad::String = i==0 ? cadena : ifirst ? string("(", cadena, ")") :
             string(cadena[1:2], "(", cadena[3:end], ")")
@@ -141,7 +141,7 @@ function homogPol2str(a::HomogeneousPolynomial{T}) where {T<:Number}
             end
         end
         @inbounds c = a[pos]
-        c == z && continue
+        iszero(c) && continue
         cadena = numbr2str(c, ifirst)
         strout = string(strout, cadena, monom, space)
         ifirst = false
@@ -170,7 +170,7 @@ function homogPol2str(a::HomogeneousPolynomial{Taylor1{T}}) where {T<:Number}
             end
         end
         @inbounds c = a[pos]
-        c == z && continue
+        iszero(c) && continue
         cadena = numbr2str(c, ifirst)
         ccad::String = (pos==1 || ifirst) ? string("(", cadena, ")") :
             string(cadena[1:2], "(", cadena[3:end], ")")
