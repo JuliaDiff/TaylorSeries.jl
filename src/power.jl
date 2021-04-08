@@ -178,7 +178,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     end
 
     # Relevant for positive integer r, to avoid round-off errors
-    if isinteger(r) && (k > r*findlast(a))
+    if isinteger(r) && r > 0 && (k > r*findlast(a))
         @inbounds c[k] = zero(a[0])
         return nothing
     end
