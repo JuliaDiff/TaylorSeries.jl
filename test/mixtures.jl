@@ -312,4 +312,12 @@ end
     @test get_order(linear_polynomial(to)) == get_order(to)
     @test nonlinear_polynomial(to+ti*to^2) == Taylor1([zero(ti), zero(ti), ti], 9)
     @test ti(1 + to) isa Taylor1{Taylor1{Float64}}
+    @test sqrt(tito^2) == tito
+    @test get_order(sqrt(tito^2)) == get_order(to) >> 1
+    @test (tito^3)^(1/3) == tito
+    @test get_order(sqrt(tito^2)) == get_order(to) >> 1
+    ti2to = ti^2 * to
+    tti = (ti2to/to)/ti
+    @test get_order(tti) == get_order(to)-1
+    @test get_order(tti[0]) == get_order(ti)-1
 end

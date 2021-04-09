@@ -169,10 +169,12 @@ Base.iszero(::SymbNumber) = false
     @test (-t)^2 == tsquare
     @test t^3 == tsquare*t
     @test zero(t)/t == zero(t)
+    @test get_order(zero(t)/t) == get_order(t)
     @test one(t)/one(t) == 1.0
     @test tsquare/t == t
     @test get_order(tsquare/t) == get_order(tsquare)-1
     @test t/(t*3) == (1/3)*ot
+    @test get_order(t/(t*3)) == get_order(t)-1
     @test t/3im == -tim/3
     @test 1/(1-t) == Taylor1(ones(t.order+1))
     @test Taylor1([0,1,1])/t == t+1
@@ -203,6 +205,7 @@ Base.iszero(::SymbNumber) = false
 
     # These tests involve some sort of factorization
     @test t/(t+t^2) == 1/(1+t)
+    @test get_order(t/(t+t^2)) == get_order(1/(1+t))-1
     @test sqrt(t^2+t^3) == t*sqrt(1+t)
     @test get_order(sqrt(t^2+t^3)) == get_order(t) >> 1
     @test get_order(t*sqrt(1+t)) == get_order(t)

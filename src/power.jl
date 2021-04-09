@@ -85,8 +85,11 @@ end
 
 ## Real power ##
 function ^(a::Taylor1, r::S) where {S<:Real}
+    # println()
     a0 = constant_term(a)
-    aux = one(a0^r)
+    # @show(a, a0)
+    aux = one(a0)^r
+    # @show(aux)
 
     iszero(r) && return Taylor1(aux, a.order)
     aa = aux*a
@@ -100,11 +103,12 @@ function ^(a::Taylor1, r::S) where {S<:Real}
         return Taylor1( zero(aux), a.order)
     end
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
+    # @show(c_order)
     c = Taylor1(zero(aux), c_order)
     for k = 0:c_order
         pow!(c, aa, r, k)
     end
-
+    # println()
     return c
 end
 

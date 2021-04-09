@@ -8,7 +8,7 @@ CurrentModule = TaylorSeries
 
 [TaylorSeries.jl](https://github.com/JuliaDiff/TaylorSeries.jl)
 is a basic polynomial algebraic manipulator in one or more
-variables; these two cases are treated separately.  Three new types are defined,
+variables; these two cases are treated separately. Three new types are defined,
 [`Taylor1`](@ref), [`HomogeneousPolynomial`](@ref) and [`TaylorN`](@ref),
 which correspond to
 expansions in one independent variable, homogeneous polynomials of various
@@ -48,8 +48,8 @@ t = shift_taylor(0.0) # Independent variable `t`
 
 !!! warning
     The information about the maximum order considered is displayed using a big-𝒪 notation. 
-    The convention followed when different orders are combined, or when certain functions
-    are used that in a way reduce the order (like [`differentiate`](@ref)) is to be consistent 
+    The convention followed when different orders are combined, and when certain functions
+    are used in a way that they reduce the order (like [`differentiate`](@ref)), is to be consistent 
     with the mathematics and the big-𝒪 notation, i.e., to propagate the lowest order. 
     
 In some cases, it is desirable to not display the big-𝒪 notation. The function [`displayBigO`](@ref) 
@@ -76,13 +76,15 @@ The definition of `shift_taylor(a)` uses the method
 [`Taylor1([::Type{Float64}], order::Int)`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,
 of given type and order (the default is `Float64`).
-This is one of the easiest ways to work with the package.
+Defining the independen variable in advance is one of the easiest 
+ways to use the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
 extended to work with the [`Taylor1`](@ref) type, including promotions that
-involve `Number`s. The operations return a valid Taylor expansion of
-maximum order. This is apparent in the last example below, where
-the answer is beyond the order of the expansion.
+involve `Number`s. The operations return a valid Taylor expansion, consistent
+with the order of the series. This is apparent in the one-before-last example 
+below, where the fist non-zero coefficient is beyond the order of the expansion, 
+and hence the result is zero.
 
 ```@repl userguide
 t*(3t+2.5)
@@ -93,10 +95,16 @@ tI = im*t
 (1+t)^t
 Taylor1(3) + Taylor1(5) == 2Taylor1(3)  # big-𝒪 convention applies
 t^6  # t is of order 5
+t^2 / t # The result is of order 4, instead of 5
 ```
 
+Note that the last example returns a `Taylor1` series of order 4, instead 
+of order 5; this is be consistent with the number of known coefficients of the 
+returned series, since the rersult corresponds to factorize `t` in the numerator 
+to cancel the samee factor in the denominator.
+
 If no valid Taylor expansion can be computed an error is thrown, for instance,
-when a derivative is not defined (or simply diverges):
+when a derivative is not defined at the expansion point, or it simply diverges.
 
 ```@repl userguide
 1/t
@@ -111,9 +119,9 @@ are `exp`, `log`, `sqrt`, the trigonometric functions
 `sinh`, `cosh` and `tanh` and their inverses;
 more functions will be added in the future. Note that this way of obtaining the
 Taylor coefficients is not a *lazy* way, in particular for many independent
-variables. Yet, it is quite efficient, especially for the integration of
-ordinary differential equations, which is among the applications we have in
-mind (see
+variables. Yet, the implementation is efficient enough, especially for the 
+integration of ordinary differential equations, which is among the 
+applications we have in mind (see
 [TaylorIntegration.jl](https://github.com/PerezHz/TaylorIntegration.jl)).
 
 ```@repl userguide
@@ -189,7 +197,8 @@ eBig = evaluate( exp(tBig), one(BigFloat) )
 ℯ - eBig
 ```
 
-Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it was a function, i.e., `p(x)`:
+Another way to evaluate the value of a `Taylor1` polynomial `p` at a given value `x`, 
+is to call `p` as if it was a function, i.e., `p(x)`:
 
 ```@repl userguide
 t = Taylor1(15)
@@ -226,11 +235,11 @@ as a vector whose coefficients are polynomials in ``N-1`` variables. The
 current implementation of `TaylorSeries.jl` corresponds to the first option,
 though some infrastructure has been built that permits to develop the second
 one. An elegant (lazy) implementation of the second representation
-was discussed  [here](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ).
+was discussed [here](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ).
 
 The structure [`TaylorN`](@ref) is constructed as a vector of parameterized
 homogeneous polynomials
-defined by the type [`HomogeneousPolynomial`](@ref), which in turn is a vector of
+defined by the type [`HomogeneousPolynomial`](@ref), which in turn is an ordered vector of
 coefficients of given order (degree). This implementation imposes the user
 to specify the (maximum) order considered and the number of independent
 variables at the beginning, which can be conveniently done using
@@ -315,7 +324,7 @@ the corresponding independent variable, i.e. ``x \to x+a``.
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
 have been extended to work with [`TaylorN`](@ref) objects, including the
-appropriate promotions to deal with numbers.
+appropriate promotions to deal with the usual numberic types.
 Note that some of the arithmetic operations have been extended for
 [`HomogeneousPolynomial`](@ref), whenever the result is a
 [`HomogeneousPolynomial`](@ref); division, for instance, is not extended.

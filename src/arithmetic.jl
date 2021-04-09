@@ -418,6 +418,7 @@ end
 /(a::Taylor1{T}, b::Taylor1{S}) where {T<:Number, S<:Number} = /(promote(a,b)...)
 
 function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
+    iszero(a) && !iszero(b) && return zero(a)
     if a.order != b.order
         a, b = fixorder(a, b)
     end
