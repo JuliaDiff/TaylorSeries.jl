@@ -184,7 +184,7 @@ end
 
 
 evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
-        {T<:Number,S<:NumberNotSeriesN} = evaluate(a, (vals...,))
+        {T<:Number,S<:NumberNotSeriesN} = _evaluate(a, (vals...,))
 
 evaluate(a::HomogeneousPolynomial, v, vals...) = evaluate(a, (v, vals...,))
 
