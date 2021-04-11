@@ -163,7 +163,7 @@ struct TaylorN{T<:Number} <: AbstractSeries{T}
     end
 end
 
-TaylorN(x::TaylorN{T}) where T<:Number = x
+TaylorN(x::TaylorN{T}) where {T<:Number} = x
 function TaylorN(x::Array{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number}
     if order == 0
         order = maxorderH(x)
@@ -202,11 +202,10 @@ TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
 
 
 # A `Number` which is not an `AbstractSeries`
-const NumberNotSeries = Union{setdiff(subtypes(Number), [AbstractSeries])...}
+const NumberNotSeries = Union{Real,Complex}
 
 # A `Number` which is not `TaylorN` nor a `HomogeneousPolynomial`
-const NumberNotSeriesN =
-    Union{setdiff(subtypes(Number), [AbstractSeries])..., Taylor1}
+const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 
 ## Additional Taylor1 outer constructor ##
-Taylor1{T}(x::S) where {T<:Number, S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
+Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
