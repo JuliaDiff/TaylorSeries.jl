@@ -32,7 +32,7 @@ for op in (:mod, :rem)
                 return $T(coeffs, a.order)
             end
 
-            function ($op)(a::$T{T}, x::S) where {T<:Real, S<:Real}
+            function ($op)(a::$T{T}, x::S) where {T<:Real,S<:Real}
                 R = promote_type(T, S)
                 a = convert($T{R}, a)
                 return ($op)(a, convert(R,x))
@@ -47,7 +47,7 @@ for op in (:mod, :rem)
             return TaylorN( coeffs, a.order )
         end
 
-        function ($op)(a::TaylorN{Taylor1{T}}, x::S) where {T<:Real, S<:Real}
+        function ($op)(a::TaylorN{Taylor1{T}}, x::S) where {T<:Real,S<:Real}
             R = promote_type(T,S)
             a = convert(TaylorN{Taylor1{R}}, a)
             return ($op)(a, convert(R,x))
@@ -59,9 +59,7 @@ for op in (:mod, :rem)
             return Taylor1( coeffs, a.order )
         end
 
-        @inbounds function ($op)(a::Taylor1{TaylorN{T}}, x::S) where
-                {T<:Real, S<:Real}
-
+        @inbounds function ($op)(a::Taylor1{TaylorN{T}}, x::S) where {T<:Real,S<:Real}
             R = promote_type(T,S)
             a = convert(Taylor1{TaylorN{R}}, a)
             return ($op)(a, convert(R,x))
@@ -157,10 +155,8 @@ which returns a non-negative number.
 """ norm
 
 norm(x::AbstractSeries, p::Real=2) = norm( norm.(x.coeffs, p), p)
-norm(x::Union{Taylor1{T},HomogeneousPolynomial{T}}, p::Real=2) where
-    {T<:NumberNotSeries} = norm(x.coeffs, p)
 #norm for Taylor vectors
-norm(v::Vector{T}, p::Real=2) where T<:AbstractSeries = norm( norm.(v, p), p)
+norm(v::Vector{T}, p::Real=2) where {T<:AbstractSeries} = norm( norm.(v, p), p)
 
 # rtoldefault
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
@@ -185,7 +181,7 @@ Inexact equality comparison between polynomials: returns `true` if
 polynomials. For more details, see [`Base.isapprox`](@ref).
 """
 function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y,0), atol::Real=0.0,
-        nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
+        nans::Bool=false) where {T<:AbstractSeries,S<:AbstractSeries}
 
     x == y || (isfinite(x) && isfinite(y) &&
         norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1))) ||
@@ -193,7 +189,7 @@ function isapprox(x::T, y::S; rtol::Real=rtoldefault(x,y,0), atol::Real=0.0,
 end
 #isapprox for vectors of Taylors
 function isapprox(x::Vector{T}, y::Vector{S}; rtol::Real=rtoldefault(T,S,0), atol::Real=0.0,
-        nans::Bool=false) where {T<:AbstractSeries, S<:AbstractSeries}
+        nans::Bool=false) where {T<:AbstractSeries,S<:AbstractSeries}
 
     x == y || norm(x-y,1) <= atol + rtol*max(norm(x,1), norm(y,1)) ||
         (nans && isnan(x) && isnan(y))
@@ -285,7 +281,7 @@ for T in (:Taylor1, :TaylorN)
         @inbounds v[k] = a[k] * (convert(T, pi) / 180)
         return nothing
     end
-    @eval @inline function deg2rad!(v::$T{S}, a::$T{T}, k::Int) where {S<:AbstractFloat, T<:Real}
+    @eval @inline function deg2rad!(v::$T{S}, a::$T{T}, k::Int) where {S<:AbstractFloat,T<:Real}
         @inbounds v[k] = a[k] * (convert(float(T), pi) / 180)
         return nothing
     end
@@ -293,7 +289,7 @@ for T in (:Taylor1, :TaylorN)
         @inbounds v[k] = a[k] * (180 / convert(T, pi))
         return nothing
     end
-    @eval @inline function rad2deg!(v::$T{S}, a::$T{T}, k::Int) where {S<:AbstractFloat, T<:Real}
+    @eval @inline function rad2deg!(v::$T{S}, a::$T{T}, k::Int) where {S<:AbstractFloat,T<:Real}
         @inbounds v[k] = a[k] * (180 / convert(float(T), pi))
         return nothing
     end
