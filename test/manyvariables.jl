@@ -591,15 +591,15 @@ using LinearAlgebra
     displayBigO(false)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁²"
-    @test string(1im*yT) == " ( 1 im ) x₂"
-    @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂"
+    @test string(1im*yT) == " ( 0 + 1im ) x₂"
+    @test string(xT-im*yT) == " ( 1 + 0im ) x₁ - ( 0 + 1im ) x₂"
     @test string([ab, ab]) ==
         "TaylorN{Float64}[ 1.4142135623730951 x₂,  1.4142135623730951 x₂]"
     displayBigO(true)
     @test string(-xH) == " - 1 x₁"
     @test string(xT^2) == " 1 x₁² + 𝒪(‖x‖¹⁸)"
-    @test string(1im*yT) == " ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
-    @test string(xT-im*yT) == "  ( 1 ) x₁ - ( 1 im ) x₂ + 𝒪(‖x‖¹⁸)"
+    @test string(1im*yT) == " ( 0 + 1im ) x₂ + 𝒪(‖x‖¹⁸)"
+    @test string(xT-im*yT) == " ( 1 + 0im ) x₁ - ( 0 + 1im ) x₂ + 𝒪(‖x‖¹⁸)"
 
     @test_throws DomainError abs(xT)
     @test_throws AssertionError 1/x
