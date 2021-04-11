@@ -78,7 +78,7 @@ if `set_variables` hasn't been changed with the exception that `order`
 can be explicitely established by the user without changing internal values
 for `num_vars` or `variable_names`. Ommiting `T` defaults to `Float64`.
 """
-get_variables(T::Type, order::Int=get_order()) =
+get_variables(::Type{T}, order::Int=get_order()) where {T} =
     [TaylorN(T, i, order=order) for i in 1:get_numvars()]
 get_variables(order::Int=get_order()) =
     [TaylorN(Float64, i, order=order) for i in 1:get_numvars()]
@@ -114,8 +114,8 @@ julia> set_variables("x", order=6, numvars=2)
   1.0 x₂ + 𝒪(‖x‖⁷)
 ```
 """
-function set_variables(R::Type, names::Vector{T}; order=get_order()) where
-        {T<:AbstractString}
+function set_variables(::Type{R}, names::Vector{T}; order=get_order()) where
+        {R, T<:AbstractString}
 
     order ≥ 1 || error("Order must be at least 1")
 
@@ -145,16 +145,16 @@ function set_variables(R::Type, names::Vector{T}; order=get_order()) where
     # return a list of the new variables
     TaylorN{R}[TaylorN(R,i) for i in 1:get_numvars()]
 end
-set_variables(R::Type, symbs::Vector{T}; order=get_order()) where
-    {T<:Symbol} = set_variables(R, string.(symbs), order=order)
+set_variables(::Type{R}, symbs::Vector{T}; order=get_order()) where
+    {R,T<:Symbol} = set_variables(R, string.(symbs), order=order)
 
 set_variables(names::Vector{T}; order=get_order()) where {T<:AbstractString} =
     set_variables(Float64, names, order=order)
 set_variables(symbs::Vector{T}; order=get_order()) where {T<:Symbol} =
     set_variables(Float64, symbs, order=order)
 
-function set_variables(R::Type, names::T; order=get_order(), numvars=-1) where
-        {T<:AbstractString}
+function set_variables(::Type{R}, names::T; order=get_order(), numvars=-1) where
+        {R,T<:AbstractString}
 
     variable_names = split(names)
 
@@ -165,7 +165,7 @@ function set_variables(R::Type, names::T; order=get_order(), numvars=-1) where
 
     set_variables(R, variable_names, order=order)
 end
-set_variables(R::Type, symbs::Symbol; order=get_order(), numvars=-1) =
+set_variables(::Type{R}, symbs::Symbol; order=get_order(), numvars=-1) where {R} =
     set_variables(R, string(symbs), order=order, numvars=numvars)
 
 set_variables(names::T; order=get_order(), numvars=-1) where {T<:AbstractString} =

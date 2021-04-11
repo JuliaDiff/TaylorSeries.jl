@@ -186,9 +186,9 @@ end
 evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
         {T<:Number,S<:NumberNotSeriesN} = _evaluate(a, (vals...,))
 
-evaluate(a::HomogeneousPolynomial, v, vals...) = evaluate(a, (v, vals...,))
+evaluate(a::HomogeneousPolynomial{T}, v, vals::Vararg{S,N}) where {T,S,N} = evaluate(a, (v, vals...,))
 
-evaluate(a::HomogeneousPolynomial, v) = evaluate(a, [v...])
+evaluate(a::HomogeneousPolynomial{T}, v) where {T<:Number} = evaluate(a, [v...])
 
 function evaluate(a::HomogeneousPolynomial)
     a.order == 0 && return a[1]
@@ -198,7 +198,7 @@ end
 #function-like behavior for HomogeneousPolynomial
 (p::HomogeneousPolynomial)(x) = evaluate(p, x)
 
-(p::HomogeneousPolynomial)(x, v...) = evaluate(p, (x, v...,))
+(p::HomogeneousPolynomial)(x, v::Vararg{T, N}) where {T,N} = evaluate(p, (x, v...,))
 
 (p::HomogeneousPolynomial)() = evaluate(p)
 
@@ -221,7 +221,7 @@ evaluate(a::TaylorN{T}, vals::NTuple; sorting::Bool=true) where {T<:Number} =
 
 evaluate(a::TaylorN, vals; sorting::Bool=true) = _evaluate(a, (vals...,), Val(sorting))
 
-evaluate(a::TaylorN, v, vals...; sorting::Bool=true) =
+evaluate(a::TaylorN, v, vals::Vararg{T, N}; sorting::Bool=true) where {T,N} =
     _evaluate(a, (v, vals...,), Val(sorting))
 
 function _evaluate(a::TaylorN{T}, vals) where {T<:Number}
@@ -328,9 +328,10 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 (p::TaylorN)() = evaluate(p)
 (p::TaylorN)(s::Symbol, x) = evaluate(p, s, x)
 (p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
-(p::TaylorN)(x, v...) = evaluate(p, (x, v...,))
+(p::TaylorN)(x, v::Vararg{T, N}) where {T,N} = evaluate(p, (x, v...,))
 (p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
-(p::TaylorN)(b::Bool, x, v...) = evaluate(p, (x, v...,), sorting=b)
+(p::TaylorN)(b::Bool, x, v::Vararg{T, N}) where {T,N} = 
+    evaluate(p, (x, v...,), sorting=b)
 
 #function-like behavior for AbstractArray{TaylorN{T}}
 if VERSION > v"1.1"
