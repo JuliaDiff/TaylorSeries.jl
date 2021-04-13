@@ -26,7 +26,8 @@ using LinearAlgebra, SparseArrays
     @test constant_term(xH) == xH
     @test constant_term(tN) == zero(TaylorN([xH]))
     @test linear_polynomial(xH) == xH
-    @test linear_polynomial(tN) == tN
+    @test linear_polynomial(1+tN+tN^2) == tN
+    @test nonlinear_polynomial(1+tN+tN^2) == tN^2
 
     tN = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 3)
     @test typeof(tN) == Taylor1{TaylorN{Float64}}
@@ -294,5 +295,6 @@ end
     @test constant_term(ti+to) == ti
     @test linear_polynomial(ti*to) == Taylor1([zero(ti), ti], 9)
     @test get_order(linear_polynomial(to)) == get_order(to)
+    @test nonlinear_polynomial(to+ti*to^2) == Taylor1([zero(ti), zero(ti), ti], 9)
     @test ti(1 + to) isa Taylor1{Taylor1{Float64}}
 end

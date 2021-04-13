@@ -141,10 +141,11 @@ using LinearAlgebra
     @test constant_term(uT) == 1.0
     @test constant_term(xT) == constant_term(yT)
     @test constant_term(xH) == xH
-    @test linear_polynomial(xT) == xT
-    @test get_order(linear_polynomial(xT)) == get_order(xT)
-    @test linear_polynomial(xT+xT*yT) == xT
+    @test linear_polynomial(1+xT) == xT
+    @test get_order(linear_polynomial(1+xT)) == get_order(xT)
+    @test linear_polynomial(1+xT+xT*yT) == xT
     @test linear_polynomial(uT) == zero(yT)
+    @test nonlinear_polynomial(1+xT+xT*yT) == xT*yT
 
     @test get_order(zeroT) == 1
     @test xT[1][1] == 1
