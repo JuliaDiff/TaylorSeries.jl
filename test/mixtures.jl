@@ -284,12 +284,15 @@ end
     to = Taylor1([zero(ti), one(ti)], 9)
     @test string(to) == " ( 1.0 + 𝒪(t⁴)) t + 𝒪(t¹⁰)"
     @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
-    @test ti + to == Taylor1([ti, one(ti)], 10)
-    @test ti * to == Taylor1([zero(ti), ti], 10)
+    @test ti + to == Taylor1([ti, one(ti)], 9)
+    @test ti * to == Taylor1([zero(ti), ti], 9)
     @test ti^2-to^2 == (ti+to)*(ti-to)
-    @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 10)
+    @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
     @test to(1 + ti) == 1 + ti
     @test to(1 + ti) isa Taylor1{Float64}
     @test ti(1 + to) == 1 + to
+    @test constant_term(ti+to) == ti
+    @test linear_polynomial(ti*to) == Taylor1([zero(ti), ti], 9)
+    @test get_order(linear_polynomial(to)) == get_order(to)
     @test ti(1 + to) isa Taylor1{Taylor1{Float64}}
 end

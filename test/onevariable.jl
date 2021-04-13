@@ -141,6 +141,7 @@ Base.iszero(::SymbNumber) = false
     @test linear_polynomial(2) == 2
     @test linear_polynomial(t) == t
     @test linear_polynomial(tim^2) == zero(tim)
+    @test get_order(linear_polynomial(tim^2)) == get_order(tim)
     @test linear_polynomial([zero(tim), tim]) == [zero(tim), tim]
 
     @test ot == 1

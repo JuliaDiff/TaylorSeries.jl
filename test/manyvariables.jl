@@ -142,7 +142,8 @@ using LinearAlgebra
     @test constant_term(xT) == constant_term(yT)
     @test constant_term(xH) == xH
     @test linear_polynomial(xT) == xT
-    @test linear_polynomial(xT+yT) == xT+yT
+    @test get_order(linear_polynomial(xT)) == get_order(xT)
+    @test linear_polynomial(xT+xT*yT) == xT
     @test linear_polynomial(uT) == zero(yT)
 
     @test get_order(zeroT) == 1

@@ -306,13 +306,12 @@ constant_term(a::Number) = a
 """
     linear_polynomial(a)
 
-Return the linear part of `a` as a polynomial (`Taylor1`
-or `TaylorN`). The fallback behavior is to return `a` itself if
-`a::Number`, or `a[1]` when `a::Vector`.
+Returns the linear part of `a` as a polynomial (`Taylor1` or `TaylorN`), 
+*without* the constant term. The fallback behavior is to return `a` itself.
 """
-linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]])
+linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]], a.order)
 
-linear_polynomial(a::TaylorN) = TaylorN([a[1]])
+linear_polynomial(a::TaylorN) = TaylorN(a[1], a.order)
 
 linear_polynomial(a::Vector{T}) where {T<:Number} = linear_polynomial.(a)
 
