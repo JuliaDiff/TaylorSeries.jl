@@ -140,8 +140,13 @@ Base.iszero(::SymbNumber) = false
     @test constant_term([zt, t]) == [0, 0]
     @test linear_polynomial(2) == 2
     @test linear_polynomial(t) == t
-    @test linear_polynomial(tim^2) == zero(tim)
-    @test linear_polynomial([zero(tim), tim]) == [zero(tim), tim]
+    @test linear_polynomial(1+tim^2) == zero(tim)
+    @test get_order(linear_polynomial(1+tim^2)) == get_order(tim)
+    @test linear_polynomial([zero(tim), tim, tim^2]) == [zero(tim), tim, zero(tim)]
+    @test nonlinear_polynomial(2im) == 0im
+    @test nonlinear_polynomial(1+t) == zero(t)
+    @test nonlinear_polynomial(1+tim^2) == tim^2
+    @test nonlinear_polynomial([zero(tim), tim, 1+tim^2]) == [zero(tim), zero(tim), tim^2]
 
     @test ot == 1
     @test 0.0 == zt
