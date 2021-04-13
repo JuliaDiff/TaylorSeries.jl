@@ -126,7 +126,7 @@ function derivative(a::HomogeneousPolynomial, r::Int)
     @assert 1 ≤ r ≤ get_numvars()
     # @show zero(a[1]) zero(eltype(a))
     T = eltype(a)
-    a.order == 0 && return HomogeneousPolynomial([zero(a[1])], 0)
+    a.order == 0 && return HomogeneousPolynomial(zero(a[1]), 0)
     @inbounds num_coeffs = size_table[a.order]
     coeffs = zeros(T,num_coeffs)
     @inbounds posTb = pos_table[a.order]

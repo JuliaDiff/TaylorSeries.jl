@@ -246,7 +246,7 @@ function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number}
 end
 
 function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
-        {T<:NumberNotSeries, S<:NumberNotSeries, N}
+        {T<:Number, S<:NumberNotSeries, N}
 
     @assert N == get_numvars()
 

@@ -51,7 +51,7 @@ function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     order == 0 && return [HomogeneousPolynomial([zero(a[1])], 0)]
     v = Array{HomogeneousPolynomial{T}}(undef, order+1)
     @simd for ord in eachindex(v)
-        @inbounds v[ord] = HomogeneousPolynomial([zero(a[1])], ord-1)
+        @inbounds v[ord] = HomogeneousPolynomial(zero(a[1]), ord-1)
     end
     return v
 end
