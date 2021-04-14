@@ -77,6 +77,8 @@ include("printing.jl")
 
 function __init__()
     @require IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253" include("intervals.jl")
+
+    @require Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7" include("symbolics.jl")
 end
 
 end # module
