@@ -124,8 +124,9 @@ to the `r`-th variable.
 """
 function derivative(a::HomogeneousPolynomial, r::Int)
     @assert 1 ≤ r ≤ get_numvars()
+    # @show zero(a[1]) zero(eltype(a))
     T = eltype(a)
-    a.order == 0 && return HomogeneousPolynomial([zero(T)], 0)
+    a.order == 0 && return HomogeneousPolynomial(zero(a[1]), 0)
     @inbounds num_coeffs = size_table[a.order]
     coeffs = zeros(T,num_coeffs)
     @inbounds posTb = pos_table[a.order]
@@ -354,12 +355,12 @@ function integrate(a::HomogeneousPolynomial, r::Int)
     @assert 1 ≤ r ≤ get_numvars()
 
     order_max = get_order()
-    T = promote_type(eltype(a), eltype(a[1]/1))
-    a.order == order_max && return HomogeneousPolynomial(zero(T), 0)
+    a.order == order_max && return HomogeneousPolynomial(zero(a[1]/1), 0)
 
     @inbounds posTb = pos_table[a.order+2]
     @inbounds num_coeffs = size_table[a.order+1]
 
+    T = promote_type(eltype(a), eltype(a[1]/1))
     coeffs = zeros(T, size_table[a.order+2])
 
     @inbounds for i = 1:num_coeffs
@@ -373,7 +374,7 @@ function integrate(a::HomogeneousPolynomial, r::Int)
         iind[r] -= 1
     end
 
-    return HomogeneousPolynomial{T}(coeffs, a.order+1)
+    return HomogeneousPolynomial(coeffs, a.order+1)
 end
 integrate(a::HomogeneousPolynomial, s::Symbol) = integrate(a, lookupvar(s))
 

@@ -41,7 +41,7 @@ is equivalent to `evaluate(x)`.
 evaluate(x::AbstractArray{Taylor1{T}}, δt::S) where
     {T<:Number, S<:Number} = evaluate.(x, δt)
 evaluate(a::AbstractArray{Taylor1{T}}) where {T<:Number} =
-    evaluate.(a, zero(T))
+    evaluate.(a)
 
 """
     evaluate!(x, δt, x0)
@@ -172,8 +172,7 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
         {T<:Number, S<:Number, N}
 
     ct = coeff_table[a.order+1]
-    R = promote_type(T,S)
-    suma = zero(R)
+    suma = zero(a[1])*vals[1]
 
     for (i,a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
@@ -288,8 +287,7 @@ function evaluate(a::TaylorN{T}, vals::NTuple{N, TaylorN{S}}) where
 
     @assert length(vals) == get_numvars()
 
-    R = promote_type(T,eltype(S))
-    suma = zero(TaylorN{R})
+    suma = zero(constant_term(a))*vals[1]
 
     for homPol in length(a):-1:1
         suma += evaluate(a.coeffs[homPol], vals)

@@ -15,8 +15,8 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     return power_by_squaring(a, n)
 end
 
-#= The following method computes `a^float(n)` (except for cases like 
-Taylor1{Interval{T}}^n, where `power_by_squaring` is used), to 
+#= The following method computes `a^float(n)` (except for cases like
+Taylor1{Interval{T}}^n, where `power_by_squaring` is used), to
 use internally `pow!`.
 =#
 ^(a::Taylor1, n::Integer) = a^float(n)
@@ -167,7 +167,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     end
 
     # The first non-zero coefficient of the result; must be integer
-    !isinteger(r*l0) && throw(DomainError(a, 
+    !isinteger(r*l0) && throw(DomainError(a,
         """The 0th order Taylor1 coefficient must be non-zero
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0 )
@@ -250,12 +250,10 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function square(a::HomogeneousPolynomial)
-    T = eltype(a)
-
     order = 2*a.order
-    order > get_order() && return HomogeneousPolynomial([zero(T)], get_order())
+    order > get_order() && return HomogeneousPolynomial(zero(a[1]), get_order())
 
-    res = HomogeneousPolynomial([zero(T)], order)
+    res = HomogeneousPolynomial(zero(a[1]), order)
     sqr!(res, a)
     return res
 end
@@ -377,7 +375,7 @@ end
 function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( constant_term(a) )
     if iszero(p0)
-        throw(DomainError(a, 
+        throw(DomainError(a,
         """The 0-th order TaylorN coefficient must be non-zero
         in order to expand `sqrt` around 0."""))
     end
