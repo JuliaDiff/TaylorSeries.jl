@@ -161,8 +161,7 @@ getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
 getindex(a::TaylorN, u::StepRange{Int,Int}) where {T<:Number} =
     view(a.coeffs, u[:] .+ 1)
 
-function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
-        {T<:Number}
+function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where {T<:Number}
     @assert x.order == n
     a.coeffs[n+1] = x
 end
@@ -275,7 +274,7 @@ end
 ## copyto! ##
 # Inspired from base/abstractarray.jl, line 665
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval function copyto!(dst::$T{T}, src::$T{T}) where {T}
+    @eval function copyto!(dst::$T{T}, src::$T{T}) where {T<:Number}
         length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
         destiter = eachindex(dst)
         y = iterate(destiter)

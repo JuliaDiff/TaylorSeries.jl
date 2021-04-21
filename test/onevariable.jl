@@ -483,12 +483,12 @@ Base.iszero(::SymbNumber) = false
     displayBigO(false)
     @test string(ta(-3)) == " - 3 + 1 t "
     @test string(ta(0)^3-3) == " - 3 + 1 t³ "
-    @test TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t "
+    @test TaylorSeries.pretty_print(ta(3im)) == " ( 0 + 3im ) + ( 1 + 0im ) t "
     @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
     displayBigO(true)
     @test string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
-    @test TaylorSeries.pretty_print(ta(3im)) == " ( 3 im )  + ( 1 ) t + 𝒪(t¹⁶)"
+    @test TaylorSeries.pretty_print(ta(3im)) == " ( 0 + 3im ) + ( 1 + 0im ) t + 𝒪(t¹⁶)"
     @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
 
     a = collect(1:12)

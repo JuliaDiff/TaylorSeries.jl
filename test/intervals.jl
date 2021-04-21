@@ -83,4 +83,14 @@ eeuler = Base.MathConstants.e
     @test Interval(g(4/5),1) ⊆ g1(-1..1)
     @test g1(-1..1) ⊂ g(ii)
     @test diam(g1(-1..1)) < diam(gt(ii))
+
+    # Test display for Taylor1{Complex{Interval{T}}}
+    vc = [complex(1.5 .. 2, 0 ), complex(-2  .. -1, -1 .. 1 ), 
+        complex( -1 .. 1.5, -1 .. 1.5), complex( 0..0, -1 .. 1.5)]
+    displayBigO(false)
+    @test string(Taylor1(vc, 5)) == 
+        " ( [1.5, 2] + [0, 0]im ) - ( [1, 2] + [-1, 1]im ) t + ( [-1, 1.5] + [-1, 1.5]im ) t² + ( [0, 0] + [-1, 1.5]im ) t³ "
+    displayBigO(true)
+    @test string(Taylor1(vc, 5)) == 
+        " ( [1.5, 2] + [0, 0]im ) - ( [1, 2] + [-1, 1]im ) t + ( [-1, 1.5] + [-1, 1.5]im ) t² + ( [0, 0] + [-1, 1.5]im ) t³ + 𝒪(t⁶)"
 end

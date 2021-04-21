@@ -193,42 +193,39 @@ function numbr2str(zz::T, ifirst::Bool=false) where
     return string(plusmin, abs(zz))
 end
 
-function numbr2str(zz::T, ifirst::Bool=false) where {T<:Complex}
+function numbr2str(zz::Complex, ifirst::Bool=false)
     zT = zero(zz.re)
     iszero(zz) && return string(zT)
     zre, zim = reim(zz)
-    cadena = string("")
     if zre > zT
         if ifirst
-            cadena = string(" ( ", abs(zre)," ")
+            cadena = string("( ", zz, " )")
         else
-            cadena = string(" + ( ", abs(zre)," ")
-        end
-        if zim > zT
-            cadena = string(cadena, "+ ", abs(zim), " im )")
-        elseif zim < zT
-            cadena = string(cadena, "- ", abs(zim), " im )")
-        else
-            cadena = string(cadena, ")")
+            cadena = string("+ ( ", zz, " )")
         end
     elseif zre < zT
-        cadena = string(" - ( ", abs(zre), " ")
-        if zim > zT
-            cadena = string(cadena, "- ", abs(zim), " im )")
-        elseif zim < zT
-            cadena = string(cadena, "+ ", abs(zim), " im )")
-        else
-            cadena = string(cadena, ")")
-        end
-    else
+        cadena = string("- ( ", -zz, " )")
+    elseif zre == zT
         if zim > zT
             if ifirst
-                cadena = string("( ", abs(zim), " im )")
+                cadena = string("( ", zz, " )")
             else
-                cadena = string("+ ( ", abs(zim), " im )")
+                cadena = string("+ ( ", zz, " )")
             end
+        elseif zim < zT
+            cadena = string("- ( ", -zz, " )")
         else
-            cadena = string("- ( ", abs(zim), " im )")
+            if ifirst
+                cadena = string("( ", zz, " )")
+            else
+                cadena = string("+ ( ", zz, " )")
+            end
+        end
+    else
+        if ifirst
+            cadena = string("( ", zz, " )")
+        else
+            cadena = string("+ ( ", zz, " )")
         end
     end
     return cadena
@@ -245,7 +242,7 @@ function summary(a::Union{HomogeneousPolynomial{T}, TaylorN{T}}) where {T<:Numbe
 end
 
 # show
-function show(io::IO, a::Union{Taylor1, HomogeneousPolynomial, TaylorN})
+function show(io::IO, a::AbstractSeries)
     if _show_default[end]
         return Base.show_default(IOContext(io, :compact => false), a)
     else

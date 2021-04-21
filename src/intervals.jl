@@ -32,8 +32,7 @@ function evaluate(a::Taylor1, dx::Interval)
 end
 
 
-function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {N,T}
-
+function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {T<:Real,N}
     @assert N == get_numvars()
     a_length = length(a)
     suma = zero(constant_term(a)) + Interval{T}(0, 0)
@@ -44,8 +43,7 @@ function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {N,T}
     return suma
 end
 
-function evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}) where {T, N}
-
+function evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}) where {T<:Real,N}
     @assert N == get_numvars()
     dx == IntervalBox(-1..1, Val(N)) && return _evaluate(a, dx, Val(true))
     dx == IntervalBox( 0..1, Val(N)) && return _evaluate(a, dx, Val(false))
@@ -53,7 +51,7 @@ function evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}) where {T, N}
     return evaluate(a, dx...)
 end
 
-function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} ) where {T, N}
+function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} ) where {T<:Real,N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
     ct = coeff_table[a.order+1]
@@ -76,7 +74,7 @@ function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} )
     return suma
 end
 
-function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{false} ) where {T, N}
+function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{false} ) where {T<:Real,N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
     @inbounds suma = zero(a[1])*dx[1]
@@ -94,7 +92,7 @@ Normalizes `a::Taylor1` such that the interval `I` is mapped
 by an affine transformation to the interval `-1..1` (`symI=true`)
 or to `0..1` (`symI=false`).
 """
-normalize_taylor(a::Taylor1, I::Interval{T}, symI::Bool=true) where {T} =
+normalize_taylor(a::Taylor1, I::Interval{T}, symI::Bool=true) where {T<:Real} =
     _normalize(a, I, Val(symI))
 
 """
@@ -104,12 +102,12 @@ Normalize `a::TaylorN` such that the intervals in `I::IntervalBox`
 are mapped by an affine transformation to the intervals `-1..1`
 (`symI=true`) or to `0..1` (`symI=false`).
 """
-normalize_taylor(a::TaylorN, I::IntervalBox{N,T}, symI::Bool=true) where {N,T} =
+normalize_taylor(a::TaylorN, I::IntervalBox{N,T}, symI::Bool=true) where {T<:Real,N} =
     _normalize(a, I, Val(symI))
 
 
 #  I -> -1..1
-function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T}
+function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T<:Real}
     order = get_order(a)
     t = Taylor1(T, order)
     tnew = mid(I) + t*radius(I)
@@ -117,7 +115,7 @@ function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T}
 end
 
 #  I -> 0..1
-function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T}
+function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T<:Real}
     order = get_order(a)
     t = Taylor1(T, order)
     tnew = inf(I) + t*diam(I)
@@ -125,7 +123,7 @@ function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T}
 end
 
 #  I -> IntervalBox(-1..1, Val(N))
-function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{true}) where {N,T}
+function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{true}) where {T<:Real,N}
     order = get_order(a)
     x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
@@ -135,7 +133,7 @@ function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{true}) where {N,T}
 end
 
 #  I -> IntervalBox(0..1, Val(N))
-function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {N,T}
+function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {T<:Real,N}
     order = get_order(a)
     x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
