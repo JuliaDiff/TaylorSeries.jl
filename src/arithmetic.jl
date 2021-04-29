@@ -423,6 +423,7 @@ end
 /(a::Taylor1{T}, b::Taylor1{S}) where {T<:Number,S<:Number} = /(promote(a,b)...)
 
 function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
+    iszero(a) && !iszero(b) && return zero(a)
     if a.order != b.order
         a, b = fixorder(a, b)
     end
@@ -430,7 +431,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     # order and coefficient of first factorized term
     ordfact, cdivfact = divfactorization(a, b)
 
-    c = Taylor1(cdivfact, a.order)
+    c = Taylor1(cdivfact, a.order-ordfact)
     for ord in eachindex(c)
         div!(c, a, b, ord) # updates c[ord]
     end
@@ -573,7 +574,8 @@ function mul!(y::Vector{Taylor1{T}},
     Y = Array{T}(undef, n, order+1)
     mul!(Y, a, B)
     @inbounds for i = 1:n
-        y[i] = Taylor1( collect(Y[i,:]), order)
+        # y[i] = Taylor1( collect(Y[i,:]), order)
+        y[i] = Taylor1( Y[i,:], order)
     end
 
     return y

@@ -85,8 +85,11 @@ end
 
 ## Real power ##
 function ^(a::Taylor1, r::S) where {S<:Real}
+    # println()
     a0 = constant_term(a)
-    aux = one(a0^r)
+    # @show(a, a0)
+    aux = one(a0)^r
+    # @show(aux)
 
     iszero(r) && return Taylor1(aux, a.order)
     aa = aux*a
@@ -94,11 +97,18 @@ function ^(a::Taylor1, r::S) where {S<:Real}
     r == 2 && return square(aa)
     r == 1/2 && return sqrt(aa)
 
-    c = Taylor1( zero(aux), a.order)
-    for k = 0:a.order
+    l0 = findfirst(a)
+    lnull = trunc(Int, r*l0 )
+    if (a.order-lnull < 0) || (lnull > a.order)
+        return Taylor1( zero(aux), a.order)
+    end
+    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
+    # @show(c_order)
+    c = Taylor1(zero(aux), c_order)
+    for k = 0:c_order
         pow!(c, aa, r, k)
     end
-
+    # println()
     return c
 end
 
@@ -194,7 +204,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
         @inbounds c[k] = zero(a[0])
     end
     for i = 1:k-lnull-1
-        ((i +lnull) > a.order || (l0+kprime-i > a.order)) && continue
+        ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         aux = r*(kprime-i) - i
         @inbounds c[k] += aux * c[i+lnull] * a[l0+kprime-i]
     end
@@ -360,11 +370,12 @@ function sqrt(a::Taylor1)
     end
 
     # The last l0nz coefficients are set to zero.
-    lnull = div(l0nz, 2)
-    c = Taylor1( aux, a.order )
+    lnull = l0nz >> 1 # integer division by 2
+    c_order = l0nz == 0 ? a.order : a.order >> 1
+    c = Taylor1( aux, c_order )
     @inbounds c[lnull] = sqrt( a[l0nz] )
     aa = one(aux) * a
-    for k = lnull+1:a.order
+    for k = lnull+1:c_order
         sqrt!(c, aa, k, lnull)
     end
 

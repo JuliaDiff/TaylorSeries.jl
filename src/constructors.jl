@@ -53,6 +53,11 @@ function Taylor1(x::T, order::Int) where {T<:Number}
     return Taylor1(v, order)
 end
 
+# Methods using 1-d views to create Taylor1's
+Taylor1(a::SubArray{T,1}, order::Int) where {T<:Number} = Taylor1(a.parent[a.indices...], order)
+Taylor1(a::SubArray{T,1}) where {T<:Number} = Taylor1(a.parent[a.indices...])
+
+
 # Shortcut to define Taylor1 independent variables
 """
     Taylor1([T::Type=Float64], order::Int)
@@ -70,7 +75,6 @@ julia> Taylor1(Rational{Int}, 4)
 """
 Taylor1(::Type{T}, order::Int) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
 Taylor1(order::Int) = Taylor1(Float64, order)
-
 
 ######################### HomogeneousPolynomial
 """

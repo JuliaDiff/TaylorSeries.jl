@@ -26,6 +26,8 @@ Base.iszero(::SymbNumber) = false
     @test Taylor1{Float64} <: AbstractSeries{Float64}
 
     @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3])
+    @test Taylor1(t[0:3]) == Taylor1(t[0:get_order(t)], 4)
+    @test get_order(t) == 15
     @test get_order(Taylor1([1,2,3,4,5], 2)) == 2
 
     @test size(t) == (16,)
@@ -167,18 +169,23 @@ Base.iszero(::SymbNumber) = false
     @test (-t)^2 == tsquare
     @test t^3 == tsquare*t
     @test zero(t)/t == zero(t)
+    @test get_order(zero(t)/t) == get_order(t)
     @test one(t)/one(t) == 1.0
     @test tsquare/t == t
+    @test get_order(tsquare/t) == get_order(tsquare)-1
     @test t/(t*3) == (1/3)*ot
+    @test get_order(t/(t*3)) == get_order(t)-1
     @test t/3im == -tim/3
     @test 1/(1-t) == Taylor1(ones(t.order+1))
     @test Taylor1([0,1,1])/t == t+1
+    @test get_order(Taylor1([0,1,1])/t) == 1
     @test (t+im)^2 == tsquare+2im*t-1
     @test (t+im)^3 == Taylor1([-1im,-3,3im,1],15)
     @test (t+im)^4 == Taylor1([1,-4im,-6,4im,1],15)
     @test imag(tsquare+2im*t-1) == 2t
     @test (Rational(1,2)*tsquare)[2] == 1//2
     @test t^2/tsquare == ot
+    @test get_order(t^2/tsquare) == get_order(t)-2
     @test ((1+t)^(1/3))[2]+1/9 ≤ tol1
     @test (1.0-tsquare)^3 == (1.0-t)^3*(1.0+t)^3
     @test (1-tsquare)^2 == (1+t)^2.0 * (1-t)^2.0
@@ -198,10 +205,14 @@ Base.iszero(::SymbNumber) = false
 
     # These tests involve some sort of factorization
     @test t/(t+t^2) == 1/(1+t)
+    @test get_order(t/(t+t^2)) == get_order(1/(1+t))-1
     @test sqrt(t^2+t^3) == t*sqrt(1+t)
+    @test get_order(sqrt(t^2+t^3)) == get_order(t) >> 1
+    @test get_order(t*sqrt(1+t)) == get_order(t)
     @test (t^3+t^4)^(1/3) ≈ t*(1+t)^(1/3)
     @test norm((t^3+t^4)^(1/3) - t*(1+t)^(1/3), Inf) < eps()
-    @test ((t^3+t^4)^(1/3))[15] ≈ -8617640/1162261467
+    @test get_order((t^3+t^4)^(1/3)) == 5
+    @test ((t^3+t^4)^(1/3))[5] == -10/243
 
     trational = ta(0//1)
     @inferred ta(0//1) == Taylor1{Rational{Int}}
@@ -313,12 +324,13 @@ Base.iszero(::SymbNumber) = false
 
     t_complex = Taylor1(Complex{Int}, 15) # for use with acosh, which in the Reals is only defined for x ≥ 1
     @test cosh(acosh(t_complex)) ≈ t_complex
-    @test derivative(acosh(t_complex)) ≈ 1/sqrt(t_complex^2 - 1)
+    @test differentiate(acosh(t_complex)) ≈ 1/sqrt(t_complex^2 - 1)
     @test acosh(t_complex) ≈ log(t_complex + sqrt(t_complex^2 - 1))
     @test sinh(acosh(t_complex)) ≈ sqrt(t_complex^2 - 1)
 
     @test asin(t) + acos(t) == pi/2
-    @test derivative(acos(t)) == - 1/sqrt(1-t^2)
+    @test differentiate(acos(t)) == - 1/sqrt(1-Taylor1(t.order-1)^2)
+    @test get_order(differentiate(acos(t))) == t.order-1
 
     @test - sinh(t) + cosh(t) == exp(-t)
     @test  sinh(t) + cosh(t) == exp(t)
@@ -411,7 +423,6 @@ Base.iszero(::SymbNumber) = false
     @test ct[0] == tanh(t[0])^2
 
     v = [sin(t), exp(-t)]
-    @show(t)
     vv = Vector{Float64}(undef, 2)
     @test evaluate!(v, zero(Int), vv) == nothing
     @test vv == [0.0,1.0]
@@ -429,25 +440,33 @@ Base.iszero(::SymbNumber) = false
     @test evaluate!(m, m0, mres) == nothing
     @test mres == mres_expected
 
-    @test differentiate(exp(ta(1.0)), 0) == exp(ta(1.0))
-    expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0))[0:10]))
-    @test derivative(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
-    expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0pi))[0:12]),15)
-    @test derivative(exp(ta(1.0pi)), 3) ≈ expected_result_approx atol=eps(16.0) rtol=0.0
-    expected_result_approx = Taylor1(convert(Vector{Float64},exp(ta(1.0pi))[0:5]),15)
-    @test derivative(exp(ta(1.0pi)), 10) ≈ expected_result_approx atol=eps(64.0) rtol=0.0
+    ee_ta = exp(ta(1.0))
+    @test get_order(differentiate(ee_ta, 0)) == 15
+    @test get_order(differentiate(ee_ta, 1)) == 14
+    @test get_order(differentiate(ee_ta, 16)) == 0
+    @test differentiate(ee_ta, 0) == ee_ta
+    expected_result_approx = Taylor1(ee_ta[0:10])
+    @test differentiate(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
+    expected_result_approx = Taylor1(zero(ee_ta),0)
+    @test differentiate(ee_ta, 16) == Taylor1(zero(ee_ta),0)
+    @test eltype(differentiate(ee_ta, 16)) == eltype(ee_ta)
+    ee_ta = exp(ta(1.0pi))
+    expected_result_approx = Taylor1(ee_ta[0:12])
+    @test differentiate(ee_ta, 3) ≈ expected_result_approx atol=eps(16.0) rtol=0.0
+    expected_result_approx = Taylor1(ee_ta[0:5])
+    @test differentiate(exp(ta(1.0pi)), 10) ≈ expected_result_approx atol=eps(64.0) rtol=0.0
 
 
 
-    @test derivative(exp(ta(1.0)), 5)() == exp(1.0)
-    @test derivative(exp(ta(1.0pi)), 3)() == exp(1.0pi)
+    @test differentiate(exp(ta(1.0)), 5)() == exp(1.0)
+    @test differentiate(exp(ta(1.0pi)), 3)() == exp(1.0pi)
     @test isapprox(derivative(exp(ta(1.0pi)), 10)() , exp(1.0pi) )
 
-    @test derivative(5, exp(ta(1.0))) == exp(1.0)
-    @test derivative(3, exp(ta(1.0pi))) == exp(1.0pi)
-    @test isapprox(derivative(10, exp(ta(1.0pi))) , exp(1.0pi) )
+    @test differentiate(5, exp(ta(1.0))) == exp(1.0)
+    @test differentiate(3, exp(ta(1.0pi))) == exp(1.0pi)
+    @test isapprox(differentiate(10, exp(ta(1.0pi))) , exp(1.0pi) )
 
-    @test integrate(derivative(exp(t)),1) == exp(t)
+    @test integrate(differentiate(exp(t)),1) == exp(t)
     @test integrate(cos(t)) == sin(t)
 
     @test promote(ta(0.0), t) == (ta(0.0),ta(0.0))
@@ -465,7 +484,7 @@ Base.iszero(::SymbNumber) = false
     @test_throws DomainError sqrt(t)
     @test_throws DomainError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
-    @test_throws AssertionError derivative(30, exp(ta(1.0pi)))
+    @test_throws AssertionError differentiate(30, exp(ta(1.0pi)))
     @test_throws DomainError inverse(exp(t))
     @test_throws DomainError abs(t)
 
@@ -567,7 +586,7 @@ Base.iszero(::SymbNumber) = false
     @test string(st) == " SymbNumber(:x₀) + SymbNumber(:x₁) t + 𝒪(t²)"
 end
 
-@testset "Test `inv` for `Matrix{Taylor1{Float64}}``" begin
+@testset "Test inv for Matrix{Taylor1{Float64}}" begin
     t = Taylor1(5)
     a = Diagonal(rand(0:10,3)) + rand(3, 3)
     ainv = inv(a)

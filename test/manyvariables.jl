@@ -112,6 +112,7 @@ using LinearAlgebra
     xH = HomogeneousPolynomial([1,0])
     yH = HomogeneousPolynomial([0,1],1)
     @test xH == convert(HomogeneousPolynomial{Float64},xH)
+    @test HomogeneousPolynomial(xH) == xH
     @test HomogeneousPolynomial(0,0)  == 0
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
@@ -206,10 +207,10 @@ using LinearAlgebra
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
     @test differentiate(yH,1) == differentiate(xH, :x₂)
-    @test derivative(mod2pi(2pi+yT^3),2) == derivative(yT^3, :x₂)
-    @test derivative(yT^3, :x₂) == derivative(yT^3, (0,1))
-    @test derivative(yT) == zeroT == derivative(yT, (1,0))
-    @test derivative((0,1), yT) == 1
+    @test differentiate(mod2pi(2pi+yT^3),2) == derivative(yT^3, :x₂)
+    @test differentiate(yT^3, :x₂) == differentiate(yT^3, (0,1))
+    @test differentiate(yT) == zeroT == differentiate(yT, (1,0))
+    @test differentiate((0,1), yT) == 1
     @test -xT/3im == im*xT/3
     @test (xH/3im)' == im*xH/3
     @test xT/BigInt(3) == TaylorN(BigFloat,1)/3
@@ -227,11 +228,11 @@ using LinearAlgebra
 
     @test integrate(yH,1) == integrate(xH, :x₂)
     p = (xT-yT)^6
-    @test integrate(derivative(p, 1), 1, yT^6) == p
-    @test integrate(derivative(p, :x₁), :x₁, yT^6) == p
-    @test derivative(integrate(p, 2), 2) == p
-    @test derivative(integrate(p, :x₂), :x₂) == p
-    @test derivative(TaylorN(1.0, get_order())) == TaylorN(0.0, get_order())
+    @test integrate(differentiate(p, 1), 1, yT^6) == p
+    @test integrate(differentiate(p, :x₁), :x₁, yT^6) == p
+    @test differentiate(integrate(p, 2), 2) == p
+    @test differentiate(integrate(p, :x₂), :x₂) == p
+    @test differentiate(TaylorN(1.0, get_order())) == TaylorN(0.0, get_order())
     @test integrate(TaylorN(6.0, get_order()), 1) == 6xT
     @test integrate(TaylorN(0.0, get_order()), 2) == TaylorN(0.0, get_order())
     @test integrate(TaylorN(0.0, get_order()), 2, xT) == xT
@@ -242,20 +243,20 @@ using LinearAlgebra
     @test integrate(xT^17, :x₁, 2.0) == TaylorN(2.0, get_order())
     @test_throws AssertionError integrate(xT, 1, xT)
     @test_throws AssertionError integrate(xT, :x₁, xT)
-    @test_throws AssertionError derivative(xT, (1,))
-    @test_throws AssertionError derivative(xT, (1,2,3))
-    @test_throws AssertionError derivative(xT, (-1,2))
-    @test_throws AssertionError derivative((1,), xT)
-    @test_throws AssertionError derivative((1,2,3), xT)
-    @test_throws AssertionError derivative((-1,2), xT)
+    @test_throws AssertionError differentiate(xT, (1,))
+    @test_throws AssertionError differentiate(xT, (1,2,3))
+    @test_throws AssertionError differentiate(xT, (-1,2))
+    @test_throws AssertionError differentiate((1,), xT)
+    @test_throws AssertionError differentiate((1,2,3), xT)
+    @test_throws AssertionError differentiate((-1,2), xT)
 
 
-    @test derivative(2xT*yT^2, (8,8)) == 0
-    @test derivative((8,8), 2xT*yT^2) == 0
-    @test derivative(2xT*yT^2, 1) == 2yT^2
-    @test derivative((1,0), 2xT*yT^2) == 0
-    @test derivative(2xT*yT^2, (1,2)) == 4*one(yT)
-    @test derivative((1,2), 2xT*yT^2) == 4
+    @test differentiate(2xT*yT^2, (8,8)) == 0
+    @test differentiate((8,8), 2xT*yT^2) == 0
+    @test differentiate(2xT*yT^2, 1) == 2yT^2
+    @test differentiate((1,0), 2xT*yT^2) == 0
+    @test differentiate(2xT*yT^2, (1,2)) == 4*one(yT)
+    @test differentiate((1,2), 2xT*yT^2) == 4
     @test xT*xT^3 == xT^4
     txy = 1.0 + xT*yT - 0.5*xT^2*yT + (1/3)*xT^3*yT + 0.5*xT^2*yT^2
     @test getindex((1+TaylorN(1))^TaylorN(2),0:4) == txy.coeffs[1:5]
@@ -545,11 +546,11 @@ using LinearAlgebra
     TaylorSeries.jacobian!(jac, [f1,f2], [2,1])
     @test jac == TaylorSeries.jacobian([f1,f2], [2,1])
     @test TaylorSeries.hessian( f1*f2 ) ==
-        [derivative((2,0), f1*f2) derivative((1,1), (f1*f2));
-         derivative((1,1), f1*f2) derivative((0,2), (f1*f2))] == [4 -7; -7 0]
+        [differentiate((2,0), f1*f2) differentiate((1,1), (f1*f2));
+         differentiate((1,1), f1*f2) differentiate((0,2), (f1*f2))] == [4 -7; -7 0]
     @test TaylorSeries.hessian( f1*f2, [xT, yT] ) ==
-        [derivative(f1*f2, (2,0)) derivative((f1*f2), (1,1));
-         derivative(f1*f2, (1,1)) derivative((f1*f2), (0,2))]
+        [differentiate(f1*f2, (2,0)) differentiate((f1*f2), (1,1));
+         differentiate(f1*f2, (1,1)) differentiate((f1*f2), (0,2))]
     @test [xT yT]*TaylorSeries.hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
     @test TaylorSeries.hessian(f1^2)/2 == [ [49,0] [0,12] ]
     @test TaylorSeries.hessian(f1-f2-2*f1*f2) == (TaylorSeries.hessian(f1-f2-2*f1*f2))'

@@ -8,7 +8,7 @@ CurrentModule = TaylorSeries
 
 [TaylorSeries.jl](https://github.com/JuliaDiff/TaylorSeries.jl)
 is a basic polynomial algebraic manipulator in one or more
-variables; these two cases are treated separately.  Three new types are defined,
+variables; these two cases are treated separately. Three new types are defined,
 [`Taylor1`](@ref), [`HomogeneousPolynomial`](@ref) and [`TaylorN`](@ref),
 which correspond to
 expansions in one independent variable, homogeneous polynomials of various
@@ -46,12 +46,14 @@ shift_taylor(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial of order 5
 t = shift_taylor(0.0) # Independent variable `t`
 ```
 
-Note that the information about the maximum order considered is displayed
-using a big-𝒪 notation. The convention followed when different orders are
-combined is consistent with the mathematics and the big-𝒪 notation, that is,
-to propagate the lowest order. In some cases, it is desirable to not display
-the big-𝒪 notation. The function [`displayBigO`](@ref) allows to
-control whether it is displayed or not.
+!!! warning
+    The information about the maximum order considered is displayed using a big-𝒪 notation. 
+    The convention followed when different orders are combined, and when certain functions
+    are used in a way that they reduce the order (like [`differentiate`](@ref)), is to be consistent 
+    with the mathematics and the big-𝒪 notation, i.e., to propagate the lowest order. 
+    
+In some cases, it is desirable to not display the big-𝒪 notation. The function [`displayBigO`](@ref) 
+allows to control whether it is displayed or not.
 ```@repl userguide
 displayBigO(false) # turn-off displaying big O notation
 t
@@ -59,7 +61,7 @@ displayBigO(true) # turn it on
 t
 ```
 
-Similarly, it is possible to control if the format of the
+Similarly, it is possible to control some aspects of the format of the
 displayed series through the function [`use_show_default`](@ref);
 `use_show_default(true)` uses the `Base.show_default`, while
 `use_show_default(false)` uses the custom display form (default).
@@ -74,13 +76,15 @@ The definition of `shift_taylor(a)` uses the method
 [`Taylor1([::Type{Float64}], order::Int)`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,
 of given type and order (the default is `Float64`).
-This is one of the easiest ways to work with the package.
+Defining the independent variable in advance is one of the easiest 
+ways to use the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
 extended to work with the [`Taylor1`](@ref) type, including promotions that
-involve `Number`s. The operations return a valid Taylor expansion of
-maximum order. This is apparent in the last example below, where
-the answer is beyond the order of the expansion.
+involve `Number`s. The operations return a valid Taylor expansion, consistent
+with the order of the series. This is apparent in the penultimate example 
+below, where the fist non-zero coefficient is beyond the order of the expansion, 
+and hence the result is zero.
 
 ```@repl userguide
 t*(3t+2.5)
@@ -91,10 +95,16 @@ tI = im*t
 (1+t)^t
 Taylor1(3) + Taylor1(5) == 2Taylor1(3)  # big-𝒪 convention applies
 t^6  # t is of order 5
+t^2 / t # The result is of order 4, instead of 5
 ```
 
+Note that the last example returns a `Taylor1` series of order 4, instead 
+of order 5; this is be consistent with the number of known coefficients of the 
+returned series, since the result corresponds to factorize `t` in the numerator 
+to cancel the same factor in the denominator.
+
 If no valid Taylor expansion can be computed an error is thrown, for instance,
-when a derivative is not defined (or simply diverges):
+when a derivative is not defined at the expansion point, or it simply diverges.
 
 ```@repl userguide
 1/t
@@ -109,9 +119,9 @@ are `exp`, `log`, `sqrt`, the trigonometric functions
 `sinh`, `cosh` and `tanh` and their inverses;
 more functions will be added in the future. Note that this way of obtaining the
 Taylor coefficients is not a *lazy* way, in particular for many independent
-variables. Yet, it is quite efficient, especially for the integration of
-ordinary differential equations, which is among the applications we have in
-mind (see
+variables. Yet, the implementation is efficient enough, especially for the 
+integration of ordinary differential equations, which is among the 
+applications we have in mind (see
 [TaylorIntegration.jl](https://github.com/PerezHz/TaylorIntegration.jl)).
 
 ```@repl userguide
@@ -140,24 +150,35 @@ getcoeff(expon, 0) == expon[0]
 rationalize(expon[3])
 ```
 
+Note that certain arithmetic operations, or the application of some functions, 
+may change the order of the result, as mentioned above.
+```@repl userguide
+t #  order 5 independent variable
+t^2/t # returns an order 4 series expansion
+sqrt(t^2) # returns an order 2 series expansion
+(t^4)^(1/4) # order 1 series
+```
+
 Differentiating and integrating is straightforward for polynomial expansions in
-one variable, using [`derivative`](@ref) and [`integrate`](@ref). (The
-function [`differentiate`](@ref) is an exact synonym of `derivative`.) These
-functions return the corresponding [`Taylor1`](@ref) expansions.
-The last coefficient of a derivative is set to zero to keep the
-same order as the original polynomial; for the integral, an
-integration constant may be set by the user (the default is zero). The
-order of the resulting polynomial is kept unchanged. The value of the
-``n``-th (``n \ge 0``)
-derivative is obtained using `derivative(n,a)`, where `a` is a Taylor series.
+one variable, using [`differentiate`](@ref) and [`integrate`](@ref). (The
+function [`derivative`](@ref) is a synonym of `differentiate`.) These
+functions return the corresponding [`Taylor1`](@ref) expansions. 
+The order of the derivative of a `Taylor1` is reduced by 1.
+For the integral, an integration constant may be
+set by the user (the default is zero); the order of the integrated polynomial
+for the integral is *kept unchanged*. The *value* of the ``n``-th (``n \ge 0``)
+derivative is obtained using `differentiate(n,a)`, where `a` is a Taylor series;
+likewise, the `Taylor1` polynomial of the ``n``-th derivative is obtained as
+`differentiate(a,n)`; the resulting polynomial is of order `get_order(a)-n`.
 
 ```@repl userguide
-derivative(exp(t))
-integrate(exp(t))
+differentiate(exp(t)) # exp(t) is of order 5; the derivative is of order 4
+integrate(exp(t))  # the resulting TaylorSeries is of order 5
 integrate( exp(t), 1.0)
-integrate( derivative( exp(-t)), 1.0 ) == exp(-t)
-derivative(1, exp(shift_taylor(1.0))) == exp(1.0)
-differentiate(5, exp(shift_taylor(1.0))) == exp(1.0) # 5-th derivative of `exp(1+t)`
+integrate( differentiate( exp(-t)), 1.0 ) == exp(-t)
+differentiate(1, exp(shift_taylor(1.0))) == exp(1.0)
+differentiate(5, exp(shift_taylor(1.0))) == exp(1.0)    # 5-th differentiate of `exp(1+t)`
+derivative(exp(1+t), 3)    # Taylor1 polynomial of the 3-rd derivative of `exp(1+t)`
 ```
 
 To evaluate a Taylor series at a given point, Horner's rule is used via the
@@ -168,15 +189,16 @@ is evaluated at ``t = t_0 + dt``. Omitting `dt` corresponds to ``dt = 0``;
 see [`evaluate`](@ref).
 
 ```@repl userguide
-evaluate(exp(shift_taylor(1.0))) - ℯ # exp(t) around t0=1 (order 5), evaluated there (dt=0)
-evaluate(exp(t), 1) - ℯ # exp(t) around t0=0 (order 5), evaluated at t=1
-evaluate(exp( Taylor1(17) ), 1) - ℯ # exp(t) around t0=0, order 17
-tBig = Taylor1(BigFloat, 50) # Independent variable with BigFloats, order 50
+evaluate(exp(shift_taylor(1.0))) - ℯ    # exp(t) around t0=1 (order 5), evaluated there (dt=0)
+evaluate(exp(t), 1) - ℯ                 # exp(t) around t0=0 (order 5), evaluated at t=1
+evaluate(exp( Taylor1(17) ), 1) - ℯ     # exp(t) around t0=0, order 17
+tBig = Taylor1(BigFloat, 50)            # Independent variable with BigFloats, order 50
 eBig = evaluate( exp(tBig), one(BigFloat) )
 ℯ - eBig
 ```
 
-Another way to obtain the value of a `Taylor1` polynomial `p` at a given value `x`, is to call `p` as if it was a function, i.e., `p(x)`:
+Another way to evaluate the value of a `Taylor1` polynomial `p` at a given value `x`, 
+is to call `p` as if it was a function, i.e., `p(x)`:
 
 ```@repl userguide
 t = Taylor1(15)
@@ -213,11 +235,11 @@ as a vector whose coefficients are polynomials in ``N-1`` variables. The
 current implementation of `TaylorSeries.jl` corresponds to the first option,
 though some infrastructure has been built that permits to develop the second
 one. An elegant (lazy) implementation of the second representation
-was discussed  [here](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ).
+was discussed [here](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3Ig/sNrtyRJHK0AJ).
 
 The structure [`TaylorN`](@ref) is constructed as a vector of parameterized
 homogeneous polynomials
-defined by the type [`HomogeneousPolynomial`](@ref), which in turn is a vector of
+defined by the type [`HomogeneousPolynomial`](@ref), which in turn is an ordered vector of
 coefficients of given order (degree). This implementation imposes the user
 to specify the (maximum) order considered and the number of independent
 variables at the beginning, which can be conveniently done using
@@ -302,7 +324,7 @@ the corresponding independent variable, i.e. ``x \to x+a``.
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
 have been extended to work with [`TaylorN`](@ref) objects, including the
-appropriate promotions to deal with numbers.
+appropriate promotions to deal with the usual numberic types.
 Note that some of the arithmetic operations have been extended for
 [`HomogeneousPolynomial`](@ref), whenever the result is a
 [`HomogeneousPolynomial`](@ref); division, for instance, is not extended.
@@ -343,21 +365,21 @@ exy[8][6] # get the 6th coeff of the 8th order term
 ```
 
 Partial differentiation is also implemented for [`TaylorN`](@ref) objects,
-through the function [`derivative`](@ref), specifying the number
+through the function [`differentiate`](@ref), specifying the number
 of the variable, or its symbol, as the second argument.
 
 ```@repl userguide
 p = x^3 + 2x^2 * y - 7x + 2
 q = y - x^4
-derivative( p, 1 )   # partial derivative with respect to 1st variable
-derivative( q, :y )  # partial derivative with respect to :y
+differentiate( p, 1 )   # partial derivative with respect to 1st variable
+differentiate( q, :y )  # partial derivative with respect to :y
 ```
 
 If we ask for the partial derivative with respect to a non-defined variable,
 an error is thrown.
 
 ```@repl userguide
-derivative( q, 3 )   # error, since we are dealing with 2 variables
+differentiate( q, 3 )   # error, since we are dealing with 2 variables
 ```
 
 To obtain more specific partial derivatives we have two specialized methods
@@ -369,10 +391,10 @@ the specified tuple, normalized by the factorials defined by the tuple.
 The latter is in essence the 0-th order coefficient of the former.
 
 ```@repl userguide
-derivative(p, (2,1)) # two derivatives on :x and one on :y
-derivative((2,1), p) # 0-th order coefficient of the previous expression
-derivative(p, (1,1)) # one derivative on :x and one on :y
-derivative((1,1), p) # 0-th order coefficient of the previous expression
+differentiate(p, (2,1)) # two derivatives on :x and one on :y
+differentiate((2,1), p) # 0-th order coefficient of the previous expression
+differentiate(p, (1,1)) # one derivative on :x and one on :y
+differentiate((1,1), p) # 0-th order coefficient of the previous expression
 ```
 
 Integration with respect to the `r`-th variable for
@@ -383,10 +405,10 @@ be independent from the integrated variable. Again, the integration
 variable may be specified by its symbol.
 
 ```@repl userguide
-integrate( derivative( p, 1 ), 1) # integrate with respect to the first variable
-integrate( derivative( p, 1 ), :x, 2) # integration with respect to :x, constant of integration is 2
-integrate( derivative( q, 2 ), :y, -x^4) == q
-integrate( derivative( q, 2 ), 2, y)
+integrate( differentiate( p, 1 ), 1) # integrate with respect to the first variable
+integrate( differentiate( p, 1 ), :x, 2) # integration with respect to :x, constant of integration is 2
+integrate( differentiate( q, 2 ), :y, -x^4) == q
+integrate( differentiate( q, 2 ), 2, y)
 ```
 
 [`evaluate`](@ref) can also be used for [`TaylorN`](@ref) objects, using
