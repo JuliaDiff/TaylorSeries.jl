@@ -76,13 +76,13 @@ The definition of `shift_taylor(a)` uses the method
 [`Taylor1([::Type{Float64}], order::Int)`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,
 of given type and order (the default is `Float64`).
-Defining the independen variable in advance is one of the easiest 
+Defining the independent variable in advance is one of the easiest 
 ways to use the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
 extended to work with the [`Taylor1`](@ref) type, including promotions that
 involve `Number`s. The operations return a valid Taylor expansion, consistent
-with the order of the series. This is apparent in the one-before-last example 
+with the order of the series. This is apparent in the penultimate example 
 below, where the fist non-zero coefficient is beyond the order of the expansion, 
 and hence the result is zero.
 
@@ -100,8 +100,8 @@ t^2 / t # The result is of order 4, instead of 5
 
 Note that the last example returns a `Taylor1` series of order 4, instead 
 of order 5; this is be consistent with the number of known coefficients of the 
-returned series, since the rersult corresponds to factorize `t` in the numerator 
-to cancel the samee factor in the denominator.
+returned series, since the result corresponds to factorize `t` in the numerator 
+to cancel the same factor in the denominator.
 
 If no valid Taylor expansion can be computed an error is thrown, for instance,
 when a derivative is not defined at the expansion point, or it simply diverges.

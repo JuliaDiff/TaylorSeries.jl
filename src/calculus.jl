@@ -13,7 +13,7 @@
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
 The order of the result is `a.order-1`.
 
-The function `derivative` is an exact synonym of `differentiates`.
+The function `derivative` is an exact synonym of `differentiate`.
 """
 function differentiate(a::Taylor1)
     res = Taylor1(zero(a[0]), get_order(a)-1)
@@ -68,7 +68,7 @@ end
 """
     differentiate(a, n)
 
-Compute recursively the `Taylor1` polynomial of the n-th differential of
+Compute recursively the `Taylor1` polynomial of the n-th derivative of
 `a::Taylor1`. The order of the result is `a.order-n`.
 """
 function differentiate(a::Taylor1{T}, n::Int) where {T <: Number}
