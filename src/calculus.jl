@@ -102,7 +102,7 @@ end
 Return the integral of `a::Taylor1`. The constant of integration
 (0-th order coefficient) is set to `x`, which is zero if ommitted.
 """
-function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
+function integrate(a::Taylor1{T}, x::S) where {T<:Number,S<:Number}
     order = get_order(a)
     aa = a[0]/1 + zero(x)
     R = typeof(aa)
@@ -253,9 +253,7 @@ function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
 
     return transpose(jac)
 end
-function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where
-        {T<:Number, S<:Number}
-
+function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where {T<:Number,S<:Number}
     R = promote_type(T,S)
     numVars = get_numvars()
     @assert length(vf) == numVars == length(vals)
@@ -322,7 +320,7 @@ Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
 evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at
 zero.
 """
-hessian(f::TaylorN{T}, vals::Array{S,1}) where {T<:Number, S<:Number} =
+hessian(f::TaylorN{T}, vals::Array{S,1}) where {T<:Number,S<:Number} =
     (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
 
 hessian(f::TaylorN{T}) where {T<:Number} = hessian( f, zeros(T, get_numvars()) )
@@ -409,9 +407,9 @@ function integrate(a::TaylorN, r::Int, x0::TaylorN)
     res = integrate(a, r)
     return x0+res
 end
-integrate(a::TaylorN, r::Int, x0::NumberNotSeries) =
+integrate(a::TaylorN, r::Int, x0) =
     integrate(a,r,TaylorN(HomogeneousPolynomial([convert(eltype(a),x0)], 0)))
 
 integrate(a::TaylorN, s::Symbol) = integrate(a, lookupvar(s))
 integrate(a::TaylorN, s::Symbol, x0::TaylorN) = integrate(a, lookupvar(s), x0)
-integrate(a::TaylorN, s::Symbol, x0::NumberNotSeries) = integrate(a, lookupvar(s), x0)
+integrate(a::TaylorN, s::Symbol, x0) = integrate(a, lookupvar(s), x0)

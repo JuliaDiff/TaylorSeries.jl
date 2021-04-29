@@ -12,7 +12,7 @@
 for T in (:Taylor1, :TaylorN)
 
     @eval begin
-        ==(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number} = ==(promote(a,b)...)
+        ==(a::$T{T}, b::$T{S}) where {T<:Number,S<:Number} = ==(promote(a,b)...)
 
         function ==(a::$T{T}, b::$T{T}) where {T<:Number}
             if a.order != b.order
@@ -84,7 +84,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
     for T in (:Taylor1, :TaylorN)
         @eval begin
-            ($f)(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number} =
+            ($f)(a::$T{T}, b::$T{S}) where {T<:Number,S<:Number} =
                 $f(promote(a,b)...)
 
             function $f(a::$T{T}, b::$T{T}) where {T<:Number}
@@ -102,7 +102,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return $T(v, a.order)
             end
 
-            ($f)(a::$T{T}, b::S) where {T<:Number, S<:Number} =
+            ($f)(a::$T{T}, b::S) where {T<:Number,S<:Number} =
                 $f(promote(a,b)...)
 
             function $f(a::$T{T}, b::T) where {T<:Number}
@@ -111,7 +111,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return $T(coeffs, a.order)
             end
 
-            ($f)(b::S, a::$T{T}) where {T<:Number, S<:Number} =
+            ($f)(b::S, a::$T{T}) where {T<:Number,S<:Number} =
                 $f(promote(b,a)...)
 
             function $f(b::T, a::$T{T}) where {T<:Number}
@@ -122,23 +122,23 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             end
 
             ## add! and subst! ##
-            function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T}
+            function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
                 @inbounds v[k] = ($f)(a[k])
                 return nothing
             end
-            function ($fc)(v::$T, a::NumberNotSeries, k::Int)
-                @inbounds v[k] = k==0 ? ($f)(zero(v[0]),a) : zero(v[k])
+            function ($fc)(v::$T{T}, a::T, k::Int) where {T<:Number}
+                @inbounds v[k] = k==0 ? ($f)(a) : zero(a)
                 return nothing
             end
             function ($fc)(v::$T, a::$T, b::$T, k::Int)
                 @inbounds v[k] = ($f)(a[k], b[k])
                 return nothing
             end
-            function ($fc)(v::$T, a::$T, b::NumberNotSeries, k::Int)
+            function ($fc)(v::$T, a::$T, b::Number, k::Int)
                 @inbounds v[k] = k==0 ? ($f)(a[0], b) : ($f)(a[k], zero(b))
                 return nothing
             end
-            function ($fc)(v::$T, a::NumberNotSeries, b::$T, k::Int)
+            function ($fc)(v::$T, a::Number, b::$T, k::Int)
                 @inbounds v[k] = k==0 ? ($f)(a, b[0]) : ($f)(zero(a), b[k])
                 return nothing
             end
@@ -150,7 +150,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             {T<:NumberNotSeriesN,S<:NumberNotSeriesN} = $f(promote(a,b)...)
 
         function $f(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where
-                T<:NumberNotSeriesN
+                {T<:NumberNotSeriesN}
             @assert a.order == b.order
             v = similar(a.coeffs)
             @__dot__ v = $f(a.coeffs, b.coeffs)
@@ -164,7 +164,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::Taylor1{S}) where
-                {T<:NumberNotSeries, S<:NumberNotSeries}
+                {T<:NumberNotSeries,S<:NumberNotSeries}
             @inbounds aux = $f(a[0][1], b)
             R = eltype(aux)
             coeffs = Array{HomogeneousPolynomial{Taylor1{R}}}(undef, a.order+1)
@@ -215,18 +215,22 @@ end
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 
     @eval begin
-        *(a::Bool, b::$T) = *(convert(Int, a), b)
-
-        *(a::$T, b::Bool) = b * a
-
-        function *(a::T, b::$T) where {T<:NumberNotSeries}
+        function *(a::T, b::$T{S}) where {T<:NumberNotSeries,S<:NumberNotSeries}
             @inbounds aux = a * b.coeffs[1]
             v = Array{typeof(aux)}(undef, length(b.coeffs))
             @__dot__ v = a * b.coeffs
             return $T(v, b.order)
         end
 
-        *(b::$T, a::T) where {T<:NumberNotSeries} = a * b
+        *(b::$T{S}, a::T) where {T<:NumberNotSeries,S<:NumberNotSeries} = a * b
+
+        function *(a::T, b::$T{T}) where {T<:Number}
+            v = Array{T}(undef, length(b.coeffs))
+            @__dot__ v = a * b.coeffs
+            return $T(v, b.order)
+        end
+
+        *(b::$T{T}, a::T) where {T<:Number} = a * b
     end
 end
 
@@ -234,7 +238,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
 
     @eval begin
         function *(a::Taylor1{T}, b::$T{Taylor1{S}}) where
-                {T<:NumberNotSeries, S<:NumberNotSeries}
+                {T<:NumberNotSeries,S<:NumberNotSeries}
 
             @inbounds aux = a * b.coeffs[1]
             R = typeof(aux)
@@ -246,7 +250,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         *(b::$T{Taylor1{R}}, a::Taylor1{T}) where
             {T<:NumberNotSeries,R<:NumberNotSeries} = a * b
 
-        function *(a::$T{T}, b::Taylor1{$T{S}}) where {T<:NumberNotSeries, S<:NumberNotSeries}
+        function *(a::$T{T}, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,S<:NumberNotSeries}
             @inbounds aux = a * b[0]
             R = typeof(aux)
             coeffs = Array{R}(undef, length(b.coeffs))
@@ -254,14 +258,11 @@ for T in (:HomogeneousPolynomial, :TaylorN)
             return Taylor1(coeffs, b.order)
         end
 
-        *(b::Taylor1{$T{S}}, a::$T{T}) where
-            {T<:NumberNotSeries,S<:NumberNotSeries} = a * b
+        *(b::Taylor1{$T{S}}, a::$T{T}) where {T<:NumberNotSeries,S<:NumberNotSeries} = a * b
     end
 end
 
 for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
-    @eval *(a::$T{T}, b::$T{S}) where {T<:$W, S<:$W} = *(promote(a,b)...)
-
     @eval function *(a::$T{T}, b::$T{T}) where {T<:$W}
         if a.order != b.order
             a, b = fixorder(a, b)
@@ -293,7 +294,7 @@ end
 
 # Internal multiplication functions
 for T in (:Taylor1, :TaylorN)
-    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T}
+    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
 
         if $T == Taylor1
             @inbounds c[k] = a[0] * b[k]
@@ -376,7 +377,7 @@ end
 
 
 ## Division ##
-function /(a::Taylor1{Rational{T}}, b::S) where {T<:Integer, S<:NumberNotSeries}
+function /(a::Taylor1{Rational{T}}, b::S) where {T<:Integer,S<:NumberNotSeries}
     R = typeof( a[0] // b)
     v = Array{R}(undef, a.order+1)
     @__dot__ v = a.coeffs // b
@@ -384,13 +385,19 @@ function /(a::Taylor1{Rational{T}}, b::S) where {T<:Integer, S<:NumberNotSeries}
 end
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-
-    @eval function /(a::$T{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
-        R = promote_type(T,S)
-        return convert($T{R}, a) * inv(convert(R, b))
+    @eval function /(a::$T{T}, b::S) where {T<:NumberNotSeries,S<:NumberNotSeries}
+        @inbounds aux = a.coeffs[1] / b
+        v = Array{typeof(aux)}(undef, length(a.coeffs))
+        @__dot__ v = a.coeffs / b
+        return $T(v, a.order)
     end
 
-    @eval /(a::$T, b::T) where {T<:NumberNotSeries} = a * inv(b)
+    @eval function /(a::$T{T}, b::T) where {T<:Number}
+        @inbounds aux = a.coeffs[1] / b
+        v = Array{typeof(aux)}(undef, length(a.coeffs))
+        @__dot__ v = a.coeffs / b
+        return $T(v, a.order)
+    end
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
@@ -413,9 +420,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
     end
 end
 
-
-
-/(a::Taylor1{T}, b::Taylor1{S}) where {T<:Number, S<:Number} = /(promote(a,b)...)
+/(a::Taylor1{T}, b::Taylor1{S}) where {T<:Number,S<:Number} = /(promote(a,b)...)
 
 function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     iszero(a) && !iszero(b) && return zero(a)
@@ -435,7 +440,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
 end
 
 /(a::TaylorN{T}, b::TaylorN{S}) where
-    {T<:NumberNotSeriesN, S<:NumberNotSeriesN} = /(promote(a,b)...)
+    {T<:NumberNotSeriesN,S<:NumberNotSeriesN} = /(promote(a,b)...)
 
 function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
     @assert !iszero(constant_term(b))
@@ -603,7 +608,7 @@ end
 # Specialize a method of `lu` for Matrix{Taylor1{T}}, which avoids pivoting,
 # since the polynomial field is not an ordered one.
 # We can't assume an ordered field so we first try without pivoting
-function lu(A::AbstractMatrix{Taylor1{T}}; check::Bool = true) where T
+function lu(A::AbstractMatrix{Taylor1{T}}; check::Bool = true) where {T<:Number}
     S = Taylor1{lutype(T)}
     F = lu!(copy_oftype(A, S), Val(false); check = false)
     if issuccess(F)

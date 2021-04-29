@@ -12,13 +12,13 @@ import .Broadcast: BroadcastStyle, Broadcasted, broadcasted
 
 # BroadcastStyle definitions and basic precedence rules
 struct Taylor1Style{T} <: Base.Broadcast.AbstractArrayStyle{0} end
-Taylor1Style{T}(::Val{N}) where {T, N}= Base.Broadcast.DefaultArrayStyle{N}()
+Taylor1Style{T}(::Val{N}) where {T,N}= Base.Broadcast.DefaultArrayStyle{N}()
 BroadcastStyle(::Type{<:Taylor1{T}}) where {T} = Taylor1Style{T}()
 BroadcastStyle(::Taylor1Style{T}, ::Base.Broadcast.DefaultArrayStyle{0}) where {T} = Taylor1Style{T}()
 BroadcastStyle(::Taylor1Style{T}, ::Base.Broadcast.DefaultArrayStyle{1}) where {T} = Base.Broadcast.DefaultArrayStyle{1}()
 #
 struct HomogeneousPolynomialStyle{T} <: Base.Broadcast.AbstractArrayStyle{0} end
-HomogeneousPolynomialStyle{T}(::Val{N}) where {T, N}= Base.Broadcast.DefaultArrayStyle{N}()
+HomogeneousPolynomialStyle{T}(::Val{N}) where {T,N}= Base.Broadcast.DefaultArrayStyle{N}()
 BroadcastStyle(::Type{<:HomogeneousPolynomial{T}}) where {T} = HomogeneousPolynomialStyle{T}()
 BroadcastStyle(::HomogeneousPolynomialStyle{T}, ::Base.Broadcast.DefaultArrayStyle{0}) where {T} = HomogeneousPolynomialStyle{T}()
 BroadcastStyle(::HomogeneousPolynomialStyle{T}, ::Base.Broadcast.DefaultArrayStyle{1}) where {T} = Base.Broadcast.DefaultArrayStyle{1}()
@@ -91,7 +91,7 @@ Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
 # Adapted from Base.Broadcast.copyto!, base/broadcasting.jl, line 832
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval begin
-        @inline function copyto!(dest::$T{T}, bc::Broadcasted) where {T}
+        @inline function copyto!(dest::$T{T}, bc::Broadcasted) where {T<:Number}
             axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
             # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
             if bc.f === identity && bc.args isa Tuple{$T{T}} # only a single input argument to broadcast!
@@ -109,9 +109,9 @@ end
 
 
 # Broadcasted extensions
-@inline broadcasted(::Taylor1Style{T}, ::Type{Float32}, a::Taylor1{T}) where {T} =
+@inline broadcasted(::Taylor1Style{T}, ::Type{Float32}, a::Taylor1{T}) where {T<:Number} =
     Taylor1(Float32.(a.coeffs), a.order)
-@inline broadcasted(::TaylorNStyle{T}, ::Type{Float32}, a::TaylorN{T}) where {T} =
+@inline broadcasted(::TaylorNStyle{T}, ::Type{Float32}, a::TaylorN{T}) where {T<:Number} =
     convert(TaylorN{Float32}, a)
 
 # # This prevents broadcasting being applied to the Taylor1/TaylorN params

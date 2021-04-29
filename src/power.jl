@@ -156,8 +156,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int) where
-        {T<:Number, S<:Real}
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int) where {T<:Number,S<:Real}
 
     if r == 0
         return one!(c, a, k)
@@ -214,7 +213,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 end
 
 @inline function pow!(c::TaylorN{T}, a::TaylorN{T}, r::S, k::Int) where
-        {T<:NumberNotSeriesN, S<:Real}
+        {T<:NumberNotSeriesN,S<:Real}
 
     if r == 0
         return one!(c, a, k)
@@ -291,7 +290,7 @@ c_k & = & 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
 
 for T = (:Taylor1, :TaylorN)
     @eval begin
-        @inline function sqr!(c::$T{T}, a::$T{T}, k::Int) where {T}
+        @inline function sqr!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds c[0] = constant_term(a)^2
                 return nothing
@@ -423,7 +422,7 @@ coefficient, which must be even.
 
 """ sqrt!
 
-@inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T}
+@inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T<:Number}
 
     if k == k0
         @inbounds c[k] = sqrt(a[2*k0])

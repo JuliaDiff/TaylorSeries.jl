@@ -198,17 +198,17 @@ end
 # Recursive functions (homogeneous coefficients)
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T}
+        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             @inbounds c[k] = identity(a[k])
             return nothing
         end
 
-        @inline function zero!(c::$T{T}, a::$T{T}, k::Int) where{T}
+        @inline function zero!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             @inbounds c[k] = zero(a[k])
             return nothing
         end
 
-        @inline function one!(c::$T{T}, a::$T{T}, k::Int) where{T}
+        @inline function one!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds c[0] = one(a[0])
             else
@@ -217,7 +217,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function abs!(c::$T{T}, a::$T{T}, k::Int) where {T}
+        @inline function abs!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             z = zero(constant_term(a))
             if constant_term(constant_term(a)) > constant_term(z)
                 return add!(c, a, k)
@@ -231,9 +231,9 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline abs2!(c::$T{T}, a::$T{T}, k::Int) where {T} = sqr!(c, a, k)
+        @inline abs2!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number} = sqr!(c, a, k)
 
-        @inline function exp!(c::$T{T}, a::$T{T}, k::Int) where {T}
+        @inline function exp!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds c[0] = exp(constant_term(a))
                 return nothing
@@ -254,7 +254,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function log!(c::$T{T}, a::$T{T}, k::Int) where {T}
+        @inline function log!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds c[0] = log(constant_term(a))
                 return nothing
@@ -279,7 +279,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T}
+        @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds s[0], c[0] = sin( a0 ), cos( a0 )
@@ -310,7 +310,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function tan!(c::$T{T}, a::$T{T}, c2::$T{T}, k::Int) where {T}
+        @inline function tan!(c::$T{T}, a::$T{T}, c2::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds aux = tan( constant_term(a) )
                 @inbounds c[0] = aux
@@ -336,7 +336,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function asin!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+        @inline function asin!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = asin( a0 )
@@ -361,7 +361,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function acos!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+        @inline function acos!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = acos( a0 )
@@ -386,7 +386,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function atan!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+        @inline function atan!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = atan( a0 )
@@ -411,7 +411,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function sinhcosh!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T}
+        @inline function sinhcosh!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds s[0] = sinh( constant_term(a) )
                 @inbounds c[0] = cosh( constant_term(a) )
@@ -441,7 +441,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function tanh!(c::$T{T}, a::$T{T}, c2::$T{T}, k::Int) where {T}
+        @inline function tanh!(c::$T{T}, a::$T{T}, c2::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds aux = tanh( constant_term(a) )
                 @inbounds c[0] = aux
@@ -467,7 +467,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function asinh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+        @inline function asinh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = asinh( a0 )
@@ -492,7 +492,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function acosh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+        @inline function acosh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = acosh( a0 )
@@ -517,7 +517,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function atanh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T}
+        @inline function atanh!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = atanh( a0 )
