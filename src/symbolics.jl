@@ -1,5 +1,7 @@
 using .Symbolics
 
+@info("Loading `symbolics.jl`")
+
 # Promotion rules
 promote_rule(::Type{Taylor1{T}}, ::Type{Num}) where {T<:Number} = 
     Taylor1{promote_type(T,Num)}
@@ -16,7 +18,7 @@ promote(b::Num, a::Taylor1{Num}) = reverse(promote(a,b))
 
 
 # Arithmetics
-for f in (:+, :-)#(f, fc) in ((:+, :(add!)), (:-, :(subst!)))
+for f in (:+, :-)
     @eval begin
         ($f)(a::Taylor1{T}, b::Num) where {T<:Number} = ($f)(promote(a,b)...)
         ($f)(b::Num, a::Taylor1{T}) where {T<:Number} = ($f)(promote(b,a)...)
@@ -31,8 +33,18 @@ function *(a::Num, b::Taylor1{T}) where {T<:Number}
 end
 *(b::Taylor1{T}, a::Num) where {T<:Number} = a*b
 
+function *(a::T, b::Taylor1{T}) where {T<:Num}
+    @inbounds aux = a * b.coeffs[1]
+    v = Array{typeof(aux)}(undef, length(b.coeffs))
+    @__dot__ v = a * b.coeffs
+    return Taylor1(v, b.order)
+end
+*(b::Taylor1{T}, a::T) where {T<:Num} = a*b
+
 function /(a::Taylor1{T}, b::Num) where {T<:Number}
     v = a.coeffs ./ b
     return Taylor1(v, a.order)
 end
+
+Symbolics.substitute(a::Taylor1{Num}, d::Pair) = Taylor1(substitute.(a.coeffs, (d,)))
 
