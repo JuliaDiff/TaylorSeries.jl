@@ -1,10 +1,95 @@
-# Examples
-
+# [Examples](@id Examples)
 ---
 
 ```@meta
 CurrentModule = TaylorSeries
 ```
+## Expanding exp(x) with `taylor_expand()`
+The `taylor_expand` function takes the function to expand as it's first argument, and the point to expand about as the second argument.
+A keyword argument `order` determines which order to expand to:
+```@repl taylor_expand
+julia> using TaylorSeries
+
+julia> taylor_expand(exp, 0, order=3)
+ 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)
+```
+
+If the final `𝒪(t⁴)` information about the error is not interesting, you can make it not print with the `displayBigO` function:
+```
+julia> displayBigO(false)
+false
+
+julia> taylor_expand(exp, 0, order=3)
+ 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³
+```
+
+## Expanding exp(x) with a symbolic object
+An alternative way to compute the single-variable taylor expansion for a function is by defining a variable of type `Taylor1`,
+and simply using it in the function you wish to expand. The argument given to the `Taylor1` constructor is the order
+to expand to:
+
+```@repl Taylor1_variable
+julia> using TaylorSeries
+
+julia> x = Taylor1(3)
+ 1.0 t + 𝒪(t⁴)
+
+julia> exp(x)
+ 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)
+```
+
+### Changing printing variable
+Even though we are expanding `exp(x)`, the default variable for printing is `t`. This can be set with the function `set_taylor1_varname()`
+
+```@repl Taylor1_variable
+julia> set_taylor1_varname("x")
+"x"
+
+julia> exp(x)
+ 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³ + 𝒪(x⁴)
+```
+
+### Changing point to expand about
+But what if you want to use the symbolic object to expand about a point different from zero?
+A variable constructed with `Taylor1()` automatically expands about the point `x=0`. But because expanding 
+`exp(x)` about `x=1` is exactly the same as expanding `exp(x+1)` about `x=0`, simply replace the `x` in your expression with `x+1` to expand about `x=1`:
+```@repl Taylor1_variable
+julia> p = exp(x+1)
+ 2.718281828459045 + 2.718281828459045 x + 1.3591409142295225 x² + 0.45304697140984085 x³ + 𝒪(x⁴)
+
+julia> p(0.01)
+2.74560101388203
+
+julia> exp(1.01)
+2.7456010150169163
+```
+
+### More awesome examples
+You can even use custum functions;
+```@repl Taylor1_variable
+julia> f(x) = 1/(x+1)
+f (generic function with 1 method)
+
+julia> x = Taylor1(3)
+ 1.0 x + 𝒪(x⁴)
+
+julia> f(x)
+ 1.0 - 1.0 x + 1.0 x² - 1.0 x³ + 𝒪(x⁴)
+```
+
+Functions can be nested;
+```@repl Taylor1_variable
+julia> sin(f(x))
+ 0.8414709848078965 - 0.5403023058681398 x + 0.11956681346419151 x² + 0.3912190632511134 x³ + 𝒪(x⁴)
+```
+
+and complicated further in a modular way;
+```@repl Taylor1_variable
+julia> sin(exp(x+2))/(x+2)+cos(x+2)+f(x+2)
+ 0.364113974242596 + 0.41259243488717107 x - 11.843864409375039 x² - 20.814256098645323 x³ + 𝒪(x⁴)
+```
+
+
 
 ## Four-square identity
 
