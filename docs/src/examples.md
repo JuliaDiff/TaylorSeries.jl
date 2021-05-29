@@ -5,6 +5,66 @@
 ```@meta
 CurrentModule = TaylorSeries
 ```
+## Expanding exp(x) with `taylor_expand()`
+The `taylor_expand` function takes the function to expand as it's first argument, and the point to expand about as the second argument.
+A keyword argument `order` determines which order to expand to:
+```@repl taylor_expand
+julia> using TaylorSeries
+
+julia> taylor_expand(exp, 0, order=3)
+ 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)
+```
+If the final `𝒪(t⁴)` information about the error is not interesting, you can make it not print with the `displayBigO` function:
+```
+julia> displayBigO(false)
+false
+
+julia> taylor_expand(exp, 0, order=3)
+ 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³
+```
+
+## Expanding exp(x) with a symbolic object
+An alternative way to compute the single-variable taylor expansion for a function is by defining a variable of type `Taylor1`,
+and simply using it in the function you wish to expand. The argument given to the `Taylor1` constructor is the order
+to expand to:
+
+```@repl Taylor1_variable
+julia> using TaylorSeries
+
+julia> x = Taylor1(3)
+ 1.0 t + 𝒪(t⁴)
+
+julia> exp(x)
+ 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)
+```
+Even though we are expanding `exp(x)`, the default variable for printing is `t`. This can be set with the function `set_taylor1_varname()`
+
+```@repl Taylor1_variable
+julia> set_taylor1_varname("x")
+"x"
+
+julia> exp(x)
+ 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³ + 𝒪(x⁴)
+```
+
+But what if you want to use the symbolic object to expand about a point different from zero? Simply change the `x` in your expression to `x+2` to expand about `x=2`:
+```@repl Taylor1_variable
+julia> exp(x+2)
+ 7.38905609893065 + 7.38905609893065 x + 3.694528049465325 x² + 1.231509349821775 x³ + 𝒪(x⁴)
+```
+
+Functions can be nested;
+```@repl Taylor1_variable
+julia> sin(exp(x))
+ 0.8414709848078965 + 0.5403023058681398 x - 0.15058433946987837 x² - 0.4207354924039483 x³ + 𝒪(x⁴)
+```
+
+and complicated further in a modular way;
+```@repl Taylor1_variable
+julia> sin(exp(x+2))/(x+2)+cos(x+2)
+ 0.03078064090926269 + 0.5237035459982822 x - 11.880901446412075 x² - 20.80191041963298 x³ + 𝒪(x⁴)
+```
+
 
 ## Four-square identity
 
