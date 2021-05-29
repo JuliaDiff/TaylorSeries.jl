@@ -1,5 +1,4 @@
-# Examples
-
+# [Examples](@id Examples)
 ---
 
 ```@meta
