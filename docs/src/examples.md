@@ -5,7 +5,7 @@
 CurrentModule = TaylorSeries
 ```
 ## Expanding exp(x) with `taylor_expand()`
-The `taylor_expand` function takes the function to expand as it's first argument, and the point to expand about as the second argument.
+The [`taylor_expand`](@ref) function takes the function to expand as it's first argument, and the point to expand about as the second argument.
 A keyword argument `order` determines which order to expand to:
 ```@repl taylor_expand
 using TaylorSeries
@@ -14,7 +14,7 @@ taylor_expand(exp, 0, order=3)
  1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)
 ```
 
-If the final `𝒪(t⁴)` information about the error is not interesting, you can make it not print with the `displayBigO` function:
+If the final `𝒪(t⁴)` information about the error is not interesting, you can make it not print with the [`displayBigO`](@ref) function:
 ```
 displayBigO(false)
 false
@@ -25,7 +25,7 @@ taylor_expand(exp, 0, order=3)
 
 ## Expanding exp(x) with a symbolic object
 An alternative way to compute the single-variable taylor expansion for a function is by defining a variable of type `Taylor1`,
-and simply using it in the function you wish to expand. The argument given to the `Taylor1` constructor is the order
+and simply using it in the function you wish to expand. The argument given to the [`Taylor1`](@ref) constructor is the order
 to expand to:
 
 ```@repl Taylor1_variable
@@ -39,7 +39,7 @@ exp(x)
 ```
 
 ### Changing printing variable
-Even though we are expanding `exp(x)`, the default variable for printing is `t`. This can be set with the function `set_taylor1_varname()`
+Even though we are expanding `exp(x)`, the default variable for printing is `t`. This can be set with the function [`set_taylor1_varname()`](@ref)
 
 ```@repl Taylor1_variable
 set_taylor1_varname("x")
