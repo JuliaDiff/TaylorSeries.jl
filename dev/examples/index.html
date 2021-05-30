@@ -1,26 +1,39 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · TaylorSeries.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">TaylorSeries.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../background/">Background</a></li><li><a class="tocitem" href="../userguide/">User guide</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#Expanding-exp(x)-with-taylor_expand()"><span>Expanding exp(x) with <code>taylor_expand()</code></span></a></li><li><a class="tocitem" href="#Expanding-exp(x)-with-a-symbolic-object"><span>Expanding exp(x) with a symbolic object</span></a></li><li><a class="tocitem" href="#Four-square-identity"><span>Four-square identity</span></a></li><li><a class="tocitem" href="#Fateman-test"><span>Fateman test</span></a></li></ul></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaDiff/TaylorSeries.jl/blob/master/docs/src/examples.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h1><hr/><h2 id="Expanding-exp(x)-with-taylor_expand()"><a class="docs-heading-anchor" href="#Expanding-exp(x)-with-taylor_expand()">Expanding exp(x) with <code>taylor_expand()</code></a><a id="Expanding-exp(x)-with-taylor_expand()-1"></a><a class="docs-heading-anchor-permalink" href="#Expanding-exp(x)-with-taylor_expand()" title="Permalink"></a></h2><p>The <a href="../api/#TaylorSeries.taylor_expand"><code>taylor_expand</code></a> function takes the function to expand as it&#39;s first argument, and the point to expand about as the second argument. A keyword argument <code>order</code> determines which order to expand to:</p><pre><code class="language-julia-repl">julia&gt; using TaylorSeries
 
-julia&gt; taylor_expand(exp, 0, order=3)
- 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)</code></pre><p>If the final <code>𝒪(t⁴)</code> information about the error is not interesting, you can make it not print with the <a href="../api/#TaylorSeries.displayBigO"><code>displayBigO</code></a> function:</p><pre><code class="language-none">displayBigO(false)
+julia&gt; taylor_expand(exp, 0, order=2)
+ 1.0 + 1.0 t + 0.5 t² + 𝒪(t³)</code></pre><p>If the final BigO-notation error is not interesting, you can make it not print with the <a href="../api/#TaylorSeries.displayBigO"><code>displayBigO</code></a> function:</p><pre><code class="language-julia-repl">julia&gt; displayBigO(false)
 false
 
-taylor_expand(exp, 0, order=3)
- 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³</code></pre><h2 id="Expanding-exp(x)-with-a-symbolic-object"><a class="docs-heading-anchor" href="#Expanding-exp(x)-with-a-symbolic-object">Expanding exp(x) with a symbolic object</a><a id="Expanding-exp(x)-with-a-symbolic-object-1"></a><a class="docs-heading-anchor-permalink" href="#Expanding-exp(x)-with-a-symbolic-object" title="Permalink"></a></h2><p>An alternative way to compute the single-variable taylor expansion for a function is by defining a variable of type <code>Taylor1</code>, and simply using it in the function you wish to expand. The argument given to the <a href="../api/#TaylorSeries.Taylor1"><code>Taylor1</code></a> constructor is the order to expand to:</p><pre><code class="language-julia-repl">julia&gt; using TaylorSeries
+julia&gt; taylor_expand(exp, 0, order=3)
+ 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³</code></pre><h2 id="Expanding-exp(x)-with-a-symbolic-object"><a class="docs-heading-anchor" href="#Expanding-exp(x)-with-a-symbolic-object">Expanding exp(x) with a symbolic object</a><a id="Expanding-exp(x)-with-a-symbolic-object-1"></a><a class="docs-heading-anchor-permalink" href="#Expanding-exp(x)-with-a-symbolic-object" title="Permalink"></a></h2><p>An alternative way to compute the single-variable taylor expansion for a function is by defining a variable of type <code>Taylor1</code>, and simply using it in the function you wish to expand. The argument given to the <a href="../api/#TaylorSeries.Taylor1"><code>Taylor1</code></a> constructor is the order to expand to:</p><pre><code class="language-julia-repl">julia&gt; using TaylorSeries
 
-julia&gt; x = Taylor1(3)
- 1.0 t + 𝒪(t⁴)</code></pre><h3 id="Changing-printing-variable"><a class="docs-heading-anchor" href="#Changing-printing-variable">Changing printing variable</a><a id="Changing-printing-variable-1"></a><a class="docs-heading-anchor-permalink" href="#Changing-printing-variable" title="Permalink"></a></h3><p>Even though we are expanding <code>exp(x)</code>, the default variable for printing is <code>t</code>. This can be set with the function <a href="../api/#TaylorSeries.set_taylor1_varname"><code>set_taylor1_varname()</code></a></p><pre><code class="language-julia-repl">julia&gt; set_taylor1_varname(&quot;x&quot;)
-&quot;x&quot;
+julia&gt; x = Taylor1(2)
+ 1.0 t
 
-julia&gt; &quot;x&quot;
+julia&gt; exp(x)
+ 1.0 + 1.0 t + 0.5 t²</code></pre><p>Let&#39;s also get rid of the printed error for the next few examples:</p><pre><code class="language-julia-repl">julia&gt; displayBigO(false)
+false</code></pre><h3 id="Changing-printing-variable"><a class="docs-heading-anchor" href="#Changing-printing-variable">Changing printing variable</a><a id="Changing-printing-variable-1"></a><a class="docs-heading-anchor-permalink" href="#Changing-printing-variable" title="Permalink"></a></h3><p>Even though we are expanding <code>exp(x)</code>, the default variable for printing is <code>t</code>. This can be set with the function <a href="../api/#TaylorSeries.set_taylor1_varname"><code>set_taylor1_varname()</code></a></p><pre><code class="language-julia-repl">julia&gt; set_taylor1_varname(&quot;x&quot;)
 &quot;x&quot;
 
 julia&gt; exp(x)
- 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³ + 𝒪(x⁴)</code></pre><h3 id="Changing-point-to-expand-about"><a class="docs-heading-anchor" href="#Changing-point-to-expand-about">Changing point to expand about</a><a id="Changing-point-to-expand-about-1"></a><a class="docs-heading-anchor-permalink" href="#Changing-point-to-expand-about" title="Permalink"></a></h3><p>But what if you want to use the symbolic object to expand about a point different from zero? A variable constructed with <code>Taylor1()</code> automatically expands about the point <code>x=0</code>. But because expanding  <code>exp(x)</code> about <code>x=1</code> is exactly the same as expanding <code>exp(x+1)</code> about <code>x=0</code>, simply replace the <code>x</code> in your expression with <code>x+1</code> to expand about <code>x=1</code>:</p><pre><code class="language-julia-repl">julia&gt; p = exp(x+1)
- 2.718281828459045 + 2.718281828459045 x + 1.3591409142295225 x² + 0.45304697140984085 x³ + 𝒪(x⁴)</code></pre><h3 id="More-awesome-examples"><a class="docs-heading-anchor" href="#More-awesome-examples">More awesome examples</a><a id="More-awesome-examples-1"></a><a class="docs-heading-anchor-permalink" href="#More-awesome-examples" title="Permalink"></a></h3><p>You can even use custum functions</p><pre><code class="language-julia-repl">julia&gt; f(x) = 1/(x+1)
-f (generic function with 1 method)</code></pre><p>Functions can be nested</p><pre><code class="language-julia-repl">julia&gt; sin(f(x))
- 0.8414709848078965 - 0.5403023058681398 x + 0.11956681346419151 x² + 0.3912190632511134 x³ + 𝒪(x⁴)</code></pre><p>and complicated further in a modular way</p><pre><code class="language-julia-repl">julia&gt; sin(exp(x+2))/(x+2)+cos(x+2)+f(x+2)
- 0.364113974242596 + 0.41259243488717107 x - 11.843864409375039 x² - 20.814256098645323 x³ + 𝒪(x⁴)</code></pre><h2 id="Four-square-identity"><a class="docs-heading-anchor" href="#Four-square-identity">Four-square identity</a><a id="Four-square-identity-1"></a><a class="docs-heading-anchor-permalink" href="#Four-square-identity" title="Permalink"></a></h2><p>The first example shows that the four-square identity holds:</p><p class="math-container">\[(a_1+a_2+a_3+a_4)\cdot(b_1+b_2+b_3+b_4) = \\
+ 1.0 + 1.0 x + 0.5 x²</code></pre><h3 id="Changing-point-to-expand-about"><a class="docs-heading-anchor" href="#Changing-point-to-expand-about">Changing point to expand about</a><a id="Changing-point-to-expand-about-1"></a><a class="docs-heading-anchor-permalink" href="#Changing-point-to-expand-about" title="Permalink"></a></h3><p>But what if you want to use the symbolic object to expand about a point different from zero? A variable constructed with <code>Taylor1()</code> automatically expands about the point <code>x=0</code>. But because expanding  <code>exp(x)</code> about <code>x=1</code> is exactly the same as expanding <code>exp(x+1)</code> about <code>x=0</code>, simply replace the <code>x</code> in your expression with <code>x+1</code> to expand about <code>x=1</code>:</p><pre><code class="language-julia-repl">julia&gt; p = exp(x+1)
+ 2.718281828459045 + 2.718281828459045 x + 1.3591409142295225 x²
+
+julia&gt; p(0.01)
+2.7456005608350584
+
+julia&gt; exp(1.01)
+2.7456010150169163</code></pre><h3 id="More-awesome-examples"><a class="docs-heading-anchor" href="#More-awesome-examples">More awesome examples</a><a id="More-awesome-examples-1"></a><a class="docs-heading-anchor-permalink" href="#More-awesome-examples" title="Permalink"></a></h3><p>You can even use custum functions</p><pre><code class="language-julia-repl">julia&gt; f(y) = 1/(y+1)
+f (generic function with 1 method)
+
+julia&gt; x = Taylor1(3)
+ 1.0 x
+
+julia&gt; f(x)
+ 1.0 - 1.0 x + 1.0 x² - 1.0 x³</code></pre><p>Functions can be nested</p><pre><code class="language-julia-repl">julia&gt; sin(f(x))
+ 0.8414709848078965 - 0.5403023058681398 x + 0.11956681346419151 x² + 0.3912190632511134 x³</code></pre><p>and complicated further in a modular way</p><pre><code class="language-julia-repl">julia&gt; sin(exp(x+2))/(x+2)+cos(x+2)+f(x+2)
+ 0.364113974242596 + 0.41259243488717107 x - 11.843864409375039 x² - 20.814256098645323 x³</code></pre><h2 id="Four-square-identity"><a class="docs-heading-anchor" href="#Four-square-identity">Four-square identity</a><a id="Four-square-identity-1"></a><a class="docs-heading-anchor-permalink" href="#Four-square-identity" title="Permalink"></a></h2><p>The first example shows that the four-square identity holds:</p><p class="math-container">\[(a_1+a_2+a_3+a_4)\cdot(b_1+b_2+b_3+b_4) = \\
   \qquad (a_1 b_1 - a_2 b_2 - a_3 b_3 -a_4 b_4)^2 +
   (a_1 b_2 - a_2 b_1 - a_3 b_4 -a_4 b_3)^2 + \\
   \qquad (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 +
@@ -51,17 +64,17 @@ julia&gt; append!(variable_names, [make_variable(&quot;β&quot;, i) for i in 1:4
 julia&gt; # Create the TaylorN variables (order=4, numvars=8)
        a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4)
 8-element Vector{TaylorN{Float64}}:
-  1.0 α₁ + 𝒪(‖x‖⁵)
-  1.0 α₂ + 𝒪(‖x‖⁵)
-  1.0 α₃ + 𝒪(‖x‖⁵)
-  1.0 α₄ + 𝒪(‖x‖⁵)
-  1.0 β₁ + 𝒪(‖x‖⁵)
-  1.0 β₂ + 𝒪(‖x‖⁵)
-  1.0 β₃ + 𝒪(‖x‖⁵)
-  1.0 β₄ + 𝒪(‖x‖⁵)
+  1.0 α₁
+  1.0 α₂
+  1.0 α₃
+  1.0 α₄
+  1.0 β₁
+  1.0 β₂
+  1.0 β₃
+  1.0 β₄
 
 julia&gt; a1 # variable a1
- 1.0 α₁ + 𝒪(‖x‖⁵)</code></pre><p>Now we compute each term appearing in Eq. (\ref{eq:Euler})</p><pre><code class="language-julia-repl">julia&gt; # left-hand side
+ 1.0 α₁</code></pre><p>Now we compute each term appearing in Eq. (\ref{eq:Euler})</p><pre><code class="language-julia-repl">julia&gt; # left-hand side
        lhs1 = a1^2 + a2^2 + a3^2 + a4^2 ;
 
 julia&gt; lhs2 = b1^2 + b2^2 + b3^2 + b4^2 ;
@@ -85,10 +98,10 @@ julia&gt; const order = 20
 
 julia&gt; const x, y, z, w = set_variables(Int128, &quot;x&quot;, numvars=4, order=2order)
 4-element Vector{TaylorN{Int128}}:
-  1 x₁ + 𝒪(‖x‖⁴¹)
-  1 x₂ + 𝒪(‖x‖⁴¹)
-  1 x₃ + 𝒪(‖x‖⁴¹)
-  1 x₄ + 𝒪(‖x‖⁴¹)
+  1 x₁
+  1 x₂
+  1 x₃
+  1 x₄
 
 julia&gt; function fateman1(degree::Int)
            T = Int128
@@ -97,10 +110,10 @@ julia&gt; function fateman1(degree::Int)
            s * ( s + one(T) )
        end
 fateman1 (generic function with 1 method)</code></pre><p>(In the following lines, which are run when the documentation is built, by some reason the timing appears before the command executed.)</p><pre><code class="language-julia-repl">julia&gt; @time fateman1(0);
-  0.066091 seconds (96.75 k allocations: 43.028 MiB, 16.26% gc time, 50.59% compilation time)
+  0.090224 seconds (96.75 k allocations: 43.030 MiB, 16.44% gc time, 51.52% compilation time)
 
 julia&gt; @time f1 = fateman1(20);
-  2.224738 seconds (1.82 k allocations: 49.852 MiB, 0.54% gc time)</code></pre><p>Another implementation of the same, but exploiting optimizations related to <code>^2</code> yields:</p><pre><code class="language-julia-repl">julia&gt; function fateman2(degree::Int)
+  2.642430 seconds (1.82 k allocations: 49.852 MiB, 0.53% gc time)</code></pre><p>Another implementation of the same, but exploiting optimizations related to <code>^2</code> yields:</p><pre><code class="language-julia-repl">julia&gt; function fateman2(degree::Int)
            T = Int128
            s = one(T) + x + y + z + w
            s = s^degree
@@ -111,7 +124,7 @@ fateman2 (generic function with 1 method)
 julia&gt; fateman2(0);
 
 julia&gt; @time f2 = fateman2(20); # the timing appears above
-  1.106716 seconds (1.95 k allocations: 54.003 MiB, 0.36% gc time)</code></pre><p>We note that the above functions use expansions in <code>Int128</code>. This is actually required, since some coefficients are larger than <code>typemax(Int)</code>:</p><pre><code class="language-julia-repl">julia&gt; getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
+  1.317126 seconds (1.95 k allocations: 54.003 MiB, 0.34% gc time)</code></pre><p>We note that the above functions use expansions in <code>Int128</code>. This is actually required, since some coefficients are larger than <code>typemax(Int)</code>:</p><pre><code class="language-julia-repl">julia&gt; getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
 128358585324486316800
 
 julia&gt; ans &gt; typemax(Int)
@@ -121,4 +134,4 @@ julia&gt; length(f2)
 41
 
 julia&gt; sum(TaylorSeries.size_table)
-135751</code></pre><p>These examples show that <code>fateman2</code> is nearly twice as fast as <code>fateman1</code>, and that the series has 135751 monomials in 4 variables.</p><h3 id="Bechmarks"><a class="docs-heading-anchor" href="#Bechmarks">Bechmarks</a><a id="Bechmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Bechmarks" title="Permalink"></a></h3><p>The functions described above have been compared against Mathematica v11.1. The relevant files used for benchmarking can be found <a href="https://github.com/JuliaDiff/TaylorSeries.jl/tree/master/perf">here</a>. Running on a MacPro with Intel-Xeon processors 2.7GHz, we obtain that Mathematica requires on average (5 runs) 3.075957 seconds for the computation, while for <code>fateman1</code> and <code>fateman2</code> above we obtain 2.15408 and 1.08337, respectively.</p><p>Then, with the current version of <code>TaylorSeries.jl</code> and using Julia v0.7.0, our implementation of <code>fateman1</code> is about 30%-40% faster. (The original test by Fateman corresponds to <code>fateman1</code> above, which avoids some optimizations related to squaring; the implementation in Mathematica is done such that this optimization does not occur.)</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../userguide/">« User guide</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 29 May 2021 22:17">Saturday 29 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+135751</code></pre><p>These examples show that <code>fateman2</code> is nearly twice as fast as <code>fateman1</code>, and that the series has 135751 monomials in 4 variables.</p><h3 id="Bechmarks"><a class="docs-heading-anchor" href="#Bechmarks">Bechmarks</a><a id="Bechmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Bechmarks" title="Permalink"></a></h3><p>The functions described above have been compared against Mathematica v11.1. The relevant files used for benchmarking can be found <a href="https://github.com/JuliaDiff/TaylorSeries.jl/tree/master/perf">here</a>. Running on a MacPro with Intel-Xeon processors 2.7GHz, we obtain that Mathematica requires on average (5 runs) 3.075957 seconds for the computation, while for <code>fateman1</code> and <code>fateman2</code> above we obtain 2.15408 and 1.08337, respectively.</p><p>Then, with the current version of <code>TaylorSeries.jl</code> and using Julia v0.7.0, our implementation of <code>fateman1</code> is about 30%-40% faster. (The original test by Fateman corresponds to <code>fateman1</code> above, which avoids some optimizations related to squaring; the implementation in Mathematica is done such that this optimization does not occur.)</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../userguide/">« User guide</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 30 May 2021 15:30">Sunday 30 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
