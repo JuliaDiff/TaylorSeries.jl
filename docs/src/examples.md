@@ -10,17 +10,14 @@ A keyword argument `order` determines which order to expand to:
 ```@repl taylor_expand
 using TaylorSeries
 
-taylor_expand(exp, 0, order=3)
- 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)
+taylor_expand(exp, 0, order=2)
 ```
 
-If the final `𝒪(t⁴)` information about the error is not interesting, you can make it not print with the [`displayBigO`](@ref) function:
-```
+If the final BigO-notation error is not interesting, you can make it not print with the [`displayBigO`](@ref) function:
+```@repl taylor_expand
 displayBigO(false)
-false
 
 taylor_expand(exp, 0, order=3)
- 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³
 ```
 
 ## Expanding exp(x) with a symbolic object
@@ -31,22 +28,22 @@ to expand to:
 ```@repl Taylor1_variable
 using TaylorSeries
 
-x = Taylor1(3)
- 1.0 t + 𝒪(t⁴)
+x = Taylor1(2)
 
 exp(x)
- 1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 𝒪(t⁴)
 ```
 
+Let's also get rid of the printed error for the next few examples:
+```@repl Taylor1_variable
+displayBigO(false)
+```
 ### Changing printing variable
 Even though we are expanding `exp(x)`, the default variable for printing is `t`. This can be set with the function [`set_taylor1_varname()`](@ref)
 
 ```@repl Taylor1_variable
 set_taylor1_varname("x")
-"x"
 
 exp(x)
- 1.0 + 1.0 x + 0.5 x² + 0.16666666666666666 x³ + 𝒪(x⁴)
 ```
 
 ### Changing point to expand about
@@ -55,38 +52,30 @@ A variable constructed with `Taylor1()` automatically expands about the point `x
 `exp(x)` about `x=1` is exactly the same as expanding `exp(x+1)` about `x=0`, simply replace the `x` in your expression with `x+1` to expand about `x=1`:
 ```@repl Taylor1_variable
 p = exp(x+1)
- 2.718281828459045 + 2.718281828459045 x + 1.3591409142295225 x² + 0.45304697140984085 x³ + 𝒪(x⁴)
 
 p(0.01)
-2.74560101388203
 
 exp(1.01)
-2.7456010150169163
 ```
 
 ### More awesome examples
 You can even use custum functions
 ```@repl Taylor1_variable
-f(x) = 1/(x+1)
-f (generic function with 1 method)
+f(y) = 1/(y+1)
 
 x = Taylor1(3)
- 1.0 x + 𝒪(x⁴)
 
 f(x)
- 1.0 - 1.0 x + 1.0 x² - 1.0 x³ + 𝒪(x⁴)
 ```
 
 Functions can be nested
 ```@repl Taylor1_variable
 sin(f(x))
- 0.8414709848078965 - 0.5403023058681398 x + 0.11956681346419151 x² + 0.3912190632511134 x³ + 𝒪(x⁴)
 ```
 
 and complicated further in a modular way
 ```@repl Taylor1_variable
 sin(exp(x+2))/(x+2)+cos(x+2)+f(x+2)
- 0.364113974242596 + 0.41259243488717107 x - 11.843864409375039 x² - 20.814256098645323 x³ + 𝒪(x⁴)
 ```
 
 
