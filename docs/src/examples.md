@@ -14,7 +14,7 @@ taylor_expand(exp, 0, order=2)
 ```
 
 If the final BigO-notation error is not interesting, you can make it not print with the [`displayBigO`](@ref) function:
-```
+```@repl taylor_expand
 displayBigO(false)
 
 taylor_expand(exp, 0, order=3)
