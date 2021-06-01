@@ -7,25 +7,21 @@ CurrentModule = TaylorSeries
 ## Expanding exp(x) with `taylor_expand()`
 The [`taylor_expand`](@ref) function takes the function to expand as it's first argument, and the point to expand about as the second argument.
 A keyword argument `order` determines which order to expand to:
-```@repl taylor_expand
+```@repl 1
 using TaylorSeries
 
 taylor_expand(exp, 0, order=2)
 ```
 
-If the final BigO-notation error is not interesting, you can make it not print with the [`displayBigO`](@ref) function:
-```@repl taylor_expand
-displayBigO(false)
-
-taylor_expand(exp, 0, order=3)
+And voìla! It really is that simple to calculate a simple taylor polynomial. The next example is slightly more complicated.
 ```
 
 ## Expanding exp(x) with a symbolic object
 An alternative way to compute the single-variable taylor expansion for a function is by defining a variable of type `Taylor1`,
-and simply using it in the function you wish to expand. The argument given to the [`Taylor1`](@ref) constructor is the order
+and using it in the function you wish to expand. The argument given to the [`Taylor1`](@ref) constructor is the order
 to expand to:
 
-```@repl Taylor1_variable
+```@repl 2
 using TaylorSeries
 
 x = Taylor1(2)
@@ -33,37 +29,33 @@ x = Taylor1(2)
 exp(x)
 ```
 
-Let's also get rid of the printed error for the next few examples:
-```@repl Taylor1_variable
+Let's also get rid of the printed error for the next few examples, and set the printed independent variable to `x`:
+```@repl 2
 displayBigO(false)
-```
-### Changing printing variable
-Even though we are expanding `exp(x)`, the default variable for printing is `t`. This can be set with the function [`set_taylor1_varname()`](@ref)
 
-```@repl Taylor1_variable
 set_taylor1_varname("x")
 
 exp(x)
 ```
 
+
 ### Changing point to expand about
+A variable constructed with `Taylor1()` automatically expands about the point `x=0`.
 But what if you want to use the symbolic object to expand about a point different from zero?
-A variable constructed with `Taylor1()` automatically expands about the point `x=0`. But because expanding 
-`exp(x)` about `x=1` is exactly the same as expanding `exp(x+1)` about `x=0`, simply replace the `x` in your expression with `x+1` to expand about `x=1`:
-```@repl Taylor1_variable
+Because expanding `exp(x)` about `x=1` is exactly the same as expanding `exp(x+1)` about `x=0`, simply replace the `x` in your expression with `x+1` to expand about `x=1`:
+```@repl 2
 p = exp(x+1)
 
+# The taylor polynomials can be used as a function
 p(0.01)
 
 exp(1.01)
 ```
 
-### More awesome examples
+### More examples
 You can even use custum functions
-```@repl Taylor1_variable
-f(y) = 1/(y+1)
-
-x = Taylor1(3)
+```@repl 2
+f(a) = 1/(a+1)
 
 f(x)
 ```
@@ -77,7 +69,6 @@ and complicated further in a modular way
 ```@repl Taylor1_variable
 sin(exp(x+2))/(x+2)+cos(x+2)+f(x+2)
 ```
-
 
 
 ## Four-square identity
