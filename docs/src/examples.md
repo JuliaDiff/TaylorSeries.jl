@@ -60,12 +60,12 @@ f(x)
 ```
 
 Functions can be nested
-```@repl Taylor1_variable
+```@repl 2
 sin(f(x))
 ```
 
 and complicated further in a modular way
-```@repl Taylor1_variable
+```@repl 2
 sin(exp(x+2))/(x+2)+cos(x+2)+f(x+2)
 ```
 
