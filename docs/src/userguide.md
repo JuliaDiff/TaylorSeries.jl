@@ -5,9 +5,8 @@
 ```@meta
 CurrentModule = TaylorSeries
 ```
-If you simply want to see examples of how to quickly create some 
-taylor polynomials, head over to the [examples section](@ref Examples). If you want a 
-techincal and thorough explaination of how the package works, keep reading.
+For some simple examples, head over to the [examples section](@ref Examples).
+For a detailed guide, keep reading.
 
 [TaylorSeries.jl](https://github.com/JuliaDiff/TaylorSeries.jl)
 is a basic polynomial algebraic manipulator in one or more
