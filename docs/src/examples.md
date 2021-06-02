@@ -14,7 +14,6 @@ taylor_expand(exp, 0, order=2)
 ```
 
 And voìla! It really is that simple to calculate a simple taylor polynomial. The next example is slightly more complicated.
-```
 
 ## Expanding exp(x) with a symbolic object
 An alternative way to compute the single-variable taylor expansion for a function is by defining a variable of type `Taylor1`,
