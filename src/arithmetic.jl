@@ -410,6 +410,14 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         return $T(coeffs, b.order)
     end
 
+    @eval function /(b::$T{Taylor1{T}}, a::S) where {T<:NumberNotSeries,S<:NumberNotSeries}
+        @inbounds aux = b.coeffs[1] / a
+        R = typeof(aux)
+        coeffs = Array{R}(undef, length(b.coeffs))
+        @__dot__ coeffs = b.coeffs / a
+        return $T(coeffs, b.order)
+    end
+
     @eval function /(b::Taylor1{$T{S}}, a::$T{T}) where
             {T<:NumberNotSeries,S<:NumberNotSeries}
         @inbounds aux = b[0] / a
