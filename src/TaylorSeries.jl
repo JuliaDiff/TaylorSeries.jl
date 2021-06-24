@@ -17,7 +17,6 @@ see also [`HomogeneousPolynomial`](@ref).
 module TaylorSeries
 
 
-using InteractiveUtils: subtypes
 using SparseArrays: SparseMatrixCSC
 using Markdown
 using Requires
@@ -25,6 +24,10 @@ using Requires
 using LinearAlgebra: norm, mul!,
     lu, lu!, LinearAlgebra.lutype, LinearAlgebra.copy_oftype,
     LinearAlgebra.issuccess
+
+if VERSION >= v"1.7.0-DEV.1188"
+    using LinearAlgebra: NoPivot, RowMaximum
+end
 
 import LinearAlgebra: norm, mul!, lu
 
