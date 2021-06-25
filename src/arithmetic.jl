@@ -602,6 +602,10 @@ end
 #     return Ai
 # end
 
+# see https://github.com/JuliaLang/julia/pull/40623
+const LU_RowMaximum = VERSION >= v"1.7.0-DEV.1188" ? RowMaximum() : Val(true)
+const LU_NoPivot = VERSION >= v"1.7.0-DEV.1188" ? NoPivot() : Val(false)
+
 # Adapted from (Julia v1.2) stdlib/v1.2/LinearAlgebra/src/lu.jl#240-253
 # and (Julia v1.4.0-dev) stdlib/LinearAlgebra/v1.4/src/lu.jl#270-274,
 # licensed under MIT "Expat".
@@ -610,10 +614,10 @@ end
 # We can't assume an ordered field so we first try without pivoting
 function lu(A::AbstractMatrix{Taylor1{T}}; check::Bool = true) where {T<:Number}
     S = Taylor1{lutype(T)}
-    F = lu!(copy_oftype(A, S), Val(false); check = false)
+    F = lu!(copy_oftype(A, S), LU_NoPivot; check = false)
     if issuccess(F)
         return F
     else
-        return lu!(copy_oftype(A, S), Val(true); check = check)
+        return lu!(copy_oftype(A, S), LU_RowMaximum; check = check)
     end
 end
