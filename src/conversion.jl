@@ -209,6 +209,10 @@ promote_rule(::Type{S}, ::Type{T}) where
 promote_rule(::Type{Taylor1{T}}, ::Type{TaylorN{S}}) where {T<:NumberNotSeries,S<:NumberNotSeries} =
     throw(ArgumentError("There is no reasonable promotion among `Taylor1{$T}` and `TaylorN{$S}` types"))
 
+promote_rule(::Type{Taylor1{TaylorN{T}}}, ::Type{TaylorN{Taylor1{S}}}) where
+    {T<:NumberNotSeries, S<:NumberNotSeries} = Taylor1{TaylorN{promote_type(T,S)}}
+promote_rule(::Type{TaylorN{Taylor1{T}}}, ::Type{Taylor1{TaylorN{S}}}) where
+    {T<:NumberNotSeries, S<:NumberNotSeries} = Taylor1{TaylorN{promote_type(T,S)}}
 
 # Nested Taylor1's
 function promote(a::Taylor1{Taylor1{T}}, b::Taylor1{T}) where {T<:NumberNotSeriesN}
