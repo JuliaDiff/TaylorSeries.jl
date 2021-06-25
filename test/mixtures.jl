@@ -123,6 +123,27 @@ using LinearAlgebra, SparseArrays
     @test evaluate!([t1N, t1N^2], 0.0, v) == nothing
     @test v == [TaylorN(1), TaylorN(1)^2]
 
+    # Tests for functions of mixtures
+    t1N = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 6)
+    t = Taylor1(3)
+    xHt = HomogeneousPolynomial([one(t), zero(t)])
+    yHt = HomogeneousPolynomial([zero(t), t])
+    x = TaylorN(1, order=2)
+    y = TaylorN(2, order=2)
+    xN1 = TaylorN([HomogeneousPolynomial(zero(t), 0), xHt, zero(yHt)], 2)
+    yN1 = TaylorN([HomogeneousPolynomial(zero(t), 0), zero(xHt), yHt], 2)
+    for fn in (exp, log, sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh)
+        if fn == asin || fn == acos || fn == atanh
+            cc = 0.5
+        elseif fn == asinh || fn == acosh
+            cc = 1.5
+        else
+            cc = 1.0
+        end
+        @test x*fn(cc+t1N) == fn(cc+t)*xN1
+        @test t*fn(cc+xN1) == fn(cc+x)*t1N
+    end
+
     vt = zeros(Taylor1{Float64},2)
     @test evaluate!([tN1, tN1^2], [t, t], vt) == nothing
     @test vt == [2t, 4t^2]

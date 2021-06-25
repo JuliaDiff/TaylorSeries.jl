@@ -23,6 +23,12 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
+function ==(a::Taylor1{TaylorN{T}}, b::TaylorN{Taylor1{S}}) where {T,S}
+    R = promote_type(S,T)
+    return a == convert(Taylor1{TaylorN{R}},b)
+end
+==(b::TaylorN{Taylor1{S}}, a::Taylor1{TaylorN{T}}) where {T,S} = a == b
+
 function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     a.order == b.order && return a.coeffs == b.coeffs
     return iszero(a.coeffs) && iszero(b.coeffs)
@@ -403,6 +409,14 @@ end
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function /(b::$T{Taylor1{S}}, a::Taylor1{T}) where
             {T<:NumberNotSeries,S<:NumberNotSeries}
+        @inbounds aux = b.coeffs[1] / a
+        R = typeof(aux)
+        coeffs = Array{R}(undef, length(b.coeffs))
+        @__dot__ coeffs = b.coeffs / a
+        return $T(coeffs, b.order)
+    end
+
+    @eval function /(b::$T{Taylor1{T}}, a::S) where {T<:NumberNotSeries,S<:NumberNotSeries}
         @inbounds aux = b.coeffs[1] / a
         R = typeof(aux)
         coeffs = Array{R}(undef, length(b.coeffs))
