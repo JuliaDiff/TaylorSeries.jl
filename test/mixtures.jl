@@ -132,18 +132,16 @@ using LinearAlgebra, SparseArrays
     y = TaylorN(2, order=2)
     xN1 = TaylorN([HomogeneousPolynomial(zero(t), 0), xHt, zero(yHt)], 2)
     yN1 = TaylorN([HomogeneousPolynomial(zero(t), 0), zero(xHt), yHt], 2)
-    for fn in (:exp, :log, :sin, :cos, :tan, :sinh, :cosh, :tanh, :asin, :acos, :atan, :asinh, :acosh, :atanh)
-        @eval begin
-            if $fn == asin || $fn == acos || $fn == atanh
-                cc = 0.5
-            elseif $fn == asinh || $fn == acosh
-                cc = 1.5
-            else
-                cc = 1.0
-            end
-            @test x*$fn(cc+t1N) == $fn(cc+t)*xN1
-            @test t*$fn(cc+xN1) == $fn(cc+x)*t1N
+    for fn in (exp, log, sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh)
+        if fn == asin || fn == acos || fn == atanh
+            cc = 0.5
+        elseif fn == asinh || fn == acosh
+            cc = 1.5
+        else
+            cc = 1.0
         end
+        @test x*fn(cc+t1N) == fn(cc+t)*xN1
+        @test t*fn(cc+xN1) == fn(cc+x)*t1N
     end
 
     vt = zeros(Taylor1{Float64},2)
