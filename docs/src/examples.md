@@ -45,7 +45,6 @@ Because expanding `exp(x)` about `x=1` is exactly the same as expanding `exp(x+1
 ```@repl 2
 p = exp(x+1)
 
-# The taylor polynomials can be used as a function
 p(0.01)
 
 exp(1.01)
