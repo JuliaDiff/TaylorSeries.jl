@@ -11,6 +11,11 @@ A [Julia](http://julialang.org) package for Taylor expansions in one or more ind
 - [David P. Sanders](http://sistemas.fciencias.unam.mx/~dsanders/), Facultad
     de Ciencias, Universidad Nacional Autónoma de México (UNAM).
 
+### Citing
+
+If you find useful this package, please cite the paper:
+
+Benet, L., & Sanders, D. P. (2019). TaylorSeries.jl: Taylor expansions in one and several variables in Julia. Journal of Open Source Software, 4(36), 1–4. https://doi.org/10.5281/zenodo.2601941
 
 ### License
 

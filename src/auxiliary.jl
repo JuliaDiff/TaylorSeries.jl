@@ -229,7 +229,6 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
             @inline lastindex(a::$T) = a.order
         end
         @inline eachindex(a::$T) = firstindex(a):lastindex(a)
-        # @inline eltype(::$T{S}) where {S<:Number} = S
         @inline numtype(::$T{S}) where {S<:Number} = S
         @inline size(a::$T) = size(a.coeffs)
         @inline get_order(a::$T) = a.order
@@ -237,6 +236,12 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 numtype(a) = eltype(a)
+
+@doc doc"""
+    numtype(a::AbstractSeries)
+
+Return the type of the elements of the coefficients of `a`.
+""" numtype
 
 
 ## fixorder ##
