@@ -22,7 +22,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function log(a::$T)
-            iszero(constant_term(a)) && throw(DomainError(a, 
+            iszero(constant_term(a)) && throw(DomainError(a,
                     """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
 
             order = a.order
@@ -63,7 +63,7 @@ for T in (:Taylor1, :TaylorN)
 
         function asin(a::$T)
             a0 = constant_term(a)
-            a0^2 == one(a0) && throw(DomainError(a, 
+            a0^2 == one(a0) && throw(DomainError(a,
                 """Series expansion of asin(x) diverges at x = ±1."""))
 
             order = a.order
@@ -79,7 +79,7 @@ for T in (:Taylor1, :TaylorN)
 
         function acos(a::$T)
             a0 = constant_term(a)
-            a0^2 == one(a0) && throw(DomainError(a, 
+            a0^2 == one(a0) && throw(DomainError(a,
             """Series expansion of asin(x) diverges at x = ±1."""))
 
             order = a.order
@@ -100,7 +100,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             c = $T( aux, order)
             r = $T(one(aux) + a0^2, order)
-            iszero(constant_term(r)) && throw(DomainError(a, 
+            iszero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of atan(x) diverges at x = ±im."""))
 
             for k in eachindex(a)
@@ -576,7 +576,7 @@ function inverse(f::Taylor1{T}) where {T<:Number}
     z = Taylor1(T,f.order)
     zdivf = z/f
     zdivfpown = zdivf
-    S = eltype(zdivf)
+    S = TS.numtype(zdivf)
     coeffs = zeros(S,f.order+1)
 
     @inbounds for n in 1:f.order

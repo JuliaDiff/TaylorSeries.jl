@@ -15,8 +15,12 @@ using LinearAlgebra, SparseArrays
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
 
-    @test eltype(xH) == Int
-    @test eltype(tN) == TaylorN{Float64}
+    # @test eltype(xH) == Int
+    @test eltype(xH) == HomogeneousPolynomial{Int}
+    @test TS.numtype(xH) == Int
+    # @test eltype(tN) == TaylorN{Float64}
+    @test eltype(tN) == Taylor1{TaylorN{Float64}}
+    @test TS.numtype(tN) == TaylorN{Float64}
     @test tN.order == 3
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖¹) + 𝒪(t⁴)"
     @test string(tN) == " ( 1.0 + 𝒪(‖x‖¹)) t + 𝒪(t⁴)"
@@ -39,7 +43,9 @@ using LinearAlgebra, SparseArrays
 
     t = Taylor1(3)
     xHt = HomogeneousPolynomial(typeof(t), 1)
-    @test eltype(xHt) == Taylor1{Float64}
+    # @test eltype(xHt) == Taylor1{Float64}
+    @test eltype(xHt) == HomogeneousPolynomial{Taylor1{Float64}}
+    @test TS.numtype(xHt) == Taylor1{Float64}
     @test string(xHt) == " ( 1.0 + 𝒪(t¹)) x₁"
     xHt = HomogeneousPolynomial([one(t), zero(t)])
     yHt = HomogeneousPolynomial([zero(t), t])
@@ -49,7 +55,9 @@ using LinearAlgebra, SparseArrays
     @test 3*xHt == HomogeneousPolynomial([3*one(t), zero(t)])
     @test t*xHt == HomogeneousPolynomial([t, zero(t)])
     @test complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)])
-    @test eltype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
+    # @test eltype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
+    @test eltype(complex(0,1)*xHt) == HomogeneousPolynomial{Taylor1{Complex{Float64}}}
+    @test TS.numtype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
     @test (xHt+yHt)(1, 1) == 1+t
     @test (xHt+yHt)([1, 1]) == (xHt+yHt)((1, 1))
 
@@ -60,10 +68,15 @@ using LinearAlgebra, SparseArrays
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
     @test t1N[0] == HomogeneousPolynomial(1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
-    @test eltype(xHt) == Taylor1{Float64}
-    @test eltype(tN1) == Taylor1{Float64}
-    @test eltype(Taylor1([xH])) == HomogeneousPolynomial{Int}
-    @test eltype(tN1) == Taylor1{Float64}
+    # @test eltype(xHt) == Taylor1{Float64}
+    # @test eltype(tN1) == Taylor1{Float64}
+    # @test eltype(Taylor1([xH])) == HomogeneousPolynomial{Int}
+    @test eltype(xHt) == HomogeneousPolynomial{Taylor1{Float64}}
+    @test eltype(tN1) == TaylorN{Taylor1{Float64}}
+    @test eltype(Taylor1([xH])) == Taylor1{HomogeneousPolynomial{Int}}
+    @test TS.numtype(xHt) == Taylor1{Float64}
+    @test TS.numtype(tN1) == Taylor1{Float64}
+    @test TS.numtype(Taylor1([xH])) == HomogeneousPolynomial{Int}
     @test get_order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) == 1
     @test 3*tN1 == TaylorN([HomogeneousPolynomial([3t]),3xHt,3yHt^2])
     @test t*tN1 == TaylorN([HomogeneousPolynomial([t^2]),xHt*t,t*yHt^2])
@@ -158,7 +171,9 @@ using LinearAlgebra, SparseArrays
     x = TaylorN( [HomogeneousPolynomial(zero(t), 5), HomogeneousPolynomial([one(t),zero(t)])], 5)
     y = TaylorN(typeof(tint), 2, order=5)
     @test typeof(x) == TaylorN{Taylor1{Float64}}
-    @test eltype(y) == Taylor1{Int}
+    # @test eltype(y) == Taylor1{Int}
+    @test eltype(y) == TaylorN{Taylor1{Int}}
+    @test TS.numtype(y) == Taylor1{Int}
     @test -x == 0 - x
     @test +y == y
     @test one(y)/(1+x) == 1 - x + x^2 - x^3 + x^4 - x^5
@@ -170,7 +185,9 @@ using LinearAlgebra, SparseArrays
     δx, δy = set_variables("δx δy")
     xx = 1+Taylor1(δx,5)
     @test typeof(xx) == Taylor1{TaylorN{Float64}}
-    @test eltype(xx) == TaylorN{Float64}
+    # @test eltype(xx) == TaylorN{Float64}
+    @test eltype(xx) == Taylor1{TaylorN{Float64}}
+    @test TS.numtype(xx) == TaylorN{Float64}
     @test !isnan(xx)
     @test !isnan(δx)
     @test !isinf(xx)

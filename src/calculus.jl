@@ -34,7 +34,7 @@ const derivative = differentiate
     differentiate!(res, a) --> nothing
 
 In-place version of `differentiate`. Compute the `Taylor1` polynomial of the
-differential of `a::Taylor1` and return it as `res` (order of `res` remains 
+differential of `a::Taylor1` and return it as `res` (order of `res` remains
 unchanged).
 """
 function differentiate!(res::Taylor1, a::Taylor1)
@@ -127,8 +127,7 @@ to the `r`-th variable.
 """
 function differentiate(a::HomogeneousPolynomial, r::Int)
     @assert 1 ≤ r ≤ get_numvars()
-    # @show zero(a[1]) zero(eltype(a))
-    T = eltype(a)
+    T = TS.numtype(a)
     a.order == 0 && return HomogeneousPolynomial(zero(a[1]), 0)
     @inbounds num_coeffs = size_table[a.order]
     coeffs = zeros(T,num_coeffs)
@@ -158,7 +157,7 @@ to the `r`-th variable. The `r`-th variable may be also
 specified through its symbol.
 """
 function differentiate(a::TaylorN, r=1::Int)
-    T = eltype(a)
+    T = TS.numtype(a)
     coeffs = Array{HomogeneousPolynomial{T}}(undef, a.order)
 
     @inbounds for ord = 1:a.order
@@ -223,7 +222,7 @@ end
 Compute the gradient of the polynomial `f::TaylorN`.
 """
 function gradient(f::TaylorN)
-    T = eltype(f)
+    T = TS.numtype(f)
     numVars = get_numvars()
     grad = Array{TaylorN{T}}(undef, numVars)
     @inbounds for nv = 1:numVars
@@ -361,7 +360,7 @@ function integrate(a::HomogeneousPolynomial, r::Int)
     @inbounds posTb = pos_table[a.order+2]
     @inbounds num_coeffs = size_table[a.order+1]
 
-    T = promote_type(eltype(a), eltype(a[1]/1))
+    T = promote_type(TS.numtype(a), TS.numtype(a[1]/1))
     coeffs = zeros(T, size_table[a.order+2])
 
     @inbounds for i = 1:num_coeffs
@@ -388,7 +387,7 @@ where `x0` the integration constant and must be independent
 of the `r`-th variable; if `x0` is ommitted, it is taken as zero.
 """
 function integrate(a::TaylorN, r::Int)
-    T = promote_type(eltype(a), eltype(a[0]/1))
+    T = promote_type(TS.numtype(a), TS.numtype(a[0]/1))
     order_max = min(get_order(), a.order+1)
     coeffs = zeros(HomogeneousPolynomial{T}, order_max)
 
@@ -408,7 +407,7 @@ function integrate(a::TaylorN, r::Int, x0::TaylorN)
     return x0+res
 end
 integrate(a::TaylorN, r::Int, x0) =
-    integrate(a,r,TaylorN(HomogeneousPolynomial([convert(eltype(a),x0)], 0)))
+    integrate(a,r,TaylorN(HomogeneousPolynomial([convert(TS.numtype(a),x0)], 0)))
 
 integrate(a::TaylorN, s::Symbol) = integrate(a, lookupvar(s))
 integrate(a::TaylorN, s::Symbol, x0::TaylorN) = integrate(a, lookupvar(s), x0)

@@ -15,8 +15,12 @@ eeuler = Base.MathConstants.e
     ti = Taylor1(Interval{Float64}, 10)
     x, y = set_variables(Interval{Float64}, "x y")
 
-    @test eltype(ti) == Interval{Float64}
-    @test eltype(x) == Interval{Float64}
+    # @test eltype(ti) == Interval{Float64}
+    # @test eltype(x) == Interval{Float64}
+    @test eltype(ti) == Taylor1{Interval{Float64}}
+    @test eltype(x) == TaylorN{Interval{Float64}}
+    @test TS.numtype(ti) == Interval{Float64}
+    @test TS.numtype(x) == Interval{Float64}
 
     @test p4(ti,-a) == (ti-a)^4
     @test p5(ti,-a) == (ti-a)^5
@@ -85,12 +89,12 @@ eeuler = Base.MathConstants.e
     @test diam(g1(-1..1)) < diam(gt(ii))
 
     # Test display for Taylor1{Complex{Interval{T}}}
-    vc = [complex(1.5 .. 2, 0 ), complex(-2  .. -1, -1 .. 1 ), 
+    vc = [complex(1.5 .. 2, 0 ), complex(-2  .. -1, -1 .. 1 ),
         complex( -1 .. 1.5, -1 .. 1.5), complex( 0..0, -1 .. 1.5)]
     displayBigO(false)
-    @test string(Taylor1(vc, 5)) == 
+    @test string(Taylor1(vc, 5)) ==
         " ( [1.5, 2] + [0, 0]im ) - ( [1, 2] + [-1, 1]im ) t + ( [-1, 1.5] + [-1, 1.5]im ) t² + ( [0, 0] + [-1, 1.5]im ) t³ "
     displayBigO(true)
-    @test string(Taylor1(vc, 5)) == 
+    @test string(Taylor1(vc, 5)) ==
         " ( [1.5, 2] + [0, 0]im ) - ( [1, 2] + [-1, 1]im ) t + ( [-1, 1.5] + [-1, 1.5]im ) t² + ( [0, 0] + [-1, 1.5]im ) t³ + 𝒪(t⁶)"
 end

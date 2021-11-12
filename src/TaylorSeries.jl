@@ -45,7 +45,7 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero,
     power_by_squaring,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 
-export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries
+export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries, TS
 
 export getcoeff, derivative, integrate, differentiate,
     evaluate, evaluate!, inverse, set_taylor1_varname,
@@ -54,9 +54,11 @@ export getcoeff, derivative, integrate, differentiate,
     set_variables, get_variables,
     get_variable_names, get_variable_symbols,
     # jacobian, hessian, jacobian!, hessian!,
-    ∇, taylor_expand, update!, 
+    ∇, taylor_expand, update!,
     constant_term, linear_polynomial, nonlinear_polynomial,
     normalize_taylor
+
+const TS = TaylorSeries
 
 include("parameters.jl")
 include("hash_tables.jl")

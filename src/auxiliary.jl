@@ -229,12 +229,14 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
             @inline lastindex(a::$T) = a.order
         end
         @inline eachindex(a::$T) = firstindex(a):lastindex(a)
-        @inline eltype(::$T{S}) where {S<:Number} = S
+        # @inline eltype(::$T{S}) where {S<:Number} = S
+        @inline numtype(::$T{S}) where {S<:Number} = S
         @inline size(a::$T) = size(a.coeffs)
         @inline get_order(a::$T) = a.order
         @inline axes(a::$T) = ()
     end
 end
+numtype(a) = eltype(a)
 
 
 ## fixorder ##
@@ -305,7 +307,7 @@ constant_term(a::Number) = a
 """
     linear_polynomial(a)
 
-Returns the linear part of `a` as a polynomial (`Taylor1` or `TaylorN`), 
+Returns the linear part of `a` as a polynomial (`Taylor1` or `TaylorN`),
 *without* the constant term. The fallback behavior is to return `a` itself.
 """
 linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]], a.order)
