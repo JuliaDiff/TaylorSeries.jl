@@ -15,10 +15,9 @@ using LinearAlgebra, SparseArrays
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
 
-    # @test eltype(xH) == Int
+    @test convert(eltype(tN), tN) == tN
     @test eltype(xH) == HomogeneousPolynomial{Int}
     @test TS.numtype(xH) == Int
-    # @test eltype(tN) == TaylorN{Float64}
     @test eltype(tN) == Taylor1{TaylorN{Float64}}
     @test TS.numtype(tN) == TaylorN{Float64}
     @test tN.order == 3
@@ -43,7 +42,7 @@ using LinearAlgebra, SparseArrays
 
     t = Taylor1(3)
     xHt = HomogeneousPolynomial(typeof(t), 1)
-    # @test eltype(xHt) == Taylor1{Float64}
+    @test convert(eltype(xHt), xHt) === xHt
     @test eltype(xHt) == HomogeneousPolynomial{Taylor1{Float64}}
     @test TS.numtype(xHt) == Taylor1{Float64}
     @test string(xHt) == " ( 1.0 + 𝒪(t¹)) x₁"
@@ -55,7 +54,6 @@ using LinearAlgebra, SparseArrays
     @test 3*xHt == HomogeneousPolynomial([3*one(t), zero(t)])
     @test t*xHt == HomogeneousPolynomial([t, zero(t)])
     @test complex(0,1)*xHt == HomogeneousPolynomial([1im*one(t), zero(1im*t)])
-    # @test eltype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
     @test eltype(complex(0,1)*xHt) == HomogeneousPolynomial{Taylor1{Complex{Float64}}}
     @test TS.numtype(complex(0,1)*xHt) == Taylor1{Complex{Float64}}
     @test (xHt+yHt)(1, 1) == 1+t
@@ -68,9 +66,7 @@ using LinearAlgebra, SparseArrays
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
     @test t1N[0] == HomogeneousPolynomial(1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
-    # @test eltype(xHt) == Taylor1{Float64}
-    # @test eltype(tN1) == Taylor1{Float64}
-    # @test eltype(Taylor1([xH])) == HomogeneousPolynomial{Int}
+    @test convert(eltype(tN1), tN1) === tN1
     @test eltype(xHt) == HomogeneousPolynomial{Taylor1{Float64}}
     @test eltype(tN1) == TaylorN{Taylor1{Float64}}
     @test eltype(Taylor1([xH])) == Taylor1{HomogeneousPolynomial{Int}}
@@ -171,7 +167,6 @@ using LinearAlgebra, SparseArrays
     x = TaylorN( [HomogeneousPolynomial(zero(t), 5), HomogeneousPolynomial([one(t),zero(t)])], 5)
     y = TaylorN(typeof(tint), 2, order=5)
     @test typeof(x) == TaylorN{Taylor1{Float64}}
-    # @test eltype(y) == Taylor1{Int}
     @test eltype(y) == TaylorN{Taylor1{Int}}
     @test TS.numtype(y) == Taylor1{Int}
     @test -x == 0 - x
@@ -185,7 +180,6 @@ using LinearAlgebra, SparseArrays
     δx, δy = set_variables("δx δy")
     xx = 1+Taylor1(δx,5)
     @test typeof(xx) == Taylor1{TaylorN{Float64}}
-    # @test eltype(xx) == TaylorN{Float64}
     @test eltype(xx) == Taylor1{TaylorN{Float64}}
     @test TS.numtype(xx) == TaylorN{Float64}
     @test !isnan(xx)
@@ -335,6 +329,7 @@ end
 @testset "Tests with nested Taylor1s" begin
     ti = Taylor1(3)
     to = Taylor1([zero(ti), one(ti)], 9)
+    @test convert(eltype(to), to) === to
     @test string(to) == " ( 1.0 + 𝒪(t⁴)) t + 𝒪(t¹⁰)"
     @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
     @test ti + to == Taylor1([ti, one(ti)], 9)
@@ -344,7 +339,6 @@ end
     @test get_order(tito/to) == get_order(to)-1
     @test tito / ti == to
     @test get_order(tito/ti) == get_order(to)
-    # @test get_order((tito/ti)[1]) == get_order(ti)-1
     @test ti^2-to^2 == (ti+to)*(ti-to)
     @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
     @test to(1 + ti) == 1 + ti

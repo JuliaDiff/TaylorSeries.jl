@@ -25,6 +25,8 @@ Base.iszero(::SymbNumber) = false
     @test TS === TaylorSeries
     @test Taylor1 <: AbstractSeries
     @test Taylor1{Float64} <: AbstractSeries{Float64}
+    @test TS.numtype(1.0) == eltype(1.0)
+    @test TS.numtype([1.0]) == eltype([1.0])
 
     @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3])
     @test Taylor1(t[0:3]) == Taylor1(t[0:get_order(t)], 4)
@@ -106,9 +108,6 @@ Base.iszero(::SymbNumber) = false
     @test Taylor1(Complex{Float64},3)[1] == complex(1.0,0.0)
     @test getindex(Taylor1(3),1) == 1.0
     @inferred convert(Taylor1{Complex{Float64}},ot) == Taylor1{Complex{Float64}}
-    # @test eltype(convert(Taylor1{Complex{Float64}},ot)) == Complex{Float64}
-    # @test eltype(convert(Taylor1{Complex{Float64}},1)) == Complex{Float64}
-    # @test eltype(convert(Taylor1, 1im)) == Complex{Int}
     @test eltype(convert(Taylor1{Complex{Float64}},ot)) == Taylor1{Complex{Float64}}
     @test eltype(convert(Taylor1{Complex{Float64}},1)) == Taylor1{Complex{Float64}}
     @test eltype(convert(Taylor1, 1im)) == Taylor1{Complex{Int}}
@@ -116,15 +115,13 @@ Base.iszero(::SymbNumber) = false
     @test TS.numtype(convert(Taylor1{Complex{Float64}},1)) == Complex{Float64}
     @test TS.numtype(convert(Taylor1, 1im)) == Complex{Int}
     @test convert(Taylor1, 1im) == Taylor1(1im, 0)
+    @test convert(eltype(t), t) === t
+    @test convert(eltype(ot), ot) === ot
     @test convert(Taylor1{Int},[0,2]) == 2*t
     @test convert(Taylor1{Complex{Int}},[0,2]) == (2+0im)*t
     @test convert(Taylor1{BigFloat},[0.0, 1.0]) == ta(big(0.0))
     @test promote(t,Taylor1(1.0,0)) == (ta(0.0),ot)
     @test promote(0,Taylor1(1.0,0)) == (zt,ot)
-    # @test eltype(promote(ta(0),zeros(Int,2))[2]) == Int
-    # @test eltype(promote(ta(0.0),zeros(Int,2))[2]) == Float64
-    # @test eltype(promote(0,Taylor1(ot))[1]) == Float64
-    # @test eltype(promote(1.0+im, zt)[1]) == Complex{Float64}
     @test eltype(promote(ta(0),zeros(Int,2))[2]) == Taylor1{Int}
     @test eltype(promote(ta(0.0),zeros(Int,2))[2]) == Taylor1{Float64}
     @test eltype(promote(0,Taylor1(ot))[1]) == Taylor1{Float64}
@@ -137,7 +134,6 @@ Base.iszero(::SymbNumber) = false
     @test length(Taylor1(10)) == 11
     @test length.( TaylorSeries.fixorder(zt, Taylor1([1])) ) == (16, 16)
     @test length.( TaylorSeries.fixorder(zt, Taylor1([1], 1)) ) == (2, 2)
-    # @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Taylor1{Int}
     @test TS.numtype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
     @test TaylorSeries.findfirst(t) == 1
@@ -233,7 +229,6 @@ Base.iszero(::SymbNumber) = false
 
     trational = ta(0//1)
     @inferred ta(0//1) == Taylor1{Rational{Int}}
-    # @test eltype(trational) == Rational{Int}
     @test eltype(trational) == Taylor1{Rational{Int}}
     @test TS.numtype(trational) == Rational{Int}
     @test trational + 1//3 == Taylor1([1//3,1],15)
@@ -256,7 +251,6 @@ Base.iszero(::SymbNumber) = false
     @test taylor_expand(x->x^2+1) == Taylor1(15)*Taylor1(15) + 1
     @test evaluate(taylor_expand(cos,0.)) == cos(0.)
     @test evaluate(taylor_expand(tan,pi/4)) == tan(pi/4)
-    # @test eltype(taylor_expand(x->x^2+1,1)) == eltype(1)
     @test eltype(taylor_expand(x->x^2+1,1)) == Taylor1{Int}
     @test TS.numtype(taylor_expand(x->x^2+1,1)) == Int
     tsq = t^2
