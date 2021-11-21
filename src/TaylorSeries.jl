@@ -55,8 +55,7 @@ export getcoeff, derivative, integrate, differentiate,
     get_variable_names, get_variable_symbols,
     # jacobian, hessian, jacobian!, hessian!,
     ∇, taylor_expand, update!,
-    constant_term, linear_polynomial, nonlinear_polynomial,
-    normalize_taylor
+    constant_term, linear_polynomial, nonlinear_polynomial
 
 const TS = TaylorSeries
 
