@@ -250,6 +250,10 @@ Base.iszero(::SymbNumber) = false
     @test real(exp(tim)) == cos(t)
     @test imag(exp(tim)) == sin(t)
     @test exp(conj(tim)) == cos(t)-im*sin(t) == exp(tim')
+    @test abs2(tim) == tsquare
+    @test abs(tim) == t
+    @test isapprox(abs2(exp(tim)), ot)
+    @test isapprox(abs(exp(tim)), ot)
     @test (exp(t))^(2im) == cos(2t)+im*sin(2t)
     @test (exp(t))^Taylor1([-5.2im]) == cos(5.2t)-im*sin(5.2t)
     @test getcoeff(convert(Taylor1{Rational{Int}},cos(t)),8) == 1//factorial(8)

@@ -90,6 +90,10 @@ for T in (:Taylor1, :TaylorN)
         end
 
         abs2(a::$T) = a^2
+        
+        abs2(x::$T{T}) where {T<:Complex} = real(x)*real(x) + imag(x)*imag(x)
+
+        abs(x::$T{T}) where {T<:Complex} = sqrt(abs2(x))
     end
 end
 
@@ -128,6 +132,12 @@ function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
         (abs(x) is not differentiable at x=0)."""))
     end
 end
+
+abs2(x::Taylor1{TaylorN{T}}) where {T<:Complex} = real(x)*real(x) + imag(x)*imag(x)
+abs2(x::TaylorN{Taylor1{T}}) where {T<:Complex} = real(x)*real(x) + imag(x)*imag(x)
+
+abs(x::Taylor1{TaylorN{T}}) where {T<:Complex} = sqrt(abs2(x))
+abs(x::TaylorN{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
 
 @doc doc"""
     abs(a)

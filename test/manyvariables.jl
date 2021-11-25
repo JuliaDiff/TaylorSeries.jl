@@ -206,6 +206,10 @@ using LinearAlgebra
     @test (rem(1+xT,1.0))[0] == 0
     @test abs(1-xT)  == 1-xT
     @test abs(-1-xT)  == 1+xT
+    @test abs2(im*xT) == abs2(xT)
+    @test abs(im*(1+xT)) == abs(1+xT)
+    @test isapprox(abs2(exp(im*xT)), one(xT))
+    @test isapprox(abs(exp(im*xT)), one(xT))
     @test differentiate(yH,1) == differentiate(xH, :x₂)
     @test differentiate(mod2pi(2pi+yT^3),2) == derivative(yT^3, :x₂)
     @test differentiate(yT^3, :x₂) == differentiate(yT^3, (0,1))

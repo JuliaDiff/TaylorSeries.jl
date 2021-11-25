@@ -109,6 +109,11 @@ using LinearAlgebra, SparseArrays
     @test_throws DomainError abs(tN1)
     @test_throws DomainError abs(t1N)
 
+    @test abs2(im*(tN1+1)) == (1+tN1)^2
+    @test abs2(im*(tN1-1)) == (1-tN1)^2
+    @test abs(im*(tN1+1)) == 1+tN1
+    @test abs(im*(tN1-1)) == 1-tN1
+
     @test convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) == [t1N, t1N]
     @test convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) == [t1N t1N]
     @test convert(Array{TaylorN{Taylor1{Float64}},1}, [t1N, t1N]) == [tN1, tN1]
