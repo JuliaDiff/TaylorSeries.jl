@@ -89,10 +89,8 @@ for T in (:Taylor1, :TaylorN)
             end
         end
 
-        abs2(a::$T) = a^2
-        
-        abs2(x::$T{T}) where {T<:Complex} = real(x)*real(x) + imag(x)*imag(x)
-
+        abs2(a::$T) = real(a)^2 + imag(a)^2
+    
         abs(x::$T{T}) where {T<:Complex} = sqrt(abs2(x))
     end
 end
@@ -133,11 +131,9 @@ function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
     end
 end
 
-abs2(x::Taylor1{TaylorN{T}}) where {T<:Complex} = real(x)*real(x) + imag(x)*imag(x)
-abs2(x::TaylorN{Taylor1{T}}) where {T<:Complex} = real(x)*real(x) + imag(x)*imag(x)
-
 abs(x::Taylor1{TaylorN{T}}) where {T<:Complex} = sqrt(abs2(x))
 abs(x::TaylorN{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
+abs(x::Taylor1{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
 
 @doc doc"""
     abs(a)

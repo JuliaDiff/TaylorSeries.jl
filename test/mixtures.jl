@@ -346,4 +346,6 @@ end
     tti = (ti2to/to)/ti
     @test get_order(tti) == get_order(to)-1
     @test get_order(tti[0]) == get_order(ti)-1
+    @test isapprox(abs2(exp(im*to)), one(to))
+    @test isapprox(abs(exp(im*to)), one(to))
 end
