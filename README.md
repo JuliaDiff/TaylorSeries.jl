@@ -4,7 +4,7 @@ A [Julia](http://julialang.org) package for Taylor polynomial expansions in one 
 independent variables.
 
 [![CI](https://github.com/JuliaDiff/TaylorSeries.jl/workflows/CI/badge.svg)](https://github.com//JuliaDiff/TaylorSeries.jl/actions)
-[![Coverage Status](https://coveralls.io/repos/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/JuliaDiff/TaylorSeries.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/TaylorSeries.jl?branch=master)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliadiff.org/TaylorSeries.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://juliadiff.org/TaylorSeries.jl/latest)
@@ -95,6 +95,6 @@ We thank the participants of the course for putting up with the half-baked
 material and contributing energy and ideas.
 
 We acknowledge financial support from DGAPA-UNAM PAPIME grants
-PE-105911 and PE-107114, and DGAPA-PAPIIT grants IG-101113
-and IG-100616.
+PE-105911 and PE-107114, and DGAPA-PAPIIT grants IG-101113, 
+IG-100616, and IG-100819.
 LB acknowledges support through a *Cátedra Moshinsky* (2013).
