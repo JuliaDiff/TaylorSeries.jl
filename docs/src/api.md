@@ -45,6 +45,7 @@ hessian
 hessian!
 constant_term
 linear_polynomial
+nonlinear_polynomial
 inverse
 abs
 norm
