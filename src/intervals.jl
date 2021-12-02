@@ -105,6 +105,7 @@ are mapped by an affine transformation to the intervals `-1..1`
 normalize_taylor(a::TaylorN, I::IntervalBox{N,T}, symI::Bool=true) where {T<:Real,N} =
     _normalize(a, I, Val(symI))
 
+export normalize_taylor
 
 #  I -> -1..1
 function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T<:Real}

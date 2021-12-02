@@ -175,7 +175,9 @@ using LinearAlgebra
     @test !iszero(uT)
     @test iszero(zeroT)
 
-    @test eltype(xH) == Int
+    @test convert(eltype(xH), xH) === xH
+    @test eltype(xH) == HomogeneousPolynomial{Int}
+    @test TS.numtype(xH) == Int
     @test length(xH) == 2
     @test zero(xH) == 0*xH
     @test one(yH) == xH+yH
@@ -192,7 +194,9 @@ using LinearAlgebra
     @test TaylorN(uT) == convert(TaylorN{Complex},1)
     @test get_numvars() == 2
     @test length(uT) == get_order()+1
-    @test eltype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
+    @test convert(eltype(xT), xT) === xT
+    @test eltype(convert(TaylorN{Complex{Float64}},1)) == TaylorN{Complex{Float64}}
+    @test TS.numtype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])
@@ -222,7 +226,7 @@ using LinearAlgebra
     @test (xH/complex(0,BigInt(3)))' ==
         im*HomogeneousPolynomial([BigInt(1),0])/3
     @test evaluate(xH) == zero(eltype(xH))
-    @test xH() == zero(eltype(xH))
+    @test xH() == zero(TS.numtype(xH))
     @test xH([1,1]) == evaluate(xH, [1,1])
     @test xH((1,1)) == xH(1, 1.0) == evaluate(xH, (1, 1.0)) == 1
     hp = -5.4xH+6.89yH
@@ -653,7 +657,8 @@ using LinearAlgebra
     @test taylor_expand(f11, 1.0,2.0) == taylor_expand(f22, [1,2.0])
     @test evaluate(taylor_expand(x->x[1] + x[2], [1,2])) == 3.0
     f33(x,y) = 3x+y
-    @test eltype(taylor_expand(f33,1,1)) == eltype(1)
+    @test eltype(taylor_expand(f33,1,1)) == TaylorN{eltype(1)}
+    @test TS.numtype(taylor_expand(f33,1,1)) == eltype(1)
     x,y = get_variables()
     xysq = x^2 + y^2
     update!(xysq,[1.0,-2.0])

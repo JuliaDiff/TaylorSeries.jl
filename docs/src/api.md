@@ -45,6 +45,7 @@ hessian
 hessian!
 constant_term
 linear_polynomial
+nonlinear_polynomial
 inverse
 abs
 norm
@@ -67,6 +68,7 @@ in_base
 make_inverse_dict
 resize_coeffs1!
 resize_coeffsHP!
+numtype
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)
 mul!(::Vector{Taylor1{T}}, ::Union{Matrix{T},SparseMatrixCSC{T}},::Vector{Taylor1{T}}) where {T<:Number}
