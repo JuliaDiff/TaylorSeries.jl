@@ -178,6 +178,7 @@ using LinearAlgebra
     @test convert(eltype(xH), xH) === xH
     @test eltype(xH) == HomogeneousPolynomial{Int}
     @test TS.numtype(xH) == Int
+    @test normalize_taylor(xH) == xH
     @test length(xH) == 2
     @test zero(xH) == 0*xH
     @test one(yH) == xH+yH
@@ -197,6 +198,7 @@ using LinearAlgebra
     @test convert(eltype(xT), xT) === xT
     @test eltype(convert(TaylorN{Complex{Float64}},1)) == TaylorN{Complex{Float64}}
     @test TS.numtype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
+    @test normalize_taylor(xT) == xT
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])

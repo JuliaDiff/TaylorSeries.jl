@@ -240,8 +240,11 @@ numtype(a) = eltype(a)
 @doc doc"""
     numtype(a::AbstractSeries)
 
-Return the type of the elements of the coefficients of `a`.
+Returns the type of the elements of the coefficients of `a`.
 """ numtype
+
+# Dumb methods included to properly export normalize_taylor (if IntervalArithmetic is loaded)
+@inline normalize_taylor(a::AbstractSeries) = a
 
 
 ## fixorder ##

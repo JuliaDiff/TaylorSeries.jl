@@ -21,6 +21,8 @@ eeuler = Base.MathConstants.e
     @test eltype(x) == TaylorN{Interval{Float64}}
     @test TS.numtype(ti) == Interval{Float64}
     @test TS.numtype(x) == Interval{Float64}
+    @test normalize_taylor(ti) == ti
+    @test normalize_taylor(x) == x
 
     @test p4(ti,-a) == (ti-a)^4
     @test p5(ti,-a) == (ti-a)^5
