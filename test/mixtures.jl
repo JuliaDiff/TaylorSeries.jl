@@ -109,6 +109,11 @@ using LinearAlgebra, SparseArrays
     @test_throws DomainError abs(tN1)
     @test_throws DomainError abs(t1N)
 
+    @test abs2(im*(tN1+1)) == (1+tN1)^2
+    @test abs2(im*(tN1-1)) == (1-tN1)^2
+    @test abs(im*(tN1+1)) == 1+tN1
+    @test abs(im*(tN1-1)) == 1-tN1
+
     @test convert(Array{Taylor1{TaylorN{Float64}},1}, [tN1, tN1]) == [t1N, t1N]
     @test convert(Array{Taylor1{TaylorN{Float64}},2}, [tN1 tN1]) == [t1N t1N]
     @test convert(Array{TaylorN{Taylor1{Float64}},1}, [t1N, t1N]) == [tN1, tN1]
@@ -341,4 +346,6 @@ end
     tti = (ti2to/to)/ti
     @test get_order(tti) == get_order(to)-1
     @test get_order(tti[0]) == get_order(ti)-1
+    @test isapprox(abs2(exp(im*to)), one(to))
+    @test isapprox(abs(exp(im*to)), one(to))
 end

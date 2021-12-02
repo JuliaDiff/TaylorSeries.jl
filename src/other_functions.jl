@@ -89,7 +89,9 @@ for T in (:Taylor1, :TaylorN)
             end
         end
 
-        abs2(a::$T) = a^2
+        abs2(a::$T) = real(a)^2 + imag(a)^2
+    
+        abs(x::$T{T}) where {T<:Complex} = sqrt(abs2(x))
     end
 end
 
@@ -129,12 +131,19 @@ function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
     end
 end
 
+abs(x::Taylor1{TaylorN{T}}) where {T<:Complex} = sqrt(abs2(x))
+abs(x::TaylorN{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
+abs(x::Taylor1{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
+
 @doc doc"""
     abs(a)
 
-Returns `a` if `constant_term(a) > 0` and `-a` if `constant_term(a) < 0` for
+For a `Real` type returns `a` if `constant_term(a) > 0` and `-a` if `constant_term(a) < 0` for
 `a <:Union{Taylor1,TaylorN}`.
-Notice that `typeof(abs(a)) <: AbstractSeries`.
+For a `Complex` type, such as `Taylor1{ComplexF64}`, returns `sqrt(real(a)^2 + imag(a)^2)`. 
+
+Notice that `typeof(abs(a)) <: AbstractSeries` and 
+that for a `Complex` argument a `Real` type is returned (e.g. `typeof(abs(a::Taylor1{ComplexF64})) == Taylor1{Float64}`).
 
 """ abs
 
