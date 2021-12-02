@@ -20,6 +20,7 @@ using LinearAlgebra, SparseArrays
     @test TS.numtype(xH) == Int
     @test eltype(tN) == Taylor1{TaylorN{Float64}}
     @test TS.numtype(tN) == TaylorN{Float64}
+    @test normalize_taylor(tN) == tN
     @test tN.order == 3
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖¹) + 𝒪(t⁴)"
     @test string(tN) == " ( 1.0 + 𝒪(‖x‖¹)) t + 𝒪(t⁴)"
@@ -45,6 +46,7 @@ using LinearAlgebra, SparseArrays
     @test convert(eltype(xHt), xHt) === xHt
     @test eltype(xHt) == HomogeneousPolynomial{Taylor1{Float64}}
     @test TS.numtype(xHt) == Taylor1{Float64}
+    @test normalize_taylor(xHt) == xHt
     @test string(xHt) == " ( 1.0 + 𝒪(t¹)) x₁"
     xHt = HomogeneousPolynomial([one(t), zero(t)])
     yHt = HomogeneousPolynomial([zero(t), t])
@@ -73,6 +75,7 @@ using LinearAlgebra, SparseArrays
     @test TS.numtype(xHt) == Taylor1{Float64}
     @test TS.numtype(tN1) == Taylor1{Float64}
     @test TS.numtype(Taylor1([xH])) == HomogeneousPolynomial{Int}
+    @test normalize_taylor(tN1) == tN1
     @test get_order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) == 1
     @test 3*tN1 == TaylorN([HomogeneousPolynomial([3t]),3xHt,3yHt^2])
     @test t*tN1 == TaylorN([HomogeneousPolynomial([t^2]),xHt*t,t*yHt^2])
@@ -329,6 +332,9 @@ end
 @testset "Tests with nested Taylor1s" begin
     ti = Taylor1(3)
     to = Taylor1([zero(ti), one(ti)], 9)
+    @test TS.numtype(to) == Taylor1{Float64}
+    @test normalize_taylor(to) == to
+    @test normalize_taylor(Taylor1([zero(to), one(to)], 5)) == Taylor1([zero(to), one(to)], 5)
     @test convert(eltype(to), to) === to
     @test string(to) == " ( 1.0 + 𝒪(t⁴)) t + 𝒪(t¹⁰)"
     @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
