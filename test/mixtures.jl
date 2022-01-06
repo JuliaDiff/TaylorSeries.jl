@@ -4,7 +4,7 @@
 using TaylorSeries
 
 using Test
-using LinearAlgebra, SparseArrays
+using LinearAlgebra
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
     @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
