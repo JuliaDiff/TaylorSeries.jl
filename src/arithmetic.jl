@@ -565,7 +565,7 @@ end
 Multiply A*B and save the result in Y.
 """
 function mul!(y::Vector{Taylor1{T}},
-        a::AbstractMatrix{T}, #Union{Matrix{T},SparseMatrixCSC{T}},
+        a::Union{Matrix{T},SparseMatrixCSC{T}},
         b::Vector{Taylor1{T}}) where {T<:Number}
 
     n, k = size(a)
