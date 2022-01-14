@@ -613,6 +613,8 @@ end
     ainv = inv(a)
     b = Taylor1.(a, 5)
     binv = inv(b)
+    c = Symmetric(b)
+    cinv = inv(c)
     tol = 1.0e-11
 
     for its = 1:10
@@ -620,11 +622,19 @@ end
         ainv .= inv(a)
         b .= Taylor1.(a, 5)
         binv .= inv(b)
+        c .= Symmetric(Taylor1.(a, 5))
+        cinv .= inv(c)
         @test norm(binv - ainv, Inf) ≤ tol
         @test norm(b*binv - I, Inf) ≤ tol
         @test norm(binv*b - I, Inf) ≤ tol
         @test norm(triu(b)*inv(UpperTriangular(b)) - I, Inf) ≤ tol
         @test norm(inv(LowerTriangular(b))*tril(b) - I, Inf) ≤ tol
+        ainv .= inv(Symmetric(a))
+        @test norm(cinv - ainv, Inf) ≤ tol
+        @test norm(c*cinv - I, Inf) ≤ tol
+        @test norm(cinv*c - I, Inf) ≤ tol
+        @test norm(triu(c)*inv(UpperTriangular(c)) - I, Inf) ≤ tol
+        @test norm(inv(LowerTriangular(c))*tril(c) - I, Inf) ≤ tol
 
         b .= b .+ t
         binv .= inv(b)
@@ -632,6 +642,10 @@ end
         @test norm(binv*b - I, Inf) ≤ tol
         @test norm(triu(b)*inv(triu(b)) - I, Inf) ≤ tol
         @test norm(inv(tril(b))*tril(b) - I, Inf) ≤ tol
+        c .= Symmetric(b)
+        cinv .= inv(c)
+        @test norm(c*cinv - I, Inf) ≤ tol
+        @test norm(cinv*c - I, Inf) ≤ tol
     end
 end
 
