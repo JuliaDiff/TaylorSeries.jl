@@ -626,7 +626,7 @@ const LU_NoPivot = VERSION >= v"1.7.0-DEV.1188" ? NoPivot() : Val(false)
 # Specialize a method of `lu` for Matrix{Taylor1{T}}, which avoids pivoting,
 # since the polynomial field is not an ordered one.
 # We can't assume an ordered field so we first try without pivoting
-function lu(A::StridedMatrix{Taylor1{T}}; check::Bool = true) where {T<:Number}
+function lu(A::AbstractMatrix{Taylor1{T}}; check::Bool = true) where {T<:Number}
     S = Taylor1{lutype(T)}
     F = lu!(copy_oftype(A, S), LU_NoPivot; check = false)
     if issuccess(F)
