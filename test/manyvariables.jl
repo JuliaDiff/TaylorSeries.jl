@@ -401,6 +401,8 @@ using LinearAlgebra
     @test getcoeff(txy,(8,7)) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
     @test getindex(tan(TaylorN(1)+TaylorN(2)),0:4) == ptxy.coeffs[1:5]
+    @test tan(1+xT+yT) ≈ sin(1+xT+yT)/cos(1+xT+yT)
+    @test cot(1+xT+yT) ≈ 1/tan(1+xT+yT)
     @test evaluate(xH*yH, 1.0, 2.0) == (xH*yH)(1.0, 2.0) == 2.0
     @test evaluate(xH*yH, (1.0, 2.0)) == 2.0
     @test evaluate(xH*yH, [1.0, 2.0]) == 2.0

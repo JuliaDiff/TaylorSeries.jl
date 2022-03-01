@@ -276,6 +276,8 @@ Base.iszero(::SymbNumber) = false
     @test getcoeff(convert(Taylor1{Rational{Int}},cos(t)),8) == 1//factorial(8)
     @test abs((tan(t))[7]- 17/315) < tol1
     @test abs((tan(t))[13]- 21844/6081075) < tol1
+    @test tan(1.3+t) ≈ sin(1.3+t)/cos(1.3+t)
+    @test cot(1.3+t) ≈ 1/tan(1.3+t)
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*eeuler
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
