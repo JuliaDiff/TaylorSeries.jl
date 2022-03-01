@@ -282,7 +282,7 @@ for T in (:Taylor1, :TaylorN)
         @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
-                @inbounds s[0], c[0] = sin( a0 ), cos( a0 )
+                @inbounds s[0], c[0] = sincos( a0 )
                 return nothing
             end
 
@@ -319,9 +319,9 @@ for T in (:Taylor1, :TaylorN)
             end
 
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * a[k-1] * c2[1]
+                @inbounds c[k] = k * a[k] * c2[0]
             else
-                @inbounds mul!(c[k], (k-1) * a[k-1], c2[1])
+                @inbounds mul!(c[k], k * a[k], c2[0])
             end
             @inbounds for i = 1:k-1
                 if $T == Taylor1
