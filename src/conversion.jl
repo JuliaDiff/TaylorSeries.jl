@@ -187,8 +187,6 @@ promote_rule(::Type{HomogeneousPolynomial{T}}, ::Type{S}) where
 promote_rule(::Type{TaylorN{T}}, ::Type{TaylorN{S}}) where {T<:Number,S<:Number} =
     TaylorN{promote_type(T,S)}
 
-promote_rule(::Type{TaylorN{T}}, ::Type{TaylorN{T}}) where {T<:Number} = TaylorN{T}
-
 promote_rule(::Type{TaylorN{T}}, ::Type{HomogeneousPolynomial{S}}) where
     {T<:Number,S<:Number} = TaylorN{promote_type(T,S)}
 
@@ -202,6 +200,8 @@ promote_rule(::Type{TaylorN{T}}, ::Type{S}) where {T<:Number,S<:Number} =
 # Order may matter
 promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries,T<:AbstractSeries} =
     promote_rule(T,S)
+# disambiguation with Base
+promote_rule(::Type{Bool}, ::Type{T}) where {T<:AbstractSeries} = promote_rule(T, Bool)
 
 promote_rule(::Type{S}, ::Type{T}) where
     {S<:AbstractIrrational,T<:AbstractSeries} = promote_rule(T,S)
