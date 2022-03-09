@@ -30,6 +30,7 @@ function evaluate(a::Taylor1{T}, dx::S) where {T<:Number,S<:Number}
 end
 evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
 
+
 """
     evaluate(x, δt)
 
@@ -40,7 +41,8 @@ is equivalent to `evaluate(x)`.
 """
 evaluate(x::AbstractArray{Taylor1{T}}, δt::S) where
     {T<:Number,S<:Number} = evaluate.(x, δt)
-evaluate(a::AbstractArray{Taylor1{T}}) where {T<:Number} = evaluate.(a, zero(T))
+evaluate(a::AbstractArray{Taylor1{T}}) where {T<:Number} = getcoeff.(a, 0)
+
 
 """
     evaluate!(x, δt, x0)
@@ -52,12 +54,10 @@ computed values.
 """
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
         x0::AbstractArray{T}) where {T<:Number,S<:Number}
-
-    @inbounds for i in eachindex(x, x0)
-        x0[i] = evaluate( x[i], δt )
-    end
+    x0 .= evaluate.( x, δt )
     nothing
 end
+
 
 """
     evaluate(a, x)
@@ -94,8 +94,8 @@ function evaluate(a::Taylor1{T}, x::Taylor1{Taylor1{T}}) where {T<:Number}
     suma
 end
 
-evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number,S<:Number} =
-    evaluate.([p], x)
+evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number,S<:Number} = evaluate.(Ref(p), x)
+
 
 #function-like behavior for Taylor1
 (p::Taylor1)(x) = evaluate(p, x)
@@ -112,11 +112,10 @@ else
     (p::SubArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
 end
 
-## Evaluation of multivariable
+
+## In place evaluation of multivariable arrays
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{T,1},
         x0::AbstractArray{T}) where {T<:Number}
-
-    # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δx )
     end
@@ -125,8 +124,6 @@ end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{Taylor1{T},1},
         x0::AbstractArray{Taylor1{T}}) where {T<:NumberNotSeriesN}
-
-    # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δx )
     end
@@ -135,7 +132,6 @@ end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
         x0::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
-
     @inbounds for i in eachindex(x, x0)
         x0[i] = _evaluate( x[i], δx, Val(sorting) )
     end
@@ -144,13 +140,12 @@ end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δt::T,
         x0::AbstractArray{TaylorN{T}}) where {T<:Number}
-
-    # @assert length(x) == length(x0)
     @inbounds for i in eachindex(x, x0)
         x0[i] = evaluate( x[i], δt )
     end
     nothing
 end
+
 
 """
     evaluate(a, [vals])
@@ -173,7 +168,7 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
     ct = coeff_table[a.order+1]
     suma = zero(a[1])*vals[1]
 
-    for (i,a_coeff) in enumerate(a.coeffs)
+    for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
         @inbounds tmp = prod( vals .^ ct[i] )
         suma += a_coeff * tmp
@@ -202,6 +197,7 @@ end
 
 (p::HomogeneousPolynomial)() = evaluate(p)
 
+
 """
     evaluate(a, [vals]; sorting::Bool=true)
 
@@ -216,26 +212,61 @@ Note that the syntax `a(vals)` is equivalent to
 `evaluate(a)`. No extension exists that incorporates
 `sorting`.
 """
-evaluate(a::TaylorN{T}, vals::NTuple; sorting::Bool=true) where {T<:Number} =
-    _evaluate(a, vals, Val(sorting))
-
 evaluate(a::TaylorN, vals; sorting::Bool=true) = _evaluate(a, (vals...,), Val(sorting))
 
-evaluate(a::TaylorN, v, vals::Vararg{T, N}; sorting::Bool=true) where {T,N} =
+evaluate(a::TaylorN, vals::NTuple; sorting::Bool=true) = _evaluate(a, vals, Val(sorting))
+
+evaluate(a::TaylorN, v, vals::Vararg; sorting::Bool=true) = _evaluate(a, (v, vals...,), Val(sorting))
+
+evaluate(a::TaylorN, vals::NTuple{N,T}; sorting::Bool=false) where
+    {N, T<:AbstractSeries} = _evaluate(a, vals, Val(sorting))
+
+evaluate(a::TaylorN{Taylor1}, vals::NTuple{N,<:AbstractSeries}; sorting::Bool=false) where
+    {N} = _evaluate(a, vals, Val(sorting))
+
+evaluate(a::TaylorN{Taylor1}, vals::NTuple; sorting::Bool=false) =
+    _evaluate(a, vals, Val(sorting))
+
+evaluate(a::TaylorN{Taylor1}, v::Number, vals::Vararg; sorting::Bool=false) =
     _evaluate(a, (v, vals...,), Val(sorting))
 
-function _evaluate(a::TaylorN{T}, vals) where {T<:Number}
+# evaluate(a::TaylorN, vals::AbstractVector{Number}) = evaluate(a, (vals...,))
+
+evaluate(a::TaylorN, vals::AbstractVector{T}) where {S, T<:AbstractSeries{S}} =
+    _evaluate(a, (vals...,), Val(false))
+
+evaluate(a::TaylorN{Taylor1}, vals::AbstractVector{T}) where {T} =
+    _evaluate(a, (vals...,), Val(false))
+
+function evaluate(a::TaylorN{T}, s::Symbol, val::S) where {T<:Number, S<:NumberNotSeriesN}
+    vars = get_variables(T)
+    ind = lookupvar(s)
+    vars[ind] = val + zero(vars[ind])
+    return evaluate(a, vars)
+end
+
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:NumberNotSeries,S} =
+    evaluate(a, first(x), last(x))
+
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:AbstractSeries,S} =
+    evaluate(a, first(x), last(x))
+
+evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
+
+
+# _evaluate
+function _evaluate(a::TaylorN, vals)
     @assert get_numvars() == length(vals)
-    R = promote_type(T,typeof(vals[1]))
+    R = promote_type(numtype(a), typeof.(vals)...)
     a_length = length(a)
     suma = zeros(R, a_length)
-    @inbounds for homPol in length(a):-1:1
+    @inbounds for homPol in 1:a_length
         suma[homPol] = evaluate(a.coeffs[homPol], vals)
     end
     return suma
 end
 
-function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:Number}
+function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:NumberNotSeries}
     suma = _evaluate(a, vals)
     return sum( sort!(suma, by=abs2) )
 end
@@ -244,72 +275,6 @@ function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number}
     return sum( suma )
 end
 
-function evaluate(a::TaylorN{T}, vals::NTuple{N,Taylor1{S}}) where
-        {T<:Number,S<:NumberNotSeries,N}
-
-    @assert N == get_numvars()
-
-    R = promote_type(T,S)
-    ord = maximum( get_order.(vals) )
-    suma = Taylor1(zeros(R, ord))
-
-    @inbounds for homPol in length(a):-1:1
-        suma += evaluate(a.coeffs[homPol], vals)
-    end
-
-    return suma
-end
-
-evaluate(a::TaylorN{T}, vals::Array{Taylor1{S},1}) where
-    {T<:Number,S<:NumberNotSeriesN} = evaluate(a, (vals...,))
-
-function evaluate(a::TaylorN{Taylor1{T}}, vals::NTuple{N, Taylor1{T}}) where
-        {T<:NumberNotSeries,N}
-
-    @assert N == get_numvars()
-
-    ord = maximum( get_order.(vals) )
-    suma = Taylor1(zeros(T, ord))
-
-    for homPol in length(a):-1:1
-        suma += evaluate(a.coeffs[homPol], vals)
-    end
-
-    return suma
-end
-
-evaluate(a::TaylorN{Taylor1{T}}, vals::Array{Taylor1{T},1}) where
-    {T<:NumberNotSeries} = evaluate(a, (vals...,))
-
-function evaluate(a::TaylorN{T}, vals::NTuple{N, TaylorN{S}}) where
-        {T<:Number,S<:NumberNotSeries,N}
-
-    @assert length(vals) == get_numvars()
-
-    suma = zero(constant_term(a))*vals[1]
-
-    for homPol in length(a):-1:1
-        suma += evaluate(a.coeffs[homPol], vals)
-    end
-
-    return suma
-end
-
-evaluate(a::TaylorN{T}, vals::Array{TaylorN{S},1}) where
-    {T<:Number,S<:NumberNotSeries} = evaluate(a, (vals...,))
-
-function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
-        {T<:Number, S<:NumberNotSeriesN}
-    vars = get_variables(T)
-    ind = lookupvar(s)
-    vars[ind] = val
-    evaluate(a, vars)
-end
-
-evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:Number,S<:NumberNotSeriesN} =
-    evaluate(a, first(x), last(x))
-
-evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
 
 #High-dim array evaluation
 function evaluate(A::AbstractArray{TaylorN{T},N}, δx::Vector{S}) where {T<:Number,S<:Number,N}
@@ -330,8 +295,7 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 (p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
 (p::TaylorN)(x, v::Vararg{T, N}) where {T,N} = evaluate(p, (x, v...,))
 (p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
-(p::TaylorN)(b::Bool, x, v::Vararg{T, N}) where {T,N} = 
-    evaluate(p, (x, v...,), sorting=b)
+(p::TaylorN)(b::Bool, x, v::Vararg{T, N}) where {T,N} = evaluate(p, (x, v...,), sorting=b)
 
 #function-like behavior for AbstractArray{TaylorN{T}}
 if VERSION > v"1.1"
