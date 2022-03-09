@@ -94,7 +94,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{Taylor1{T}}) where {T<:Number}
     suma
 end
 
-evaluate(p::Taylor1{T}, x::Array{S}) where {T<:Number,S<:Number} = evaluate.(Ref(p), x)
+evaluate(p::Taylor1{T}, x::AbstractArray{S}) where {T<:Number,S<:Number} = evaluate.(Ref(p), x)
 
 
 #function-like behavior for Taylor1
@@ -154,17 +154,13 @@ Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
 it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
 `evaluate(a, vals)`; and `a()` is equivalent to `evaluate(a)`.
 """
-function evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
-        {T<:Number,S<:Number,N}
-
-    @assert N == get_numvars()
+function evaluate(a::HomogeneousPolynomial, vals::NTuple)
+    @assert length(vals) == get_numvars()
 
     return _evaluate(a, vals)
 end
 
-function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
-        {T<:Number,S<:Number,N}
-
+function _evaluate(a::HomogeneousPolynomial, vals::NTuple)
     ct = coeff_table[a.order+1]
     suma = zero(a[1])*vals[1]
 
@@ -178,12 +174,12 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,S} ) where
 end
 
 
-evaluate(a::HomogeneousPolynomial{T}, vals::Array{S,1} ) where
+evaluate(a::HomogeneousPolynomial{T}, vals::AbstractArray{S,1} ) where
         {T<:Number,S<:NumberNotSeriesN} = _evaluate(a, (vals...,))
 
-evaluate(a::HomogeneousPolynomial{T}, v, vals::Vararg{S,N}) where {T,S,N} = evaluate(a, (v, vals...,))
+evaluate(a::HomogeneousPolynomial, v, vals::Vararg) = evaluate(a, (v, vals...,))
 
-evaluate(a::HomogeneousPolynomial{T}, v) where {T<:Number} = evaluate(a, [v...])
+evaluate(a::HomogeneousPolynomial, v) = evaluate(a, [v...])
 
 function evaluate(a::HomogeneousPolynomial)
     a.order == 0 && return a[1]
@@ -229,8 +225,6 @@ evaluate(a::TaylorN{Taylor1}, vals::NTuple; sorting::Bool=false) =
 
 evaluate(a::TaylorN{Taylor1}, v::Number, vals::Vararg; sorting::Bool=false) =
     _evaluate(a, (v, vals...,), Val(sorting))
-
-# evaluate(a::TaylorN, vals::AbstractVector{Number}) = evaluate(a, (vals...,))
 
 evaluate(a::TaylorN, vals::AbstractVector{T}) where {S, T<:AbstractSeries{S}} =
     _evaluate(a, (vals...,), Val(false))
