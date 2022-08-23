@@ -114,9 +114,14 @@ using LinearAlgebra
     @test xH == convert(HomogeneousPolynomial{Float64},xH)
     @test HomogeneousPolynomial(xH) == xH
     @test HomogeneousPolynomial(0,0)  == 0
+    @test (@inferred conj(xH)) == (@inferred adjoint(xH))
+    @test (@inferred real(xH)) == xH
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
+    @test (@inferred conj(xT)) == (@inferred adjoint(xT))
+    @test (@inferred real(xT)) == (xT)
     zeroT = zero( TaylorN([xH],1) )
+    @test (@inferred imag(xT)) == (zeroT)
     @test zeroT.coeffs == zeros(HomogeneousPolynomial{Int}, 1)
     @test size(xH) == (2,)
     @test firstindex(xH) == 1
@@ -376,8 +381,8 @@ using LinearAlgebra
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
     @test real(xH) == xH
     @test imag(xH) == zero(xH)
-    @test conj(im*yH) == (im*yH)'
-    @test conj(im*yT) == (im*yT)'
+    @test (@inferred conj(im*yH)) == (@inferred adjoint(im*yH))
+    @test (@inferred conj(im*yT)) == (@inferred adjoint(im*yT))
     @test real( exp(1im * xT)) == cos(xT)
     @test getcoeff(convert(TaylorN{Rational{Int}},cos(xT)),(4,0)) ==
         1//factorial(4)
