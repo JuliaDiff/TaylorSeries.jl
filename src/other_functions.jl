@@ -16,9 +16,9 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval adjoint(a::$T) = conj(a)
 
     ## isinf and isnan ##
-    @eval isinf(a::$T) = any( isinf.(a.coeffs) )
+    @eval isinf(a::$T) = any(isinf, a.coeffs)
 
-    @eval isnan(a::$T) = any( isnan.(a.coeffs) )
+    @eval isnan(a::$T) = any(isnan, a.coeffs)
 end
 
 
