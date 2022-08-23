@@ -148,8 +148,8 @@ Base.iszero(::SymbNumber) = false
     @test TaylorSeries.findlast(zt) == -1
     @test iszero(zero(t))
     @test !iszero(one(t))
-    @test isinf(Taylor1([typemax(1.0)]))
-    @test isnan(Taylor1([typemax(1.0), NaN]))
+    @test @inferred isinf(Taylor1([typemax(1.0)]))
+    @test @inferred isnan(Taylor1([typemax(1.0), NaN]))
 
     @test constant_term(2.0) == 2.0
     @test constant_term(t) == 0

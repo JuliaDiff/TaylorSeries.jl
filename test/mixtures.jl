@@ -100,8 +100,8 @@ using LinearAlgebra
     end
     @test string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + ( 2.0 x₂² + 𝒪(‖x‖³)) t³ + 𝒪(t⁴)"
-    @test !isnan(tN1)
-    @test !isinf(tN1)
+    @test !(@inferred isnan(tN1))
+    @test !(@inferred isinf(tN1))
 
     @test mod(tN1+1,1.0) == 0+tN1
     @test mod(tN1-1.125,2) == 0.875+tN1
@@ -185,10 +185,10 @@ using LinearAlgebra
     @test typeof(xx) == Taylor1{TaylorN{Float64}}
     @test eltype(xx) == Taylor1{TaylorN{Float64}}
     @test TS.numtype(xx) == TaylorN{Float64}
-    @test !isnan(xx)
-    @test !isnan(δx)
-    @test !isinf(xx)
-    @test !isinf(δx)
+    @test !(@inferred isnan(xx))
+    @test !(@inferred isnan(δx))
+    @test !(@inferred isinf(xx))
+    @test !(@inferred isinf(δx))
     @test +xx == xx
     @test -xx == 0 - xx
     @test xx/1.0 == 1.0*xx
@@ -297,8 +297,8 @@ using LinearAlgebra
     @test P ≈ P
     Q = deepcopy(P)
     Q[2][2] = Taylor1([NaN, Inf])
-    @test isnan(Q)
-    @test isinf(Q)
+    @test (@inferred isnan(Q))
+    @test (@inferred isinf(Q))
     @test !isfinite(Q)
     Q[2][2] = P[2][2]+sqrt(eps())/2
     @test isapprox(P, Q, rtol=1.0)
