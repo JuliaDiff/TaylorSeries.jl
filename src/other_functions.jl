@@ -83,14 +83,14 @@ for T in (:Taylor1, :TaylorN)
             elseif constant_term(a) < 0
                 return -a
             else
-                throw(DomainError(a, 
+                throw(DomainError(a,
                 """The 0th order Taylor1 coefficient must be non-zero
                 (abs(x) is not differentiable at x=0)."""))
             end
         end
 
         abs2(a::$T) = real(a)^2 + imag(a)^2
-    
+
         abs(x::$T{T}) where {T<:Complex} = sqrt(abs2(x))
     end
 end
@@ -140,9 +140,9 @@ abs(x::Taylor1{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
 
 For a `Real` type returns `a` if `constant_term(a) > 0` and `-a` if `constant_term(a) < 0` for
 `a <:Union{Taylor1,TaylorN}`.
-For a `Complex` type, such as `Taylor1{ComplexF64}`, returns `sqrt(real(a)^2 + imag(a)^2)`. 
+For a `Complex` type, such as `Taylor1{ComplexF64}`, returns `sqrt(real(a)^2 + imag(a)^2)`.
 
-Notice that `typeof(abs(a)) <: AbstractSeries` and 
+Notice that `typeof(abs(a)) <: AbstractSeries` and
 that for a `Complex` argument a `Real` type is returned (e.g. `typeof(abs(a::Taylor1{ComplexF64})) == Taylor1{Float64}`).
 
 """ abs
@@ -215,18 +215,18 @@ a `TaylorN` expansion will be computed. If the dimension of x0 (`length(x0)`)
 is different from the variables set for `TaylorN` (`get_numvars()`), an
 `AssertionError` will be thrown.
 """
-function taylor_expand(f::F; order::Int=15) where {F}
+function taylor_expand(f::Function; order::Int=15)
    a = Taylor1(order)
    return f(a)
 end
 
-function taylor_expand(f::F, x0::T; order::Int=15) where {F,T<:Number}
+function taylor_expand(f::Function, x0::T; order::Int=15) where {T<:Number}
    a = Taylor1([x0, one(T)], order)
    return f(a)
 end
 
 #taylor_expand function for TaylorN
-function taylor_expand(f::F, x0::Vector{T}; order::Int=get_order()) where {F,T<:Number}
+function taylor_expand(f::Function, x0::Vector{T}; order::Int=get_order()) where {T<:Number}
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
     X = Array{TaylorN{T}}(undef, ll)
@@ -238,9 +238,10 @@ function taylor_expand(f::F, x0::Vector{T}; order::Int=get_order()) where {F,T<:
     return f( X )
 end
 
-function taylor_expand(f::F, x0::Vararg{T, N}; order::Int=get_order()) where {F,T,N}
+function taylor_expand(f::Function, x0::Vararg; order::Int=get_order())
     x0 = promote(x0...)
     ll = length(x0)
+    T = eltype(x0[1])
     @assert ll == get_numvars() && order <= get_order()
     X = Array{TaylorN{T}}(undef, ll)
 

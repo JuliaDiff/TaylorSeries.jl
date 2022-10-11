@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ['1', '1.8', 'nightly']
+        julia-version: ['1.6', '1', 'nightly']
         julia-arch: [x64]
         os: [ubuntu-latest, macOS-latest, windows-latest]
         # # 32-bit Julia binaries are not available on macOS

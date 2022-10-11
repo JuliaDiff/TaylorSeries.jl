@@ -108,8 +108,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return $T(v, a.order)
             end
 
-            ($f)(a::$T{T}, b::S) where {T<:Number,S<:Number} =
-                $f(promote(a,b)...)
+            ($f)(a::$T{T}, b::S) where {T<:Number, S<:Number} = $f(promote(a, b)...)
 
             function $f(a::$T{T}, b::T) where {T<:Number}
                 coeffs = copy(a.coeffs)
@@ -117,8 +116,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return $T(coeffs, a.order)
             end
 
-            ($f)(b::S, a::$T{T}) where {T<:Number,S<:Number} =
-                $f(promote(b,a)...)
+            # ($f)(b::S, a::$T{T}) where {T<:Number,S<:Number} = $f(promote(b, a)...)
 
             function $f(b::T, a::$T{T}) where {T<:Number}
                 coeffs = similar(a.coeffs)
@@ -149,7 +147,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return nothing
             end
         end
+
     end
+
+    @eval $(f)(a::T, b::S) where {T<:Taylor1, S<:TaylorN} = $(f)(promote(a, b)...)
+    @eval $(f)(a::T, b::S) where {T<:TaylorN, S<:Taylor1} = $(f)(promote(a, b)...)
 
     @eval begin
         ($f)(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where
@@ -210,11 +212,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
     end
 end
-
-+(a::Taylor1{T}, b::TaylorN{S}) where {T<:NumberNotSeries,S<:NumberNotSeries} =
-    +(promote(a,b)...)
--(a::Taylor1{T}, b::TaylorN{S}) where {T<:NumberNotSeries,S<:NumberNotSeries} =
-    -(promote(a,b)...)
 
 
 ## Multiplication ##
