@@ -633,10 +633,8 @@ either `Taylor1` or `TaylorN`.
 The coefficients are given by
 
 ```math
-\begin{aligned*}
-s_k & =  \frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} c_j ,\\
-c_k & = -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
-\end{aligned*}
+s_k =  \frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} c_j ,\\
+c_k = -\frac{1}{k}\sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
 ```
 
 """ sincos!
@@ -720,10 +718,8 @@ either `Taylor1` or `TaylorN`.
 The coefficients are given by
 
 ```math
-\begin{aligned*}
-s_k &= \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j, \\
-c_k &= \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
-\end{aligned*}
+s_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} c_j, \\
+c_k = \frac{1}{k} \sum_{j=0}^{k-1} (k-j) a_{k-j} s_j.
 ```
 
 """ sinhcosh!
