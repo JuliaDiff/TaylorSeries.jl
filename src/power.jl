@@ -278,12 +278,10 @@ both `c` and `a` either `Taylor1` or `TaylorN`.
 The coefficients are given by
 
 ```math
-\begin{eqnarray*}
-c_k & = & 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j,
+c_k = 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j,
     \text{ if k is odd,} \\
-c_k & = & 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
+c_k = 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
     \text{ if k is even. }
-\end{eqnarray*}
 ```
 
 """ sqr!
@@ -409,12 +407,10 @@ for both`c` and `a` either `Taylor1` or `TaylorN`.
 The coefficients are given by
 
 ```math
-\begin{eqnarray*}
-c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-1)/2} c_{k-j}c_j\big),
+c_k = \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-1)/2} c_{k-j}c_j\big),
     \text{ if k is odd,} \\
-c_k &=& \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-2)/2} c_{k-j}c_j
+c_k = \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-2)/2} c_{k-j}c_j
     - (c_{k/2})^2\big), \text{ if k is even.}
-\end{eqnarray*}
 ```
 
 For `Taylor1` polynomials, `k0` is the order of the first non-zero
