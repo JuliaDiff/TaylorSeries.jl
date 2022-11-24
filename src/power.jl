@@ -177,7 +177,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
     # The first non-zero coefficient of the result; must be integer
     !isinteger(r*l0) && throw(DomainError(a,
-        """The 0th order Taylor1 coefficient must be non-zero
+        """The 0-th order Taylor1 coefficient must be non-zero
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0 )
     kprime = k-lnull
@@ -278,10 +278,12 @@ both `c` and `a` either `Taylor1` or `TaylorN`.
 The coefficients are given by
 
 ```math
+\begin{aligned}
 c_k = 2 \sum_{j=0}^{(k-1)/2} a_{k-j} a_j,
     \text{ if k is odd,} \\
 c_k = 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
     \text{ if k is even. }
+\end{aligned}
 ```
 
 """ sqr!
@@ -407,10 +409,12 @@ for both`c` and `a` either `Taylor1` or `TaylorN`.
 The coefficients are given by
 
 ```math
+\begin{aligned}
 c_k = \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-1)/2} c_{k-j}c_j\big),
     \text{ if k is odd,} \\
 c_k = \frac{1}{2 c_0} \big( a_k - 2 \sum_{j=1}^{(k-2)/2} c_{k-j}c_j
     - (c_{k/2})^2\big), \text{ if k is even.}
+\end{aligned}
 ```
 
 For `Taylor1` polynomials, `k0` is the order of the first non-zero
