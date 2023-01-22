@@ -1,12 +1,14 @@
 using .IntervalArithmetic
 
 # Method used for Taylor1{Interval{T}}^n
-function ^(a::Taylor1{Interval{T}}, n::Integer) where {T<:Real}
-    n == 0 && return one(a)
-    n == 1 && return copy(a)
-    n == 2 && return square(a)
-    n < 0 && return a^float(n)
-    return power_by_squaring(a, n)
+for T in (:Taylor1, :TaylorN)
+    @eval function ^(a::$T{Interval{S}}, n::Integer) where {S<:Real}
+        n == 0 && return one(a)
+        n == 1 && return copy(a)
+        n == 2 && return square(a)
+        n < 0 && return a^float(n)
+        return power_by_squaring(a, n)
+    end
 end
 
 function ^(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
@@ -29,6 +31,31 @@ function ^(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
     c = Taylor1(zero(aux), c_order)
     for k = 0:c_order
         pow!(c, aa, r, k)
+    end
+
+    return c
+end
+function ^(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
+    a0 = constant_term(a) ∩ Interval(zero(T), T(Inf))
+    a0r = a0^r
+    aux = one(a0r)
+
+    iszero(r) && return TaylorN(aux, a.order)
+    aa = aux * a
+    aa[0] = aux * a0
+    r == 1 && return aa
+    r == 2 && return square(aa)
+    r == 1/2 && return sqrt(aa)
+    isinteger(r) && return aa^round(Int,r)
+
+    # @assert !iszero(a0)
+    iszero(a0) && throw(DomainError(a,
+        """The 0-th order TaylorN coefficient must be non-zero
+        in order to expand `^` around 0."""))
+
+    c = TaylorN( a0r, a.order)
+    for ord in 1:a.order
+        pow!(c, aa, r, ord)
     end
 
     return c
