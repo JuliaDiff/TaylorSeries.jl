@@ -33,7 +33,7 @@ of the corresponding monomial in `coeffs_table`.
 function generate_tables(num_vars, order)
     coeff_table = [generate_index_vectors(num_vars, i) for i in 0:order]
 
-    index_table = Vector{Int}[map(x->in_base(order, x), coeffs) for coeffs in coeff_table]
+    index_table = Vector{Int}[map(x->in_base_safe(order, x), coeffs) for coeffs in coeff_table]
 
     pos_table = map(make_inverse_dict, index_table)
     size_table = map(length, index_table)
@@ -91,11 +91,31 @@ function in_base(order, v)
 
     result = 0
 
+    all(iszero.(v)) && return result
+
     for i in v
         result = result*order + i
     end
 
     result
+end
+
+"""
+    in_base_safe(order, v)
+
+Same as `in_base` assuring positivity of the result;
+used for constructing `index_table`.
+"""
+function in_base_safe(order, v)
+    result = in_base(order, v)
+
+    iszero(v) && return result
+
+    (result <= 0) && throw(OverflowError("""
+        Using numvars=$(length(v)) at order=$(order-1) produces
+        a negative index_table entry: $result."""))
+
+    return result
 end
 
 
