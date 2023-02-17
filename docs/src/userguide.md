@@ -49,12 +49,12 @@ t = shift_taylor(0.0) # Independent variable `t`
 ```
 
 !!! warning
-    The information about the maximum order considered is displayed using a big-𝒪 notation. 
+    The information about the maximum order considered is displayed using a big-𝒪 notation.
     The convention followed when different orders are combined, and when certain functions
-    are used in a way that they reduce the order (like [`differentiate`](@ref)), is to be consistent 
-    with the mathematics and the big-𝒪 notation, i.e., to propagate the lowest order. 
-    
-In some cases, it is desirable to not display the big-𝒪 notation. The function [`displayBigO`](@ref) 
+    are used in a way that they reduce the order (like [`differentiate`](@ref)), is to be consistent
+    with the mathematics and the big-𝒪 notation, i.e., to propagate the lowest order.
+
+In some cases, it is desirable to not display the big-𝒪 notation. The function [`displayBigO`](@ref)
 allows to control whether it is displayed or not.
 ```@repl userguide
 displayBigO(false) # turn-off displaying big O notation
@@ -78,14 +78,14 @@ The definition of `shift_taylor(a)` uses the method
 [`Taylor1([::Type{Float64}], order::Int)`](@ref), which is a
 shortcut to define the independent variable of a Taylor expansion,
 of given type and order (the default is `Float64`).
-Defining the independent variable in advance is one of the easiest 
+Defining the independent variable in advance is one of the easiest
 ways to use the package.
 
 The usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`) have been
 extended to work with the [`Taylor1`](@ref) type, including promotions that
 involve `Number`s. The operations return a valid Taylor expansion, consistent
-with the order of the series. This is apparent in the penultimate example 
-below, where the fist non-zero coefficient is beyond the order of the expansion, 
+with the order of the series. This is apparent in the penultimate example
+below, where the fist non-zero coefficient is beyond the order of the expansion,
 and hence the result is zero.
 
 ```@repl userguide
@@ -100,9 +100,9 @@ t^6  # t is of order 5
 t^2 / t # The result is of order 4, instead of 5
 ```
 
-Note that the last example returns a `Taylor1` series of order 4, instead 
-of order 5; this is be consistent with the number of known coefficients of the 
-returned series, since the result corresponds to factorize `t` in the numerator 
+Note that the last example returns a `Taylor1` series of order 4, instead
+of order 5; this is be consistent with the number of known coefficients of the
+returned series, since the result corresponds to factorize `t` in the numerator
 to cancel the same factor in the denominator.
 
 If no valid Taylor expansion can be computed an error is thrown, for instance,
@@ -121,8 +121,8 @@ are `exp`, `log`, `sqrt`, the trigonometric functions
 `sinh`, `cosh` and `tanh` and their inverses;
 more functions will be added in the future. Note that this way of obtaining the
 Taylor coefficients is not a *lazy* way, in particular for many independent
-variables. Yet, the implementation is efficient enough, especially for the 
-integration of ordinary differential equations, which is among the 
+variables. Yet, the implementation is efficient enough, especially for the
+integration of ordinary differential equations, which is among the
 applications we have in mind (see
 [TaylorIntegration.jl](https://github.com/PerezHz/TaylorIntegration.jl)).
 
@@ -152,7 +152,7 @@ getcoeff(expon, 0) == expon[0]
 rationalize(expon[3])
 ```
 
-Note that certain arithmetic operations, or the application of some functions, 
+Note that certain arithmetic operations, or the application of some functions,
 may change the order of the result, as mentioned above.
 ```@repl userguide
 t #  order 5 independent variable
@@ -164,7 +164,7 @@ sqrt(t^2) # returns an order 2 series expansion
 Differentiating and integrating is straightforward for polynomial expansions in
 one variable, using [`differentiate`](@ref) and [`integrate`](@ref). (The
 function [`derivative`](@ref) is a synonym of `differentiate`.) These
-functions return the corresponding [`Taylor1`](@ref) expansions. 
+functions return the corresponding [`Taylor1`](@ref) expansions.
 The order of the derivative of a `Taylor1` is reduced by 1.
 For the integral, an integration constant may be
 set by the user (the default is zero); the order of the integrated polynomial
@@ -199,7 +199,7 @@ eBig = evaluate( exp(tBig), one(BigFloat) )
 ℯ - eBig
 ```
 
-Another way to evaluate the value of a `Taylor1` polynomial `p` at a given value `x`, 
+Another way to evaluate the value of a `Taylor1` polynomial `p` at a given value `x`,
 is to call `p` as if it was a function, i.e., `p(x)`:
 
 ```@repl userguide
@@ -280,6 +280,10 @@ by `set_variables` initially.
 ```@repl userguide
 get_variables(2) # vector of independent variables of order 2
 ```
+
+!!! warning
+    An `OverflowError` is thrown when the construction of the internal tables is not
+    fully consistent, avoiding silent errors; see [issue #85](https://github.com/JuliaDiff/TaylorSeries.jl/issues/85).
 
 The function [`show_params_TaylorN`](@ref) displays the current values of the
 parameters, in an info block.
