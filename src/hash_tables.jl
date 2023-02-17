@@ -112,8 +112,8 @@ function in_base_safe(order, v)
     iszero(v) && return result
 
     (result <= 0) && throw(OverflowError("""
-        Using numvars=$(length(v)) at order=$(order-1) produces
-        a negative index_table entry: $result."""))
+        Using numvars=$(length(v)) at order=$(order) produces
+        a non-positive index_table entry: $result."""))
 
     return result
 end

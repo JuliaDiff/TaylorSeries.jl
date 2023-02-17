@@ -6,19 +6,25 @@ using TaylorSeries
 using Test
 using LinearAlgebra
 
-@testset "Tests for HomogeneousPolynomial and TaylorN" begin
-    eeuler = Base.MathConstants.e
-
-    @test HomogeneousPolynomial <: AbstractSeries
-    @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
-    @test TaylorN{Float64} <: AbstractSeries{Float64}
-
+@testset "Test hash tables" begin
     set_variables("x", numvars=2, order=6)
     _taylorNparams = TaylorSeries.ParamsTaylorN(6, 2, String["x₁", "x₂"])
     @test _taylorNparams.order == get_order()
     @test _taylorNparams.num_vars == get_numvars()
     @test _taylorNparams.variable_names == get_variable_names()
     @test _taylorNparams.variable_symbols == get_variable_symbols()
+
+    @test_throws OverflowError("""
+        Using numvars=65 at order=1 produces
+        a non-positive index_table entry: 0.""") set_variables("δ", order=1, numvars=65)
+    @test_throws OverflowError("""
+        Using numvars=41 at order=2 produces
+        a non-positive index_table entry: -6289078614652622815.""") set_variables("δ", order=2, numvars=41)
+    @test_throws OverflowError("""
+        Using numvars=32 at order=3 produces
+        a non-positive index_table entry: -9223372036854775808.""") set_variables("δ", order=3, numvars=32)
+    set_variables("x", numvars=2, order=40)
+    @test all(allunique.(TS.index_table[:]))
 
     @test eltype(set_variables(Int, "x", numvars=2, order=6)) == TaylorN{Int}
     @test eltype(set_variables("x", numvars=2, order=6)) == TaylorN{Float64}
@@ -35,7 +41,16 @@ using LinearAlgebra
     @test TaylorSeries.index_table[2][1] == 7
     @test TaylorSeries.in_base(get_order(),[2,1]) == 15
     @test TaylorSeries.pos_table[4][15] == 2
+end
 
+@testset "Tests for HomogeneousPolynomial and TaylorN" begin
+    eeuler = Base.MathConstants.e
+
+    @test HomogeneousPolynomial <: AbstractSeries
+    @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
+    @test TaylorN{Float64} <: AbstractSeries{Float64}
+
+    set_variables([:x,:y], order=6)
     @test get_order() == 6
     @test get_numvars() == 2
 
