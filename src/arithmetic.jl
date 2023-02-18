@@ -34,6 +34,65 @@ function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     return iszero(a.coeffs) && iszero(b.coeffs)
 end
 
+# Iss #209
+"""
+    <(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+
+Less-than comparison of `a::Taylor1`` series and `b::NumberNotSeries`,
+comparing an *infinitissimal* approximation of the `a` and `b`.
+The infinitessimal approximation considers the 0-order coefficient, its
+eps-value (in that sense, infinitessimal), and the sign and degree
+of the fist non-zero coefficient of `a` (excluding the constant term
+of `a`).
+
+Note that this comparisson defines a partial order.
+"""
+function <(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+    a0 = constant_term(a)
+    e0 = eps(a0)
+    ord = findfirst(a-a0)
+    δ = a[ord]*e0^ord
+    ss = copysign(e0, δ)
+    if iseven(ord)
+        atest = a0 + ss
+    else
+        atest = a0 + max(ss, -ss)
+    end
+    return atest < b
+end
+
+<(b::NumberNotSeries, a::Taylor1{<:NumberNotSeries}) = >(a, b)
+
+
+"""
+    >(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+
+Greater-than comparison of `a::Taylor1`` series and `b::NumberNotSeries`,
+comparing an *infinitissimal* approximation of the `a` and `b`.
+The infinitessimal approximation considers the 0-order coefficient, its
+eps-value (in that sense, infinitessimal), and the sign and degree
+of the fist non-zero coefficient of `a` (excluding the constant term
+of `a`).
+
+Note that this comparisson defines a partial order.
+"""
+function >(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+    a0 = constant_term(a)
+    e0 = eps(a0)
+    ord = findfirst(a-a0)
+    δ = a[ord]*e0^ord
+    ss = copysign(e0, δ)
+    if iseven(ord)
+        atest = a0 + ss
+    else
+        atest = a0 + min(ss, -ss)
+    end
+    return atest > b
+end
+
+>(b::NumberNotSeries, a::Taylor1{<:NumberNotSeries}) = >(a, b)
+
+
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval iszero(a::$T) = iszero(a.coeffs)
 end
