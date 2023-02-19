@@ -36,18 +36,20 @@ end
 
 # Iss #209
 """
-    <(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+    <(a::Taylor1{<:Real}, b::Real)
+    <(a::TaylorN{<:Real}, b::Real)
 
-Less-than comparison of `a::Taylor1`` series and `b::NumberNotSeries`,
+Less-than comparison of `a::Taylor1`` series and `b::Real`,
 comparing an *infinitissimal* approximation of the `a` and `b`.
+
 The infinitessimal approximation considers the 0-order coefficient, its
 eps-value (in that sense, infinitessimal), and the sign and degree
 of the fist non-zero coefficient of `a` (excluding the constant term
-of `a`).
+of `a`). Note that this comparisson defines a partial order.
 
-Note that this comparisson defines a partial order.
+In order to use the `<` with TaylorN, you need to load `IntervalArithmetic.jl` first.
 """
-function <(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+function <(a::Taylor1{<:Real}, b::Real)
     a0 = constant_term(a)
     e0 = eps(a0)
     ord = findfirst(a-a0)
@@ -61,13 +63,14 @@ function <(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
     return atest < b
 end
 
-<(b::NumberNotSeries, a::Taylor1{<:NumberNotSeries}) = >(a, b)
+<(b::Real, a::AbstractSeries{<:Real}) = >(a, b)
 
 
 """
-    >(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+    >(a::Taylor1{<:Real}, b::Real)
+    >(a::TaylorN{<:Real}, b::Real)
 
-Greater-than comparison of `a::Taylor1`` series and `b::NumberNotSeries`,
+Greater-than comparison of `a::Taylor1`` series and `b::Real`,
 comparing an *infinitissimal* approximation of the `a` and `b`.
 The infinitessimal approximation considers the 0-order coefficient, its
 eps-value (in that sense, infinitessimal), and the sign and degree
@@ -76,7 +79,7 @@ of `a`).
 
 Note that this comparisson defines a partial order.
 """
-function >(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
+function >(a::Taylor1{<:Real}, b::Real)
     a0 = constant_term(a)
     e0 = eps(a0)
     ord = findfirst(a-a0)
@@ -90,7 +93,7 @@ function >(a::Taylor1{<:NumberNotSeries}, b::NumberNotSeries)
     return atest > b
 end
 
->(b::NumberNotSeries, a::Taylor1{<:NumberNotSeries}) = >(a, b)
+>(b::Real, a::AbstractSeries{<:Real}) = >(a, b)
 
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)

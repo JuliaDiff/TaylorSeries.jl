@@ -1,5 +1,24 @@
 using .IntervalArithmetic
 
+function <(a::TaylorN{<:Real}, b::Real)
+    a0 = constant_term(a)
+    e0 = eps(a0)
+    ord, _ = findfirst(a-a0)
+    ieps = eps(a0) * symmetric_box(get_numvars(), numtype(a))
+    atest = a0 + copysign(e0, a[ord](ieps))
+    return sup(atest) < b
+end
+
+function >(a::TaylorN{<:Real}, b::Real)
+    a0 = constant_term(a)
+    e0 = eps(a0)
+    ord, _ = findfirst(a-a0)
+    ieps = eps(a0) * symmetric_box(get_numvars(), numtype(a))
+    atest = a0 + copysign(e0, a[ord](ieps))
+    return inf(atest) > b
+end
+
+
 # Method used for Taylor1{Interval{T}}^n
 for T in (:Taylor1, :TaylorN)
     @eval function ^(a::$T{Interval{S}}, n::Integer) where {S<:Real}

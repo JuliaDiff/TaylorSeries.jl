@@ -265,18 +265,53 @@ function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 end
 
 
-# Finds the first non zero entry; extended to Taylor1
+# Finds the first non-zero entry; extended to Taylor1
 function Base.findfirst(a::Taylor1{T}) where {T<:Number}
     first = findfirst(x->!iszero(x), a.coeffs)
     isnothing(first) && return -1
     return first-1
 end
+
+# Finds the first non-zero entry; extended to HomogeneousPolynomial and TaylorN
+function Base.findfirst(a::HomogeneousPolynomial{T}) where {T<:Number}
+    first = findfirst(x->!iszero(x), a.coeffs)
+    isnothing(first) && return -1
+    return first
+end
+
+function Base.findfirst(a::TaylorN{T}) where {T<:Number}
+    ord = 1
+    first = 1
+    for ord in eachindex(a.coeffs)
+        first = findfirst(a.coeffs[ord])
+        first ≥ 1 && return (ord-1, first)
+    end
+    return (-1, first)
+end
+
 # Finds the last non-zero entry; extended to Taylor1
 function Base.findlast(a::Taylor1{T}) where {T<:Number}
     last = findlast(x->!iszero(x), a.coeffs)
     isnothing(last) && return -1
     return last-1
 end
+
+# Finds the last non-zero entry; extended to HomogeneousPolynomial and TaylorN
+function Base.findlast(a::HomogeneousPolynomial{T}) where {T<:Number}
+    last = findlast(x->!iszero(x), a.coeffs)
+    isnothing(last) && return -1
+    return last
+end
+function Base.findlast(a::TaylorN{T}) where {T<:Number}
+    ord = 1
+    last = 1
+    for ord in reverse(eachindex(a.coeffs))
+        last = findlast(a.coeffs[ord])
+        last ≥ 1 && return (ord-1, last)
+    end
+    return (-1, first)
+end
+
 
 
 ## copyto! ##
