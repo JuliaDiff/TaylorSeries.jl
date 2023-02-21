@@ -1,5 +1,4 @@
-# This file is part of TaylorSeries.jl, MIT licensed
-#
+# This file is part of TS.jl, MIT licensed#
 
 using TaylorSeries
 
@@ -7,24 +6,24 @@ using Test
 using LinearAlgebra
 
 @testset "Test hash tables" begin
-    set_variables("x", numvars=2, order=6)
-    _taylorNparams = TaylorSeries.ParamsTaylorN(6, 2, String["x₁", "x₂"])
-    @test _taylorNparams.order == get_order()
-    @test _taylorNparams.num_vars == get_numvars()
-    @test _taylorNparams.variable_names == get_variable_names()
-    @test _taylorNparams.variable_symbols == get_variable_symbols()
-
-    @test_throws OverflowError("""
-        Using numvars=65 at order=1 produces
-        a non-positive index_table entry: 0.""") set_variables("δ", order=1, numvars=65)
-    @test_throws OverflowError("""
-        Using numvars=41 at order=2 produces
-        a non-positive index_table entry: -6289078614652622815.""") set_variables("δ", order=2, numvars=41)
-    @test_throws OverflowError("""
-        Using numvars=32 at order=3 produces
-        a non-positive index_table entry: -9223372036854775808.""") set_variables("δ", order=3, numvars=32)
-    set_variables("x", numvars=2, order=40)
-    @test all(allunique.(TS.index_table[:]))
+    # Issue #85 is solved!
+    set_variables("x", numvars=66, order=1)
+    @test TS._params_TaylorN_.order == get_order() == 1
+    @test TS._params_TaylorN_.num_vars == get_numvars() == 66
+    @test TS._params_TaylorN_.variable_names[end] == "x₆₆"
+    @test TS._params_TaylorN_.variable_symbols[6] == :x₆
+    @test sum(TS.size_table) == 67
+    @test TS.coeff_table[2][1] == vcat([1], zeros(Int, 65))
+    @test TS.index_table[2][1] == 3^65
+    @test TS.pos_table[2][3^64] == 2
+    #
+    set_variables("x", numvars=66, order=2)
+    @test TS._params_TaylorN_.order == get_order() == 2
+    @test TS._params_TaylorN_.num_vars == get_numvars() == 66
+    @test sum(TS.size_table) == binomial(66+2, 2)
+    @test TS.coeff_table[2][1] == vcat([1], zeros(Int, 65))
+    @test TS.index_table[2][1] == 3^65
+    @test TS.pos_table[2][3^64] == 2
 
     @test eltype(set_variables(Int, "x", numvars=2, order=6)) == TaylorN{Int}
     @test eltype(set_variables("x", numvars=2, order=6)) == TaylorN{Float64}
@@ -32,15 +31,15 @@ using LinearAlgebra
     @test eltype(set_variables("x y", order=6)) == TaylorN{Float64}
     @test eltype(set_variables(Int, :x, numvars=2, order=6)) == TaylorN{Int}
     @test eltype(set_variables(:x, numvars=2, order=6)) == TaylorN{Float64}
-    @test eltype(set_variables(BigInt, [:x,:y], order=6)) == TaylorN{BigInt}
-    @test eltype(set_variables([:x,:y], order=6)) == TaylorN{Float64}
+    @test eltype(set_variables(BigInt, [:x, :y], order=6)) == TaylorN{BigInt}
+    @test eltype(set_variables([:x, :y], order=6)) == TaylorN{Float64}
     @test typeof(show_params_TaylorN()) == Nothing
     @test typeof(show_monomials(2)) == Nothing
 
-    @test TaylorSeries.coeff_table[2][1] == [1,0]
-    @test TaylorSeries.index_table[2][1] == 7
-    @test TaylorSeries.in_base(get_order(),[2,1]) == 15
-    @test TaylorSeries.pos_table[4][15] == 2
+    @test TS.coeff_table[2][1] == [1,0]
+    @test TS.index_table[2][1] == 7
+    @test TS.in_base(get_order(), [2,1]) == 15
+    @test TS.pos_table[4][15] == 2
 end
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
@@ -50,7 +49,7 @@ end
     @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
     @test TaylorN{Float64} <: AbstractSeries{Float64}
 
-    set_variables([:x,:y], order=6)
+    set_variables([:x, :y], order=6)
     @test get_order() == 6
     @test get_numvars() == 2
 
@@ -75,13 +74,13 @@ end
     @test iterate(x, 7) == nothing
 
     @test x.order == 6
-    @test TaylorSeries.name_taylorNvar(1) == " x"
-    @test TaylorSeries._params_TaylorN_.variable_names == ["x","y"]
-    @test TaylorSeries._params_TaylorN_.variable_symbols == [:x, :y]
+    @test TS.name_taylorNvar(1) == " x"
+    @test TS._params_TaylorN_.variable_names == ["x","y"]
+    @test TS._params_TaylorN_.variable_symbols == [:x, :y]
     @test get_variable_symbols() == [:x, :y]
-    @test TaylorSeries.lookupvar(:x) == 1
-    @test TaylorSeries.lookupvar(:α) == 0
-    @test TaylorSeries.get_variable_names() == ["x", "y"]
+    @test TS.lookupvar(:x) == 1
+    @test TS.lookupvar(:α) == 0
+    @test TS.get_variable_names() == ["x", "y"]
     @test x == HomogeneousPolynomial(Float64, 1)
     @test x == HomogeneousPolynomial(1)
     @test y == HomogeneousPolynomial(Float64, 2)
@@ -90,9 +89,9 @@ end
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test typeof(TaylorSeries.resize_coeffsHP!(v,2)) == Nothing
+    @test typeof(TS.resize_coeffsHP!(v,2)) == Nothing
     @test v == [1,2,0]
-    @test_throws AssertionError TaylorSeries.resize_coeffsHP!(v,1)
+    @test_throws AssertionError TS.resize_coeffsHP!(v,1)
     hpol_v = HomogeneousPolynomial(v)
     hpol_v[3] = 3
     @test v == [1,2,3]
@@ -154,8 +153,8 @@ end
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
     @test !isnan(uT)
-    @test TaylorSeries.fixorder(xH,yH) == (xH,yH)
-    @test_throws AssertionError TaylorSeries.fixorder(zeros(xH,0)[1],yH)
+    @test TS.fixorder(xH,yH) == (xH,yH)
+    @test_throws AssertionError TS.fixorder(zeros(xH,0)[1],yH)
 
 
     @test constant_term(xT) == 0
@@ -462,104 +461,104 @@ end
     @test sinh(xT+yT) == imag(sin(im*(xT+yT)))
 
     xx = 1.0*zeroT
-    TaylorSeries.add!(xx, 1.0*xT, 2yT, 1)
+    TS.add!(xx, 1.0*xT, 2yT, 1)
     @test xx[1] == HomogeneousPolynomial([1,2])
-    TaylorSeries.add!(xx, 5.0, 0)
+    TS.add!(xx, 5.0, 0)
     @test xx[0] == HomogeneousPolynomial([5.0])
-    TaylorSeries.add!(xx, -5.0, 1)
+    TS.add!(xx, -5.0, 1)
     @test xx[1] == zero(xx[1])
-    TaylorSeries.subst!(xx, 1.0*xT, yT, 1)
+    TS.subst!(xx, 1.0*xT, yT, 1)
     @test xx[1] == HomogeneousPolynomial([1,-1])
-    TaylorSeries.subst!(xx, 5.0, 0)
+    TS.subst!(xx, 5.0, 0)
     @test xx[0] == HomogeneousPolynomial([-5.0])
-    TaylorSeries.subst!(xx, -5.0, 1)
+    TS.subst!(xx, -5.0, 1)
     @test xx[1] == zero(xx[end])
-    TaylorSeries.div!(xx, 1.0+xT, 1.0+xT, 0)
+    TS.div!(xx, 1.0+xT, 1.0+xT, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TaylorSeries.pow!(xx, 1.0+xT, 0.5, 1)
+    TS.pow!(xx, 1.0+xT, 0.5, 1)
     @test xx[1] == HomogeneousPolynomial([0.5,0.0])
     xx = 1.0*zeroT
-    TaylorSeries.pow!(xx, 1.0+xT, 1.5, 0)
+    TS.pow!(xx, 1.0+xT, 1.5, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TaylorSeries.pow!(xx, 1.0+xT, 1.5, 1)
+    TS.pow!(xx, 1.0+xT, 1.5, 1)
     @test xx[1] == HomogeneousPolynomial([1.5,0.0])
     xx = 1.0*zeroT
-    TaylorSeries.pow!(xx, 1.0+xT, 0, 0)
+    TS.pow!(xx, 1.0+xT, 0, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TaylorSeries.pow!(xx, 1.0+xT, 1, 1)
+    TS.pow!(xx, 1.0+xT, 1, 1)
     @test xx[1] == HomogeneousPolynomial([1.0,0.0])
     xx = 1.0*zeroT
-    TaylorSeries.pow!(xx, 1.0+xT, 2, 0)
+    TS.pow!(xx, 1.0+xT, 2, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TaylorSeries.pow!(xx, 1.0+xT, 2, 1)
+    TS.pow!(xx, 1.0+xT, 2, 1)
     @test xx[1] == HomogeneousPolynomial([2.0,0.0])
     xx = 1.0*zeroT
-    TaylorSeries.sqrt!(xx, 1.0+xT, 0)
-    TaylorSeries.sqrt!(xx, 1.0+xT, 1)
+    TS.sqrt!(xx, 1.0+xT, 0)
+    TS.sqrt!(xx, 1.0+xT, 1)
     @test xx[0] == 1.0
     @test xx[1] == HomogeneousPolynomial([0.5,0.0])
     xx = 1.0*zeroT
-    TaylorSeries.exp!(xx, 1.0*xT, 0)
-    TaylorSeries.exp!(xx, 1.0*xT, 1)
+    TS.exp!(xx, 1.0*xT, 0)
+    TS.exp!(xx, 1.0*xT, 1)
     @test xx[0] == 1.0
     @test xx[1] == HomogeneousPolynomial([1.0,0.0])
     xx = 1.0*zeroT
-    TaylorSeries.log!(xx, 1.0+xT, 0)
-    TaylorSeries.log!(xx, 1.0+xT, 1)
+    TS.log!(xx, 1.0+xT, 0)
+    TS.log!(xx, 1.0+xT, 1)
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     xx = 1.0*zeroT
     cxx = zero(xx)
-    TaylorSeries.sincos!(xx, cxx, 1.0*xT, 0)
-    TaylorSeries.sincos!(xx, cxx, 1.0*xT, 1)
+    TS.sincos!(xx, cxx, 1.0*xT, 0)
+    TS.sincos!(xx, cxx, 1.0*xT, 1)
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     @test cxx[0] == 1.0
     @test cxx[1] == HomogeneousPolynomial(0.0,1)
     xx = 1.0*zeroT
     cxx = zero(xx)
-    TaylorSeries.tan!(xx, 1.0*xT, cxx, 0)
-    TaylorSeries.tan!(xx, 1.0*xT, cxx, 1)
+    TS.tan!(xx, 1.0*xT, cxx, 0)
+    TS.tan!(xx, 1.0*xT, cxx, 1)
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     @test cxx[0] == 0.0
     @test cxx[1] == HomogeneousPolynomial(0.0,1)
     xx = 1.0*zeroT
     cxx = zero(xx)
-    TaylorSeries.asin!(xx, 1.0*xT, cxx, 0)
-    TaylorSeries.asin!(xx, 1.0*xT, cxx, 1)
+    TS.asin!(xx, 1.0*xT, cxx, 0)
+    TS.asin!(xx, 1.0*xT, cxx, 1)
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     @test cxx[0] == 1.0
     @test cxx[1] == HomogeneousPolynomial(0.0,1)
     xx = 1.0*zeroT
     cxx = zero(xx)
-    TaylorSeries.acos!(xx, 1.0*xT, cxx, 0)
-    TaylorSeries.acos!(xx, 1.0*xT, cxx, 1)
+    TS.acos!(xx, 1.0*xT, cxx, 0)
+    TS.acos!(xx, 1.0*xT, cxx, 1)
     @test xx[0] == acos(0.0)
     @test xx[1] == HomogeneousPolynomial(-1.0,1)
     @test cxx[0] == 1.0
     @test cxx[1] == HomogeneousPolynomial(0.0,1)
     xx = 1.0*zeroT
     cxx = zero(xx)
-    TaylorSeries.atan!(xx, 1.0*xT, cxx, 0)
-    TaylorSeries.atan!(xx, 1.0*xT, cxx, 1)
+    TS.atan!(xx, 1.0*xT, cxx, 0)
+    TS.atan!(xx, 1.0*xT, cxx, 1)
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     @test cxx[0] == 1.0
     @test cxx[1] == HomogeneousPolynomial(0.0,1)
     xx = 1.0*zeroT
     cxx = zero(xx)
-    TaylorSeries.sinhcosh!(xx, cxx, 1.0*xT, 0)
-    TaylorSeries.sinhcosh!(xx, cxx, 1.0*xT, 1)
+    TS.sinhcosh!(xx, cxx, 1.0*xT, 0)
+    TS.sinhcosh!(xx, cxx, 1.0*xT, 1)
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     @test cxx[0] == 1.0
     @test cxx[1] == HomogeneousPolynomial(0.0,1)
     xx = 1.0*zeroT
     cxx = zero(xx)
-    TaylorSeries.tanh!(xx, 1.0*xT, cxx, 0)
-    TaylorSeries.tanh!(xx, 1.0*xT, cxx, 1)
+    TS.tanh!(xx, 1.0*xT, cxx, 0)
+    TS.tanh!(xx, 1.0*xT, cxx, 1)
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     @test cxx[0] == 0.0
@@ -569,35 +568,35 @@ end
     g2(x, y) = y + x^2 - x^4
     f1 = g1(xT, yT)
     f2 = g2(xT, yT)
-    @test TaylorSeries.gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
+    @test TS.gradient(f1) == [ 3*xT^2-4*xT*yT-TaylorN(7,0), 6*yT-2*xT^2 ]
     @test ∇(f2) == [2*xT - 4*xT^3, TaylorN(1,0)]
-    @test TaylorSeries.jacobian([f1,f2], [2,1]) == TaylorSeries.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
+    @test TS.jacobian([f1,f2], [2,1]) == TS.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     jac = Array{Int}(undef, 2, 2)
-    TaylorSeries.jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
-    @test jac == TaylorSeries.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
-    TaylorSeries.jacobian!(jac, [f1,f2], [2,1])
-    @test jac == TaylorSeries.jacobian([f1,f2], [2,1])
-    @test TaylorSeries.hessian( f1*f2 ) ==
+    TS.jacobian!(jac, [g1(xT+2,yT+1), g2(xT+2,yT+1)])
+    @test jac == TS.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
+    TS.jacobian!(jac, [f1,f2], [2,1])
+    @test jac == TS.jacobian([f1,f2], [2,1])
+    @test TS.hessian( f1*f2 ) ==
         [differentiate((2,0), f1*f2) differentiate((1,1), (f1*f2));
          differentiate((1,1), f1*f2) differentiate((0,2), (f1*f2))] == [4 -7; -7 0]
-    @test TaylorSeries.hessian( f1*f2, [xT, yT] ) ==
+    @test TS.hessian( f1*f2, [xT, yT] ) ==
         [differentiate(f1*f2, (2,0)) differentiate((f1*f2), (1,1));
          differentiate(f1*f2, (1,1)) differentiate((f1*f2), (0,2))]
-    @test [xT yT]*TaylorSeries.hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
-    @test TaylorSeries.hessian(f1^2)/2 == [ [49,0] [0,12] ]
-    @test TaylorSeries.hessian(f1-f2-2*f1*f2) == (TaylorSeries.hessian(f1-f2-2*f1*f2))'
-    @test TaylorSeries.hessian(f1-f2,[1,-1]) == TaylorSeries.hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    @test [xT yT]*TS.hessian(f1*f2)*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
+    @test TS.hessian(f1^2)/2 == [ [49,0] [0,12] ]
+    @test TS.hessian(f1-f2-2*f1*f2) == (TS.hessian(f1-f2-2*f1*f2))'
+    @test TS.hessian(f1-f2,[1,-1]) == TS.hessian(g1(xT+1,yT-1)-g2(xT+1,yT-1))
     hes = Array{Int}(undef, 2, 2)
-    TaylorSeries.hessian!(hes, f1*f2)
-    @test hes == TaylorSeries.hessian(f1*f2)
+    TS.hessian!(hes, f1*f2)
+    @test hes == TS.hessian(f1*f2)
     @test [xT yT]*hes*[xT, yT] == [ 2*TaylorN((f1*f2)[2]) ]
-    TaylorSeries.hessian!(hes, f1^2)
+    TS.hessian!(hes, f1^2)
     @test hes/2 == [ [49,0] [0,12] ]
-    TaylorSeries.hessian!(hes, f1-f2-2*f1*f2)
+    TS.hessian!(hes, f1-f2-2*f1*f2)
     @test hes == hes'
     hes1 = Array{Int}(undef, 2, 2)
-    TaylorSeries.hessian!(hes1, f1-f2,[1,-1])
-    TaylorSeries.hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
+    TS.hessian!(hes1, f1-f2,[1,-1])
+    TS.hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes
 
     use_show_default(true)
@@ -652,11 +651,11 @@ end
     @test norm(a, Inf) == 8.0
     @test norm((3.0 + 4im)*x) == abs(3.0 + 4im)
 
-    @test TaylorSeries.rtoldefault(TaylorN{Int}) == 0
-    @test TaylorSeries.rtoldefault(TaylorN{Float64}) == sqrt(eps(Float64))
-    @test TaylorSeries.rtoldefault(TaylorN{BigFloat}) == sqrt(eps(BigFloat))
-    @test TaylorSeries.real(TaylorN{Float64}) == TaylorN{Float64}
-    @test TaylorSeries.real(TaylorN{Complex{Float64}}) == TaylorN{Float64}
+    @test TS.rtoldefault(TaylorN{Int}) == 0
+    @test TS.rtoldefault(TaylorN{Float64}) == sqrt(eps(Float64))
+    @test TS.rtoldefault(TaylorN{BigFloat}) == sqrt(eps(BigFloat))
+    @test TS.real(TaylorN{Float64}) == TaylorN{Float64}
+    @test TS.real(TaylorN{Complex{Float64}}) == TaylorN{Float64}
     @test isfinite(a)
     @test a[0] ≈ a[0]
     @test a[1] ≈ a[1]
@@ -728,23 +727,23 @@ end
     end
     p = sin(exp(dx[1]*dx[2])+dx[3]*dx[2])/(1.0+dx[4]^2)
     q = zero(p)
-    TaylorSeries.deg2rad!(q, p, 0)
+    TS.deg2rad!(q, p, 0)
     @test q[0] == p[0]*(pi/180)
-    # TaylorSeries.deg2rad!.(q, p, [1,3,5])
+    # TS.deg2rad!.(q, p, [1,3,5])
     # for i in [0,1,3,5]
     #     @test q[i] == p[i]*(pi/180)
     # end
-    TaylorSeries.rad2deg!(q, p, 0)
+    TS.rad2deg!(q, p, 0)
     @test q[0] == p[0]*(180/pi)
-    # TaylorSeries.rad2deg!.(q, p, [1,3,5])
+    # TS.rad2deg!.(q, p, [1,3,5])
     # for i in [0,1,3,5]
     #     @test q[i] == p[i]*(180/pi)
     # end
     xT = 5+TaylorN(Int, 1, order=10)
     yT = TaylorN(2, order=10)
-    TaylorSeries.deg2rad!(yT, xT, 0)
+    TS.deg2rad!(yT, xT, 0)
     @test yT[0] == xT[0]*(pi/180)
-    TaylorSeries.rad2deg!(yT, xT, 0)
+    TS.rad2deg!(yT, xT, 0)
     @test yT[0] == xT[0]*(180/pi)
 end
 
