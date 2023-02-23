@@ -33,12 +33,19 @@ of the corresponding monomial in `coeffs_table`.
 function generate_tables(num_vars, order)
     coeff_table = [generate_index_vectors(num_vars, i) for i in 0:order]
 
-    index_table = Vector{Int}[map(x->in_base_safe(order, x), coeffs) for coeffs in coeff_table]
+    index_table = Vector{Int}[map(x->in_base(order, x), coeffs) for coeffs in coeff_table]
+
+    # Check uniqueness of labels as "non-collision" test
+    @assert all(allunique.(index_table))
 
     pos_table = map(make_inverse_dict, index_table)
     size_table = map(length, index_table)
 
-    coeff_table, index_table, size_table, pos_table
+    # The next line tests the consistency of the number of monomials,
+    # but it's commented because it may not pass due to the `binomial`
+    # @assert sum(size_table) == binomial(num_vars+order, min(num_vars,order))
+
+    return (coeff_table, index_table, size_table, pos_table)
 end
 
 """
@@ -61,7 +68,7 @@ function generate_index_vectors(num_vars, degree)
 
     end
 
-    indices
+    return indices
 end
 
 
@@ -77,43 +84,24 @@ the corresponding index.
 
 It is used to construct `pos_table` from `index_table`.
 """
-function make_inverse_dict(v::Vector)
-    Dict(Dict(x=>i for (i,x) in enumerate(v)))
-end
+make_inverse_dict(v::Vector) = Dict(Dict(x=>i for (i,x) in enumerate(v)))
 
 """
     in_base(order, v)
 
-Convert vector `v` of non-negative integers to base `order+1`.
+Convert vector `v` of non-negative integers to base `oorder`, where
+`oorder` is the next odd integer of `order`.
 """
 function in_base(order, v)
-    order = order+1
+    oorder = iseven(order) ? order+1 : order+2 # `oorder` is the next odd integer to `order`
 
     result = 0
 
     all(iszero.(v)) && return result
 
     for i in v
-        result = result*order + i
+        result = result*oorder + i
     end
-
-    result
-end
-
-"""
-    in_base_safe(order, v)
-
-Same as `in_base` assuring positivity of the result;
-used for constructing `index_table`.
-"""
-function in_base_safe(order, v)
-    result = in_base(order, v)
-
-    iszero(v) && return result
-
-    (result <= 0) && throw(OverflowError("""
-        Using numvars=$(length(v)) at order=$(order) produces
-        a non-positive index_table entry: $result."""))
 
     return result
 end

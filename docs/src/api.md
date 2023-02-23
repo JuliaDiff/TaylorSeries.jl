@@ -65,7 +65,6 @@ _InternalMutFuncs
 generate_tables
 generate_index_vectors
 in_base
-in_base_safe
 make_inverse_dict
 resize_coeffs1!
 resize_coeffsHP!
