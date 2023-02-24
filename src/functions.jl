@@ -62,6 +62,20 @@ for T in (:Taylor1, :TaylorN)
             return s, c
         end
 
+        sinpi(a::$T) = sincospi(a)[1]
+        cospi(a::$T) = sincospi(a)[2]
+        function sincospi(a::$T)
+            order = a.order
+            aux = sinpi(constant_term(a))
+            aa = one(aux) * a
+            s = $T( aux, order )
+            c = $T( cospi(constant_term(a)), order )
+            for k in eachindex(a)
+                sincospi!(s, c, aa, k)
+            end
+            return s, c
+        end
+
         function tan(a::$T)
             order = a.order
             aux = tan(constant_term(a))
@@ -347,6 +361,16 @@ for T in (:Taylor1, :TaylorN)
 
             @inbounds s[k] = s[k] / k
             @inbounds c[k] = c[k] / k
+            return nothing
+        end
+
+        @inline function sincospi!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds s[0], c[0] = sincospi( a0 )
+                return nothing
+            end
+            sincos!(s, c, a*pi, k)
             return nothing
         end
 

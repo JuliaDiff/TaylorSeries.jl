@@ -267,9 +267,15 @@ Base.iszero(::SymbNumber) = false
     @test log1p(0.25 + t) == log(1.25+t)
     @test log1p(-t^2) == log(1-t^2)
 
-    @test real(exp(tim)) == cos(t)
-    @test imag(exp(tim)) == sin(t)
-    @test exp(conj(tim)) == cos(t)-im*sin(t) == exp(tim')
+    st, ct = sincos(t)
+    @test real(exp(tim)) == ct
+    @test imag(exp(tim)) == st
+    @test exp(conj(tim)) == ct-im*st == exp(tim')
+    st, ct = sincospi(t)
+    @test (st, ct) == sincos(pi*t)
+    @test real(exp(pi*tim)) == cospi(t)
+    @test imag(exp(pi*tim)) == sinpi(t)
+    @test exp(pi*conj(tim)) == ct-im*st == exp(pi*tim')
     @test abs2(tim) == tsquare
     @test abs(tim) == t
     @test isapprox(abs2(exp(tim)), ot)
@@ -293,8 +299,10 @@ Base.iszero(::SymbNumber) = false
     @test myexpfun() == 1.0
     @test myexpfun(t17^2) == exp(t17^2)
     @test exp(t17^2)(t17) == exp(t17^2)
-    p = cos(t17)
-    q = sin(t17)
+    q, p = sincospi(t17)
+    @test cospi(-im*t)(1)+im*sinpi(-im*t)(1) == exp(-im*pi*t)(im)
+    @test p(-im*t17)(1)+im*q(-im*t17)(1) ≈ exp(-im*pi*t17)(im)
+    q, p = sincos(t17)
     @test cos(-im*t)(1)+im*sin(-im*t)(1) == exp(-im*t)(im)
     @test p(-im*t17)(1)+im*q(-im*t17)(1) == exp(-im*t17)(im)
     cossin1 = x->p(q(x))
