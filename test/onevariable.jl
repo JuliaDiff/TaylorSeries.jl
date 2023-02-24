@@ -264,6 +264,9 @@ Base.iszero(::SymbNumber) = false
     @test log(exp(tsquare)) == tsquare
     @test exp(log(1-tsquare)) == 1-tsquare
     @test log((1-t)^2) == 2*log(1-t)
+    @test log1p(0.25 + t) == log(1.25+t)
+    @test log1p(-t^2) == log(1-t^2)
+
     @test real(exp(tim)) == cos(t)
     @test imag(exp(tim)) == sin(t)
     @test exp(conj(tim)) == cos(t)-im*sin(t) == exp(tim')
@@ -422,6 +425,10 @@ Base.iszero(::SymbNumber) = false
     @test tt[0] == exp(t[0])
     TaylorSeries.log!(tt, 1.0+t, 0)
     @test tt[0] == 0.0
+    TaylorSeries.log1p!(tt, 0.25+t, 0)
+    @test tt[0] == log1p(0.25)
+    TaylorSeries.log1p!(tt, 0.25+t, 1)
+    @test tt[1] == 1/1.25
     ct = zero(ut)
     TaylorSeries.sincos!(tt, ct, 1.0*t, 0)
     @test tt[0] == sin(t[0])

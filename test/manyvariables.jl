@@ -508,6 +508,11 @@ end
     @test xx[0] == 0.0
     @test xx[1] == HomogeneousPolynomial(1.0,1)
     xx = 1.0*zeroT
+    TS.log1p!(xx, 0.25+xT, 0)
+    TS.log1p!(xx, 0.25+xT, 1)
+    @test xx[0] == log1p(0.25)
+    @test xx[1] == HomogeneousPolynomial(1/1.25,1)
+    xx = 1.0*zeroT
     cxx = zero(xx)
     TS.sincos!(xx, cxx, 1.0*xT, 0)
     TS.sincos!(xx, cxx, 1.0*xT, 1)
@@ -639,6 +644,7 @@ end
     @test_throws DomainError sqrt(x)
     @test_throws AssertionError x^(-2)
     @test_throws DomainError log(x)
+    @test_throws DomainError log1p(-2+x)
     @test_throws AssertionError cos(x)/sin(y)
     @test_throws BoundsError xH[20]
     @test_throws BoundsError xT[20]

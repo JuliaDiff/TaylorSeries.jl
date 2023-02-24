@@ -149,8 +149,8 @@ using LinearAlgebra
     y = TaylorN(2, order=2)
     xN1 = TaylorN([HomogeneousPolynomial(zero(t), 0), xHt, zero(yHt)], 2)
     yN1 = TaylorN([HomogeneousPolynomial(zero(t), 0), zero(xHt), yHt], 2)
-    for fn in (exp, log, sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh)
-        if fn == asin || fn == acos || fn == atanh
+    for fn in (exp, log, log1p, sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh)
+        if fn == asin || fn == acos || fn == atanh || fn == log1p
             cc = 0.5
         elseif fn == asinh || fn == acosh
             cc = 1.5

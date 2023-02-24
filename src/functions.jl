@@ -34,6 +34,19 @@ for T in (:Taylor1, :TaylorN)
             end
             return c
         end
+        function log1p(a::$T)
+            # constant_term(a) < -one(constant_term(a)) && throw(DomainError(a,
+            #         """The 0-th order coefficient must be larger than -1 in order to expand `log1`."""))
+
+            order = a.order
+            aux = log1p(constant_term(a))
+            aa = one(aux) * a
+            c = $T( aux, order )
+            for k in eachindex(a)
+                log1p!(c, aa, k)
+            end
+            return c
+        end
 
         sin(a::$T) = sincos(a)[1]
         cos(a::$T) = sincos(a)[2]
@@ -276,6 +289,33 @@ for T in (:Taylor1, :TaylorN)
                 end
             end
             @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
+            return nothing
+        end
+
+        @inline function log1p!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            a0 = constant_term(a)
+            a0p1 = a0+one(a0)
+            if k == 0
+                @inbounds c[0] = log1p(a0)
+                return nothing
+            elseif k == 1
+                @inbounds c[1] = a[1] / a0p1
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * a[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1)*a[1], c[k-1])
+            end
+            @inbounds for i = 2:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * a[i] * c[k-i]
+                else
+                    mul!(c[k], (k-i)*a[i], c[k-i])
+                end
+            end
+            @inbounds c[k] = (a[k] - c[k]/k) / a0p1
             return nothing
         end
 
