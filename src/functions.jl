@@ -21,6 +21,17 @@ for T in (:Taylor1, :TaylorN)
             return c
         end
 
+        function expm1(a::$T)
+            order = a.order
+            aux = expm1(constant_term(a))
+            aa = one(aux) * a
+            c = $T( aux, order )
+            for k in eachindex(a)
+                expm1!(c, aa, k)
+            end
+            return c
+        end
+
         function log(a::$T)
             iszero(constant_term(a)) && throw(DomainError(a,
                     """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
@@ -269,6 +280,28 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[k] = k * a[k] * c[0]
             else
                 @inbounds mul!(c[k], k * a[k], c[0])
+            end
+            @inbounds for i = 1:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * a[k-i] * c[i]
+                else
+                    mul!(c[k], (k-i) * a[k-i], c[i])
+                end
+            end
+            @inbounds c[k] = c[k] / k
+            return nothing
+        end
+
+        @inline function expm1!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            if k == 0
+                @inbounds c[0] = expm1(constant_term(a))
+                return nothing
+            end
+            c0 = c[0]+one(c[0])
+            if $T == Taylor1
+                @inbounds c[k] = k * a[k] * c0
+            else
+                @inbounds mul!(c[k], k * a[k], c0)
             end
             @inbounds for i = 1:k-1
                 if $T == Taylor1

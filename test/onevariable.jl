@@ -263,6 +263,8 @@ Base.iszero(::SymbNumber) = false
 
     @test log(exp(tsquare)) == tsquare
     @test exp(log(1-tsquare)) == 1-tsquare
+    @test constant_term(expm1(1.0e-16+t)) == 1.0e-16
+    @test expm1(1.e-16+t).coeffs[2:end] == (exp(t)-1).coeffs[2:end]
     @test log((1-t)^2) == 2*log(1-t)
     @test log1p(0.25 + t) == log(1.25+t)
     @test log1p(-t^2) == log(1-t^2)

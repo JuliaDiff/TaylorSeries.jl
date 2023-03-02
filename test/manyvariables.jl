@@ -416,6 +416,9 @@ end
     @test exy([0.1im, 0.01im]) == exp(0.11im)
     @test isapprox(evaluate(exy, (1,1)), eeuler^2)
     @test exy(:x₁, 0.0) == exp(yT)
+    exym1 = expm1(1.0e-16+xT+yT)
+    @test exym1[0] == expm1(1.0e-16)
+    @test evaluate(exym1, [1.0e-16, 0.0]) ≈ expm1(2.0e-16)
     txy = tan(xT+yT)
     @test getcoeff(txy,(8,7)) == 929569/99225
     ptxy = xT + yT + (1/3)*( xT^3 + yT^3 ) + xT^2*yT + xT*yT^2
@@ -501,6 +504,11 @@ end
     TS.exp!(xx, 1.0*xT, 0)
     TS.exp!(xx, 1.0*xT, 1)
     @test xx[0] == 1.0
+    @test xx[1] == HomogeneousPolynomial([1.0,0.0])
+    xx = 1.0e-16 + 1.0*zeroT
+    TS.expm1!(xx, 1.0e-16 + 1.0*xT, 0)
+    TS.expm1!(xx, 1.0e-16 + 1.0*xT, 1)
+    @test xx[0] == expm1(1.0e-16)
     @test xx[1] == HomogeneousPolynomial([1.0,0.0])
     xx = 1.0*zeroT
     TS.log!(xx, 1.0+xT, 0)
