@@ -21,6 +21,17 @@ for T in (:Taylor1, :TaylorN)
             return c
         end
 
+        function expm1(a::$T)
+            order = a.order
+            aux = expm1(constant_term(a))
+            aa = one(aux) * a
+            c = $T( aux, order )
+            for k in eachindex(a)
+                expm1!(c, aa, k)
+            end
+            return c
+        end
+
         function log(a::$T)
             iszero(constant_term(a)) && throw(DomainError(a,
                     """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
@@ -31,6 +42,19 @@ for T in (:Taylor1, :TaylorN)
             c = $T( aux, order )
             for k in eachindex(a)
                 log!(c, aa, k)
+            end
+            return c
+        end
+        function log1p(a::$T)
+            # constant_term(a) < -one(constant_term(a)) && throw(DomainError(a,
+            #         """The 0-th order coefficient must be larger than -1 in order to expand `log1`."""))
+
+            order = a.order
+            aux = log1p(constant_term(a))
+            aa = one(aux) * a
+            c = $T( aux, order )
+            for k in eachindex(a)
+                log1p!(c, aa, k)
             end
             return c
         end
@@ -45,6 +69,20 @@ for T in (:Taylor1, :TaylorN)
             c = $T( cos(constant_term(a)), order )
             for k in eachindex(a)
                 sincos!(s, c, aa, k)
+            end
+            return s, c
+        end
+
+        sinpi(a::$T) = sincospi(a)[1]
+        cospi(a::$T) = sincospi(a)[2]
+        function sincospi(a::$T)
+            order = a.order
+            aux = sinpi(constant_term(a))
+            aa = one(aux) * a
+            s = $T( aux, order )
+            c = $T( cospi(constant_term(a)), order )
+            for k in eachindex(a)
+                sincospi!(s, c, aa, k)
             end
             return s, c
         end
@@ -254,6 +292,28 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
+        @inline function expm1!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            if k == 0
+                @inbounds c[0] = expm1(constant_term(a))
+                return nothing
+            end
+            c0 = c[0]+one(c[0])
+            if $T == Taylor1
+                @inbounds c[k] = k * a[k] * c0
+            else
+                @inbounds mul!(c[k], k * a[k], c0)
+            end
+            @inbounds for i = 1:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * a[k-i] * c[i]
+                else
+                    mul!(c[k], (k-i) * a[k-i], c[i])
+                end
+            end
+            @inbounds c[k] = c[k] / k
+            return nothing
+        end
+
         @inline function log!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds c[0] = log(constant_term(a))
@@ -276,6 +336,33 @@ for T in (:Taylor1, :TaylorN)
                 end
             end
             @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
+            return nothing
+        end
+
+        @inline function log1p!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            a0 = constant_term(a)
+            a0p1 = a0+one(a0)
+            if k == 0
+                @inbounds c[0] = log1p(a0)
+                return nothing
+            elseif k == 1
+                @inbounds c[1] = a[1] / a0p1
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = (k-1) * a[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], (k-1)*a[1], c[k-1])
+            end
+            @inbounds for i = 2:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * a[i] * c[k-i]
+                else
+                    mul!(c[k], (k-i)*a[i], c[k-i])
+                end
+            end
+            @inbounds c[k] = (a[k] - c[k]/k) / a0p1
             return nothing
         end
 
@@ -307,6 +394,16 @@ for T in (:Taylor1, :TaylorN)
 
             @inbounds s[k] = s[k] / k
             @inbounds c[k] = c[k] / k
+            return nothing
+        end
+
+        @inline function sincospi!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds s[0], c[0] = sincospi( a0 )
+                return nothing
+            end
+            sincos!(s, c, a*pi, k)
             return nothing
         end
 
