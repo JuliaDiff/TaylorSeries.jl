@@ -255,6 +255,7 @@ end
     vr = rand(2)
     @test hp(vr) == evaluate(hp, vr)
 
+    ctab = copy(TS.coeff_table)
     @test integrate(yH,1) == integrate(xH, :x₂)
     p = (xT-yT)^6
     @test integrate(differentiate(p, 1), 1, yT^6) == p
@@ -270,6 +271,7 @@ end
     @test integrate(xT^17, 1, yT) == yT
     @test integrate(xT^17, 1, 2.0) == TaylorN(2.0, get_order())
     @test integrate(xT^17, :x₁, 2.0) == TaylorN(2.0, get_order())
+    @test ctab == TS.@isonethread(TS.coeff_table)
     @test_throws AssertionError integrate(xT, 1, xT)
     @test_throws AssertionError integrate(xT, :x₁, xT)
     @test_throws AssertionError differentiate(xT, (1,))
@@ -771,5 +773,69 @@ end
     @test integrate(x, 1) == t * x
     @test integrate(x, 2) == 0.5*x^2
     @test integrate(y, 2) == x * y
+
+end
+
+@testset "Consistency of coeff_table (differentiate)" begin
+    order = 20
+    x, y, z, w = set_variables(Int128, "x y z w", numvars=4, order=2order)
+    ctab = deepcopy(TS.coeff_table);
+
+    function fun(degree::Int)
+        s = x + y + z + w + 1
+        return s^degree
+    end
+
+    function diffs1(f)
+        f1 = differentiate(f, 1)
+        f2 = differentiate(f, 2)
+        f3 = differentiate(f, 3)
+        f4 = differentiate(f, 4)
+        return f1 + f2 + f3 + f4
+    end
+
+    function diffs2(f)
+        vder = zeros(typeof(f), get_numvars())
+        Threads.@threads for i = 1:get_numvars()
+            vder[i] = differentiate(f, i)
+        end
+        return sum(vder)
+    end
+
+    f = fun(order);
+    df_exact = 4*20*fun(order-1);
+    fint_exact = 4*fun(order+1)/(order+1);
+
+    df1 = diffs1(f);
+    @test ctab == TS.coeff_table
+    @test df1 == df_exact
+
+    df2 = diffs2(f);
+    @test ctab == TS.coeff_table
+    @test df1 == df_exact
+
+    # function integ1(f)
+    #     f1 = integrate(f, 1)
+    #     f2 = integrate(f, 2)
+    #     f3 = integrate(f, 3)
+    #     f4 = integrate(f, 4)
+    #     return f1 + f2 + f3 + f4
+    # end
+    #
+    # function integ2(f)
+    #     vder = zeros(typeof(f), get_numvars())
+    #     Threads.@threads for i = 1:get_numvars()
+    #         vder[i] = integrate(f, i)
+    #     end
+    #     return sum(vder)
+    # end
+    #
+    # ii1 = integ1(f);
+    # @test ctab == TS.coeff_table
+    # @test ii1 == fint_exact
+    #
+    # ii2 = integ2(f);
+    # @test ctab == TS.coeff_table
+    # @test ii2 == fint_exact
 
 end

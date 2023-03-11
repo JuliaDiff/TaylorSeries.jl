@@ -14,8 +14,11 @@ on:
 
 jobs:
   test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.julia-threads }} thread(s) - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     if: "!contains(github.event.head_commit.message, 'skip ci')"
+    env:
+      JULIA_NUM_THREADS: ${{ matrix.julia-threads }}
     strategy:
       fail-fast: false
       matrix:
@@ -26,15 +29,22 @@ jobs:
         # exclude:
         #   - os: macOS-latest
         #     julia-arch: x86
+        julia-threads:
+          - '1'
+        include:
+          - os: ubuntu-latest
+            julia-version: '1'
+            julia-arch: x64
+            julia-threads: '2'
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
-      - uses: actions/cache@v1
+      - uses: actions/cache@v3
         env:
           cache-name: cache-artifacts
         with:
