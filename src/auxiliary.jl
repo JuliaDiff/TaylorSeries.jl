@@ -336,3 +336,25 @@ nonlinear_polynomial(a::AbstractSeries) = a - constant_term(a) - linear_polynomi
 nonlinear_polynomial(a::Vector{T}) where {T<:Number} = nonlinear_polynomial.(a)
 
 nonlinear_polynomial(a::Number) = zero(a)
+
+
+"""
+    @isonethread (expr)
+
+Internal macro used to check the number of threads in use, to prevent a data race
+that modifies `coeff_table` when using `differentiate` or `integrate`; see
+https://github.com/JuliaDiff/TaylorSeries.jl/issues/318.
+
+This macro is inspired by the macro `@threaded`; see https://github.com/trixi-framework/Trixi.jl/blob/main/src/auxiliary/auxiliary.jl;
+and https://github.com/trixi-framework/Trixi.jl/pull/426/files.
+"""
+macro isonethread(expr)
+    return esc(quote
+        if Threads.nthreads() == 1
+            $(expr)
+        else
+            copy($(expr))
+        end
+    end)
+end
+
