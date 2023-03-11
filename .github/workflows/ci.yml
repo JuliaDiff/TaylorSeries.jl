@@ -14,6 +14,7 @@ on:
 
 jobs:
   test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.julia-threads }} thread(s) - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     env:
@@ -32,8 +33,8 @@ jobs:
           - '1'
         include:
           - os: ubuntu-latest
-            version: '1'
-            arch: x64
+            julia-version: '1'
+            julia-arch: x64
             julia-threads: '2'
 
     steps:
