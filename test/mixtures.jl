@@ -14,6 +14,7 @@ using LinearAlgebra
     xH = HomogeneousPolynomial(Int, 1)
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
+    @test findfirst(tN) == 1
 
     @test convert(eltype(tN), tN) == tN
     @test eltype(xH) == HomogeneousPolynomial{Int}
@@ -43,6 +44,7 @@ using LinearAlgebra
 
     t = Taylor1(3)
     xHt = HomogeneousPolynomial(typeof(t), 1)
+    @test findfirst(xHt) == 1
     @test convert(eltype(xHt), xHt) === xHt
     @test eltype(xHt) == HomogeneousPolynomial{Taylor1{Float64}}
     @test TS.numtype(xHt) == Taylor1{Float64}
@@ -50,6 +52,7 @@ using LinearAlgebra
     @test string(xHt) == " ( 1.0 + 𝒪(t¹)) x₁"
     xHt = HomogeneousPolynomial([one(t), zero(t)])
     yHt = HomogeneousPolynomial([zero(t), t])
+    @test findfirst(yHt) == 2
     @test string(xHt) == " ( 1.0 + 𝒪(t⁴)) x₁"
     @test string(yHt) == " ( 1.0 t + 𝒪(t⁴)) x₂"
     @test string(HomogeneousPolynomial([t])) == " ( 1.0 t + 𝒪(t⁴))"
@@ -62,10 +65,13 @@ using LinearAlgebra
     @test (xHt+yHt)([1, 1]) == (xHt+yHt)((1, 1))
 
     tN1 = TaylorN([HomogeneousPolynomial([t]), xHt, yHt^2])
+    @test findfirst(tN1) == 0
     @test tN1[0] == HomogeneousPolynomial([t])
     @test tN1(t,one(t)) == 2t+t^2
+    @test findfirst(tN1(t,one(t))) == 1
     @test tN1([t,one(t)]) == tN1((t,one(t)))
     t1N = convert(Taylor1{TaylorN{Float64}}, tN1)
+    @test findfirst(zero(tN1)) == -1
     @test t1N[0] == HomogeneousPolynomial(1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
     @test convert(eltype(tN1), tN1) === tN1
@@ -332,6 +338,7 @@ end
 @testset "Tests with nested Taylor1s" begin
     ti = Taylor1(3)
     to = Taylor1([zero(ti), one(ti)], 9)
+    @test findfirst(to) == 1
     @test TS.numtype(to) == Taylor1{Float64}
     @test normalize_taylor(to) == to
     @test normalize_taylor(Taylor1([zero(to), one(to)], 5)) == Taylor1([zero(to), one(to)], 5)
@@ -346,6 +353,7 @@ end
     @test tito / ti == to
     @test get_order(tito/ti) == get_order(to)
     @test ti^2-to^2 == (ti+to)*(ti-to)
+    @test findfirst(ti^2-to^2) == 0
     @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
     @test to(1 + ti) == 1 + ti
     @test to(1 + ti) isa Taylor1{Float64}
