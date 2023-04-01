@@ -18,7 +18,7 @@ jet-coefficients used to integrate ODEs.
 `_InternalMutFuncs`
 
 Contains parameters and expressions that allow a simple
-programatic construction for calling the internal mutating
+programmatic construction for calling the internal mutating
 functions.
 """
 struct _InternalMutFuncs

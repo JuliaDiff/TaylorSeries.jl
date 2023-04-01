@@ -21,7 +21,7 @@ de Ciencias, Universidad Nacional Autónoma de México (UNAM)
 Comments, suggestions and improvements are welcome and appreciated.
 
 #### Examples
-Taylor series in one varaible
+Taylor series in one variable
 ```julia
 julia> using TaylorSeries
 
