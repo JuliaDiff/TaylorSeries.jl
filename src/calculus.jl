@@ -100,7 +100,7 @@ end
     integrate(a, [x])
 
 Return the integral of `a::Taylor1`. The constant of integration
-(0-th order coefficient) is set to `x`, which is zero if ommitted.
+(0-th order coefficient) is set to `x`, which is zero if omitted.
 """
 function integrate(a::Taylor1{T}, x::S) where {T<:Number,S<:Number}
     order = get_order(a)
@@ -239,7 +239,7 @@ const ∇ = TaylorSeries.gradient
 ```
 
 Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials,
-evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at zero.
+evaluated at the vector `vals`. If `vals` is omitted, it is evaluated at zero.
 """
 function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
@@ -280,7 +280,7 @@ end
 ```
 
 Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials
-evaluated at the vector `vals`, and write results to `jac`. If `vals` is ommited,
+evaluated at the vector `vals`, and write results to `jac`. If `vals` is omitted,
 it is evaluated at zero.
 """
 function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
@@ -316,7 +316,7 @@ end
 ```
 
 Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
-evaluated at the vector `vals`. If `vals` is ommited, it is evaluated at
+evaluated at the vector `vals`. If `vals` is omitted, it is evaluated at
 zero.
 """
 hessian(f::TaylorN{T}, vals::Array{S,1}) where {T<:Number,S<:Number} =
@@ -332,7 +332,7 @@ hessian(f::TaylorN{T}) where {T<:Number} = hessian( f, zeros(T, get_numvars()) )
 
 Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
 evaluated at the vector `vals`, and write results to `hes`. If `vals` is
-ommited, it is evaluated at zero.
+omitted, it is evaluated at zero.
 """
 hessian!(hes::Array{T,2}, f::TaylorN{T}, vals::Array{T,1}) where {T<:Number} =
     jacobian!(hes, gradient(f), vals)
@@ -384,7 +384,7 @@ integrate(a::HomogeneousPolynomial, s::Symbol) = integrate(a, lookupvar(s))
 
 Integrate the `a::TaylorN` series with respect to the `r`-th variable,
 where `x0` the integration constant and must be independent
-of the `r`-th variable; if `x0` is ommitted, it is taken as zero.
+of the `r`-th variable; if `x0` is omitted, it is taken as zero.
 """
 function integrate(a::TaylorN, r::Int)
     T = promote_type(TS.numtype(a), TS.numtype(a[0]/1))

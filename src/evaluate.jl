@@ -11,7 +11,7 @@
     evaluate(a, [dx])
 
 Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
-ommitted, its value is considered as zero. Note that the syntax `a(dx)` is
+omitted, its value is considered as zero. Note that the syntax `a(dx)` is
 equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
@@ -150,7 +150,7 @@ end
 """
     evaluate(a, [vals])
 
-Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is ommitted,
+Evaluate a `HomogeneousPolynomial` polynomial at `vals`. If `vals` is omitted,
 it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
 `evaluate(a, vals)`; and `a()` is equivalent to `evaluate(a)`.
 """
@@ -198,7 +198,7 @@ end
     evaluate(a, [vals]; sorting::Bool=true)
 
 Evaluate the `TaylorN` polynomial `a` at `vals`.
-If `vals` is ommitted, it's evaluated at zero. The
+If `vals` is omitted, it's evaluated at zero. The
 keyword parameter `sorting` can be used to avoid
 sorting (in increasing order by `abs2`) the
 terms that are added.

@@ -124,7 +124,7 @@ The identity is satisfied. ``\square``
 
 ## Fateman test
 
-Richard J. Fateman, from Berkley, proposed as a stringent test
+Richard J. Fateman, from Berkeley, proposed as a stringent test
 of polynomial multiplication
 the evaluation of ``s\cdot(s+1)``, where ``s = (1+x+y+z+w)^{20}``. This is
 implemented in
@@ -184,7 +184,7 @@ These examples show that
 monomials in 4 variables.
 
 
-### Bechmarks
+### Benchmarks
 
 The functions described above have been compared against Mathematica v11.1.
 The relevant files used for benchmarking can be found

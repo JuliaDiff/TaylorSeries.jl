@@ -330,7 +330,7 @@ the corresponding independent variable, i.e. ``x \to x+a``.
 
 As before, the usual arithmetic operators (`+`, `-`, `*`, `/`, `^`, `==`)
 have been extended to work with [`TaylorN`](@ref) objects, including the
-appropriate promotions to deal with the usual numberic types.
+appropriate promotions to deal with the usual numeric types.
 Note that some of the arithmetic operations have been extended for
 [`HomogeneousPolynomial`](@ref), whenever the result is a
 [`HomogeneousPolynomial`](@ref); division, for instance, is not extended.

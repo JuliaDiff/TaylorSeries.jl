@@ -75,8 +75,8 @@ end
 Return a `TaylorN{T}` vector with each entry representing an
 independent variable. It takes the default `_params_TaylorN_` values
 if `set_variables` hasn't been changed with the exception that `order`
-can be explicitely established by the user without changing internal values
-for `num_vars` or `variable_names`. Ommiting `T` defaults to `Float64`.
+can be explicitly established by the user without changing internal values
+for `num_vars` or `variable_names`. Omitting `T` defaults to `Float64`.
 """
 get_variables(::Type{T}, order::Int=get_order()) where {T} =
     [TaylorN(T, i, order=order) for i in 1:get_numvars()]

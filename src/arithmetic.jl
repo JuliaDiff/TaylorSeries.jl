@@ -85,7 +85,7 @@ ones(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
 
 
 
-## Addition and substraction ##
+## Addition and subtraction ##
 for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
     for T in (:Taylor1, :TaylorN)
