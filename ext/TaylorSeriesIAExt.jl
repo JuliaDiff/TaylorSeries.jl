@@ -1,4 +1,12 @@
-using .IntervalArithmetic
+module TaylorSeriesIAExt
+
+using TaylorSeries
+
+import Base: ^, log, asin, acos, acosh, atanh, power_by_squaring
+
+import TaylorSeries: evaluate, _evaluate, normalize_taylor, square
+
+isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..IntervalArithmetic)
 
 # Method used for Taylor1{Interval{T}}^n
 for T in (:Taylor1, :TaylorN)
@@ -30,7 +38,7 @@ function ^(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
     for k = 0:c_order
-        pow!(c, aa, r, k)
+        TaylorSeries.pow!(c, aa, r, k)
     end
 
     return c
@@ -55,7 +63,7 @@ function ^(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
 
     c = TaylorN( a0r, a.order)
     for ord in 1:a.order
-        pow!(c, aa, r, ord)
+        TaylorSeries.pow!(c, aa, r, ord)
     end
 
     return c
@@ -73,7 +81,7 @@ for T in (:Taylor1, :TaylorN)
         aa[0] = one(aux) * a0
         c = $T( aux, order )
         for k in eachindex(a)
-            log!(c, aa, k)
+            TaylorSeries.log!(c, aa, k)
         end
         return c
     end
@@ -90,7 +98,7 @@ for T in (:Taylor1, :TaylorN)
         c = $T( aux, order )
         r = $T( sqrt(1 - a0^2), order )
         for k in eachindex(a)
-            asin!(c, aa, r, k)
+            TaylorSeries.asin!(c, aa, r, k)
         end
         return c
     end
@@ -107,7 +115,7 @@ for T in (:Taylor1, :TaylorN)
         c = $T( aux, order )
         r = $T( sqrt(1 - a0^2), order )
         for k in eachindex(a)
-            acos!(c, aa, r, k)
+            TaylorSeries.acos!(c, aa, r, k)
         end
         return c
     end
@@ -124,7 +132,7 @@ for T in (:Taylor1, :TaylorN)
         c = $T( aux, order )
         r = $T( sqrt(a0^2 - 1), order )
         for k in eachindex(a)
-            acosh!(c, aa, r, k)
+            TaylorSeries.acosh!(c, aa, r, k)
         end
         return c
     end
@@ -141,11 +149,12 @@ for T in (:Taylor1, :TaylorN)
             """Series expansion of atanh(x) diverges at x = ±1."""))
 
         for k in eachindex(a)
-            atanh!(c, aa, r, k)
+            TaylorSeries.atanh!(c, aa, r, k)
         end
         return c
     end
 end
+
 
 function evaluate(a::Taylor1, dx::Interval)
     order = a.order
@@ -166,7 +175,6 @@ function evaluate(a::Taylor1, dx::Interval)
     end
     return sum_even + sum_odd*dx
 end
-
 
 function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {T<:Real,N}
     @assert N == get_numvars()
@@ -190,7 +198,7 @@ end
 function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} ) where {T<:Real,N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
-    ct = coeff_table[a.order+1]
+    ct = TaylorSeries.coeff_table[a.order+1]
     @inbounds suma = a[1]*Interval{T}(0,0)
 
     Ieven = Interval{T}(0,1)
@@ -275,4 +283,6 @@ function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {T<:Rea
         x[ind] = inf(I[ind]) + TaylorN(ind, order=order)*diam(I[ind])
     end
     return a(x)
+end
+
 end

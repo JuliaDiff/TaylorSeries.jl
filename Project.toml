@@ -4,11 +4,16 @@ repo = "https://github.com/JuliaDiff/TaylorSeries.jl.git"
 version = "0.14.0"
 
 [deps]
-IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[weakdeps]
+IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
+
+[extensions]
+TaylorSeriesIAExt = "IntervalArithmetic"
 
 [compat]
 IntervalArithmetic = "0.15, 0.16, 0.17, 0.18, 0.19, 0.20"
