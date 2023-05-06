@@ -268,13 +268,13 @@ end
 # Finds the first non zero entry; extended to Taylor1
 function Base.findfirst(a::Taylor1{T}) where {T<:Number}
     first = findfirst(x->!iszero(x), a.coeffs)
-    isa(first, Nothing) && return -1
+    isnothing(first) && return -1
     return first-1
 end
 # Finds the last non-zero entry; extended to Taylor1
 function Base.findlast(a::Taylor1{T}) where {T<:Number}
     last = findlast(x->!iszero(x), a.coeffs)
-    isa(last, Nothing) && return -1
+    isnothing(last) && return -1
     return last-1
 end
 

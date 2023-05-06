@@ -31,7 +31,7 @@ end
 
 import LinearAlgebra: norm, mul!, lu
 
-import Base: ==, +, -, *, /, ^
+import Base: ==, +, -, *, /, ^, <, >
 
 import Base: iterate, size, eachindex, firstindex, lastindex,
     eltype, length, getindex, setindex!, axes, copyto!
