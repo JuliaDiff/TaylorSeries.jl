@@ -133,6 +133,8 @@ end
     @test HomogeneousPolynomial(0,0)  == 0
     @test (@inferred conj(xH)) == (@inferred adjoint(xH))
     @test (@inferred real(xH)) == xH
+    @test xH > yH
+    @test -yH < 0
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
     @test findfirst(xT) == 1
@@ -223,6 +225,8 @@ end
     @test eltype(convert(TaylorN{Complex{Float64}},1)) == TaylorN{Complex{Float64}}
     @test TS.numtype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
     @test normalize_taylor(xT) == xT
+    @test 1 > xT > yT > xT^2 > 0
+    @test -yT < -xT^2 < 0
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])
@@ -766,6 +770,8 @@ end
     @test yT[0] == xT[0]*(pi/180)
     TS.rad2deg!(yT, xT, 0)
     @test yT[0] == xT[0]*(180/pi)
+    @test 1 > dx[1] > dx[2] > dx[3] > dx[4]
+    @test dx[4]^2 < dx[3]*dx[4] < dx[3]^2 < dx[2]*dx[4] < dx[2]*dx[3] < dx[2]^2 < dx[1]*dx[4] < dx[1]*dx[3] < dx[1]*dx[2] < dx[1]^2
 end
 
 @testset "Integrate for several variables" begin

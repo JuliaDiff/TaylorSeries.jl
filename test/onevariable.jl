@@ -45,6 +45,9 @@ Base.iszero(::SymbNumber) = false
     @test axes(t) == ()
     @test axes([t]) == (Base.OneTo(1),)
 
+    @test 1 > t > t^2
+    @test 1 > -t^2 > -t
+
     v = [1,2]
     @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
     @test v == [1,2,0,0]
