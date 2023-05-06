@@ -73,7 +73,7 @@ sin(exp(x+2))/(x+2)+cos(x+2)+f(x+2)
 
 The first example shows that the four-square identity holds:
 ```math
-(a_1+a_2+a_3+a_4)\cdot(b_1+b_2+b_3+b_4) = \\
+(a_1^2 + a_2^2 + a_3^2 + a_4^2)\cdot(b_1^2 + b_2^2 + b_3^2 + b_4^2) = \\
   \qquad (a_1 b_1 - a_2 b_2 - a_3 b_3 -a_4 b_4)^2 +
   (a_1 b_2 - a_2 b_1 - a_3 b_4 -a_4 b_3)^2 + \\
   \qquad (a_1 b_3 - a_2 b_4 - a_3 b_1 -a_4 b_2)^2 +
