@@ -112,7 +112,7 @@ end
 end
 @inline isless(a::TaylorN{Taylor1{T}}, b::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries} = isless(a - b, zero(T))
 
-#= TODO: Nested Taylor1s; needs careful thinking. The following works:
+#= TODO: Nested Taylor1s; needs careful thinking; iss #326. The following works:
 @inline isless(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where {T<:Number} = isless(a - b, zero(T))
 # Is the following correct?
 # ti = Taylor1(3)

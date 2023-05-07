@@ -356,6 +356,7 @@ end
     @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
     @test ti + to == Taylor1([ti, one(ti)], 9)
     tito = ti * to
+    # The next tests are related to iss #326
     # @test ti > ti^2 > to > 0
     # @test to^2 < toti < ti^2
     @test tito == Taylor1([zero(ti), ti], 9)
