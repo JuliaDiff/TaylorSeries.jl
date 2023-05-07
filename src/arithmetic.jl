@@ -96,6 +96,33 @@ end
     end
 end
 
+# Mixtures
+@inline isless(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries} =
+    isless(a - b, zero(T))
+@inline function isless(a::HomogeneousPolynomial{Taylor1{T}}, b::HomogeneousPolynomial{Taylor1{T}}) where {T<:NumberNotSeries}
+    orda = get_order(a)
+    ordb = get_order(b)
+    if orda == ordb
+        return isless(a-b, zero(T))
+    elseif orda < ordb
+        return isless(a, zero(T))
+    else
+        return isless(-b, zero(T))
+    end
+end
+@inline isless(a::TaylorN{Taylor1{T}}, b::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries} = isless(a - b, zero(T))
+
+#= TODO: Nested Taylor1s; needs careful thinking. The following works:
+@inline isless(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where {T<:Number} = isless(a - b, zero(T))
+# Is the following correct?
+# ti = Taylor1(3)
+# to = Taylor1([zero(ti), one(ti)], 9)
+# tito = ti * to
+# ti > to > 0 # ok
+# to^2 < toti < ti^2 # ok
+# ti > ti^2 > to # is this ok?
+=#
+
 @doc doc"""
     isless(a::Taylor1{<:Real}, b::Real)
     isless(a::TaylorN{<:Real}, b::Real)
