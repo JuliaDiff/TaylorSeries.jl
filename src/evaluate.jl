@@ -214,8 +214,8 @@ evaluate(a::TaylorN, vals::NTuple; sorting::Bool=true) = _evaluate(a, vals, Val(
 
 evaluate(a::TaylorN, v, vals::Vararg; sorting::Bool=true) = _evaluate(a, (v, vals...,), Val(sorting))
 
-evaluate(a::TaylorN, vals::NTuple{N,T}; sorting::Bool=false) where
-    {N, T<:AbstractSeries} = _evaluate(a, vals, Val(sorting))
+evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries}; sorting::Bool=false) where
+    {N} = _evaluate(a, vals, Val(sorting))
 
 evaluate(a::TaylorN{Taylor1}, vals::NTuple{N,<:AbstractSeries}; sorting::Bool=false) where
     {N} = _evaluate(a, vals, Val(sorting))
