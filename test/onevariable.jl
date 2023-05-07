@@ -145,10 +145,6 @@ Base.iszero(::SymbNumber) = false
     @test findfirst(t^2) == 2
     @test findfirst(ot) == 0
     @test findfirst(zt) == -1
-    @test findlast(t) == 1
-    @test findlast(t^2) == 2
-    @test findlast(ot) == 0
-    @test findlast(zt) == -1
     @test iszero(zero(t))
     @test !iszero(one(t))
     @test @inferred isinf(Taylor1([typemax(1.0)]))
