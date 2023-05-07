@@ -33,14 +33,66 @@ function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     return iszero(a.coeffs) && iszero(b.coeffs)
 end
 
-# Iss: #209
-"""
+## Total ordering ##
+for (fn, gn) in zip((:<,:>), (:>,:<))
+    for T in (:Taylor1, :TaylorN)
+        @eval begin
+            function $fn(a::$T{<:Real}, b::Real)
+                a0 = constant_term(a)
+                a0 != b && return $fn(a0, b)
+                nz = findfirst(a-b)
+                if nz == -1
+                    return $fn(zero(a0), zero(b))
+                else
+                    return $fn(a[nz], zero(b))
+                end
+            end
+            $fn(b::Real, a::$T{<:Real}) = $gn(a, b)
+            #
+            $fn(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number} = $fn(promote(a,b)...)
+            $fn(a::$T{T}, b::$T{T}) where {T<:Number} = $fn(a - b, zero(constant_term(a)))
+        end
+    end
+
+    @eval begin
+        function $fn(a::HomogeneousPolynomial{<:Real}, b::Real)
+            orda = get_order(a)
+            if orda == 0
+                return $fn(a[1], b)
+            else
+                !iszero(b) && return zero($fn(a[1]), b)
+                nz = findfirst(a)
+                return $fn(a[nz], zero(b))
+            end
+        end
+        $fn(b::Real, a::HomogeneousPolynomial{<:Real}) = $gn(a, b)
+        #
+        $fn(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where {T<:Number,S<:Number} = $fn(promote(a,b)...)
+        function $fn(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where {T<:Number}
+            orda = get_order(a)
+            ordb = get_order(b)
+            if orda == ordb
+                return $fn(a-b, zero(a[1]))
+            elseif orda < ordb
+                return $fn(a, zero(a[1]))
+            else
+                return $fn(-b, zero(a[1]))
+            end
+        end
+    end
+end
+
+@doc doc"""
     <(a::Taylor1{<:Real}, b::Real)
     <(a::TaylorN{<:Real}, b::Real)
 
 Less-than comparison of `a::Taylor1` series and `b::Real`, computed by comparing
 `constant_term(a)` and `b`. If they are equal, returns `a[nz] < 0`, with `nz` the first
 non-zero coefficient beyond the constant term. This defines a total order.
+
+For many variables, the ordering must include a lexicographical convention in order to be
+total. We have opted for the simplest, where the *larger* variable appears *before*
+when they are defined (e.g., through [`set_variables`](@ref)).
 
 Refs:
 - M. Berz, AIP Conference Proceedings 177, 275 (1988); https://doi.org/10.1063/1.37800
@@ -53,51 +105,19 @@ Refs:
     <(a::TaylorN{<:Real}, b::Taylor1{<:Real})
 
 Return `a - b < zero(b)`.
-"""
-function <(a::Taylor1{<:Real}, b::Real)
-    a0 = constant_term(a)
-    a0 != b && return a0 < b
-    nz = findfirst(a-b)
-    if nz == -1
-        return zero(a0) < zero(b)
-    else
-        return a[nz] < zero(b)
-    end
-end
-<(b::Real, a::Taylor1{<:Real}) = >(a, b)
+""" :<
 
-function <(a::HomogeneousPolynomial{<:Real}, b::Real)
-    ord_a = get_order(a)
-    if ord_a == 0
-        return a[1] < b
-    else
-        !iszero(b) && return zero(a[1]) < b
-        nz = findfirst(a)
-        return a[nz] < zero(b)
-    end
-end
-<(b::Real, a::HomogeneousPolynomial{<:Real}) = >(a, b)
-
-function <(a::TaylorN{<:Real}, b::Real)
-    a0 = constant_term(a)
-    a0 != b && return a0 < b
-    nz = findfirst(a-b)
-    if nz == -1
-        return zero(a0) < zero(b)
-    else
-        return a[nz] < zero(b)
-    end
-end
-<(b::Real, a::TaylorN{<:Real}) = >(a, b)
-
-
-"""
+@doc doc"""
     >(a::Taylor1{<:Real}, b::Real)
-    >(a::Taylor1{<:Real}, b::Real)
+    >(a::TaylorN{<:Real}, b::Real)
 
-Greater-than comparison of `a::Taylor1` series and `b::Real`, computed by comparing
+Greater-than comparison of `a` series and `b::Real`, computed by comparing
 `constant_term(a)` and `b`. If both are equal, returns `a[nz] > 0`, with `nz` the first
 non-zero coefficient beyond the constant term. This defines a total order.
+
+For many variables, the ordering must include a lexicographical convention in order to be
+total. We have opted for the simplest, where the *larger* variable appears *before*
+when they are defined (e.g., through [`set_variables`](@ref)).
 
 Refs:
 - M. Berz, AIP Conference Proceedings 177, 275 (1988); https://doi.org/10.1063/1.37800
@@ -110,73 +130,14 @@ Refs:
 >(a::TaylorN{<:Real}, b::Taylor1{<:Real})
 
 Return `a - b > zero(b)`.
-"""
-function >(a::Taylor1{<:Real}, b::Real)
-    a0 = constant_term(a)
-    a0 != b && return a0 > b
-    nz = findfirst(a-b)
-    if nz == -1
-        return zero(a0) > zero(b)
-    else
-        return a[nz] > zero(b)
-    end
-end
->(b::Real, a::Taylor1{<:Real}) = <(a, b)
-
-function >(a::HomogeneousPolynomial{<:Real}, b::Real)
-    ord_a = get_order(a)
-    if ord_a == 0
-        return a[1] > b
-    else
-        !iszero(b) && return zero(a[1]) > b
-        nz = findfirst(a)
-        return a[nz] > zero(b)
-    end
-end
->(b::Real, a::HomogeneousPolynomial{<:Real}) = <(a, b)
-
-function >(a::TaylorN{<:Real}, b::Real)
-    a0 = constant_term(a)
-    a0 != b && return a0 > b
-    nz = findfirst(a-b)
-    if nz == -1
-        return zero(a0) > zero(b)
-    else
-        return a[nz] > zero(b)
-    end
-end
->(b::Real, a::TaylorN{<:Real}) = <(a, b)
-
-#
-for T in (:Taylor1, :TaylorN,)
-    @eval begin
-        <(a::$T{T}, b::$T{S}) where {T<:Number,S<:Number} = <(promote(a,b)...)
-        <(a::$T{T}, b::$T{T}) where {T<:Number} = a - b < zero(constant_term(a))
-
-        >(a::$T{T}, b::$T{S}) where {T<:Number,S<:Number} = >(promote(a,b)...)
-        >(a::$T{T}, b::$T{T}) where {T<:Number} = a - b > zero(constant_term(a))
-    end
-end
-
-<(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where {T<:Number,S<:Number} = <(promote(a,b)...)
-function <(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where {T<:Number}
-    ord_a = get_order(a)
-    ord_b = get_order(b)
-    if ord_a == ord_b
-        return a-b < zero(a[1])
-    elseif ord_a < ord_b
-        return a < zero(a[1])
-    else
-        return -b < zero(a[1])
-    end
-end
+""" :>
 
 
+## zero and one ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval iszero(a::$T) = iszero(a.coeffs)
 end
 
-## zero and one ##
 for T in (:Taylor1, :TaylorN)
     @eval zero(a::$T) = $T(zero.(a.coeffs))
     @eval function one(a::$T)

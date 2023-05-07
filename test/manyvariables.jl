@@ -133,8 +133,8 @@ end
     @test HomogeneousPolynomial(0,0)  == 0
     @test (@inferred conj(xH)) == (@inferred adjoint(xH))
     @test (@inferred real(xH)) == xH
-    @test xH > yH
-    @test -yH < 0
+    @test xH > yH > xH^2
+    @test -xH < -yH^2 < 0
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
     @test findfirst(xT) == 1
