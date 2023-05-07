@@ -31,12 +31,12 @@ end
 
 import LinearAlgebra: norm, mul!, lu
 
-import Base: ==, +, -, *, /, ^, <, >
+import Base: ==, +, -, *, /, ^
 
 import Base: iterate, size, eachindex, firstindex, lastindex,
     eltype, length, getindex, setindex!, axes, copyto!
 
-import Base: zero, one, zeros, ones, isinf, isnan, iszero,
+import Base: zero, one, zeros, ones, isinf, isnan, iszero, isless,
     convert, promote_rule, promote, show,
     real, imag, conj, adjoint,
     rem, mod, mod2pi, abs, abs2,

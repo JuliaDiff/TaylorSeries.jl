@@ -34,90 +34,79 @@ function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
 end
 
 ## Total ordering ##
-for (fn, gn) in zip((:<,:>), (:>,:<))
-    for T in (:Taylor1, :TaylorN)
-        @eval begin
-            function $fn(a::$T{<:Real}, b::Real)
-                a0 = constant_term(a)
-                a0 != b && return $fn(a0, b)
-                nz = findfirst(a-b)
-                if nz == -1
-                    return $fn(zero(a0), zero(b))
-                else
-                    return $fn(a[nz], zero(b))
-                end
-            end
-            $fn(b::Real, a::$T{<:Real}) = $gn(a, b)
-            #
-            $fn(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number} = $fn(promote(a,b)...)
-            $fn(a::$T{T}, b::$T{T}) where {T<:Number} = $fn(a - b, zero(constant_term(a)))
-        end
-    end
-
+for T in (:Taylor1, :TaylorN)
     @eval begin
-        function $fn(a::HomogeneousPolynomial{<:Real}, b::Real)
-            orda = get_order(a)
-            if orda == 0
-                return $fn(a[1], b)
+        @inline function isless(a::$T{<:Number}, b::Real)
+            a0 = constant_term(a)
+            a0 != b && return isless(a0, b)
+            nz = findfirst(a-b)
+            if nz == -1
+                return isless(zero(a0), zero(b))
             else
-                !iszero(b) && return zero($fn(a[1]), b)
-                nz = findfirst(a)
-                return $fn(a[nz], zero(b))
+                return isless(a[nz], zero(b))
             end
         end
-        $fn(b::Real, a::HomogeneousPolynomial{<:Real}) = $gn(a, b)
+        @inline function isless(b::Real, a::$T{<:Number})
+            a0 = constant_term(a)
+            a0 != b && return isless(b, a0)
+            nz = findfirst(b-a)
+            if nz == -1
+                return isless(zero(b), zero(a0))
+            else
+                return isless(zero(b), a[nz])
+            end
+        end
         #
-        $fn(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where {T<:Number,S<:Number} = $fn(promote(a,b)...)
-        function $fn(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where {T<:Number}
-            orda = get_order(a)
-            ordb = get_order(b)
-            if orda == ordb
-                return $fn(a-b, zero(a[1]))
-            elseif orda < ordb
-                return $fn(a, zero(a[1]))
-            else
-                return $fn(-b, zero(a[1]))
-            end
-        end
+        @inline isless(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number} = isless(promote(a,b)...)
+        @inline isless(a::$T{T}, b::$T{T}) where {T<:Number} = isless(a - b, zero(constant_term(a)))
+    end
+end
+
+@inline function isless(a::HomogeneousPolynomial{<:Number}, b::Real)
+    orda = get_order(a)
+    if orda == 0
+        return isless(a[1], b)
+    else
+        !iszero(b) && return isless(zero(a[1]), b)
+        nz = max(findfirst(a), 1)
+        return isless(a[nz], b)
+    end
+end
+@inline function isless(b::Real, a::HomogeneousPolynomial{<:Number})
+    orda = get_order(a)
+    if orda == 0
+        return isless(b, a[1])
+    else
+        !iszero(b) && return isless(b, zero(a[1]))
+        nz = max(findfirst(a),1)
+        return isless(b, a[nz])
+    end
+end
+#
+@inline isless(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where {T<:Number, S<:Number} = isless(promote(a,b)...)
+@inline function isless(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where {T<:Number}
+    orda = get_order(a)
+    ordb = get_order(b)
+    if orda == ordb
+        return isless(a-b, zero(a[1]))
+    elseif orda < ordb
+        return isless(a, zero(a[1]))
+    else
+        return isless(-b, zero(a[1]))
     end
 end
 
 @doc doc"""
-    <(a::Taylor1{<:Real}, b::Real)
-    <(a::TaylorN{<:Real}, b::Real)
+    isless(a::Taylor1{<:Real}, b::Real)
+    isless(a::TaylorN{<:Real}, b::Real)
 
-Less-than comparison of `a::Taylor1` series and `b::Real`, computed by comparing
-`constant_term(a)` and `b`. If they are equal, returns `a[nz] < 0`, with `nz` the first
-non-zero coefficient beyond the constant term. This defines a total order.
+Compute `isless` by comparing the `constant_term(a)` and `b`. If they are equal,
+returns `a[nz] < 0`, with `nz` the first
+non-zero coefficient after the constant term. This defines a total order.
 
-For many variables, the ordering must include a lexicographical convention in order to be
-total. We have opted for the simplest, where the *larger* variable appears *before*
-when they are defined (e.g., through [`set_variables`](@ref)).
-
-Refs:
-- M. Berz, AIP Conference Proceedings 177, 275 (1988); https://doi.org/10.1063/1.37800
-- M. Berz, "Automatic Differentiation as Nonarchimedean Analysis", Computer Arithmetic and
-    Enclosure Methods, (1992), Elsevier, 439-450.
-
----
-
-    <(a::Taylor1{<:Real}, b::Taylor1{<:Real})
-    <(a::TaylorN{<:Real}, b::Taylor1{<:Real})
-
-Return `a - b < zero(b)`.
-""" :<
-
-@doc doc"""
-    >(a::Taylor1{<:Real}, b::Real)
-    >(a::TaylorN{<:Real}, b::Real)
-
-Greater-than comparison of `a` series and `b::Real`, computed by comparing
-`constant_term(a)` and `b`. If both are equal, returns `a[nz] > 0`, with `nz` the first
-non-zero coefficient beyond the constant term. This defines a total order.
-
-For many variables, the ordering must include a lexicographical convention in order to be
-total. We have opted for the simplest, where the *larger* variable appears *before*
-when they are defined (e.g., through [`set_variables`](@ref)).
+For many variables, the ordering includes a lexicographical convention in order to be
+total. We have opted for the simplest one, where the *larger* variable appears *before*
+when the `TaylorN` variables are defined (e.g., through [`set_variables`](@ref)).
 
 Refs:
 - M. Berz, AIP Conference Proceedings 177, 275 (1988); https://doi.org/10.1063/1.37800
@@ -126,11 +115,11 @@ Refs:
 
 ---
 
->(a::Taylor1{<:Real}, b::Taylor1{<:Real})
->(a::TaylorN{<:Real}, b::Taylor1{<:Real})
+    isless(a::Taylor1{<:Real}, b::Taylor1{<:Real})
+    isless(a::TaylorN{<:Real}, b::Taylor1{<:Real})
 
-Return `a - b > zero(b)`.
-""" :>
+Return `isless(a - b, zero(b))`.
+""" isless
 
 
 ## zero and one ##

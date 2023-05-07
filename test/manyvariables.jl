@@ -94,6 +94,7 @@ end
     @test_throws AssertionError TS.resize_coeffsHP!(v,1)
     hpol_v = HomogeneousPolynomial(v)
     @test findfirst(hpol_v) == 1
+    @test findlast(hpol_v) == 2
     hpol_v[3] = 3
     @test v == [1,2,3]
     hpol_v[1:3] = 3
@@ -101,12 +102,14 @@ end
     hpol_v[1:2:2] = 0
     @test v == [0,3,3]
     @test findfirst(hpol_v) == 2
+    @test findlast(hpol_v) == 3
     hpol_v[1:1:2] = [1,2]
     @test all(hpol_v[1:1:2] .== [1,2])
     @test v == [1,2,3]
     hpol_v[:] = zeros(Int, 3)
     @test hpol_v == 0
     @test findfirst(hpol_v) == -1
+    @test findlast(hpol_v) == -1
 
     tn_v = TaylorN(HomogeneousPolynomial(zeros(Int, 3)))
     tn_v[0] = 1
@@ -135,13 +138,16 @@ end
     @test (@inferred real(xH)) == xH
     @test xH > yH > xH^2
     @test -xH < -yH^2 < 0
+    @test HomogeneousPolynomial([-2]) < 0
+    @test !(zero(yH^2) > 0)
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
     @test findfirst(xT) == 1
+    @test findlast(yT) == 1
     @test (@inferred conj(xT)) == (@inferred adjoint(xT))
     @test (@inferred real(xT)) == (xT)
     zeroT = zero( TaylorN([xH],1) )
-    @test findfirst(zeroT) == -1
+    @test findfirst(zeroT) == findlast(zeroT) == -1
     @test (@inferred imag(xT)) == (zeroT)
     @test zeroT.coeffs == zeros(HomogeneousPolynomial{Int}, 1)
     @test size(xH) == (2,)
@@ -227,6 +233,8 @@ end
     @test normalize_taylor(xT) == xT
     @test 1 > xT > yT > xT^2 > 0
     @test -yT < -xT^2 < 0
+    @test !(zero(xT) > 0)
+    @test !(zero(yT^2) < 0)
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])
