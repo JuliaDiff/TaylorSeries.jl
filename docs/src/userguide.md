@@ -352,12 +352,23 @@ The ordering is consistent with the interpretation that there are infinitessimal
 elements in the algebra; for details see M. Berz, "Automatic Differentiation as
 Nonarchimedean Analysis", Computer Arithmetic and Enclosure Methods, (1992), Elsevier,
 439-450.
+Essentially, the lexicographic order works as follows: smaller order monomials
+are *larger* than higher order monomials; when the order is the same, *larger* monomials
+appear before in the hash-tables; the function [`show_monomials`](@ref).
+```@repl userguide
+x, y = set_variables("x y", order=10);
+
+show_monomials(2)
+```
+Then, the following clearly holds:
+```@repl userguide
+0 < 1e8 * y^2 < x*y < x^2  < y < x/1e8 < 1.0
+```
 
 The elementary functions have also been
 implemented, again by computing their coefficients recursively:
 
 ```@repl userguide
-x, y = set_variables("x y", order=10);
 exy = exp(x+y)
 ```
 
