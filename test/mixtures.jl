@@ -23,8 +23,8 @@ using LinearAlgebra
     @test TS.numtype(tN) == TaylorN{Float64}
     @test normalize_taylor(tN) == tN
     @test tN.order == 3
-    @test 1 > xH > yH > 0
-    @test -xH^2 < -xH*yH < -yH^2 < -xH^3 < -yH^3 < 0
+    @test HomogeneousPolynomial([1]) > xH > yH > 0.0
+    @test -xH^2 < -xH*yH < -yH^2 < -xH^3 < -yH^3 < HomogeneousPolynomial([0.0])
     @test 1 ≥ tN > 2*tN^2 > 100*tN^3 > 0
     @test -2*tN < -tN^2 ≤ 0
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖¹) + 𝒪(t⁴)"

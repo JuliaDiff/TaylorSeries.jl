@@ -136,9 +136,9 @@ end
     @test HomogeneousPolynomial(0,0)  == 0
     @test (@inferred conj(xH)) == (@inferred adjoint(xH))
     @test (@inferred real(xH)) == xH
-    @test xH > yH > xH^2
+    @test HomogeneousPolynomial([2.1]) > xH > yH > xH^2
     @test -xH < -yH^2 < 0
-    @test HomogeneousPolynomial([-2]) < 0
+    @test HomogeneousPolynomial([-2.1]) < 0
     @test !(zero(yH^2) > 0)
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
@@ -231,8 +231,8 @@ end
     @test eltype(convert(TaylorN{Complex{Float64}},1)) == TaylorN{Complex{Float64}}
     @test TS.numtype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
     @test normalize_taylor(xT) == xT
-    @test 1 > xT > yT > xT^2 > 0
-    @test -yT < -xT^2 < 0
+    @test 1.0 > xT > yT > xT^2 > 0
+    @test -1 < -yT < -xT^2 < 0.0
     @test !(zero(xT) > 0)
     @test !(zero(yT^2) < 0)
 
