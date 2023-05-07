@@ -50,6 +50,7 @@ inverse
 abs
 norm
 isapprox
+isless
 isfinite
 displayBigO
 use_show_default
