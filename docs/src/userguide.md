@@ -360,7 +360,7 @@ x, y = set_variables("x y", order=10);
 
 show_monomials(2)
 ```
-Then, the following clearly holds:
+Then, the following then holds:
 ```@repl userguide
 0 < 1e8 * y^2 < x*y < x^2  < y < x/1e8 < 1.0
 ```
