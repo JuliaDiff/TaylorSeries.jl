@@ -105,6 +105,16 @@ of order 5; this is be consistent with the number of known coefficients of the
 returned series, since the result corresponds to factorize `t` in the numerator
 to cancel the same factor in the denominator.
 
+`Taylor1` is also equiped with a total order, provided by overloading [`isless`](@ref).
+The ordering is consistent with the interpretation that there are infinitessimal
+elements in the algebra; for details see M. Berz, "Automatic Differentiation as
+Nonarchimedean Analysis", Computer Arithmetic and Enclosure Methods, (1992), Elsevier,
+439-450. This is illustrated by:
+
+```@repl userguide
+1 > t > 2*t^2 > 100*t^3 >= 0
+```
+
 If no valid Taylor expansion can be computed an error is thrown, for instance,
 when a derivative is not defined at the expansion point, or it simply diverges.
 
@@ -336,12 +346,29 @@ Note that some of the arithmetic operations have been extended for
 [`HomogeneousPolynomial`](@ref); division, for instance, is not extended.
 The same convention used for `Taylor1` objects is used when combining
 `TaylorN` polynomials of different order.
+Both `HomogeneousPolynomial` and `TaylorN` are equiped with a total *lexicographical*
+order, provided by overloading [`isless`](@ref).
+The ordering is consistent with the interpretation that there are infinitessimal
+elements in the algebra; for details see M. Berz, "Automatic Differentiation as
+Nonarchimedean Analysis", Computer Arithmetic and Enclosure Methods, (1992), Elsevier,
+439-450.
+Essentially, the lexicographic order works as follows: smaller order monomials
+are *larger* than higher order monomials; when the order is the same, *larger* monomials
+appear before in the hash-tables; the function [`show_monomials`](@ref).
+```@repl userguide
+x, y = set_variables("x y", order=10);
+
+show_monomials(2)
+```
+Then, the following then holds:
+```@repl userguide
+0 < 1e8 * y^2 < x*y < x^2  < y < x/1e8 < 1.0
+```
 
 The elementary functions have also been
 implemented, again by computing their coefficients recursively:
 
 ```@repl userguide
-x, y = set_variables("x y", order=10);
 exy = exp(x+y)
 ```
 
