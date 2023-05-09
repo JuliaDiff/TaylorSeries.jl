@@ -23,10 +23,13 @@ using LinearAlgebra
     @test TS.numtype(tN) == TaylorN{Float64}
     @test normalize_taylor(tN) == tN
     @test tN.order == 3
-    @test HomogeneousPolynomial([1]) > xH > yH > 0.0
-    @test -xH^2 < -xH*yH < -yH^2 < -xH^3 < -yH^3 < HomogeneousPolynomial([0.0])
-    @test 1 ≥ tN > 2*tN^2 > 100*tN^3 > 0
-    @test -2*tN < -tN^2 ≤ 0
+
+    @testset "Lexicographic order: Taylor1{HomogeneousPolynomial{T}} and Taylor1{TaylorN{T}}" begin
+        @test HomogeneousPolynomial([1]) > xH > yH > 0.0
+        @test -xH^2 < -xH*yH < -yH^2 < -xH^3 < -yH^3 < HomogeneousPolynomial([0.0])
+        @test 1 ≥ tN > 2*tN^2 > 100*tN^3 > 0
+        @test -2*tN < -tN^2 ≤ 0
+    end
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖¹) + 𝒪(t⁴)"
     @test string(tN) == " ( 1.0 + 𝒪(‖x‖¹)) t + 𝒪(t⁴)"
     @test string(tN + 3Taylor1(Int, 2)) == " ( 4.0 + 𝒪(‖x‖¹)) t + 𝒪(t³)"
@@ -113,10 +116,12 @@ using LinearAlgebra
     @test !(@inferred isnan(tN1))
     @test !(@inferred isinf(tN1))
 
-    @test 1 > xHt > yHt > xHt^2 > 0
-    @test -xHt^2 < -xHt*yHt < -yHt^2 < -xHt^3 < -yHt^3 < 0
-    @test 1 ≥ tN1 > 2*tN1^2 > 100*tN1^3 > 0
-    @test -2*tN1 < -tN1^2 ≤ 0
+    @testset "Lexicographic order: HomogeneousPolynomial{Taylor1{T}} and TaylorN{Taylor1{T}}" begin
+        @test 1 > xHt > yHt > xHt^2 > 0
+        @test -xHt^2 < -xHt*yHt < -yHt^2 < -xHt^3 < -yHt^3 < 0
+        @test 1 ≥ tN1 > 2*tN1^2 > 100*tN1^3 > 0
+        @test -2*tN1 < -tN1^2 ≤ 0
+    end
 
     @test mod(tN1+1,1.0) == 0+tN1
     @test mod(tN1-1.125,2) == 0.875+tN1

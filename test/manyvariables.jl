@@ -136,10 +136,6 @@ end
     @test HomogeneousPolynomial(0,0)  == 0
     @test (@inferred conj(xH)) == (@inferred adjoint(xH))
     @test (@inferred real(xH)) == xH
-    @test HomogeneousPolynomial([2.1]) > 0.5 * xH > yH > xH^2
-    @test -1.0*xH < -yH^2 < 0 < HomogeneousPolynomial([1.0])
-    @test -3 < HomogeneousPolynomial([-2]) < 0.0
-    @test !(zero(yH^2) > 0)
     xT = TaylorN(xH, 17)
     yT = TaylorN(Int, 2, order=17)
     @test findfirst(xT) == 1
@@ -169,6 +165,16 @@ end
     @test TS.fixorder(xH,yH) == (xH,yH)
     @test_throws AssertionError TS.fixorder(zeros(xH,0)[1],yH)
 
+    @testset "Lexicographic order" begin
+        @test HomogeneousPolynomial([2.1]) > 0.5 * xH > yH > xH^2
+        @test -1.0*xH < -yH^2 < 0 < HomogeneousPolynomial([1.0])
+        @test -3 < HomogeneousPolynomial([-2]) < 0.0
+        @test !(zero(yH^2) > 0)
+        @test 1 > 0.5 * xT > yT > xT^2 > 0 > TaylorN(-1.0, 3)
+        @test -1 < -0.25 * yT < -xT^2 < 0.0 < TaylorN(1, 3)
+        @test !(zero(xT) > 0)
+        @test !(zero(yT^2) < 0)
+    end
 
     @test constant_term(xT) == 0
     @test constant_term(uT) == 1.0
@@ -231,10 +237,6 @@ end
     @test eltype(convert(TaylorN{Complex{Float64}},1)) == TaylorN{Complex{Float64}}
     @test TS.numtype(convert(TaylorN{Complex{Float64}},1)) == Complex{Float64}
     @test normalize_taylor(xT) == xT
-    @test 1 > 0.5 * xT > yT > xT^2 > 0 > TaylorN(-1.0, 3)
-    @test -1 < -0.25 * yT < -xT^2 < 0.0 < TaylorN(1, 3)
-    @test !(zero(xT) > 0)
-    @test !(zero(yT^2) < 0)
 
     @test 1+xT+yT == TaylorN(1,1) + TaylorN([xH,yH],1)
     @test xT-yT-1 == TaylorN([-1,xH-yH])
@@ -778,6 +780,7 @@ end
     @test yT[0] == xT[0]*(pi/180)
     TS.rad2deg!(yT, xT, 0)
     @test yT[0] == xT[0]*(180/pi)
+    # Lexicographic tests with 4 vars
     @test 1 > dx[1] > dx[2] > dx[3] > dx[4]
     @test dx[4]^2 < dx[3]*dx[4] < dx[3]^2 < dx[2]*dx[4] < dx[2]*dx[3] < dx[2]^2 < dx[1]*dx[4] < dx[1]*dx[3] < dx[1]*dx[2] < dx[1]^2
 end

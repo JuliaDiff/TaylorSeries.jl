@@ -45,8 +45,10 @@ Base.iszero(::SymbNumber) = false
     @test axes(t) == ()
     @test axes([t]) == (Base.OneTo(1),)
 
-    @test 1 + t ≥ 1.0 > 0.5 + t > t^2 ≥ zero(t)
-    @test -1.0 < -1/1000 - t  < -t < -t^2 ≤ 0
+    @testset "Total order" begin
+        @test 1 + t ≥ 1.0 > 0.5 + t > t^2 ≥ zero(t)
+        @test -1.0 < -1/1000 - t  < -t < -t^2 ≤ 0
+    end
 
     v = [1,2]
     @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
