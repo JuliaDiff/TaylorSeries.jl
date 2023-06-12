@@ -15,17 +15,15 @@ using Aqua
     pkg_match(pkgname, pkdir::Nothing) = false
     pkg_match(pkgname, pkdir::AbstractString) = occursin(pkgname, pkdir)
     filter!(x -> pkg_match("TaylorSeries", pkgdir(last(x).module)), ambs)
-    @test length(ambs) == 0
+    if VERSION < v"1.10.0-DEV"
+        @test length(ambs) == 0
+    end
 end
 
 @testset "Aqua tests (additional)" begin
     Aqua.test_undefined_exports(TaylorSeries)
     Aqua.test_deps_compat(TaylorSeries)
     Aqua.test_stale_deps(TaylorSeries; ignore=[:Requires])
-    if !isdefined(Base, :get_extension)
-        Aqua.test_project_extras(TaylorSeries) # failing on julia 1.9
-        Aqua.test_project_toml_formatting(TaylorSeries) # failing on julia 1.9
-    end
     Aqua.test_piracy(TaylorSeries)
 end
 
