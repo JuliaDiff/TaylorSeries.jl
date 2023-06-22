@@ -3,7 +3,7 @@
 using TaylorSeries
 
 using Test
-using LinearAlgebra
+# using LinearAlgebra
 
 @testset "Test hash tables" begin
     # Issue #85 is solved!

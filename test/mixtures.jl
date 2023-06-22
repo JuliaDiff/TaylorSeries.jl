@@ -4,7 +4,7 @@
 using TaylorSeries
 
 using Test
-using LinearAlgebra
+# using LinearAlgebra
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
     @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
@@ -231,7 +231,7 @@ using LinearAlgebra
     F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
     Q = F(v+dx)
     diff_evals = cos(sin(dx[1]))-p(P[1])
-    @test norm( norm.(map(x->x.coeffs, diff_evals.coeffs),Inf) , Inf) < 1e-15
+    @test norm(diff_evals, Inf) < 1e-15
     #evaluate a Taylor1 at a TaylorN
     @test p(P) == evaluate(p, P)
     @test q(Q) == evaluate(q, Q)
@@ -279,7 +279,7 @@ using LinearAlgebra
     a11 = Taylor1([t,t^2,exp(-t),sin(t),cos(t)])
     b11 = t+t*(t^2)+(t^2)*(exp(-t))+(t^3)*sin(t)+(t^4)*cos(t)
     diff_a11b11 = a11(t)-b11
-    @test norm(diff_a11b11.coeffs,Inf) < 1E-19
+    @test norm(diff_a11b11.coeffs, Inf) < 1E-19
 
     X, Y = set_variables(Taylor1{Float64}, "x y")
     @test typeof( norm(X) ) == Float64
