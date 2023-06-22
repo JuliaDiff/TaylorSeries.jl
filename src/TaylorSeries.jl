@@ -60,7 +60,7 @@ export getcoeff, derivative, integrate, differentiate,
     # jacobian, hessian, jacobian!, hessian!,
     ∇, taylor_expand, update!,
     constant_term, linear_polynomial, nonlinear_polynomial,
-    normalize_taylor
+    normalize_taylor, norm
 
 const TS = TaylorSeries
 
