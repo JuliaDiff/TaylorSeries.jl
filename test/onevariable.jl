@@ -558,8 +558,8 @@ Base.iszero(::SymbNumber) = false
     @test typeof( norm(Taylor1(rnd)) ) == Float64
     @test norm(Taylor1(rnd)) > 0
     @test norm(t_a) == norm(a)
-    @test norm(Taylor1(a,15),3) == sum((a.^3))^(1/3)
-    @test norm(t_a,Inf) == 12
+    @test norm(Taylor1(a,15), 3) == sum((a.^3))^(1/3)
+    @test norm(t_a, Inf) == 12
     @test norm(t_C) == norm(complex(3.0,4.0)*a)
 
     @test TaylorSeries.rtoldefault(Taylor1{Int}) == 0
