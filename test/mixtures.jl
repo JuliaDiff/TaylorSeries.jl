@@ -30,6 +30,7 @@ using Test
         @test 1 ≥ tN > 2*tN^2 > 100*tN^3 > 0
         @test -2*tN < -tN^2 ≤ 0
     end
+
     @test string(zero(tN)) == "  0.0 + 𝒪(‖x‖¹) + 𝒪(t⁴)"
     @test string(tN) == " ( 1.0 + 𝒪(‖x‖¹)) t + 𝒪(t⁴)"
     @test string(tN + 3Taylor1(Int, 2)) == " ( 4.0 + 𝒪(‖x‖¹)) t + 𝒪(t³)"
@@ -82,12 +83,12 @@ using Test
     @test t1N[0] == HomogeneousPolynomial(1)
     ctN1 = convert(TaylorN{Taylor1{Float64}}, t1N)
     @test convert(eltype(tN1), tN1) === tN1
-    @test eltype(xHt) == HomogeneousPolynomial{Taylor1{Float64}}
     @test eltype(tN1) == TaylorN{Taylor1{Float64}}
     @test eltype(Taylor1([xH])) == Taylor1{HomogeneousPolynomial{Int}}
     @test TS.numtype(xHt) == Taylor1{Float64}
     @test TS.numtype(tN1) == Taylor1{Float64}
     @test TS.numtype(Taylor1([xH])) == HomogeneousPolynomial{Int}
+    @test TS.numtype(t1N) == TaylorN{Float64}
     @test normalize_taylor(tN1) == tN1
     @test get_order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) == 1
     @test 3*tN1 == TaylorN([HomogeneousPolynomial([3t]),3xHt,3yHt^2])
@@ -157,7 +158,7 @@ using Test
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     @test string((t1N^2)(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = zeros(TaylorN{Float64},2)
-    @test evaluate!([t1N, t1N^2], 0.0, v) == nothing
+    @test isnothing(evaluate!([t1N, t1N^2], 0.0, v))
     @test v == [TaylorN(1), TaylorN(1)^2]
 
     # Tests for functions of mixtures
@@ -182,7 +183,7 @@ using Test
     end
 
     vt = zeros(Taylor1{Float64},2)
-    @test evaluate!([tN1, tN1^2], [t, t], vt) == nothing
+    @test isnothing(evaluate!([tN1, tN1^2], [t, t], vt))
     @test vt == [2t, 4t^2]
 
     tint = Taylor1(Int, 10)
@@ -201,10 +202,13 @@ using Test
 
     # See #92 and #94
     δx, δy = set_variables("δx δy")
-    xx = 1+Taylor1(δx,5)
+    xx = 1+Taylor1(δx, 5)
+    yy = 1+Taylor1(δy, 5)
+    tt = Taylor1([zero(δx), one(δx)], xx.order)
+    @test all((xx, yy) .== (TS.fixorder(xx, yy)))
     @test typeof(xx) == Taylor1{TaylorN{Float64}}
     @test eltype(xx) == Taylor1{TaylorN{Float64}}
-    @test TS.numtype(xx) == TaylorN{Float64}
+    @test TS.numtype(tt) == TaylorN{Float64}
     @test !(@inferred isnan(xx))
     @test !(@inferred isnan(δx))
     @test !(@inferred isinf(xx))
@@ -218,7 +222,88 @@ using Test
     @test xx/xx == one(xx)
     @test xx*δx + Taylor1(typeof(δx),5) == δx + δx^2 + Taylor1(typeof(δx),5)
     @test xx/(1+δx) == one(xx)
+    @test 1/(1-tt) == 1 + tt + tt^2 + tt^3 + tt^4 + tt^5
+    @test xx/(1-tt) == xx * (1 + tt + tt^2 + tt^3 + tt^4 + tt^5)
+    res = xx * tt
+    @test 1/(1-xx*tt) == 1 + res + res^2 + res^3 + res^4 + res^5
     @test typeof(xx+δx) == Taylor1{TaylorN{Float64}}
+    res = 1/(1+δx)
+    @test one(xx)/(xx*(1+tt)) == Taylor1([res, -res, res, -res, res, -res])
+    res = 1/(1+δx)^2
+    @test (xx^2 + yy^2)/(xx*yy) == xx/yy + yy/xx
+    @test ((xx+yy)*tt)^2/((xx+yy)*tt) == (xx+yy)*tt
+    @test sqrt(xx) == Taylor1(sqrt(xx[0]), xx.order)
+    @test xx^0.25 == sqrt(sqrt(xx))
+    @test (xx*yy*tt^2)^0.5 == sqrt(xx*yy)*tt
+    FF(x,y,t) = (1 + x + y + t)^4
+    QQ(x,y,t) = x^4.0 + (4*y + (4*t + 4))*x^3 + (6*y^2 + (12*t + 12)*y + (6*t^2 + 12*t + 6))*x^2 +
+        (4*y^3 + (12*t + 12)*y^2 + (12*t^2 + 24*t + 12)*y + (4*t^3 + 12*t^2 + 12*t + 4))*x +
+        (y^4 + (4*t + 4)*y^3 + (6*t^2 + 12*t + 6)*y^2 + (4*t^3 + 12*t^2 + 12*t + 4)*y +
+            (t^4 + 4*t^3 + 6*t^2 + 4*t + 1))
+    @test FF(xx, yy, tt) == QQ(xx, yy, tt)
+    @test FF(tt, yy-1, xx-1) == QQ(xx-1, yy-1, tt)
+    @test (xx+tt)^4 == xx^4 + 4*xx^3*tt + 6*xx^2*tt^2 + 4*xx*tt^3 + tt^4
+    pp = xx*yy*(1+tt)^4
+    @test pp^0.25 == sqrt(sqrt(pp))
+    @test (xx*yy)^(3/2)*(1+tt+tt^2) == (sqrt(xx*yy))^3*(1+tt+tt^2)
+    @test sqrt((xx+yy+tt)^3) ≈ (xx+yy+tt)^1.5
+    @test (sqrt(xx*(1+tt)))^4 ≈ xx^2 * (1+tt)^2
+    @test (sqrt(xx*(1+tt)))^5 ≈ xx^2.5 * (1+tt)^2.5
+    @test exp(xx) == exp(xx[0]) + zero(tt)
+    @test exp(xx+tt) ≈ exp(xx)*exp(tt)
+    @test norm(exp(xx+tt) - exp(xx)*exp(tt), Inf) < 5e-17
+    @test expm1(xx) == expm1(xx[0]) + zero(tt)
+    @test expm1(xx+tt) ≈ exp(xx+tt)-1
+    @test norm(expm1(xx+tt) - (exp(xx+tt)-1), Inf) < 5e-16
+    @test log(xx) == log(xx[0]) + zero(tt)
+    @test log((xx+tt)*(yy+tt)) ≈ log(xx+tt)+log(yy+tt)
+    @test log(pp) ≈ log(xx)+log(yy)+4*log(1+tt)
+    @test norm(log(pp) - (log(xx)+log(yy)+4*log(1+tt)), Inf) < 1e-15
+    @test log1p(xx) == log1p(xx[0]) + zero(tt)
+    @test log1p(xx+tt) == log(1+xx+tt)
+    exp(log(xx+tt)) == log(exp(xx+tt))
+    @test exp(log(pp)) ≈ log(exp(pp))
+    @test sincos(δx + xx) == sincos(δx+xx[0]) .+ zero(tt)
+    qq = sincos(pp)
+    @test exp(im*pp) ≈ qq[2] + im*qq[1]
+    @test qq[2]^2 ≈ 1 - qq[1]^2
+    @test sincospi(δx + xx - 1) == sincospi(δx + xx[0] - 1) .+ zero(tt)
+    @test all(sincospi(pp) .≈ sincos(pi*pp))
+    @test tan(xx) == tan(xx[0]) + zero(tt)
+    @test tan(xx+tt) ≈ sin(xx+tt)/cos(xx+tt)
+    @test tan(xx*tt) ≈ sin(xx*tt)/cos(xx*tt)
+    @test asin(xx-1) == asin(xx[0]-1) + zero(tt)
+    @test asin(sin(xx+tt)) ≈ xx + tt
+    @test sin(asin(xx*tt)) == xx * tt
+    @test_throws DomainError asin(2+xx+tt)
+    @test acos(xx-1) == acos(xx[0]-1) + zero(tt)
+    @test acos(cos(xx+tt)) ≈ xx + tt
+    @test cos(acos(xx*tt)) ≈ xx * tt
+    @test_throws DomainError acos(2+xx+tt)
+    @test atan(xx) == atan(xx[0]) + zero(tt)
+    @test atan(tan(xx+tt)) ≈ xx + tt
+    @test tan(atan(xx*tt)) == xx * tt
+    @test TS.sinhcosh(xx) == TS.sinhcosh(xx[0]) .+ zero(tt)
+    qq = TS.sinhcosh(pp)
+    @test qq[2]^2 - 1 ≈ qq[1]^2
+    @test 2*qq[1] ≈ exp(pp)-exp(-pp)
+    @test 2*qq[2] ≈ exp(pp)+exp(-pp)
+    qq = TS.sinhcosh(xx+tt)
+    @test tanh(xx) == tanh(xx[0]) + zero(tt)
+    @test tanh(xx+tt) ≈ qq[1]/qq[2]
+    qq = TS.sinhcosh(xx*tt)
+    @test tanh(xx*tt) ≈ qq[1]/qq[2]
+    @test asinh(xx-1) == asinh(xx[0]-1) + zero(tt)
+    @test asinh(sinh(xx+tt)) ≈ xx + tt
+    @test sinh(asinh(xx*tt)) == xx * tt
+    @test acosh(xx+1) == acosh(xx[0]+1) + zero(tt)
+    @test acosh(cosh(xx+1+tt)) ≈ xx + 1 + tt
+    @test cosh(acosh(2+xx*tt)) ≈ 2 + xx * tt
+    @test_throws DomainError acosh(xx+tt)
+    @test atanh(xx-1) == atanh(xx[0]-1) + zero(tt)
+    @test atanh(tanh(-1+xx+tt)) ≈ -1 + xx + tt
+    @test tanh(atanh(xx*tt)) ≈ xx * tt
+    @test_throws DomainError atanh(xx+tt)
 
     #testing evaluate and function-like behavior of Taylor1, TaylorN for mixtures:
     t = Taylor1(25)
