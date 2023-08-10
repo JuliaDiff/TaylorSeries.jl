@@ -411,7 +411,6 @@ end
         ordT::Int) where {T<:NumberNotSeries}
     # Sanity
     zero!(res, a, ordT)
-
     if ordT == 0
         @inbounds for ordQ in eachindex(a[0])
             @inbounds sqr!(res[0], a[0], ordQ)
@@ -434,7 +433,6 @@ end
     kodd == 1 && return nothing
 
     @inbounds for ordQ in eachindex(a[0])
-        zero!(tmp, a[0], ordQ)
         sqr!(tmp, a[ordT >> 1], ordQ)
         add!(res[ordT], res[ordT], tmp, ordQ)
     end
@@ -444,9 +442,9 @@ end
 
 
 """
-    sqr!(c, a)
+    accsqr!(c, a)
 
-Return `c += a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
+Returns `c += a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
 
 """
 @inline function accsqr!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where

@@ -34,7 +34,7 @@ for T in (:Taylor1, :TaylorN)
 
         function log(a::$T)
             iszero(constant_term(a)) && throw(DomainError(a,
-                    """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
+                """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
 
             order = a.order
             aux = log(constant_term(a))
@@ -118,7 +118,7 @@ for T in (:Taylor1, :TaylorN)
         function acos(a::$T)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(DomainError(a,
-            """Series expansion of asin(x) diverges at x = ±1."""))
+                """Series expansion of asin(x) diverges at x = ±1."""))
 
             order = a.order
             aux = acos(a0)
@@ -247,10 +247,9 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function one!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            zero!(c, a, k)
             if k == 0
                 @inbounds c[0] = one(a[0])
-            else
-                @inbounds c[k] = zero(a[k])
             end
             return nothing
         end
@@ -263,8 +262,8 @@ for T in (:Taylor1, :TaylorN)
                 return subst!(c, a, k)
             else
                 throw(DomainError(a,
-                """The 0th order coefficient must be non-zero
-                (abs(x) is not differentiable at x=0)."""))
+                    """The 0th order coefficient must be non-zero
+                    (abs(x) is not differentiable at x=0)."""))
             end
             return nothing
         end
@@ -276,6 +275,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[0] = exp(constant_term(a))
                 return nothing
             end
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c[0]
             else
@@ -297,6 +297,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[0] = expm1(constant_term(a))
                 return nothing
             end
+            zero!(c, a, k)
             c0 = c[0]+one(c[0])
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c0
@@ -322,7 +323,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[1] = a[1] / constant_term(a)
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * a[1] * c[k-1]
             else
@@ -340,16 +341,19 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function log1p!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            a0 = constant_term(a)
-            a0p1 = a0+one(a0)
             if k == 0
+                a0 = constant_term(a)
                 @inbounds c[0] = log1p(a0)
                 return nothing
             elseif k == 1
+                a0 = constant_term(a)
+                a0p1 = a0+one(a0)
                 @inbounds c[1] = a[1] / a0p1
                 return nothing
             end
-
+            a0 = constant_term(a)
+            a0p1 = a0+one(a0)
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * a[1] * c[k-1]
             else
@@ -372,8 +376,9 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds s[0], c[0] = sincos( a0 )
                 return nothing
             end
-
             x = a[1]
+            zero!(s, a, k)
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds s[k] = x * c[k-1]
                 @inbounds c[k] = -x * s[k-1]
@@ -403,7 +408,11 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds s[0], c[0] = sincospi( a0 )
                 return nothing
             end
-            sincos!(s, c, a*pi, k)
+            aa = $T(pi * a[0], a.order)
+            @inbounds for ordQ in eachindex(a)
+                aa[ordQ] = pi * a[ordQ]
+            end
+            sincos!(s, c, aa, k)
             return nothing
         end
 
@@ -414,7 +423,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c2[0] = aux^2
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c2[0]
             else
@@ -440,7 +449,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( 1 - a0^2 )
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -465,7 +474,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( 1 - a0^2 )
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -490,7 +499,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = 1 + a0^2
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -514,8 +523,9 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[0] = cosh( constant_term(a) )
                 return nothing
             end
-
             x = a[1]
+            zero!(s, a, k)
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds s[k] = x * c[k-1]
                 @inbounds c[k] = x * s[k-1]
@@ -545,7 +555,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c2[0] = aux^2
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c2[0]
             else
@@ -571,7 +581,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( a0^2 + 1 )
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -596,7 +606,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( a0^2 - 1 )
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -621,7 +631,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = 1 - a0^2
                 return nothing
             end
-
+            zero!(c, a, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -642,6 +652,493 @@ for T in (:Taylor1, :TaylorN)
 
     end
 end
+
+
+# Mutating functions for Taylor1{TaylorN{T}}
+@inline function exp!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds for ordQ in eachindex(a[0])
+            # zero!(res[0], a[0], ordQ)
+            exp!(res[0], a[0], ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i = 0:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[i][ordQ]
+            mul!(res[k], tmp, a[k-i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    return nothing
+end
+
+@inline function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds for ordQ in eachindex(a[0])
+            # zero!(res[0], a[0], ordQ)
+            expm1!(res[0], a[0], ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    zero!(res, a, k)
+    # i=0 term of sum
+    @inbounds for ordQ in eachindex(a[0])
+        one!(tmp, a[0], ordQ)
+        add!(tmp, res[0], tmp, ordQ)
+        tmp[ordQ] = k * tmp[ordQ]
+        # zero!(res[k], a[0], ordQ)
+        mul!(res[k], a[k], tmp, ordQ)
+    end
+    for i = 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[i][ordQ]
+            mul!(res[k], tmp, a[k-i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    return nothing
+end
+
+@inline function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds for ordQ in eachindex(a[0])
+            # zero!(res[k], a[0], ordQ)
+            log!(res[k], a[0], ordQ)
+        end
+        return nothing
+    elseif k == 1
+        @inbounds for ordQ in eachindex(a[0])
+            zero!(res[k], a[0], ordQ)
+            div!(res[k], a[1], a[0], ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i = 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, a[i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    @inbounds for ordQ in eachindex(a[0])
+        subst!(tmp, a[k], res[k], ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, a[0], ordQ)
+    end
+    return nothing
+end
+
+@inline function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds for ordQ in eachindex(a[0])
+            # zero!(res[k], a[0], ordQ)
+            log1p!(res[k], a[0], ordQ)
+        end
+        return nothing
+    end
+    tmp1 = TaylorN( zero(a[k][0][1]), a[0].order)
+    zero!(res, a, k)
+    @inbounds for ordQ in eachindex(a[0])
+        # zero!(res[k], a[0], ordQ)
+        one!(tmp1, a[0], ordQ)
+        add!(tmp1, tmp1, a[0], ordQ)
+    end
+    if k == 1
+        @inbounds for ordQ in eachindex(a[0])
+            div!(res[k], a[1], tmp1, ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    for i = 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, a[i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    @inbounds for ordQ in eachindex(a[0])
+        subst!(tmp, a[k], res[k], ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, tmp1, ordQ)
+    end
+    return nothing
+end
+
+# @inline function _sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
+#         a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+#     if k == 0
+#         @inbounds for ordQ in eachindex(a[0])
+#             sincos!(s[0], c[0], a[0], ordQ)
+#         end
+#         return nothing
+#     end
+#     # The recursion formula
+#     x = TaylorN( a[1][0][1], a[0].order )
+#     zero!(s, a, k)
+#     zero!(c, a, k)
+#     @inbounds for i = 1:k
+#         for ordQ in eachindex(a[0])
+#             x[ordQ] = i * a[i][ordQ]
+#             mul!(s[k], x, c[k-i], ordQ)
+#             mul!(c[k], x, s[k-i], ordQ)
+#         end
+#     end
+#     div!(s, s, k, k)
+#     subst!(c, c, k)
+#     div!(c, c, k, k)
+#     return nothing
+# end
+
+@inline function sincospi!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
+        a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds for ordQ in eachindex(a[0])
+            sincospi!(s[0], c[0], a[0], ordQ)
+        end
+        return nothing
+    end
+    # aa = pi * a
+    aa = Taylor1(zero(a[0]), a.order)
+    @inbounds for ordT in eachindex(a)
+        mul!(aa, pi, a, ordT)
+    end
+    sincos!(s, c, aa, k)
+    return nothing
+end
+
+@inline function tan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds res[0] = tan( a[0] )
+        # zero!(res2, res, 0)
+        sqr!(res2, res, 0)
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i = 0:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res2[i][ordQ]
+            mul!(res[k], tmp, a[k-i], ordQ)
+        end
+    end
+    @inbounds for ordQ in eachindex(a[0])
+        # zero!(tmp, res[k], ordQ)
+        tmp[ordQ] = res[k][ordQ] / k
+        add!(res[k], a[k], tmp, ordQ)
+    end
+    # zero!(res2, res, k)
+    sqr!(res2, res, k)
+    return nothing
+end
+
+@inline function asin!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds res[0] = asin( a[0] )
+        # r[0] = sqrt(1-a[0]^2)
+        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+        r[0] = square(a[0])
+        for ordQ in eachindex(a[0])
+            one!(tmp, a[0], ordQ)
+            subst!(tmp, tmp, r[0], ordQ)
+            # zero!(r[0], tmp, ordQ)
+            sqrt!(r[0], tmp, ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i in 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, r[i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    @inbounds for ordQ in eachindex(a[0])
+        subst!(tmp, a[k], res[k], ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, r[0], ordQ)
+    end
+    # Compute auxiliary term s=1-a^2
+    s = Taylor1(zero(a[0]), a.order)
+    for i = 0:k
+        sqr!(s, a, i)
+        subst!(s, s, i)
+        if i == 0
+            s[0] = one(s[0]) - s[0]
+            add!(s, one(s), s, 0)
+        end
+    end
+    # Update aux term r = sqrt(s) = sqrt(1-a^2)
+    sqrt!(r, s, k)
+    return nothing
+end
+
+@inline function acos!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds res[0] = acos( a[0] )
+        # r[0] = sqrt(1-a[0]^2)
+        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+        r[0] = square(a[0])
+        for ordQ in eachindex(a[0])
+            one!(tmp, a[0], ordQ)
+            subst!(tmp, tmp, r[0], ordQ)
+            # zero!(r[0], tmp, ordQ)
+            sqrt!(r[0], tmp, ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i in 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, r[i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    @inbounds for ordQ in eachindex(a[0])
+        add!(tmp, a[k], res[k], ordQ)
+        subst!(tmp, tmp, ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, r[0], ordQ)
+    end
+    # Compute auxiliary term s=1-a^2
+    s = Taylor1(zero(a[0]), a.order)
+    for i = 0:k
+        sqr!(s, a, i)
+        subst!(s, s, i)
+        if i == 0
+            s[0] = one(s[0]) - s[0]
+            add!(s, one(s), s, 0)
+        end
+    end
+    # Update aux term r = sqrt(s) = sqrt(1-a^2)
+    sqrt!(r, s, k)
+    return nothing
+end
+
+@inline function atan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        res[0] = atan( a[0] )
+        # zero!(r, a, 0)
+        sqr!(r, a, 0)
+        add!(r, r, one(a[0][0][1]), 0)
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order )
+    zero!(res, a, k)
+    for i in 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, r[i], ordQ)
+        end
+    end
+    @inbounds for ordQ in eachindex(a[0])
+        # zero!(tmp, res[k], ordQ)
+        tmp[ordQ] = - res[k][ordQ] / k
+        add!(tmp, a[k], tmp, ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, r[0], ordQ)
+    end
+    zero!(r, a, k)
+    sqr!(r, a, k)
+    return nothing
+end
+
+@inline function sinhcosh!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
+        a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds for ordQ in eachindex(a[0])
+            sinhcosh!(s[0], c[0], a[0], ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    x = TaylorN( a[k][0][1], a[0].order )
+    zero!(s, a, k)
+    zero!(c, a, k)
+    @inbounds for i = 1:k
+        for ordQ in eachindex(a[0])
+            x[ordQ] = i * a[i][ordQ]
+            mul!(s[k], x, c[k-i], ordQ)
+            mul!(c[k], x, s[k-i], ordQ)
+        end
+    end
+    div!(s, s, k, k)
+    div!(c, c, k, k)
+    return nothing
+end
+
+@inline function tanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds res[0] = tanh( a[0] )
+        # zero!(res2, res, 0)
+        sqr!(res2, res, 0)
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i = 0:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res2[i][ordQ]
+            mul!(res[k], tmp, a[k-i], ordQ)
+        end
+    end
+    @inbounds for ordQ in eachindex(a[0])
+        # zero!(tmp, res[k], ordQ)
+        tmp[ordQ] = res[k][ordQ] / k
+        subst!(res[k], a[k], tmp, ordQ)
+    end
+    zero!(res2, res, k)
+    sqr!(res2, res, k)
+    return nothing
+end
+
+@inline function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds res[0] = asinh( a[0] )
+        # r[0] = sqrt(1+a[0]^2)
+        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+        r[0] = square(a[0])
+        for ordQ in eachindex(a[0])
+            one!(tmp, a[0], ordQ)
+            add!(tmp, tmp, r[0], ordQ)
+            # zero!(r[0], tmp, ordQ)
+            sqrt!(r[0], tmp, ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i in 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, r[i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    @inbounds for ordQ in eachindex(a[0])
+        subst!(tmp, a[k], res[k], ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, r[0], ordQ)
+    end
+    # Compute auxiliary term s=1+a^2
+    s = Taylor1(zero(a[0]), a.order)
+    for i = 0:k
+        sqr!(s, a, i)
+        if i == 0
+            s[0] = one(s[0]) + s[0]
+            add!(s, one(s), s, 0)
+        end
+    end
+    # Update aux term r = sqrt(s) = sqrt(1+a^2)
+    sqrt!(r, s, k)
+    return nothing
+end
+
+@inline function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds res[0] = acosh( a[0] )
+        # r[0] = sqrt(a[0]^2-1)
+        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+        r[0] = square(a[0])
+        for ordQ in eachindex(a[0])
+            one!(tmp, a[0], ordQ)
+            subst!(tmp, r[0], tmp, ordQ)
+            # zero!(r[0], tmp, ordQ)
+            sqrt!(r[0], tmp, ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    zero!(res, a, k)
+    for i in 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, r[i], ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    @inbounds for ordQ in eachindex(a[0])
+        subst!(tmp, a[k], res[k], ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, r[0], ordQ)
+    end
+    # Compute auxiliary term s=a^2-1
+    s = Taylor1(zero(a[0]), a.order)
+    for i = 0:k
+        sqr!(s, a, i)
+        if i == 0
+            s[0] = one(s[0]) + s[0]
+            subst!(s, s, one(s), 0)
+        end
+    end
+    # Update aux term r = sqrt(s) = sqrt(a^2-1)
+    sqrt!(r, s, k)
+    return nothing
+end
+
+@inline function atanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        res[0] = atanh( a[0] )
+        # zero!(r, a, 0)
+        sqr!(r, a, 0)
+        subst!(r, one(a[0][0][1]), r, 0)
+        return nothing
+    end
+    # The recursion formula
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order )
+    zero!(res, a, k)
+    for i in 1:k-1
+        @inbounds for ordQ in eachindex(a[0])
+            tmp[ordQ] = (k-i) * res[k-i][ordQ]
+            mul!(res[k], tmp, r[i], ordQ)
+        end
+    end
+    @inbounds for ordQ in eachindex(a[0])
+        # zero!(tmp, res[k], ordQ)
+        tmp[ordQ] = res[k][ordQ] / k
+        add!(tmp, a[k], tmp, ordQ)
+        zero!(res[k], a[0], ordQ)
+        div!(res[k], tmp, r[0], ordQ)
+    end
+    zero!(r, a, k)
+    sqr!(r, a, k)
+    return nothing
+end
+
+
 
 
 @doc doc"""
