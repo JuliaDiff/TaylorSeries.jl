@@ -24,7 +24,9 @@ end
     Aqua.test_undefined_exports(TaylorSeries)
     Aqua.test_deps_compat(TaylorSeries)
     Aqua.test_stale_deps(TaylorSeries; ignore=[:Requires])
-    Aqua.test_piracy(TaylorSeries)
+    Aqua.test_piracies(TaylorSeries)
+    Aqua.test_unbound_args(TaylorSeries)
+    Aqua.test_project_extras(TaylorSeries)
 end
 
 nothing
