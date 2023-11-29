@@ -351,7 +351,6 @@ using Test
     z0N = -1.333+get_variables()[1]
     z = Taylor1(z0N,20)
     z[20][1][1] = 5.0
-    @show z z[20][1].coeffs
     @test z[0][0][1] == -1.333
     @test z[20][1][1] == 5.0
     for i in 1:19
