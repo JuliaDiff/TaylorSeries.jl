@@ -359,6 +359,7 @@ using Test
         end
     end
     @test all(z[20][1][2:end] .== 0.0)
+    @test differentiate(integrate(z)) ≈ z
 end
 
 @testset "Tests with nested Taylor1s" begin
