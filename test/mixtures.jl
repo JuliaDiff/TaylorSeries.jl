@@ -347,6 +347,26 @@ using Test
     @test_throws ArgumentError Taylor1(2) - TaylorN(1)
     @test_throws ArgumentError Taylor1(2) * TaylorN(1)
     @test_throws ArgumentError TaylorN(2) / Taylor1(1)
+
+    # Issue #342 and PR #343
+    z0N = -1.333+get_variables()[1]
+    z = Taylor1(z0N,20)
+    z[20][1][1] = 5.0
+    @test z[0][0][1] == -1.333
+    @test z[20][1][1] == 5.0
+    for i in 1:19
+        for j in eachindex(z[i].coeffs)
+            @test all(z[i].coeffs[j][:] .== 0.0)
+        end
+    end
+    @test all(z[20][1][2:end] .== 0.0)
+    intz = integrate(z)
+    intz[20] = z[0]
+    @test intz[1] == z[0]
+    @test intz[20] == z[0]
+    for i in 2:19
+        @test iszero(intz[i])
+    end
 end
 
 @testset "Tests with nested Taylor1s" begin
