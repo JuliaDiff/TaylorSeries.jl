@@ -137,8 +137,8 @@ function convert(::Type{Array{TaylorN{Taylor1{T}},N}},
     return v
 end
 
-function convert(::Type{Array{Taylor1{TaylorN{T}},N}},
-        s::Array{TaylorN{Taylor1{T}},N}) where {T<:NumberNotSeries,N}
+function convert(::Type{Array{Taylor1{TaylorN{T}}}},
+        s::Array{TaylorN{Taylor1{T}}}) where {T<:NumberNotSeries}
 
     v = Array{Taylor1{TaylorN{T}}}(undef, size(s))
     @simd for ind in eachindex(s)
@@ -197,9 +197,11 @@ promote_rule(::Type{TaylorN{T}}, ::Type{S}) where {T<:Number,S<:Number} =
     TaylorN{promote_type(T,S)}
 
 
-# Order may matter
-promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries,T<:AbstractSeries} =
-    promote_rule(T,S)
+# iss 339
+# # Order may matter
+# promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries,T<:AbstractSeries} =
+#     promote_rule(T,S)
+
 # disambiguation with Base
 promote_rule(::Type{Bool}, ::Type{T}) where {T<:AbstractSeries} = promote_rule(T, Bool)
 

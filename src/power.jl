@@ -47,7 +47,7 @@ for T in (:Taylor1, :TaylorN)
         return power_by_squaring(a, n)
     end
 
-    @eval ^(a::$T, x::Rational) = a^(x.num/x.den)
+    @eval ^(a::$T, x::S) where {S<:Rational} = a^(x.num/x.den)
 
     @eval ^(a::$T, b::$T) = exp( b*log(a) )
 
