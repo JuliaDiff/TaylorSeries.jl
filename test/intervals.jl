@@ -7,8 +7,9 @@ using Test
 # eeuler = Base.MathConstants.e
 
 @testset "Tests Taylor1 and TaylorN expansions over Intervals" begin
-    a = 1..2
-    b = -1 .. 1
+    a = interval(1, 2)
+    b = interval(-1, 1)
+    c = interval(0, 1)
     p4(x, a) = x^4 + 4*a*x^3 + 6*a^2*x^2 + 4*a^3*x + a^4
     p5(x, a) = x^5 + 5*a*x^4 + 10*a^2*x^3 + 10*a^3*x^2 + 5*a^4*x + a^5
 
@@ -40,65 +41,65 @@ using Test
     end
 
     # Tests `evaluate`
-    @test evaluate(p4(x,y), IntervalBox(a,-b)) == p4(a, -b)
-    @test (p5(x,y))(IntervalBox(a,b)) == p5(a, b)
-    @test (a-b)^4 ⊆ ((x-y)^4)(a × b)
-    @test (((x-y)^4)[4])(a × b) == -39 .. 81
+    @test evaluate(p4(x,y), [a, -b]) == p4(a, -b)
+    @test (p5(x,y))([a, b]) == p5(a, b)
+    @test (a-b)^4 ⊆ ((x-y)^4)([a, b])
+    @test (((x-y)^4)[4])([a, b]) == interval(-39, 81)
 
-    p4n = normalize_taylor(p4(x,y), a × b, true)
-    @test (0..16) ⊆ p4n((-1..1)×(-1..1))
-    p5n = normalize_taylor(p5(x,y), a × b, true)
-    @test (-32 .. 32) ⊆ p5n((-1..1)×(-1..1))
+    p4n = normalize_taylor(p4(x,y), [a, b], true)
+    @test interval(0, 16) ⊆ p4n([b, b])
+    p5n = normalize_taylor(p5(x,y), [a, b], true)
+    @test interval(-32, 32) ⊆ p5n([b, b])
 
-    p4n = normalize_taylor(p4(x,y), a × b, false)
-    @test (0..16) ⊆ p4n((0..1)×(0..1))
-    p5n = normalize_taylor(p5(x,y), a × b, false)
-    @test (0..32) ⊆ p5n((0..1)×(0..1))
+    p4n = normalize_taylor(p4(x,y), [a, b], false)
+    @test interval(0, 16) ⊆ p4n([c, c])
+    p5n = normalize_taylor(p5(x,y), [a, b], false)
+    @test interval(0, 32) ⊆ p5n([c, c])
 
-    @test evaluate(x*y^3, (-1..1)×(-1..1)) == (-1..1)
-    @test evaluate(x*y^2, (-1..1)×(-1..1)) == (-1..1)
-    @test evaluate(x^2*y^2, (-1..1)×(-1..1)) == (0..1)
+    @test evaluate(x*y^3, [b, b]) == b
+    @test evaluate(x*y^2, [b, b]) == b
+    @test evaluate(x^2*y^2, [b, b]) == c
 
-    ii = -1..1
+    ii = b
     t = Taylor1(1)
-    @test 0..2 ⊆ (1+t)(ii)
+    @test interval(0, 2) ⊆ (1+t)(ii)
     t = Taylor1(2)
-    @test 0..4 ⊆ ((1+t)^2)(ii)
+    @test interval(0, 4) ⊆ ((1+t)^2)(ii)
 
-    ii = 0..6
+    ii = interval(0, 6)
     t = Taylor1(4)
     f(x) = 0.1 * x^3 - 0.5*x^2 + 1
     ft = f(t)
     f1 = normalize_taylor(ft, ii, true)
     f2 = normalize_taylor(ft, ii, false)
-    @test Interval(-23/27, f(6)) ⊆ f(ii)
-    @test Interval(-23/27, f(6)) ⊆ ft(ii)
-    @test Interval(-23/27, f(6)) ⊆ f1(-1..1)
-    @test Interval(-23/27, f(6)) ⊆ f2(0..1)
-    @test f1(-1..1) ⊆ f(ii)
-    @test diam(f1(-1..1)) < diam(f2(0..1))
+    @test interval(-23/27, f(6)) ⊆ f(ii)
+    @test interval(-23/27, f(6)) ⊆ ft(ii)
+    @test interval(-23/27, f(6)) ⊆ f1b
+    @test interval(-23/27, f(6)) ⊆ f2(c)
+    @test f1b ⊆ f(ii)
+    @test diam(f1b) < diam(f2(c))
 
     # An example from Makino's thesis
-    ii = 0..1
+    ii = c
     t = Taylor1(5)
     g(x) = 1 - x^4 + x^5
     gt = g(t)
-    g1 = normalize_taylor(gt, 0..1, true)
-    @test Interval(g(4/5),1) ⊆ g(ii)
-    @test Interval(g(4/5),1) ⊆ gt(ii)
-    @test Interval(g(4/5),1) ⊆ g1(-1..1)
-    @test g1(-1..1) ⊂ g(ii)
-    @test diam(g1(-1..1)) < diam(gt(ii))
+    g1 = normalize_taylor(gt, c, true)
+    @test interval(g(4/5), 1) ⊆ g(ii)
+    @test interval(g(4/5), 1) ⊆ gt(ii)
+    @test interval(g(4/5), 1) ⊆ g1b
+    @test g1b ⊂ g(ii)
+    @test diam(g1b) < diam(gt(ii))
 
     # Test display for Taylor1{Complex{Interval{T}}}
-    vc = [complex(1.5 .. 2, 0..0 ), complex(-2  .. -1, -1 .. 1 ),
-        complex( -1 .. 1.5, -1 .. 1.5), complex( 0..0, -1 .. 1.5)]
+    vc = [complex(interval(1.5, 2), interval(0, 0)), complex(interval(-2, -1), interval(-1, 1 )),
+          complex(interval(-1, 1.5), interval(-1, 1.5)), complex( interval(0,0), interval(-1, 1.5))]
     displayBigO(false)
     @test string(Taylor1(vc, 5)) ==
-        " ( [1.5, 2] + [0, 0]im ) - ( [1, 2] + [-1, 1]im ) t + ( [-1, 1.5] + [-1, 1.5]im ) t² + ( [0, 0] + [-1, 1.5]im ) t³ "
+        " ( Interval(1.5, 2.0) + Interval(0.0, 0.0)im ) - ( Interval(1.0, 2.0) + Interval(-1.0, 1.0)im ) t + ( Interval(-1.0, 1.5) + Interval(-1.0, 1.5)im ) t² + ( Interval(0.0, 0.0) + Interval(-1.0, 1.5)im ) t³ "
     displayBigO(true)
     @test string(Taylor1(vc, 5)) ==
-        " ( [1.5, 2] + [0, 0]im ) - ( [1, 2] + [-1, 1]im ) t + ( [-1, 1.5] + [-1, 1.5]im ) t² + ( [0, 0] + [-1, 1.5]im ) t³ + 𝒪(t⁶)"
+        " ( Interval(1.5, 2.0) + Interval(0.0, 0.0)im ) - ( Interval(1.0, 2.0) + Interval(-1.0, 1.0)im ) t + ( Interval(-1.0, 1.5) + Interval(-1.0, 1.5)im ) t² + ( Interval(0.0, 0.0) + Interval(-1.0, 1.5)im ) t³ + 𝒪(t⁶)"
 
     # Iss 351 (inspired by a test in ReachabilityAnalysis)
     p1 = Taylor1([0 .. 0, (0 .. 0.1) + (0 .. 0.01) * y], 4)
@@ -109,38 +110,38 @@ using Test
     # Tests related to Iss #311
     # `sqrt` and `pow` defined on Interval(0,Inf)
     @test_throws DomainError sqrt(ti)
-    @test sqrt(Interval(0.0, 1.e-15) + ti) == sqrt(Interval(-1.e-15, 1.e-15) + ti)
-    aa = sqrt(sqrt(Interval(0.0, 1.e-15) + ti))
-    @test aa == sqrt(sqrt(Interval(-1.e-15, 1.e-15) + ti))
-    bb = (Interval(0.0, 1.e-15) + ti)^(1/4)
-    @test bb == (Interval(-1.e-15, 1.e-15) + ti)^(1/4)
+    @test sqrt(interval(0.0, 1.e-15) + ti) == sqrt(interval(-1.e-15, 1.e-15) + ti)
+    aa = sqrt(sqrt(interval(0.0, 1.e-15) + ti))
+    @test aa == sqrt(sqrt(interval(-1.e-15, 1.e-15) + ti))
+    bb = (interval(0.0, 1.e-15) + ti)^(1/4)
+    @test bb == (interval(-1.e-15, 1.e-15) + ti)^(1/4)
     @test all(aa.coeffs[2:end] .⊂ bb.coeffs[2:end])
     @test_throws DomainError sqrt(x)
-    @test sqrt(Interval(-1,1)+x) == sqrt(Interval(0,1)+x)
-    @test (Interval(-1,1)+x)^(1/4) == (Interval(0,1)+x)^(1/4)
+    @test sqrt(interval(-1,1)+x) == sqrt(interval(0,1)+x)
+    @test (interval(-1,1)+x)^(1/4) == (interval(0,1)+x)^(1/4)
 
     # `log` defined on Interval(0,Inf)
     @test_throws DomainError log(ti)
-    @test log(Interval(0.0, 1.e-15) + ti) == log(Interval(-1.e-15, 1.e-15) + ti)
+    @test log(interval(0.0, 1.e-15) + ti) == log(interval(-1.e-15, 1.e-15) + ti)
     @test_throws DomainError log(y)
-    @test log(Interval(0.0, 1.e-15) + y) == log(Interval(-1.e-15, 1.e-15) + y)
-    # `asin` and `acos` defined on Interval(-1,1)
-    @test_throws DomainError asin(Interval(1.0 .. 2.0) + ti)
-    @test asin(Interval(-2.0 .. 0.0) + ti) == asin(Interval(-1,0) + ti)
-    @test_throws DomainError acos(Interval(1.0 .. 2.0) + ti)
-    @test acos(Interval(-2.0 .. 0.0) + ti) == acos(Interval(-1,0) + ti)
-    @test_throws DomainError asin(Interval(1.0 .. 2.0) + x)
-    @test asin(Interval(-2.0 .. 0.0) + x) == asin(Interval(-1,0) + x)
-    @test_throws DomainError acos(Interval(1.0 .. 2.0) + x)
-    @test acos(Interval(-2.0 .. 0.0) + x) == acos(Interval(-1,0) + x)
-    # acosh defined on Interval(1,Inf)
-    @test_throws DomainError acosh(Interval(0.0 .. 1.0) + ti)
-    @test acosh(Interval(0.0 .. 2.0) + ti) == acosh(Interval(1.0 .. 2.0) + ti)
-    @test_throws DomainError acosh(Interval(0.0 .. 1.0) + x)
-    @test acosh(Interval(0.0 .. 2.0) + x) == acosh(Interval(1.0 .. 2.0) + x)
-    # atanh defined on Interval(-1,1)
-    @test_throws DomainError atanh(Interval(1.0 .. 1.0) + ti)
-    @test atanh(Interval(-2.0 .. 0.0) + ti) == atanh(Interval(-1.0 .. 0.0) + ti)
-    @test_throws DomainError atanh(Interval(1.0 .. 1.0) + y)
-    @test atanh(Interval(-2.0 .. 0.0) + y) == atanh(Interval(-1.0 .. 0.0) + y)
+    @test log(interval(0.0, 1.e-15) + y) == log(interval(-1.e-15, 1.e-15) + y)
+    # `asin` and `acos` defined on interval(-1,1)
+    @test_throws DomainError asin(interval(1.0, 2.0) + ti)
+    @test asin(interval(-2.0, 0.0) + ti) == asin(interval(-1,0) + ti)
+    @test_throws DomainError acos(interval(1.0, 2.0) + ti)
+    @test acos(interval(-2.0, 0.0) + ti) == acos(interval(-1,0) + ti)
+    @test_throws DomainError asin(interval(1.0, 2.0) + x)
+    @test asin(interval(-2.0, 0.0) + x) == asin(interval(-1,0) + x)
+    @test_throws DomainError acos(interval(1.0, 2.0) + x)
+    @test acos(interval(-2.0, 0.0) + x) == acos(interval(-1,0) + x)
+    # acosh defined on interval(1,Inf)
+    @test_throws DomainError acosh(interval(0.0, 1.0) + ti)
+    @test acosh(interval(0.0, 2.0) + ti) == acosh(interval(1.0, 2.0) + ti)
+    @test_throws DomainError acosh(interval(0.0, 1.0) + x)
+    @test acosh(interval(0.0, 2.0) + x) == acosh(interval(1.0, 2.0) + x)
+    # atanh defined on interval(-1,1)
+    @test_throws DomainError atanh(interval(1.0, 1.0) + ti)
+    @test atanh(interval(-2.0, 0.0) + ti) == atanh(interval(-1.0, 0.0) + ti)
+    @test_throws DomainError atanh(interval(1.0, 1.0) + y)
+    @test atanh(interval(-2.0, 0.0) + y) == atanh(interval(-1.0, 0.0) + y)
 end
