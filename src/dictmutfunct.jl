@@ -29,7 +29,7 @@ struct _InternalMutFuncs
 end
 
 # Constructor
-function _InternalMutFuncs( namef::Vector )
+function _InternalMutFuncs( namef::Tuple )
     if length(namef) == 3
     	return _InternalMutFuncs( namef[1], namef[2], namef[3], Expr(:nothing) )
     else
@@ -56,11 +56,11 @@ of `:_res`.
 
 """
 const _dict_binary_ops = Dict(
-    :+ => [:add!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 + _arg2)],
-    :- => [:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)],
-    :* => [:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)],
-    :/ => [:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)],
-    :^ => [:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ float(_arg2))],
+    :+ => (:add!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 + _arg2)),
+    :- => (:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)),
+    :* => (:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)),
+    :/ => (:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)),
+    :^ => (:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ float(_arg2))),
 );
 
 """
@@ -83,50 +83,50 @@ added as the last entry of the vector.
 
 """
 const _dict_unary_ops = Dict(
-    :+ => [:add!,   (:_res, :_arg1, :_k), :(_res = + _arg1)],
-    :- => [:subst!, (:_res, :_arg1, :_k), :(_res = - _arg1)],
-    :sqr =>  [:sqr!, (:_res, :_arg1, :_k), :(_res = sqr(_arg1))],
-    :sqrt => [:sqrt!, (:_res, :_arg1, :_k), :(_res = sqrt(_arg1))],
-    :exp =>  [:exp!, (:_res, :_arg1, :_k), :(_res = exp(_arg1))],
-    :expm1 =>  [:expm1!, (:_res, :_arg1, :_k), :(_res = expm1(_arg1))],
-    :log =>  [:log!, (:_res, :_arg1, :_k), :(_res = log(_arg1))],
-    :log1p =>  [:log1p!, (:_res, :_arg1, :_k), :(_res = log1p(_arg1))],
-    :identity => [:identity!, (:_res, :_arg1, :_k), :(_res = identity(_arg1))],
-    :zero => [:zero!, (:_res, :_arg1, :_k), :(_res = zero(_arg1))],
-    :one => [:one!, (:_res, :_arg1, :_k), :(_res = one(_arg1))],
-    :abs => [:abs!, (:_res, :_arg1, :_k), :(_res = abs(_arg1))],
-    :abs2 => [:abs2!, (:_res, :_arg1, :_k), :(_res = abs2(_arg1))],
-    :deg2rad => [:deg2rad!, (:_res, :_arg1, :_k), :(_res = deg2rad(_arg1))],
-    :rad2deg => [:rad2deg!, (:_res, :_arg1, :_k), :(_res = rad2deg(_arg1))],
+    :+ => (:add!,   (:_res, :_arg1, :_k), :(_res = + _arg1)),
+    :- => (:subst!, (:_res, :_arg1, :_k), :(_res = - _arg1)),
+    :sqr =>  (:sqr!, (:_res, :_arg1, :_k), :(_res = sqr(_arg1))),
+    :sqrt => (:sqrt!, (:_res, :_arg1, :_k), :(_res = sqrt(_arg1))),
+    :exp =>  (:exp!, (:_res, :_arg1, :_k), :(_res = exp(_arg1))),
+    :expm1 =>  (:expm1!, (:_res, :_arg1, :_k), :(_res = expm1(_arg1))),
+    :log =>  (:log!, (:_res, :_arg1, :_k), :(_res = log(_arg1))),
+    :log1p =>  (:log1p!, (:_res, :_arg1, :_k), :(_res = log1p(_arg1))),
+    :identity => (:identity!, (:_res, :_arg1, :_k), :(_res = identity(_arg1))),
+    :zero => (:zero!, (:_res, :_arg1, :_k), :(_res = zero(_arg1))),
+    :one => (:one!, (:_res, :_arg1, :_k), :(_res = one(_arg1))),
+    :abs => (:abs!, (:_res, :_arg1, :_k), :(_res = abs(_arg1))),
+    :abs2 => (:abs2!, (:_res, :_arg1, :_k), :(_res = abs2(_arg1))),
+    :deg2rad => (:deg2rad!, (:_res, :_arg1, :_k), :(_res = deg2rad(_arg1))),
+    :rad2deg => (:rad2deg!, (:_res, :_arg1, :_k), :(_res = rad2deg(_arg1))),
     #
-    :sin =>  [:sincos!, (:_res, :_aux, :_arg1, :_k), :(_res = sin(_arg1)),
-        :(_aux = cos(_arg1))],
-    :cos => [:sincos!, (:_aux, :_res, :_arg1, :_k), :(_res = cos(_arg1)),
-        :(_aux = sin(_arg1))],
-    :sinpi =>  [:sincospi!, (:_res, :_aux, :_arg1, :_k), :(_res = sinpi(_arg1)),
-        :(_aux = cospi(_arg1))],
-    :cospi => [:sincospi!, (:_aux, :_res, :_arg1, :_k), :(_res = cospi(_arg1)),
-        :(_aux = sinpi(_arg1))],
-    :tan => [:tan!, (:_res, :_arg1, :_aux, :_k), :(_res = tan(_arg1)),
-        :(_aux = tan(_arg1)^2)],
-    :asin => [:asin!, (:_res, :_arg1, :_aux, :_k), :(_res = asin(_arg1)),
-        :(_aux = sqrt(1 - _arg1^2))],
-    :acos => [:acos!, (:_res, :_arg1, :_aux, :_k), :(_res = acos(_arg1)),
-        :(_aux = sqrt(1 - _arg1^2))],
-    :atan => [:atan!, (:_res, :_arg1, :_aux, :_k), :(_res = atan(_arg1)),
-        :(_aux = 1 + _arg1^2)],
-    :sinh => [:sinhcosh!, (:_res, :_aux, :_arg1, :_k), :(_res = sinh(_arg1)),
-        :(_aux = cosh(_arg1))],
-    :cosh => [:sinhcosh!, (:_aux, :_res, :_arg1, :_k), :(_res = cosh(_arg1)),
-        :(_aux = sinh(_arg1))],
-    :tanh => [:tanh!, (:_res, :_arg1, :_aux, :_k), :(_res = tanh(_arg1)),
-        :(_aux = tanh(_arg1)^2)],
-    :asinh => [:asinh!, (:_res, :_arg1, :_aux, :_k), :(_res = asinh(_arg1)),
-        :(_aux = sqrt(_arg1^2 + 1))],
-    :acosh => [:acosh!, (:_res, :_arg1, :_aux, :_k), :(_res = acosh(_arg1)),
-        :(_aux = sqrt(_arg1^2 - 1))],
-    :atanh => [:atanh!, (:_res, :_arg1, :_aux, :_k), :(_res = atanh(_arg1)),
-        :(_aux = 1 - _arg1^2)],
+    :sin =>  (:sincos!, (:_res, :_aux, :_arg1, :_k), :(_res = sin(_arg1)),
+        :(_aux = cos(_arg1))),
+    :cos => (:sincos!, (:_aux, :_res, :_arg1, :_k), :(_res = cos(_arg1)),
+        :(_aux = sin(_arg1))),
+    :sinpi =>  (:sincospi!, (:_res, :_aux, :_arg1, :_k), :(_res = sinpi(_arg1)),
+        :(_aux = cospi(_arg1))),
+    :cospi => (:sincospi!, (:_aux, :_res, :_arg1, :_k), :(_res = cospi(_arg1)),
+        :(_aux = sinpi(_arg1))),
+    :tan => (:tan!, (:_res, :_arg1, :_aux, :_k), :(_res = tan(_arg1)),
+        :(_aux = tan(_arg1)^2)),
+    :asin => (:asin!, (:_res, :_arg1, :_aux, :_k), :(_res = asin(_arg1)),
+        :(_aux = sqrt(1 - _arg1^2))),
+    :acos => (:acos!, (:_res, :_arg1, :_aux, :_k), :(_res = acos(_arg1)),
+        :(_aux = sqrt(1 - _arg1^2))),
+    :atan => (:atan!, (:_res, :_arg1, :_aux, :_k), :(_res = atan(_arg1)),
+        :(_aux = 1 + _arg1^2)),
+    :sinh => (:sinhcosh!, (:_res, :_aux, :_arg1, :_k), :(_res = sinh(_arg1)),
+        :(_aux = cosh(_arg1))),
+    :cosh => (:sinhcosh!, (:_aux, :_res, :_arg1, :_k), :(_res = cosh(_arg1)),
+        :(_aux = sinh(_arg1))),
+    :tanh => (:tanh!, (:_res, :_arg1, :_aux, :_k), :(_res = tanh(_arg1)),
+        :(_aux = tanh(_arg1)^2)),
+    :asinh => (:asinh!, (:_res, :_arg1, :_aux, :_k), :(_res = asinh(_arg1)),
+        :(_aux = sqrt(_arg1^2 + 1))),
+    :acosh => (:acosh!, (:_res, :_arg1, :_aux, :_k), :(_res = acosh(_arg1)),
+        :(_aux = sqrt(_arg1^2 - 1))),
+    :atanh => (:atanh!, (:_res, :_arg1, :_aux, :_k), :(_res = atanh(_arg1)),
+        :(_aux = 1 - _arg1^2)),
 );
 
 
@@ -146,8 +146,32 @@ _internalmutfunc_call( fn :: _InternalMutFuncs ) = (
     Expr( :call, Meta.parse("TaylorSeries.$(fn.namef)"), fn.argsf... ), fn.defexpr, fn.auxexpr )
 
 
-
 """
+`_populate_dicts!()`
+
+Function that populates the internal dictionaries [`_dict_unary_calls`](@ref) and
+[`_dict_binary_calls`](@ref)
+"""
+function _populate_dicts!()
+    #Populates the constant vector `_dict_unary_calls`.
+    _dict_unary_calls = Dict{Symbol, NTuple{3,Expr}}()
+    for kk in keys(_dict_unary_ops)
+        res = _internalmutfunc_call( _InternalMutFuncs(_dict_unary_ops[kk]) )
+        push!(_dict_unary_calls, kk => res )
+    end
+
+    #Populates the constant vector `_dict_binary_calls`.
+    _dict_binary_calls = Dict{Symbol, NTuple{3,Expr}}()
+    for kk in keys(_dict_binary_ops)
+        res = _internalmutfunc_call( _InternalMutFuncs(_dict_binary_ops[kk]) )
+        push!(_dict_binary_calls, kk => res )
+    end
+    return _dict_unary_calls, _dict_binary_calls
+end
+
+const _dict_unary_calls, _dict_binary_calls = _populate_dicts!()
+
+@doc """
 `_dict_unary_calls::Dict{Symbol, NTuple{2,Expr}}`
 
 Dictionary with the expressions that define the
@@ -158,16 +182,16 @@ internal mutating functions.
 
 Evaluating the entries generates expressions that represent
 the actual calls to the internal mutating functions.
-"""
-const _dict_unary_calls = Dict{Symbol, NTuple{3,Expr}}()
+""" _dict_unary_calls
+# const _dict_unary_calls = Dict{Symbol, NTuple{3,Expr}}()
 
-#Populates the constant vector `_dict_unary_calls`.
-for kk in keys(_dict_unary_ops)
-    res = _internalmutfunc_call( _InternalMutFuncs(_dict_unary_ops[kk]) )
-    push!(_dict_unary_calls, kk => res )
-end
+# #Populates the constant vector `_dict_unary_calls`.
+# for kk in keys(_dict_unary_ops)
+#     res = _internalmutfunc_call( _InternalMutFuncs(_dict_unary_ops[kk]) )
+#     push!(_dict_unary_calls, kk => res )
+# end
 
-"""
+@doc """
 `_dict_binary_calls::Dict{Symbol, NTuple{2,Expr}}`
 
 Dictionary with the expressions that define the
@@ -178,10 +202,6 @@ internal mutating functions.
 
 Evaluating the entries generates symbols that represent
 the actual calls to the internal mutating functions.
-"""
-const _dict_binary_calls = Dict{Symbol, NTuple{3,Expr}}()
-#Populates the constant vector `_dict_binary_calls`.
-for kk in keys(_dict_binary_ops)
-    res = _internalmutfunc_call( _InternalMutFuncs(_dict_binary_ops[kk]) )
-    push!(_dict_binary_calls, kk => res )
-end
+""" _dict_binary_calls
+# const _dict_binary_calls = Dict{Symbol, NTuple{3,Expr}}()
+

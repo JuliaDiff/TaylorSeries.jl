@@ -127,25 +127,26 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
     return Taylor1(vT)
 end
 
-function convert(::Type{Array{TaylorN{Taylor1{T}},N}},
-        s::Array{Taylor1{TaylorN{T}},N}) where {T<:NumberNotSeries,N}
-
-    v = Array{TaylorN{Taylor1{T}}}(undef, size(s))
-    @simd for ind in eachindex(s)
-        @inbounds v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
-    end
-    return v
-end
-
-function convert(::Type{Array{Taylor1{TaylorN{T}}}},
-        s::Array{TaylorN{Taylor1{T}}}) where {T<:NumberNotSeries}
-
-    v = Array{Taylor1{TaylorN{T}}}(undef, size(s))
-    @simd for ind in eachindex(s)
-        @inbounds v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
-    end
-    return v
-end
+# iss 339: this triggers some invalidations
+# function convert(::Type{Array{TaylorN{Taylor1{T}},N}},
+#         s::Array{Taylor1{TaylorN{T}},N}) where {T<:NumberNotSeries,N}
+#
+#     v = Array{TaylorN{Taylor1{T}}}(undef, size(s))
+#     @simd for ind in eachindex(s)
+#         @inbounds v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
+#     end
+#     return v
+# end
+#
+# function convert(::Type{Array{Taylor1{TaylorN{T}}}},
+#         s::Array{TaylorN{Taylor1{T}}}) where {T<:NumberNotSeries}
+#
+#     v = Array{Taylor1{TaylorN{T}}}(undef, size(s))
+#     @simd for ind in eachindex(s)
+#         @inbounds v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
+#     end
+#     return v
+# end
 
 
 
@@ -197,13 +198,13 @@ promote_rule(::Type{TaylorN{T}}, ::Type{S}) where {T<:Number,S<:Number} =
     TaylorN{promote_type(T,S)}
 
 
-# iss 339
+# iss 339: this triggers some invalidations
 # # Order may matter
-# promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries,T<:AbstractSeries} =
+# promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries, T<:AbstractSeries} =
 #     promote_rule(T,S)
-
-# disambiguation with Base
-promote_rule(::Type{Bool}, ::Type{T}) where {T<:AbstractSeries} = promote_rule(T, Bool)
+#
+# # disambiguation with Base
+# promote_rule(::Type{Bool}, ::Type{T}) where {T<:AbstractSeries} = promote_rule(T, Bool)
 
 promote_rule(::Type{S}, ::Type{T}) where
     {S<:AbstractIrrational,T<:AbstractSeries} = promote_rule(T,S)
