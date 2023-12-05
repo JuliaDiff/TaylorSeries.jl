@@ -19,3 +19,5 @@ for file in testfiles
     VERSION < v"1.1" && file == "intervals.jl" && continue
     include(file)
 end
+# After `using intervalArithmetic` new ambiguities may arise
+include("aqua.jl")

@@ -10,12 +10,15 @@ isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..Interval
 
 # Method used for Taylor1{Interval{T}}^n
 for T in (:Taylor1, :TaylorN)
-    @eval function ^(a::$T{Interval{S}}, n::Integer) where {S<:Real}
-        n == 0 && return one(a)
-        n == 1 && return copy(a)
-        n == 2 && return square(a)
-        n < 0 && return a^float(n)
-        return power_by_squaring(a, n)
+    @eval begin
+        function ^(a::$T{Interval{S}}, n::Integer) where {S<:Real}
+            n == 0 && return one(a)
+            n == 1 && return copy(a)
+            n == 2 && return square(a)
+            n < 0 && return a^float(n)
+            return power_by_squaring(a, n)
+        end
+        ^(a::$T{Interval{S}}, r::Rational) where {S<:Real} = a^float(r)
     end
 end
 
