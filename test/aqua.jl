@@ -15,6 +15,9 @@ using Aqua
     pkg_match(pkgname, pkdir::Nothing) = false
     pkg_match(pkgname, pkdir::AbstractString) = occursin(pkgname, pkdir)
     filter!(x -> pkg_match("TaylorSeries", pkgdir(last(x).module)), ambs)
+    for method_ambiguity in ambs
+        @show method_ambiguity
+    end
     if VERSION < v"1.10.0-DEV"
         @test length(ambs) == 0
     end
@@ -27,6 +30,7 @@ end
     Aqua.test_piracies(TaylorSeries)
     Aqua.test_unbound_args(TaylorSeries)
     Aqua.test_project_extras(TaylorSeries)
+    Aqua.test_persistent_tasks(TaylorSeries)
 end
 
 nothing
