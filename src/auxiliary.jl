@@ -274,7 +274,7 @@ end
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function fixorder(a::Taylor1{$T{T}}, b::Taylor1{$T{S}}) where
             {T<:NumberNotSeries, S<:NumberNotSeries}
-        (a.order == b.order) && (all(get_order.(a[:]) .== get_order.(b[:]))) && return a, b
+        (a.order == b.order) && (all(get_order.(a.coeffs) .== get_order.(b.coeffs))) && return a, b
         minordT = _minorder(a, b)
         aa = Taylor1(copy(a.coeffs), minordT)
         bb = Taylor1(copy(b.coeffs), minordT)

@@ -24,7 +24,7 @@ end
 
 function ==(a::Taylor1{TaylorN{T}}, b::TaylorN{Taylor1{S}}) where {T, S}
     R = promote_type(T, S)
-    return a == convert(Taylor1{TaylorN{S}}, b)
+    return a == convert(Taylor1{TaylorN{R}}, b)
 end
 ==(b::TaylorN{Taylor1{S}}, a::Taylor1{TaylorN{T}}) where {T, S} = a == b
 
@@ -465,7 +465,7 @@ function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{S}}) where
 end
 
 function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    if (a.order != b.order) || any(get_order.(a[:]) .!= get_order.(b[:]))
+    if (a.order != b.order) || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
         a, b = fixorder(a, b)
     end
     res = Taylor1(zero(a[0]), a.order)
@@ -677,7 +677,7 @@ end
 
 function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     iszero(a) && !iszero(b) && return zero(a)
-    if (a.order != b.order) || any(get_order.(a[:]) .!= get_order.(b[:]))
+    if (a.order != b.order) || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
         a, b = fixorder(a, b)
     end
 
@@ -774,7 +774,7 @@ div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
     return nothing
 end
 
-# NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
+# NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
 @inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeriesN}
 
