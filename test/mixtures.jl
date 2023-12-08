@@ -7,8 +7,8 @@ using Test
 # using LinearAlgebra
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
-    @test TaylorSeries.NumberNotSeries == Union{Real,Complex}
-    @test TaylorSeries.NumberNotSeriesN == Union{Real,Complex,Taylor1}
+    @test TS.NumberNotSeries == Union{Real,Complex}
+    @test TS.NumberNotSeriesN == Union{Real,Complex,Taylor1}
 
     set_variables("x", numvars=2, order=6)
     xH = HomogeneousPolynomial(Int, 1)
@@ -380,15 +380,15 @@ using Test
     @test norm(-10X+4Y,Inf) == 10.
 
 
-    @test TaylorSeries.rtoldefault(TaylorN{Taylor1{Int}}) == 0
-    @test TaylorSeries.rtoldefault(Taylor1{TaylorN{Int}}) == 0
+    @test TS.rtoldefault(TaylorN{Taylor1{Int}}) == 0
+    @test TS.rtoldefault(Taylor1{TaylorN{Int}}) == 0
     for T in (Float64, BigFloat)
-        @test TaylorSeries.rtoldefault(TaylorN{Taylor1{T}}) == sqrt(eps(T))
-        @test TaylorSeries.rtoldefault(Taylor1{TaylorN{T}}) == sqrt(eps(T))
-        @test TaylorSeries.real(TaylorN{Taylor1{T}}) == TaylorN{Taylor1{T}}
-        @test TaylorSeries.real(Taylor1{TaylorN{T}}) == Taylor1{TaylorN{T}}
-        @test TaylorSeries.real(TaylorN{Taylor1{Complex{T}}}) == TaylorN{Taylor1{T}}
-        @test TaylorSeries.real(Taylor1{TaylorN{Complex{T}}}) == Taylor1{TaylorN{T}}
+        @test TS.rtoldefault(TaylorN{Taylor1{T}}) == sqrt(eps(T))
+        @test TS.rtoldefault(Taylor1{TaylorN{T}}) == sqrt(eps(T))
+        @test TS.real(TaylorN{Taylor1{T}}) == TaylorN{Taylor1{T}}
+        @test TS.real(Taylor1{TaylorN{T}}) == Taylor1{TaylorN{T}}
+        @test TS.real(TaylorN{Taylor1{Complex{T}}}) == TaylorN{Taylor1{T}}
+        @test TS.real(Taylor1{TaylorN{Complex{T}}}) == Taylor1{TaylorN{T}}
     end
 
     rndT1(ord1) = Taylor1(-1 .+ 2rand(ord1+1)) # generates a random Taylor1 with order `ord`
@@ -426,7 +426,7 @@ using Test
     Pv = [rndTN(get_order(), 3), rndTN(get_order(), 3)]
     Qv = convert.(Taylor1{TaylorN{Float64}}, Pv)
 
-    @test TaylorSeries.jacobian(Pv) == TaylorSeries.jacobian(Qv)
+    @test TS.jacobian(Pv) == TS.jacobian(Qv)
 
     @test_throws ArgumentError Taylor1(2) + TaylorN(1)
     @test_throws ArgumentError Taylor1(2) - TaylorN(1)
