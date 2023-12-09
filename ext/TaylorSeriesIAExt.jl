@@ -41,7 +41,7 @@ function ^(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
     for k = 0:c_order
-        TaylorSeries.pow!(c, aa, r, k)
+        TS.pow!(c, aa, r, k)
     end
 
     return c
@@ -66,7 +66,7 @@ function ^(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
 
     c = TaylorN( a0r, a.order)
     for ord in 1:a.order
-        TaylorSeries.pow!(c, aa, r, ord)
+        TS.pow!(c, aa, r, ord)
     end
 
     return c
@@ -84,7 +84,7 @@ for T in (:Taylor1, :TaylorN)
         aa[0] = one(aux) * a0
         c = $T( aux, order )
         for k in eachindex(a)
-            TaylorSeries.log!(c, aa, k)
+            TS.log!(c, aa, k)
         end
         return c
     end
@@ -101,7 +101,7 @@ for T in (:Taylor1, :TaylorN)
         c = $T( aux, order )
         r = $T( sqrt(1 - a0^2), order )
         for k in eachindex(a)
-            TaylorSeries.asin!(c, aa, r, k)
+            TS.asin!(c, aa, r, k)
         end
         return c
     end
@@ -118,7 +118,7 @@ for T in (:Taylor1, :TaylorN)
         c = $T( aux, order )
         r = $T( sqrt(1 - a0^2), order )
         for k in eachindex(a)
-            TaylorSeries.acos!(c, aa, r, k)
+            TS.acos!(c, aa, r, k)
         end
         return c
     end
@@ -135,7 +135,7 @@ for T in (:Taylor1, :TaylorN)
         c = $T( aux, order )
         r = $T( sqrt(a0^2 - 1), order )
         for k in eachindex(a)
-            TaylorSeries.acosh!(c, aa, r, k)
+            TS.acosh!(c, aa, r, k)
         end
         return c
     end
@@ -152,14 +152,14 @@ for T in (:Taylor1, :TaylorN)
             """Series expansion of atanh(x) diverges at x = ±1."""))
 
         for k in eachindex(a)
-            TaylorSeries.atanh!(c, aa, r, k)
+            TS.atanh!(c, aa, r, k)
         end
         return c
     end
 end
 
 
-function evaluate(a::Taylor1, dx::Interval)
+function evaluate(a::Taylor1{T}, dx::Interval{S}) where {T<:Real, S<:Real}
     order = a.order
     uno = one(dx)
     dx2 = dx^2
@@ -201,7 +201,7 @@ end
 function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} ) where {T<:Real,N}
     a.order == 0 && return a[1] + Interval{T}(0, 0)
 
-    ct = TaylorSeries.coeff_table[a.order+1]
+    ct = TS.coeff_table[a.order+1]
     @inbounds suma = a[1]*Interval{T}(0,0)
 
     Ieven = Interval{T}(0,1)
