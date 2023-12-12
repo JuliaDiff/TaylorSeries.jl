@@ -12,12 +12,16 @@ using Test
     c = interval(0, 1)
     p4(x, a) = x^4 + 4*a*x^3 + 6*a^2*x^2 + 4*a^3*x + a^4
     p5(x, a) = x^5 + 5*a*x^4 + 10*a^2*x^3 + 10*a^3*x^2 + 5*a^4*x + a^5
+    # ifour = interval(4)
+    # ifive = interval(5)
+    # isix = interval(6)
+    # iten = interval(10)
+    # p4(x, a) = x^4 + ifour*a*x^3 + isix*a^2*x^2 + ifour*a^3*x + a^4
+    # p5(x, a) = x^5 + ifive*a*x^4 + iten*a^2*x^3 + iten*a^3*x^2 + ifive*a^4*x + a^5
 
     ti = Taylor1(Interval{Float64}, 10)
     x, y = set_variables(Interval{Float64}, "x y")
 
-    # @test eltype(ti) == Interval{Float64}
-    # @test eltype(x) == Interval{Float64}
     @test eltype(ti) == Taylor1{Interval{Float64}}
     @test eltype(x) == TaylorN{Interval{Float64}}
     @test TS.numtype(ti) == Interval{Float64}
@@ -28,8 +32,7 @@ using Test
     @test p4(ti,-a) == (ti-a)^4
     @test p5(ti,-a) == (ti-a)^5
     @test p4(ti,-b) == (ti-b)^4
-    @test all((p5(ti,-b)).coeffs .⊆ ((ti-b)^5).coeffs)
-
+    @test all(issubset_interval.((p5(ti,-b)).coeffs, ((ti-b)^5).coeffs))
 
     @test p4(x,-y) == (x-y)^4
     @test p5(x,-y) == (x-y)^5
@@ -37,34 +40,35 @@ using Test
     @test p5(x,-a) == (x-a)^5
     @test p4(x,-b) == (x-b)^4
     for ind in eachindex(p5(x,-b))
-        @test all((p5(x,-b)[ind]).coeffs .⊆ (((x-b)^5)[ind]).coeffs)
+        @test all(issubset_interval.((p5(x,-b)[ind]).coeffs, (((x-b)^5)[ind]).coeffs))
     end
 
+
     # Tests `evaluate`
-    @test evaluate(p4(x,y), [a, -b]) == p4(a, -b)
-    @test (p5(x,y))([a, b]) == p5(a, b)
-    @test (a-b)^4 ⊆ ((x-y)^4)([a, b])
-    @test (((x-y)^4)[4])([a, b]) == interval(-39, 81)
+    @test isequal_interval(evaluate(p4(x,y), [a, -b]), p4(a, -b))
+    @test isequal_interval((p5(x,y))([a, b]), p5(a, b))
+    @test issubset_interval((a-b)^4, ((x-y)^4)([a, b]))
+    @test isequal_interval((((x-y)^4)[4])([a, b]), interval(-39, 81))
 
     p4n = normalize_taylor(p4(x,y), [a, b], true)
-    @test interval(0, 16) ⊆ p4n([b, b])
+    @test issubset_interval(interval(0, 16), p4n([b, b]))
     p5n = normalize_taylor(p5(x,y), [a, b], true)
-    @test interval(-32, 32) ⊆ p5n([b, b])
+    @test issubset_interval(interval(-32, 32), p5n([b, b]))
 
     p4n = normalize_taylor(p4(x,y), [a, b], false)
-    @test interval(0, 16) ⊆ p4n([c, c])
+    @test issubset_interval(interval(0, 16), p4n([c, c]))
     p5n = normalize_taylor(p5(x,y), [a, b], false)
-    @test interval(0, 32) ⊆ p5n([c, c])
+    @test issubset_interval(interval(0, 32), p5n([c, c]))
 
-    @test evaluate(x*y^3, [b, b]) == b
-    @test evaluate(x*y^2, [b, b]) == b
-    @test evaluate(x^2*y^2, [b, b]) == c
+    @test isequal_interval(evaluate(x*y^3, [b, b]), b)
+    @test isequal_interval(evaluate(x*y^2, [b, b]), b)
+    @test isequal_interval(evaluate(x^2*y^2, [b, b]), c)
 
     ii = b
     t = Taylor1(1)
-    @test interval(0, 2) ⊆ (1+t)(ii)
+    @test issubset_interval(interval(0, 2), (1+t)(ii))
     t = Taylor1(2)
-    @test interval(0, 4) ⊆ ((1+t)^2)(ii)
+    @test issubset_interval(interval(0, 4), ((1+t)^2)(ii))
 
     ii = interval(0, 6)
     t = Taylor1(4)
@@ -72,12 +76,17 @@ using Test
     ft = f(t)
     f1 = normalize_taylor(ft, ii, true)
     f2 = normalize_taylor(ft, ii, false)
-    @test interval(-23/27, f(6)) ⊆ f(ii)
-    @test interval(-23/27, f(6)) ⊆ ft(ii)
-    @test interval(-23/27, f(6)) ⊆ f1b
-    @test interval(-23/27, f(6)) ⊆ f2(c)
-    @test f1b ⊆ f(ii)
-    @test diam(f1b) < diam(f2(c))
+    @test !isguaranteed(f(ii))
+    @test !isguaranteed(ft(ii))
+    @test !isguaranteed(f1(b))
+    @test !isguaranteed(f2(c))
+    @test issubset_interval(interval(-23/27, f(6)), f(ii))
+    @test issubset_interval(interval(-23/27, f(6)), ft(ii))
+    @test issubset_interval(interval(-23/27, f(6)), f1(b))
+    @test issubset_interval(interval(-23/27, f(6)), f2(c))
+    @test issubset_interval(f1(b), f(ii))
+    @test diam(f1(b)) < diam(f2(c))
+
 
     # An example from Makino's thesis
     ii = c
@@ -85,21 +94,31 @@ using Test
     g(x) = 1 - x^4 + x^5
     gt = g(t)
     g1 = normalize_taylor(gt, c, true)
-    @test interval(g(4/5), 1) ⊆ g(ii)
-    @test interval(g(4/5), 1) ⊆ gt(ii)
-    @test interval(g(4/5), 1) ⊆ g1b
-    @test g1b ⊂ g(ii)
-    @test diam(g1b) < diam(gt(ii))
+    @test issubset_interval(interval(g(4/5), 1), g(ii))
+    @test issubset_interval(interval(g(4/5), 1), gt(ii))
+    @test issubset_interval(interval(g(4/5), 1), g1(b))
+    @test isinterior(g1(b), g(ii))
+    @test diam(g1(b)) < diam(gt(ii))
+
 
     # Test display for Taylor1{Complex{Interval{T}}}
-    vc = [complex(interval(1.5, 2), interval(0, 0)), complex(interval(-2, -1), interval(-1, 1 )),
-          complex(interval(-1, 1.5), interval(-1, 1.5)), complex( interval(0,0), interval(-1, 1.5))]
+    vc = [complex(interval(1.5, 2), interval(0, 0)),
+        complex(interval(-2, -1), interval(-1, 1 )),
+        complex(interval(-1, 1.5), interval(-1, 1.5)),
+        complex(interval(0, 0), interval(-1, 1.5))]
     displayBigO(false)
     @test string(Taylor1(vc, 5)) ==
-        " ( Interval(1.5, 2.0) + Interval(0.0, 0.0)im ) - ( Interval(1.0, 2.0) + Interval(-1.0, 1.0)im ) t + ( Interval(-1.0, 1.5) + Interval(-1.0, 1.5)im ) t² + ( Interval(0.0, 0.0) + Interval(-1.0, 1.5)im ) t³ "
+        " ( Interval{Float64}(1.5, 2.0, com) + Interval{Float64}(0.0, 0.0, com)im ) +" *
+        " ( Interval{Float64}(-2.0, -1.0, com) + Interval{Float64}(-1.0, 1.0, com)im ) t" *
+        " + ( Interval{Float64}(-1.0, 1.5, com) + Interval{Float64}(-1.0, 1.5, com)im ) t²" *
+        " + ( Interval{Float64}(0.0, 0.0, com) + Interval{Float64}(-1.0, 1.5, com)im ) t³ "
     displayBigO(true)
     @test string(Taylor1(vc, 5)) ==
-        " ( Interval(1.5, 2.0) + Interval(0.0, 0.0)im ) - ( Interval(1.0, 2.0) + Interval(-1.0, 1.0)im ) t + ( Interval(-1.0, 1.5) + Interval(-1.0, 1.5)im ) t² + ( Interval(0.0, 0.0) + Interval(-1.0, 1.5)im ) t³ + 𝒪(t⁶)"
+        " ( Interval{Float64}(1.5, 2.0, com) + Interval{Float64}(0.0, 0.0, com)im ) +" *
+        " ( Interval{Float64}(-2.0, -1.0, com) + Interval{Float64}(-1.0, 1.0, com)im ) t" *
+        " + ( Interval{Float64}(-1.0, 1.5, com) + Interval{Float64}(-1.0, 1.5, com)im ) t²" *
+        " + ( Interval{Float64}(0.0, 0.0, com) + Interval{Float64}(-1.0, 1.5, com)im ) t³ + 𝒪(t⁶)"
+
 
     # Iss 351 (inspired by a test in ReachabilityAnalysis)
     p1 = Taylor1([0 .. 0, (0 .. 0.1) + (0 .. 0.01) * y], 4)
@@ -115,7 +134,7 @@ using Test
     @test aa == sqrt(sqrt(interval(-1.e-15, 1.e-15) + ti))
     bb = (interval(0.0, 1.e-15) + ti)^(1/4)
     @test bb == (interval(-1.e-15, 1.e-15) + ti)^(1/4)
-    @test all(aa.coeffs[2:end] .⊂ bb.coeffs[2:end])
+    @test all(isinterior.(aa.coeffs[2:end], bb.coeffs[2:end]))
     @test_throws DomainError sqrt(x)
     @test sqrt(interval(-1,1)+x) == sqrt(interval(0,1)+x)
     @test (interval(-1,1)+x)^(1/4) == (interval(0,1)+x)^(1/4)
