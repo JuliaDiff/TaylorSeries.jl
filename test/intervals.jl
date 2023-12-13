@@ -48,7 +48,7 @@ using Test
     @test isequal_interval(evaluate(p4(x,y), [a, -b]), p4(a, -b))
     @test isequal_interval((p5(x,y))([a, b]), p5(a, b))
     @test issubset_interval((a-b)^4, ((x-y)^4)([a, b]))
-    @test isequal_interval((((x-y)^4)[4])([a, b]), interval(-39, 81))
+    @test isequal_interval((((x-y)^4)[4])([a, b]), interval(-64, 81))
 
     p4n = normalize_taylor(p4(x,y), [a, b], true)
     @test issubset_interval(interval(0, 16), p4n([b, b]))
