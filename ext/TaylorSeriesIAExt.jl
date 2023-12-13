@@ -401,92 +401,460 @@ end
 
 # several math functions
 for T in (:Taylor1, :TaylorN)
-    @eval function log(a::$T{Interval{S}}) where {S<:Real}
-        TS._isthinzero(constant_term(a)) && throw(DomainError(a,
-                """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
-        a0 = intersect_interval(constant_term(a), interval(zero(S), S(Inf)))
-        order = a.order
-        aux = log(a0)
-        aa = one(aux) * a
-        aa[0] = one(aux) * a0
-        c = $T( aux, order )
-        for k in eachindex(a)
-            TS.log!(c, aa, k)
+    @eval begin
+        function log(a::$T{Interval{S}}) where {S<:Real}
+            TS._isthinzero(constant_term(a)) && throw(DomainError(a,
+                    """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
+            a0 = intersect_interval(constant_term(a), interval(zero(S), S(Inf)))
+            order = a.order
+            aux = log(a0)
+            aa = one(aux) * a
+            aa[0] = one(aux) * a0
+            c = $T( aux, order )
+            for k in eachindex(a)
+                TS.log!(c, aa, k)
+            end
+            return c
         end
-        return c
-    end
 
-    @eval function asin(a::$T{Interval{S}}) where {S<:Real}
-        a0 = intersect_interval(constant_term(a), interval(-one(S), one(S)))
-        a0sqr = a0^2
-        isequal_interval(a0sqr, one(a0)) &&
-            throw(DomainError(a,
-                """Series expansion of asin(x) diverges at x = ±1."""))
+        function asin(a::$T{Interval{S}}) where {S<:Real}
+            a0 = intersect_interval(constant_term(a), interval(-one(S), one(S)))
+            a0sqr = a0^2
+            isequal_interval(a0sqr, one(a0)) &&
+                throw(DomainError(a,
+                    """Series expansion of asin(x) diverges at x = ±1."""))
 
-        order = a.order
-        aux = asin(a0)
-        aa = one(aux) * a
-        aa[0] = one(aux) * a0
-        c = $T( aux, order )
-        r = $T( sqrt(1 - a0sqr), order )
-        for k in eachindex(a)
-            TS.asin!(c, aa, r, k)
+            order = a.order
+            aux = asin(a0)
+            aa = one(aux) * a
+            aa[0] = one(aux) * a0
+            c = $T( aux, order )
+            r = $T( sqrt(1 - a0sqr), order )
+            for k in eachindex(a)
+                TS.asin!(c, aa, r, k)
+            end
+            return c
         end
-        return c
-    end
 
-    @eval function acos(a::$T{Interval{S}}) where {S<:Real}
-        a0 = intersect_interval(constant_term(a), interval(-one(S), one(S)))
-        a0sqr = a0^2
-        isequal_interval(a0sqr, one(a0)) &&
-            throw(DomainError(a,
-                """Series expansion of acos(x) diverges at x = ±1."""))
+        function acos(a::$T{Interval{S}}) where {S<:Real}
+            a0 = intersect_interval(constant_term(a), interval(-one(S), one(S)))
+            a0sqr = a0^2
+            isequal_interval(a0sqr, one(a0)) &&
+                throw(DomainError(a,
+                    """Series expansion of acos(x) diverges at x = ±1."""))
 
-        order = a.order
-        aux = acos(a0)
-        aa = one(aux) * a
-        aa[0] = one(aux) * a0
-        c = $T( aux, order )
-        r = $T( sqrt(1 - a0sqr), order )
-        for k in eachindex(a)
-            TS.acos!(c, aa, r, k)
+            order = a.order
+            aux = acos(a0)
+            aa = one(aux) * a
+            aa[0] = one(aux) * a0
+            c = $T( aux, order )
+            r = $T( sqrt(1 - a0sqr), order )
+            for k in eachindex(a)
+                TS.acos!(c, aa, r, k)
+            end
+            return c
         end
-        return c
-    end
 
-    @eval function acosh(a::$T{Interval{S}}) where {S<:Real}
-        a0 = intersect_interval(constant_term(a), interval(one(S), S(Inf)))
-        a0sqr = a0^2
-        isequal_interval(a0sqr, one(a0)) && throw(DomainError(a,
-            """Series expansion of acosh(x) diverges at x = ±1."""))
+        function acosh(a::$T{Interval{S}}) where {S<:Real}
+            a0 = intersect_interval(constant_term(a), interval(one(S), S(Inf)))
+            a0sqr = a0^2
+            isequal_interval(a0sqr, one(a0)) && throw(DomainError(a,
+                """Series expansion of acosh(x) diverges at x = ±1."""))
 
-        order = a.order
-        aux = acosh(a0)
-        aa = one(aux) * a
-        aa[0] = one(aux) * a0
-        c = $T( aux, order )
-        r = $T( sqrt(a0sqr - 1), order )
-        for k in eachindex(a)
-            TS.acosh!(c, aa, r, k)
+            order = a.order
+            aux = acosh(a0)
+            aa = one(aux) * a
+            aa[0] = one(aux) * a0
+            c = $T( aux, order )
+            r = $T( sqrt(a0sqr - 1), order )
+            for k in eachindex(a)
+                TS.acosh!(c, aa, r, k)
+            end
+            return c
         end
-        return c
-    end
 
-    @eval function atanh(a::$T{Interval{S}}) where {S<:Real}
-        order = a.order
-        a0 = intersect_interval(constant_term(a), interval(-one(S), one(S)))
-        aux = atanh(a0)
-        aa = one(aux) * a
-        aa[0] = one(aux) * a0
-        c = $T( aux, order)
-        r = $T(one(aux) - a0^2, order)
-        TS._isthinzero(constant_term(r)) && throw(DomainError(a,
-            """Series expansion of atanh(x) diverges at x = ±1."""))
+        function atanh(a::$T{Interval{S}}) where {S<:Real}
+            order = a.order
+            a0 = intersect_interval(constant_term(a), interval(-one(S), one(S)))
+            aux = atanh(a0)
+            aa = one(aux) * a
+            aa[0] = one(aux) * a0
+            c = $T( aux, order)
+            r = $T(one(aux) - a0^2, order)
+            TS._isthinzero(constant_term(r)) && throw(DomainError(a,
+                """Series expansion of atanh(x) diverges at x = ±1."""))
 
-        for k in eachindex(a)
-            TS.atanh!(c, aa, r, k)
+            for k in eachindex(a)
+                TS.atanh!(c, aa, r, k)
+            end
+            return c
         end
-        return c
+
+        # Some internal functions
+        @inline function exp!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:Real}
+            if k == 0
+                @inbounds c[0] = exp(constant_term(a))
+                return nothing
+            end
+            if $T == Taylor1
+                @inbounds c[k] = interval(k) * a[k] * c[0]
+            else
+                @inbounds mul!(c[k], interval(k) * a[k], c[0])
+            end
+            @inbounds for i = 1:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * a[k-i] * c[i]
+                else
+                    mul!(c[k], interval(k-i) * a[k-i], c[i])
+                end
+            end
+            @inbounds c[k] = c[k] / interval(k)
+            return nothing
+        end
+
+        @inline function expm1!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:Real}
+            if k == 0
+                @inbounds c[0] = expm1(constant_term(a))
+                return nothing
+            end
+            c0 = c[0]+one(c[0])
+            if $T == Taylor1
+                @inbounds c[k] = interval(k) * a[k] * c0
+            else
+                @inbounds mul!(c[k], interval(k) * a[k], c0)
+            end
+            @inbounds for i = 1:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * a[k-i] * c[i]
+                else
+                    mul!(c[k], interval(k-i) * a[k-i], c[i])
+                end
+            end
+            @inbounds c[k] = c[k] / interval(k)
+            return nothing
+        end
+
+        @inline function log!(c::$T{Interval{T}}, a::$T{T}, k::Int) where {T<:Real}
+            if k == 0
+                @inbounds c[0] = log(constant_term(a))
+                return nothing
+            elseif k == 1
+                @inbounds c[1] = a[1] / constant_term(a)
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * a[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1)*a[1], c[k-1])
+            end
+            @inbounds for i = 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * a[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i)*a[i], c[k-i])
+                end
+            end
+            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(a)
+            return nothing
+        end
+
+        @inline function log1p!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:Real}
+            a0 = constant_term(a)
+            a0p1 = a0+one(a0)
+            if k == 0
+                @inbounds c[0] = log1p(a0)
+                return nothing
+            elseif k == 1
+                @inbounds c[1] = a[1] / a0p1
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * a[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1)*a[1], c[k-1])
+            end
+            @inbounds for i = 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * a[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i)*a[i], c[k-i])
+                end
+            end
+            @inbounds c[k] = (a[k] - c[k]/interval(k)) / a0p1
+            return nothing
+        end
+
+        @inline function sincos!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
+                k::Int) where {T<:Real}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds s[0], c[0] = sincos( a0 )
+                return nothing
+            end
+
+            x = a[1]
+            if $T == Taylor1
+                @inbounds s[k] = x * c[k-1]
+                @inbounds c[k] = -x * s[k-1]
+            else
+                mul!(s[k], x, c[k-1])
+                mul!(c[k], -x, s[k-1])
+            end
+            @inbounds for i = 2:k
+                x = interval(i) * a[i]
+                if $T == Taylor1
+                    s[k] += x * c[k-i]
+                    c[k] -= x * s[k-i]
+                else
+                    mul!(s[k], x, c[k-i])
+                    mul!(c[k], -x, s[k-i])
+                end
+            end
+
+            @inbounds s[k] = s[k] / interval(k)
+            @inbounds c[k] = c[k] / interval(k)
+            return nothing
+        end
+
+        @inline function tan!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
+                k::Int) where {T<:Real}
+            if k == 0
+                @inbounds aux = tan( constant_term(a) )
+                @inbounds c[0] = aux
+                @inbounds c2[0] = aux^2
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k) * a[k] * c2[0]
+            else
+                @inbounds mul!(c[k], interval(k) * a[k], c2[0])
+            end
+            @inbounds for i = 1:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * a[k-i] * c2[i]
+                else
+                    mul!(c[k], interval(k-i) * a[k-i], c2[i])
+                end
+            end
+            @inbounds c[k] = a[k] + c[k]/interval(k)
+            sqr!(c2, c, k)
+
+            return nothing
+        end
+
+        @inline function asin!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+                k::Int) where {T<:Real}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = asin( a0 )
+                @inbounds r[0] = sqrt( one(a0) - a0^2 )
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i) * r[i], c[k-i])
+                end
+            end
+            sqrt!(r, one(a0)-a^2, k)
+            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            return nothing
+        end
+
+        @inline function acos!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+                k::Int) where {T<:Real}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = acos( a0 )
+                @inbounds r[0] = sqrt( one(a0) - a0^2 )
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i) * r[i], c[k-i])
+                end
+            end
+            sqrt!(r, one(a0)-a^2, k)
+            @inbounds c[k] = -(a[k] + c[k]/interval(k)) / constant_term(r)
+            return nothing
+        end
+
+        @inline function atan!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+                k::Int) where {T<:Real}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = atan( a0 )
+                @inbounds r[0] = one(a0) + a0^2
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i) * r[i], c[k-i])
+                end
+            end
+            @inbounds sqr!(r, a, k)
+            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            return nothing
+        end
+
+        @inline function sinhcosh!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
+                k::Int) where {T<:Real}
+            if k == 0
+                @inbounds s[0] = sinh( constant_term(a) )
+                @inbounds c[0] = cosh( constant_term(a) )
+                return nothing
+            end
+
+            x = a[1]
+            if $T == Taylor1
+                @inbounds s[k] = x * c[k-1]
+                @inbounds c[k] = x * s[k-1]
+            else
+                @inbounds mul!(s[k], x, c[k-1])
+                @inbounds mul!(c[k], x, s[k-1])
+            end
+            @inbounds for i = 2:k
+                x = interval(i) * a[i]
+                if $T == Taylor1
+                    s[k] += x * c[k-i]
+                    c[k] += x * s[k-i]
+                else
+                    mul!(s[k], x, c[k-i])
+                    mul!(c[k], x, s[k-i])
+                end
+            end
+            s[k] = s[k] / interval(k)
+            c[k] = c[k] / interval(k)
+            return nothing
+        end
+
+        @inline function tanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
+                k::Int) where {T<:Real}
+            if k == 0
+                @inbounds aux = tanh( constant_term(a) )
+                @inbounds c[0] = aux
+                @inbounds c2[0] = aux^2
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = k * a[k] * c2[0]
+            else
+                @inbounds mul!(c[k], k * a[k], c2[0])
+            end
+            @inbounds for i = 1:k-1
+                if $T == Taylor1
+                    c[k] += (k-i) * a[k-i] * c2[i]
+                else
+                    mul!(c[k], (k-i) * a[k-i], c2[i])
+                end
+            end
+            @inbounds c[k] = a[k] - c[k]/k
+            sqr!(c2, c, k)
+
+            return nothing
+        end
+
+        @inline function asinh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}}, k::Int) where {T<:Real}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = asinh( a0 )
+                @inbounds r[0] = sqrt( a0^2 + one(a0) )
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i) * r[i], c[k-i])
+                end
+            end
+            sqrt!(r, a^2+one(a0), k)
+            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            return nothing
+        end
+
+        @inline function acosh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}}, k::Int) where {T<:Real}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = acosh( a0 )
+                @inbounds r[0] = sqrt( a0^2 - one(a0) )
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i) * r[i], c[k-i])
+                end
+            end
+            sqrt!(r, a^2-one(a0), k)
+            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            return nothing
+        end
+
+        @inline function atanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}}, k::Int) where {T<:Real}
+            if k == 0
+                a0 = constant_term(a)
+                @inbounds c[0] = atanh( a0 )
+                @inbounds r[0] = one(a0) - a0^2
+                return nothing
+            end
+
+            if $T == Taylor1
+                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+            else
+                @inbounds mul!(c[k], interval(k-1) * r[1], c[k-1])
+            end
+            @inbounds for i in 2:k-1
+                if $T == Taylor1
+                    c[k] += interval(k-i) * r[i] * c[k-i]
+                else
+                    mul!(c[k], interval(k-i) * r[i], c[k-i])
+                end
+            end
+            @inbounds sqr!(r, a, k)
+            @inbounds c[k] = (a[k] + c[k]/interval(k)) / constant_term(r)
+            return nothing
+        end
     end
 end
 
@@ -688,93 +1056,7 @@ function _normalize(a::TaylorN, I::AbstractVector{Interval{T}}, ::Val{false}) wh
     return a(x)
 end
 
-# Printing-related methods
-# function TS.pretty_print(a::Taylor1{Interval{T}}) where {T<:Real}
-#     z = zero(a[0])
-#     var = TS._params_Taylor1_.var_name
-#     space = string(" ")
-#     bigO = TS.bigOnotation[end] ?
-#         string("+ 𝒪(", var, TS.superscriptify(a.order+1), ")") :
-#         string("")
-#     TS._isthinzero(a) && return string(space, z, space, bigO)
-#     strout::String = space
-#     ifirst = true
-#     for i in eachindex(a)
-#         monom::String = i==0 ? string("") :
-#             i==1 ? string(" ", var) : string(" ", var, TS.superscriptify(i))
-#         @inbounds c = a[i]
-#         TS._isthinzero(c) && continue
-#         cadena = TS.numbr2str(c, ifirst)
-#         strout = string(strout, cadena, monom, space)
-#         ifirst = false
-#     end
-#     strout = strout * bigO
-#     return strout
-# end
-
-# function TS.pretty_print(a::HomogeneousPolynomial{Interval{T}}) where
-#         {T<:Real}
-#     z = zero(a[1])
-#     space = string(" ")
-#     TS._isthinzero(a) && return string(space, z)
-#     strout::String = TS.homogPol2str(a)
-#     return strout
-# end
-
-# function TS.pretty_print(a::TaylorN{Interval{T}}) where {T<:Real}
-#     z = zero(a[0])
-#     space = string("")
-#     bigO::String = TS.bigOnotation[end] ?
-#         string(" + 𝒪(‖x‖", TS.superscriptify(a.order+1), ")") :
-#         string("")
-#     TS._isthinzero(a) && return string(space, z, space, bigO)
-#     strout::String = space
-#     ifirst = true
-#     for ord in eachindex(a)
-#         pol = a[ord]
-#         TS._isthinzero(pol) && continue
-#         cadena::String = TS.homogPol2str( pol )
-#         strsgn = (ifirst || ord == 0) ?
-#             string("") : string(" +")
-#         strout = string( strout, strsgn, cadena)
-#         ifirst = false
-#     end
-#     strout = strout * bigO
-#     strout
-# end
-
-
-# function TS.homogPol2str(a::HomogeneousPolynomial{Interval{T}}) where
-#         {T<:Real}
-#     numVars = get_numvars()
-#     order = a.order
-#     z = zero(a.coeffs[1])
-#     space = string(" ")
-#     strout::String = space
-#     ifirst = true
-#     iIndices = zeros(Int, numVars)
-#     for pos = 1:TS.size_table[order+1]
-#         monom::String = string("")
-#         @inbounds iIndices[:] = TS.coeff_table[order+1][pos]
-#         for ivar = 1:numVars
-#             powivar = iIndices[ivar]
-#             if powivar == 1
-#                 monom = string(monom, TS.name_taylorNvar(ivar))
-#             elseif powivar > 1
-#                 monom = string(monom, TS.name_taylorNvar(ivar),
-#                     TS.superscriptify(powivar))
-#             end
-#         end
-#         @inbounds c = a[pos]
-#         TS._isthinzero(c) && continue
-#         cadena = TS.numbr2str(c, ifirst)
-#         strout = string(strout, cadena, monom, space)
-#         ifirst = false
-#     end
-#     return strout[1:prevind(strout, end)]
-# end
-
-
+# Printing-related methods numbr2str
 function TS.numbr2str(zz::Interval, ifirst::Bool=false)
     TS._isthinzero(zz) && return string( zz )
     plusmin = ifelse( ifirst, string(""), string("+ ") )
