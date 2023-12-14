@@ -114,41 +114,37 @@ it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
 """
 function evaluate(a::HomogeneousPolynomial, vals::NTuple)
     @assert length(vals) == get_numvars()
-
     return _evaluate(a, vals)
 end
-
-function _evaluate(a::HomogeneousPolynomial, vals::NTuple)
-    ct = coeff_table[a.order+1]
-    suma = zero(a[1])*vals[1]
-
-    for (i, a_coeff) in enumerate(a.coeffs)
-        iszero(a_coeff) && continue
-        @inbounds tmp = prod( vals .^ ct[i] )
-        suma += a_coeff * tmp
-    end
-
-    return suma
-end
-
 
 evaluate(a::HomogeneousPolynomial{T}, vals::AbstractArray{S,1} ) where
         {T<:Number,S<:NumberNotSeriesN} = _evaluate(a, (vals...,))
 
-evaluate(a::HomogeneousPolynomial, v, vals::Vararg) = evaluate(a, (v, vals...,))
+evaluate(a::HomogeneousPolynomial, v, vals::Vararg) = _evaluate(a, promote(v, vals...,))
 
-evaluate(a::HomogeneousPolynomial, v) = evaluate(a, [v...])
+evaluate(a::HomogeneousPolynomial, v) = _evaluate(a, promote(v...,))
 
 function evaluate(a::HomogeneousPolynomial)
     a.order == 0 && return a[1]
     return zero(a[1])
 end
 
+
+function _evaluate(a::HomogeneousPolynomial, vals::NTuple)
+    ct = coeff_table[a.order+1]
+    suma = zero(a[1])*vals[1]
+    for (i, a_coeff) in enumerate(a.coeffs)
+        iszero(a_coeff) && continue
+        @inbounds tmp = prod( vals .^ ct[i] )
+        suma += a_coeff * tmp
+    end
+    return suma
+end
+
+
 #function-like behavior for HomogeneousPolynomial
 (p::HomogeneousPolynomial)(x) = evaluate(p, x)
-
-(p::HomogeneousPolynomial)(x, v::Vararg{T, N}) where {T,N} = evaluate(p, (x, v...,))
-
+(p::HomogeneousPolynomial)(x, v::Vararg{T, N}) where {T,N} = _evaluate(p, promote(x, v...,))
 (p::HomogeneousPolynomial)() = evaluate(p)
 
 
@@ -166,12 +162,12 @@ Note that the syntax `a(vals)` is equivalent to
 `evaluate(a)`. No extension exists that incorporates
 `sorting`.
 """
-evaluate(a::TaylorN, vals; sorting::Bool=true) = _evaluate(a, (vals...,), Val(sorting))
+evaluate(a::TaylorN, vals; sorting::Bool=true) = _evaluate(a, promote(vals...,), Val(sorting))
 
 evaluate(a::TaylorN, vals::NTuple; sorting::Bool=true) = _evaluate(a, vals, Val(sorting))
 
 evaluate(a::TaylorN, v, vals::Vararg; sorting::Bool=true) =
-    _evaluate(a, (v, vals...,), Val(sorting))
+    _evaluate(a, promote(v, vals...,), Val(sorting))
 
 evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries}; sorting::Bool=false) where
     {N} = _evaluate(a, vals, Val(sorting))
@@ -194,14 +190,14 @@ evaluate(a::TaylorN{Taylor1}, vals::AbstractVector{T}) where {T} =
 function evaluate(a::TaylorN{T}, s::Symbol, val::S) where {T<:Number, S<:NumberNotSeriesN}
     vars = get_variables(T)
     ind = lookupvar(s)
-    vars[ind] = val + zero(vars[ind])
+    @inbounds vars[ind] = val + zero(vars[ind])
     return evaluate(a, vars)
 end
 
-evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:NumberNotSeries,S} =
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:NumberNotSeries, S} =
     evaluate(a, first(x), last(x))
 
-evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:AbstractSeries,S} =
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T<:AbstractSeries, S} =
     evaluate(a, first(x), last(x))
 
 evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
@@ -209,9 +205,9 @@ evaluate(a::TaylorN{T}) where {T<:Number} = a[0][1]
 
 # _evaluate
 # Returns a vector with the evaluation of the HomogeneousPolynomials
-function _evaluate(a::TaylorN, vals)
+function _evaluate(a::TaylorN{T}, vals) where {T<:Number}
     @assert get_numvars() == length(vals)
-    R = promote_type(numtype(a), typeof.(vals)...)
+    R = promote_type(T, typeof.(vals)...)
     a_length = length(a)
     suma = zeros(R, a_length)
     @inbounds for homPol in eachindex(a)
@@ -220,18 +216,16 @@ function _evaluate(a::TaylorN, vals)
     return suma
 end
 
-function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:NumberNotSeries}
-    suma = _evaluate(a, vals)
-    return sum( sort!(suma, by=abs2) )
-end
-function _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number}
-    suma = _evaluate(a, vals)
-    return sum( suma )
-end
+_evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:NumberNotSeries} =
+    sum( sort!(_evaluate(a, vals), by=abs2) )
+
+_evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number} =
+    sum( _evaluate(a, vals) )
 
 
 #High-dim array evaluation
-function evaluate(A::AbstractArray{TaylorN{T},N}, δx::Vector{S}) where {T<:Number,S<:Number,N}
+function evaluate(A::AbstractArray{TaylorN{T},N}, δx::Vector{S}) where
+        {T<:Number, S<:Number, N}
     R = promote_type(T,S)
     return evaluate(convert(Array{TaylorN{R},N},A), convert(Vector{R},δx))
 end
@@ -282,13 +276,13 @@ function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{T,1},
     return nothing
 end
 
-function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{Taylor1{T},1},
-        x0::AbstractArray{Taylor1{T}}) where {T<:NumberNotSeriesN}
-    @inbounds for i in eachindex(x, x0)
-        x0[i] = evaluate( x[i], δx )
-    end
-    return nothing
-end
+# function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{Taylor1{T},1},
+#         x0::AbstractArray{Taylor1{T}}) where {T<:NumberNotSeriesN}
+#     @inbounds for i in eachindex(x, x0)
+#         x0[i] = evaluate( x[i], δx )
+#     end
+#     return nothing
+# end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
         x0::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
@@ -298,10 +292,10 @@ function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
     return nothing
 end
 
-function evaluate!(x::AbstractArray{TaylorN{T}}, δt::T,
-        x0::AbstractArray{TaylorN{T}}) where {T<:Number}
-    @inbounds for i in eachindex(x, x0)
-        x0[i] = evaluate( x[i], δt )
-    end
-    return nothing
-end
+# function evaluate!(x::AbstractArray{TaylorN{T}}, δt::T,
+#         x0::AbstractArray{TaylorN{T}}) where {T<:Number}
+#     @inbounds for i in eachindex(x, x0)
+#         x0[i] = evaluate( x[i], δt )
+#     end
+#     return nothing
+# end
