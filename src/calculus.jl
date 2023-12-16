@@ -41,7 +41,7 @@ function differentiate!(res::Taylor1, a::Taylor1)
     for ord in eachindex(res)
         differentiate!(res, a, ord)
     end
-    nothing
+    return nothing
 end
 
 """
@@ -58,9 +58,14 @@ p_k = (k+1) a_{k+1}.
 
 """
 function differentiate!(p::Taylor1, a::Taylor1, k::Int)
-    if k < a.order
-        @inbounds p[k] = (k+1)*a[k+1]
-    end
+    k >= a.order && return nothing
+    @inbounds p[k] = (k+1)*a[k+1]
+    return nothing
+end
+function differentiate!(p::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where
+        {T<:NumberNotSeries}
+    k >= a.order && return nothing
+    @inbounds p[k] = (k+1)*a[k+1]
     return nothing
 end
 
@@ -73,16 +78,17 @@ Compute recursively the `Taylor1` polynomial of the n-th derivative of
 """
 function differentiate(a::Taylor1{T}, n::Int) where {T <: Number}
     if n > a.order
-        return Taylor1(T, 0)
+        return Taylor1(zero(T), 0)
+    elseif n == a.order
+        return Taylor1(differentiate(n, a), 0)
     elseif n==0
         return a
-    else
-        res = differentiate(a)
-        for i = 2:n
-            differentiate!(res, res)
-        end
-        return Taylor1(view(res.coeffs, 1:a.order-n+1))
     end
+    res = differentiate(a)
+    for i = 2:n
+        differentiate!(res, res)
+    end
+    return Taylor1(res.coeffs[1:a.order-n+1])
 end
 
 """
@@ -92,8 +98,9 @@ Return the value of the `n`-th differentiate of the polynomial `a`.
 """
 function differentiate(n::Int, a::Taylor1{T}) where {T<:Number}
     @assert a.order ≥ n ≥ 0
-    factorial( widen(n) ) * a[n] :: T
+    return factorial( widen(n) ) * a[n] :: T
 end
+
 
 ## Integrating ##
 """
@@ -101,13 +108,14 @@ end
 
 Return the integral of `a::Taylor1`. The constant of integration
 (0-th order coefficient) is set to `x`, which is zero if omitted.
+Note that the order of the result is `a.order+1`.
 """
-function integrate(a::Taylor1{T}, x::S) where {T<:Number,S<:Number}
+function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
     order = get_order(a)
     aa = a[0]/1 + zero(x)
     R = typeof(aa)
     coeffs = Array{typeof(aa)}(undef, order+1)
-    fill!(coeffs, zero(aa))
+    # fill!(coeffs, zero(aa))
     @inbounds for i = 1:order
         coeffs[i+1] = a[i-1] / i
     end
@@ -130,7 +138,7 @@ function differentiate(a::HomogeneousPolynomial, r::Int)
     T = TS.numtype(a)
     a.order == 0 && return HomogeneousPolynomial(zero(a[1]), 0)
     @inbounds num_coeffs = size_table[a.order]
-    coeffs = zeros(T,num_coeffs)
+    coeffs = zeros(T, num_coeffs)
     @inbounds posTb = pos_table[a.order]
     @inbounds num_coeffs = size_table[a.order+1]
 
@@ -184,7 +192,7 @@ function differentiate(a::TaylorN, ntup::NTuple{N,Int}) where {N}
 
     aa = copy(a)
     for nvar in 1:get_numvars()
-        for numder in 1:ntup[nvar]
+        for _ in 1:ntup[nvar]
             aa = differentiate(aa, nvar)
         end
     end
@@ -296,7 +304,6 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
 end
 function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1},
         vals::Array{T,1}) where {T<:Number}
-
     numVars = get_numvars()
     @assert length(vf) == numVars == length(vals)
     @assert (numVars, numVars) == size(jac)

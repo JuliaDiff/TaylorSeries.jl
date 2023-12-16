@@ -215,40 +215,36 @@ a `TaylorN` expansion will be computed. If the dimension of x0 (`length(x0)`)
 is different from the variables set for `TaylorN` (`get_numvars()`), an
 `AssertionError` will be thrown.
 """
-function taylor_expand(f::Function; order::Int=15)
+function taylor_expand(f::F; order::Int=15) where {F}
    a = Taylor1(order)
    return f(a)
 end
 
-function taylor_expand(f::Function, x0::T; order::Int=15) where {T<:Number}
-   a = Taylor1([x0, one(T)], order)
+function taylor_expand(f::F, x0::T; order::Int=15) where {T<:Number, F}
+   a = Taylor1(T[x0, one(x0)], order)
    return f(a)
 end
 
 #taylor_expand function for TaylorN
-function taylor_expand(f::Function, x0::Vector{T}; order::Int=get_order()) where {T<:Number}
+function taylor_expand(f::F, x0::Vector{T}; order::Int=get_order()) where {T<:Number, F}
     ll = length(x0)
     @assert ll == get_numvars() && order <= get_order()
     X = Array{TaylorN{T}}(undef, ll)
-
     for i in eachindex(X)
         X[i] = x0[i] + TaylorN(T, i, order=order)
     end
-
     return f( X )
 end
 
-function taylor_expand(f::Function, x0::Vararg; order::Int=get_order())
-    x0 = promote(x0...)
+function taylor_expand(f::F, x1::Vararg{Number,N}; order::Int=get_order()) where {F, N}
+    x0 = promote(x1...)
     ll = length(x0)
     T = eltype(x0[1])
     @assert ll == get_numvars() && order <= get_order()
     X = Array{TaylorN{T}}(undef, ll)
-
     for i in eachindex(X)
         X[i] = x0[i] + TaylorN(T, i, order=order)
     end
-
     return f( X... )
 end
 

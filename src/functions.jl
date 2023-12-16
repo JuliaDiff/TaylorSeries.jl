@@ -779,30 +779,30 @@ end
     return nothing
 end
 
-# @inline function _sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
-#         a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-#     if k == 0
-#         @inbounds for ordQ in eachindex(a[0])
-#             sincos!(s[0], c[0], a[0], ordQ)
-#         end
-#         return nothing
-#     end
-#     # The recursion formula
-#     x = TaylorN( a[1][0][1], a[0].order )
-#     zero!(s, a, k)
-#     zero!(c, a, k)
-#     @inbounds for i = 1:k
-#         for ordQ in eachindex(a[0])
-#             x[ordQ] = i * a[i][ordQ]
-#             mul!(s[k], x, c[k-i], ordQ)
-#             mul!(c[k], x, s[k-i], ordQ)
-#         end
-#     end
-#     div!(s, s, k, k)
-#     subst!(c, c, k)
-#     div!(c, c, k, k)
-#     return nothing
-# end
+@inline function sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
+        a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        @inbounds for ordQ in eachindex(a[0])
+            sincos!(s[0], c[0], a[0], ordQ)
+        end
+        return nothing
+    end
+    # The recursion formula
+    x = TaylorN( a[1][0][1], a[0].order )
+    zero!(s, a, k)
+    zero!(c, a, k)
+    @inbounds for i = 1:k
+        for ordQ in eachindex(a[0])
+            x[ordQ] = i * a[i][ordQ]
+            mul!(s[k], x, c[k-i], ordQ)
+            mul!(c[k], x, s[k-i], ordQ)
+        end
+    end
+    div!(s, s, k, k)
+    subst!(c, c, k)
+    div!(c, c, k, k)
+    return nothing
+end
 
 @inline function sincospi!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
