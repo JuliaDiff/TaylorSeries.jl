@@ -371,7 +371,7 @@ using Test
     a = sum(exp.(get_variables()).^2)
     b = Taylor1([a])
     bcopy = deepcopy(b)
-    c = Taylor1(constant_term(b),1)
+    c = Taylor1(constant_term(b),0)
     c[0][0][1] = 0.0
     b == bcopy
 end
