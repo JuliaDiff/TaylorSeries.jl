@@ -367,6 +367,13 @@ using Test
     for i in 2:19
         @test iszero(intz[i])
     end
+
+    a = sum(exp.(get_variables()).^2)
+    b = Taylor1([a])
+    bcopy = deepcopy(b)
+    c = Taylor1(constant_term(b),1)
+    c[0][0][1] = 0.0
+    b == bcopy
 end
 
 @testset "Tests with nested Taylor1s" begin
