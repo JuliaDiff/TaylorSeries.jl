@@ -10,14 +10,14 @@ using Test
     a = interval(1, 2)
     b = interval(-1, 1)
     c = interval(0, 1)
-    p4(x, a) = x^4 + 4*a*x^3 + 6*a^2*x^2 + 4*a^3*x + a^4
-    p5(x, a) = x^5 + 5*a*x^4 + 10*a^2*x^3 + 10*a^3*x^2 + 5*a^4*x + a^5
-    # ifour = interval(4)
-    # ifive = interval(5)
-    # isix = interval(6)
-    # iten = interval(10)
-    # p4(x, a) = x^4 + ifour*a*x^3 + isix*a^2*x^2 + ifour*a^3*x + a^4
-    # p5(x, a) = x^5 + ifive*a*x^4 + iten*a^2*x^3 + iten*a^3*x^2 + ifive*a^4*x + a^5
+    # p4(x, a) = x^4 + 4*a*x^3 + 6*a^2*x^2 + 4*a^3*x + a^4
+    # p5(x, a) = x^5 + 5*a*x^4 + 10*a^2*x^3 + 10*a^3*x^2 + 5*a^4*x + a^5
+    ifour = interval(4)
+    ifive = interval(5)
+    isix = interval(6)
+    iten = interval(10)
+    p4(x, a) = x^4 + ifour*a*x^3 + isix*a^2*x^2 + ifour*a^3*x + a^4
+    p5(x, a) = x^5 + ifive*a*x^4 + iten*a^2*x^3 + iten*a^3*x^2 + ifive*a^4*x + a^5
 
     ti = Taylor1(Interval{Float64}, 10)
     x, y = set_variables(Interval{Float64}, "x y")
@@ -48,7 +48,7 @@ using Test
     @test isequal_interval(evaluate(p4(x,y), [a, -b]), p4(a, -b))
     @test isequal_interval((p5(x,y))([a, b]), p5(a, b))
     @test issubset_interval((a-b)^4, ((x-y)^4)([a, b]))
-    @test isequal_interval((((x-y)^4)[4])([a, b]), interval(-64, 81))
+    @test isequal_interval((((x-y)^4)[4])([a, b]), interval(-39, 81))
 
     p4n = normalize_taylor(p4(x,y), [a, b], true)
     @test issubset_interval(interval(0, 16), p4n([b, b]))
@@ -159,8 +159,8 @@ using Test
     @test_throws DomainError acosh(interval(0.0, 1.0) + x)
     @test acosh(interval(0.0, 2.0) + x) == acosh(interval(1.0, 2.0) + x)
     # atanh defined on interval(-1,1)
-    @test_throws DomainError atanh(interval(1.0, 1.0) + ti)
+    @test_logs (:warn, "invalid interval, empty interval is returned") @test_throws DomainError atanh(interval(1.0, 1.0) + ti)
     @test atanh(interval(-2.0, 0.0) + ti) == atanh(interval(-1.0, 0.0) + ti)
-    @test_throws DomainError atanh(interval(1.0, 1.0) + y)
+    @test_logs (:warn, "invalid interval, empty interval is returned") @test_throws DomainError atanh(interval(1.0, 1.0) + y)
     @test atanh(interval(-2.0, 0.0) + y) == atanh(interval(-1.0, 0.0) + y)
 end
