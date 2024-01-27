@@ -21,11 +21,11 @@ Contains parameters and expressions that allow a simple
 programmatic construction for calling the internal mutating
 functions.
 """
-struct _InternalMutFuncs
-    namef    :: Symbol   # internal name of the function
-    argsf    :: NTuple   # arguments
-    defexpr  :: Expr     # defining expr
-    auxexpr  :: Expr     # auxiliary expr
+struct _InternalMutFuncs{N}
+    namef    :: Symbol             # internal name of the function
+    argsf    :: NTuple{N,Symbol}   # arguments
+    defexpr  :: Expr               # defining expr
+    auxexpr  :: Expr               # auxiliary expr
 end
 
 # Constructor

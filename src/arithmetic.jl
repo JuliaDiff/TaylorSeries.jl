@@ -348,33 +348,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             return c
         end
 
-        # function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{S}}) where
-        #         {T<:NumberNotSeries, S<:NumberNotSeries}
-        #     R = promote_type(T,S)
-        #     return ($f)(convert(Taylor1{TaylorN{R}}, a), convert(Taylor1{TaylorN{R}}, b))
-        # end
-
-        # function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
-        #         {T<:NumberNotSeries}
-        #     if (a.order != b.order) || any(get_order.(a[:]) .!= get_order.(b[:]))
-        #         a, b = fixorder(a, b)
-        #     end
-        #     res = Taylor1(zero( constant_term(a)), a.order )
-        #     for ordT in eachindex(a)
-        #         ($fc)(res, a, b, ordT)
-        #     end
-        #     return res
-        # end
-
-        # function ($fc)(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
-        #         b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeries}
-        #     # Sanity
-        #     zero!(res, a, ordT)
-        #     @inbounds for ordQ in eachindex(a[ordT])
-        #         $(fc)(res[ordT], a[ordT], b[ordT], ordQ)
-        #     end
-        #     return nothing
-        # end
     end
 end
 

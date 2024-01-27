@@ -86,7 +86,7 @@ convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 
 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    orderN = get_order()
+    orderN = maximum(get_order.(s[:]))
     r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
 
     v = zeros(T, s.order+1)
@@ -126,28 +126,6 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
     end
     return Taylor1(vT)
 end
-
-# iss 339: this triggers some invalidations
-# function convert(::Type{Array{TaylorN{Taylor1{T}},N}},
-#         s::Array{Taylor1{TaylorN{T}},N}) where {T<:NumberNotSeries,N}
-#
-#     v = Array{TaylorN{Taylor1{T}}}(undef, size(s))
-#     @simd for ind in eachindex(s)
-#         @inbounds v[ind] = convert(TaylorN{Taylor1{T}}, s[ind])
-#     end
-#     return v
-# end
-#
-# function convert(::Type{Array{Taylor1{TaylorN{T}}}},
-#         s::Array{TaylorN{Taylor1{T}}}) where {T<:NumberNotSeries}
-#
-#     v = Array{Taylor1{TaylorN{T}}}(undef, size(s))
-#     @simd for ind in eachindex(s)
-#         @inbounds v[ind] = convert(Taylor1{TaylorN{T}}, s[ind])
-#     end
-#     return v
-# end
-
 
 
 # Promotion
@@ -197,14 +175,6 @@ promote_rule(::Type{TaylorN{T}}, ::Type{Array{HomogeneousPolynomial{S},1}}) wher
 promote_rule(::Type{TaylorN{T}}, ::Type{S}) where {T<:Number,S<:Number} =
     TaylorN{promote_type(T,S)}
 
-
-# iss 339: this triggers some invalidations
-# # Order may matter
-# promote_rule(::Type{S}, ::Type{T}) where {S<:NumberNotSeries, T<:AbstractSeries} =
-#     promote_rule(T,S)
-#
-# # disambiguation with Base
-# promote_rule(::Type{Bool}, ::Type{T}) where {T<:AbstractSeries} = promote_rule(T, Bool)
 
 promote_rule(::Type{S}, ::Type{T}) where
     {S<:AbstractIrrational,T<:AbstractSeries} = promote_rule(T,S)
