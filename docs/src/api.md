@@ -105,6 +105,5 @@ _populate_dicts!
 
 ```@index
 Pages = ["api.md"]
-Module = ["TaylorSeries"]
 Order = [:type, :function]
 ```
