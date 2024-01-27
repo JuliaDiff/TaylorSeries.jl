@@ -82,8 +82,8 @@ end
 evaluate(p::Taylor1{T}, x::AbstractArray{S}) where {T<:Number, S<:Number} =
     evaluate.(Ref(p), x)
 
-function evaluate(a::Taylor1{TaylorN{T}}, dx::NumberNotSeries) where
-        {T<:NumberNotSeries}
+function evaluate(a::Taylor1{TaylorN{T}}, dx::S) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
     @inbounds suma = TaylorN( zero(T)*constant_term(dx), a[0].order )
     @inbounds for k in reverse(eachindex(a))
         for ordQ in eachindex(a[k])

@@ -336,8 +336,9 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function square(a::HomogeneousPolynomial)
-    order = 2*a.order
-    order > get_order() && return HomogeneousPolynomial(zero(a[1]), get_order())
+    order = 2*get_order(a)
+    # NOTE: the following returns order 0, but could be get_order(), or get_order(a)
+    order > get_order() && return HomogeneousPolynomial(zero(a[1]), 0)
     res = HomogeneousPolynomial(zero(a[1]), order)
     accsqr!(res, a)
     return res

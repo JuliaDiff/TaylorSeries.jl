@@ -362,6 +362,7 @@ function integrate(a::HomogeneousPolynomial, r::Int)
     @assert 1 ≤ r ≤ get_numvars()
 
     order_max = get_order()
+    # NOTE: the following returns order 0, but could be get_order(), or get_order(a)
     a.order == order_max && return HomogeneousPolynomial(zero(a[1]/1), 0)
 
     @inbounds posTb = pos_table[a.order+2]
