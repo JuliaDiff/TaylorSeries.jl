@@ -426,7 +426,6 @@ end
     @test imag((exp(yT))^(-1im)') == sin(yT)
     exy = exp( xT+yT )
     @test evaluate(exy) == 1
-    @test evaluate(exy, 0.1im, 0.01im) == exp(0.11im)
     @test exy(0.1im, 0.01im) == exp(0.11im)
     @test evaluate(exy,(0.1im, 0.01im)) == exp(0.11im)
     @test exy((0.1im, 0.01im)) == exp(0.11im)

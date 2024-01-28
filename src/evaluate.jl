@@ -120,7 +120,8 @@ end
 evaluate(a::HomogeneousPolynomial{T}, vals::AbstractArray{S,1} ) where
     {T<:Number,S<:NumberNotSeriesN} = evaluate(a, (vals...,))
 
-evaluate(a::HomogeneousPolynomial, v, vals::Vararg{Number,N}) where {N} = evaluate(a, promote(v, vals...,))
+evaluate(a::HomogeneousPolynomial, v, vals::Vararg{Number,N}) where {N} =
+    evaluate(a, promote(v, vals...,))
 
 evaluate(a::HomogeneousPolynomial, v) = evaluate(a, promote(v...,))
 
@@ -146,7 +147,8 @@ end
 
 #function-like behavior for HomogeneousPolynomial
 (p::HomogeneousPolynomial)(x) = evaluate(p, x)
-(p::HomogeneousPolynomial)(x, v::Vararg{Number,N}) where {N} = evaluate(p, promote(x, v...,))
+(p::HomogeneousPolynomial)(x, v::Vararg{Number,N}) where {N} =
+    evaluate(p, promote(x, v...,))
 (p::HomogeneousPolynomial)() = evaluate(p)
 
 
@@ -164,26 +166,29 @@ Note that the syntax `a(vals)` is equivalent to
 `evaluate(a)`; use a(b::Bool, x) corresponds to
 evaluate(a, x, sorting=b).
 """
-evaluate(a::TaylorN, vals) = evaluate(a, promote(vals...,))
-
-function evaluate(a::TaylorN, vals::NTuple{N,<:Number}; sorting::Bool=true) where {N}
+function evaluate(a::TaylorN, vals::NTuple{N,<:Number};
+        sorting::Bool=true) where {N}
     @assert get_numvars() == N
     return _evaluate(a, vals, Val(sorting))
 end
 
-evaluate(a::TaylorN, v, vals::Vararg{Number,N}; sorting::Bool=true) where {N} =
-    evaluate(a, promote(v, vals...,); sorting=sorting)
-
-function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries}; sorting::Bool=false) where {N}
+function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
+        sorting::Bool=false) where {N}
     @assert get_numvars() == N
     return _evaluate(a, vals, Val(sorting))
 end
 
-evaluate(a::TaylorN{Taylor1{T}}, v::Number, vals::Vararg{Number,N};
-    sorting::Bool=false) where {N,T} = evaluate(a, promote(v, vals...,); sorting=sorting)
+evaluate(a::TaylorN{T}, vals::AbstractVector{<:Number};
+        sorting::Bool=true) where {T<:NumberNotSeries} =
+    evaluate(a, (vals...,); sorting=sorting)
 
-evaluate(a::TaylorN, vals::AbstractVector{T}) where {S, T<:AbstractSeries{S}} =
-    evaluate(a, (vals...,); sorting=false)
+evaluate(a::TaylorN{T}, vals::AbstractVector{<:AbstractSeries};
+        sorting::Bool=false) where {T<:NumberNotSeries} =
+    evaluate(a, (vals...,); sorting=sorting)
+
+evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{S};
+        sorting::Bool=false) where {T, S} =
+    evaluate(a, (vals...,); sorting=sorting)
 
 function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
         {T<:Number, S<:NumberNotSeriesN}
