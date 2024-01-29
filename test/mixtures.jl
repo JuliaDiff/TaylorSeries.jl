@@ -156,10 +156,12 @@ using Test
     @test t1N() == TaylorN(xH, 2)
     @test string(evaluate(t1N, 0.0)) == " 1.0 x₁ + 𝒪(‖x‖³)"
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
-    @test string((t1N^2)(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
+    @test string((t1N^(2//1))(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = zeros(TaylorN{Float64},2)
     @test isnothing(evaluate!([t1N, t1N^2], 0.0, v))
     @test v == [TaylorN(1), TaylorN(1)^2]
+    @test tN1() == t
+    @test evaluate(tN1, :x₁ => 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
 
     # Tests for functions of mixtures
     t1N = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 6)
@@ -181,6 +183,15 @@ using Test
         @test x*fn(cc+t1N) == fn(cc+t)*xN1
         @test t*fn(cc+xN1) == fn(cc+x)*t1N
     end
+    ee = Taylor1(t1N[0:5], 6)
+    for ord in eachindex(t1N)
+        TS.differentiate!(ee, exp(t1N), ord)
+    end
+    @test iszero(ee[6])
+    @test getcoeff.(ee, 0:5) == getcoeff.(exp(t1N), 0:5)
+    ee = differentiate(t1N, get_order(t1N))
+    @test iszero(ee)
+    @test iszero(get_order(ee))
 
     vt = zeros(Taylor1{Float64},2)
     @test isnothing(evaluate!([tN1, tN1^2], [t, t], vt))

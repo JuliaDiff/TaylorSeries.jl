@@ -219,6 +219,16 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:Number}) where {N,T<:Number}
     return suma
 end
 
+function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}) where {N,T<:Number}
+    R = TaylorN{promote_type(T, TS.numtype(vals[1]))}
+    a_length = length(a)
+    suma = zeros(R, a_length)
+    @inbounds for homPol in eachindex(a)
+        suma[homPol+1] = _evaluate(a[homPol], vals)
+    end
+    return suma
+end
+
 _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:NumberNotSeries} =
     sum( sort!(_evaluate(a, vals), by=abs2) )
 
