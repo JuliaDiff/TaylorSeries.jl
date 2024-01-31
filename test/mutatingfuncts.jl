@@ -88,4 +88,8 @@ using Test
     TS.abs2!(res, t1, 2)
     @test res[2] == 1.0
 
+    t2 = Taylor1(Int,15)
+    TaylorSeries.zero!(t2)
+    @test TaylorSeries.iszero(t2)
+
 end
