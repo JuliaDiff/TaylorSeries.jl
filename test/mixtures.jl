@@ -211,6 +211,17 @@ using Test
     @test (1+y)/one(t) == 1 + y
     @test typeof(y+t) == TaylorN{Taylor1{Float64}}
 
+    t = Taylor1(4)
+    xN, yN = get_variables()
+    @show(xN, yN)
+    @test evaluate(1.0 + t + t^2, xN) == 1.0 + xN + xN^2
+    v1 = [1.0 + t + t^2 + t^4, 1.0 - t^2 + t^3]
+    @test v1(yN^2) == [1.0 + yN^2 + yN^4, 1.0 - yN^4 + yN^6]
+    tN = Taylor1([zero(xN), one(xN)], 4)
+    q1N = 1 + yN*tN + xN*tN^4
+    @test q1N(-1.0) == 1.0 - yN + xN
+    @test q1N(-xN^2) == 1.0 - xN^2*yN
+
     # See #92 and #94
     δx, δy = set_variables("δx δy")
     xx = 1+Taylor1(δx, 5)
