@@ -49,7 +49,7 @@ Taylor1(coeffs::Array{T,1}, order::Int) where {T<:Number} = Taylor1{T}(coeffs, o
 Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1(coeffs, length(coeffs)-1)
 function Taylor1(x::T, order::Int) where {T<:Number}
     v = [zero(x) for _ in 1:order+1]
-    v[1] = x
+    v[1] = deepcopy(x)
     return Taylor1(v, order)
 end
 
