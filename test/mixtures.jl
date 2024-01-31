@@ -213,7 +213,6 @@ using Test
 
     t = Taylor1(4)
     xN, yN = get_variables()
-    @show(xN, yN)
     @test evaluate(1.0 + t + t^2, xN) == 1.0 + xN + xN^2
     v1 = [1.0 + t + t^2 + t^4, 1.0 - t^2 + t^3]
     @test v1(yN^2) == [1.0 + yN^2 + yN^4, 1.0 - yN^4 + yN^6]
