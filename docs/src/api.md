@@ -77,7 +77,7 @@ div!
 pow!
 square
 sqr!
-sqr!(::HomogeneousPolynomial{T}, ::HomogeneousPolynomial{T}) where {T<:NumberNotSeriesN}
+accsqr!
 sqrt!
 exp!
 log!
@@ -105,6 +105,5 @@ _populate_dicts!
 
 ```@index
 Pages = ["api.md"]
-Module = ["TaylorSeries"]
 Order = [:type, :function]
 ```

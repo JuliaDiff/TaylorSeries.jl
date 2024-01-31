@@ -21,11 +21,11 @@ Contains parameters and expressions that allow a simple
 programmatic construction for calling the internal mutating
 functions.
 """
-struct _InternalMutFuncs
-    namef    :: Symbol   # internal name of the function
-    argsf    :: NTuple   # arguments
-    defexpr  :: Expr     # defining expr
-    auxexpr  :: Expr     # auxiliary expr
+struct _InternalMutFuncs{N}
+    namef    :: Symbol             # internal name of the function
+    argsf    :: NTuple{N,Symbol}   # arguments
+    defexpr  :: Expr               # defining expr
+    auxexpr  :: Expr               # auxiliary expr
 end
 
 # Constructor
@@ -183,13 +183,6 @@ internal mutating functions.
 Evaluating the entries generates expressions that represent
 the actual calls to the internal mutating functions.
 """ _dict_unary_calls
-# const _dict_unary_calls = Dict{Symbol, NTuple{3,Expr}}()
-
-# #Populates the constant vector `_dict_unary_calls`.
-# for kk in keys(_dict_unary_ops)
-#     res = _internalmutfunc_call( _InternalMutFuncs(_dict_unary_ops[kk]) )
-#     push!(_dict_unary_calls, kk => res )
-# end
 
 @doc """
 `_dict_binary_calls::Dict{Symbol, NTuple{2,Expr}}`
@@ -203,5 +196,4 @@ internal mutating functions.
 Evaluating the entries generates symbols that represent
 the actual calls to the internal mutating functions.
 """ _dict_binary_calls
-# const _dict_binary_calls = Dict{Symbol, NTuple{3,Expr}}()
 

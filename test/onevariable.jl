@@ -51,11 +51,11 @@ Base.iszero(::SymbNumber) = false
     end
 
     v = [1,2]
-    @test typeof(TaylorSeries.resize_coeffs1!(v,3)) == Nothing
+    @test typeof(TS.resize_coeffs1!(v,3)) == Nothing
     @test v == [1,2,0,0]
-    TaylorSeries.resize_coeffs1!(v,0)
+    TS.resize_coeffs1!(v,0)
     @test v == [1]
-    TaylorSeries.resize_coeffs1!(v,3)
+    TS.resize_coeffs1!(v,3)
     setindex!(Taylor1(v),3,2)
     @test v == [1,0,3,0]
     pol_int = Taylor1(v)
@@ -139,10 +139,10 @@ Base.iszero(::SymbNumber) = false
     @test TS.numtype(promote(1.0+im, zt)[1]) == Complex{Float64}
 
     @test length(Taylor1(10)) == 11
-    @test length.( TaylorSeries.fixorder(zt, Taylor1([1])) ) == (16, 16)
-    @test length.( TaylorSeries.fixorder(zt, Taylor1([1], 1)) ) == (2, 2)
-    @test eltype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Taylor1{Int}
-    @test TS.numtype(TaylorSeries.fixorder(zt,Taylor1([1]))[1]) == Int
+    @test length.( TS.fixorder(zt, Taylor1([1])) ) == (16, 16)
+    @test length.( TS.fixorder(zt, Taylor1([1], 1)) ) == (2, 2)
+    @test eltype(TS.fixorder(zt,Taylor1([1]))[1]) == Taylor1{Int}
+    @test TS.numtype(TS.fixorder(zt,Taylor1([1]))[1]) == Int
     @test findfirst(t) == 1
     @test findfirst(t^2) == 2
     @test findfirst(ot) == 0
@@ -380,86 +380,86 @@ Base.iszero(::SymbNumber) = false
 
     ut = 1.0*t
     tt = zero(ut)
-    TaylorSeries.one!(tt, ut, 0)
+    TS.one!(tt, ut, 0)
     @test tt[0] == 1.0
-    TaylorSeries.one!(tt, ut, 1)
+    TS.one!(tt, ut, 1)
     @test tt[1] == 0.0
-    TaylorSeries.abs!(tt, 1.0+ut, 0)
+    TS.abs!(tt, 1.0+ut, 0)
     @test tt[0] == 1.0
-    TaylorSeries.add!(tt, ut, ut, 1)
+    TS.add!(tt, ut, ut, 1)
     @test tt[1] == 2.0
-    TaylorSeries.add!(tt, -3.0, 0)
+    TS.add!(tt, -3.0, 0)
     @test tt[0] == -3.0
-    TaylorSeries.add!(tt, -3.0, 1)
+    TS.add!(tt, -3.0, 1)
     @test tt[1] == 0.0
-    TaylorSeries.subst!(tt, ut, ut, 1)
+    TS.subst!(tt, ut, ut, 1)
     @test tt[1] == 0.0
-    TaylorSeries.subst!(tt, -3.0, 0)
+    TS.subst!(tt, -3.0, 0)
     @test tt[0] == 3.0
-    TaylorSeries.subst!(tt, -2.5, 1)
+    TS.subst!(tt, -2.5, 1)
     @test tt[1] == 0.0
-    iind, cind = TaylorSeries.divfactorization(ut, ut)
+    iind, cind = TS.divfactorization(ut, ut)
     @test iind == 1
     @test cind == 1.0
-    TaylorSeries.div!(tt, ut, ut, 0)
+    TS.div!(tt, ut, ut, 0)
     @test tt[0] == cind
-    TaylorSeries.div!(tt, 1+ut, 1+ut, 0)
+    TS.div!(tt, 1+ut, 1+ut, 0)
     @test tt[0] == 1.0
-    TaylorSeries.div!(tt, 1, 1+ut, 0)
+    TS.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0)
+    TS.pow!(tt, 1.0+t, 1.5, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 0.0*t, 1.5, 0)
+    TS.pow!(tt, 0.0*t, 1.5, 0)
     @test tt[0] == 0.0
-    TaylorSeries.pow!(tt, 0.0+t, 18, 0)
+    TS.pow!(tt, 0.0+t, 18, 0)
     @test tt[0] == 0.0
-    TaylorSeries.pow!(tt, 1.0+t, 1.5, 0)
+    TS.pow!(tt, 1.0+t, 1.5, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1.0+t, 0.5, 1)
+    TS.pow!(tt, 1.0+t, 0.5, 1)
     @test tt[1] == 0.5
-    TaylorSeries.pow!(tt, 1.0+t, 0, 0)
+    TS.pow!(tt, 1.0+t, 0, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1.0+t, 1, 1)
+    TS.pow!(tt, 1.0+t, 1, 1)
     @test tt[1] == 1.0
     tt = zero(ut)
-    TaylorSeries.pow!(tt, 1.0+t, 2, 0)
+    TS.pow!(tt, 1.0+t, 2, 0)
     @test tt[0] == 1.0
-    TaylorSeries.pow!(tt, 1.0+t, 2, 1)
+    TS.pow!(tt, 1.0+t, 2, 1)
     @test tt[1] == 2.0
-    TaylorSeries.pow!(tt, 1.0+t, 2, 2)
+    TS.pow!(tt, 1.0+t, 2, 2)
     @test tt[2] == 1.0
-    TaylorSeries.sqrt!(tt, 1.0+t, 0, 0)
+    TS.sqrt!(tt, 1.0+t, 0, 0)
     @test tt[0] == 1.0
-    TaylorSeries.sqrt!(tt, 1.0+t, 0)
+    TS.sqrt!(tt, 1.0+t, 0)
     @test tt[0] == 1.0
-    TaylorSeries.exp!(tt, 1.0*t, 0)
+    TS.exp!(tt, 1.0*t, 0)
     @test tt[0] == exp(t[0])
-    TaylorSeries.log!(tt, 1.0+t, 0)
+    TS.log!(tt, 1.0+t, 0)
     @test tt[0] == 0.0
-    TaylorSeries.log1p!(tt, 0.25+t, 0)
+    TS.log1p!(tt, 0.25+t, 0)
     @test tt[0] == log1p(0.25)
-    TaylorSeries.log1p!(tt, 0.25+t, 1)
+    TS.log1p!(tt, 0.25+t, 1)
     @test tt[1] == 1/1.25
     ct = zero(ut)
-    TaylorSeries.sincos!(tt, ct, 1.0*t, 0)
+    TS.sincos!(tt, ct, 1.0*t, 0)
     @test tt[0] == sin(t[0])
     @test ct[0] == cos(t[0])
-    TaylorSeries.tan!(tt, 1.0*t, ct, 0)
+    TS.tan!(tt, 1.0*t, ct, 0)
     @test tt[0] == tan(t[0])
     @test ct[0] == tan(t[0])^2
-    TaylorSeries.asin!(tt, 1.0*t, ct, 0)
+    TS.asin!(tt, 1.0*t, ct, 0)
     @test tt[0] == asin(t[0])
     @test ct[0] == sqrt(1.0-t[0]^2)
-    TaylorSeries.acos!(tt, 1.0*t, ct, 0)
+    TS.acos!(tt, 1.0*t, ct, 0)
     @test tt[0] == acos(t[0])
     @test ct[0] == sqrt(1.0-t[0]^2)
-    TaylorSeries.atan!(tt, ut, ct, 0)
+    TS.atan!(tt, ut, ct, 0)
     @test tt[0] == atan(t[0])
     @test ct[0] == 1.0+t[0]^2
-    TaylorSeries.sinhcosh!(tt, ct, ut, 0)
+    TS.sinhcosh!(tt, ct, ut, 0)
     @test tt[0] == sinh(t[0])
     @test ct[0] == cosh(t[0])
-    TaylorSeries.tanh!(tt, ut, ct, 0)
+    TS.tanh!(tt, ut, ct, 0)
     @test tt[0] == tanh(t[0])
     @test ct[0] == tanh(t[0])^2
 
@@ -543,12 +543,12 @@ Base.iszero(::SymbNumber) = false
     displayBigO(false)
     @test string(ta(-3)) == " - 3 + 1 t "
     @test string(ta(0)^3-3) == " - 3 + 1 t³ "
-    @test TaylorSeries.pretty_print(ta(3im)) == " ( 0 + 3im ) + ( 1 + 0im ) t "
+    @test TS.pretty_print(ta(3im)) == " ( 0 + 3im ) + ( 1 + 0im ) t "
     @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
     displayBigO(true)
     @test string(ta(-3)) == " - 3 + 1 t + 𝒪(t¹⁶)"
     @test string(ta(0)^3-3) == " - 3 + 1 t³ + 𝒪(t¹⁶)"
-    @test TaylorSeries.pretty_print(ta(3im)) == " ( 0 + 3im ) + ( 1 + 0im ) t + 𝒪(t¹⁶)"
+    @test TS.pretty_print(ta(3im)) == " ( 0 + 3im ) + ( 1 + 0im ) t + 𝒪(t¹⁶)"
     @test string(Taylor1([1,2,3,4,5], 2)) == string(Taylor1([1,2,3]))
 
     a = collect(1:12)
@@ -562,11 +562,11 @@ Base.iszero(::SymbNumber) = false
     @test norm(t_a, Inf) == 12
     @test norm(t_C) == norm(complex(3.0,4.0)*a)
 
-    @test TaylorSeries.rtoldefault(Taylor1{Int}) == 0
-    @test TaylorSeries.rtoldefault(Taylor1{Float64}) == sqrt(eps(Float64))
-    @test TaylorSeries.rtoldefault(Taylor1{BigFloat}) == sqrt(eps(BigFloat))
-    @test TaylorSeries.real(Taylor1{Float64}) == Taylor1{Float64}
-    @test TaylorSeries.real(Taylor1{Complex{Float64}}) == Taylor1{Float64}
+    @test TS.rtoldefault(Taylor1{Int}) == 0
+    @test TS.rtoldefault(Taylor1{Float64}) == sqrt(eps(Float64))
+    @test TS.rtoldefault(Taylor1{BigFloat}) == sqrt(eps(BigFloat))
+    @test TS.real(Taylor1{Float64}) == Taylor1{Float64}
+    @test TS.real(Taylor1{Complex{Float64}}) == Taylor1{Float64}
     @test isfinite(t_C)
     @test isfinite(t_a)
     @test !isfinite( Taylor1([0, Inf]) )
@@ -596,10 +596,10 @@ Base.iszero(::SymbNumber) = false
     a = Taylor1(rand(10))
     b = Taylor1(rand(10))
     c = deepcopy(a)
-    TaylorSeries.deg2rad!(b, a, 0)
+    TS.deg2rad!(b, a, 0)
     @test a == c
     @test a[0]*(pi/180) == b[0]
-    # TaylorSeries.deg2rad!.(b, a, [0,1,2])
+    # TS.deg2rad!.(b, a, [0,1,2])
     # @test a == c
     # for i in 0:2
     #     @test a[i]*(pi/180) == b[i]
@@ -607,10 +607,10 @@ Base.iszero(::SymbNumber) = false
     a = Taylor1(rand(10))
     b = Taylor1(rand(10))
     c = deepcopy(a)
-    TaylorSeries.rad2deg!(b, a, 0)
+    TS.rad2deg!(b, a, 0)
     @test a == c
     @test a[0]*(180/pi) == b[0]
-    # TaylorSeries.rad2deg!.(b, a, [0,1,2])
+    # TS.rad2deg!.(b, a, [0,1,2])
     # @test a == c
     # for i in 0:2
     #     @test a[i]*(180/pi) == b[i]

@@ -54,6 +54,11 @@ for T in (:Taylor1, :TaylorN)
     @eval ^(a::$T, x::T) where {T<:Complex} = exp( x*log(a) )
 end
 
+^(a::Taylor1{TaylorN{T}}, n::Integer) where {T<:NumberNotSeries} = a^float(n)
+
+^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} = a^(r.num/r.den)
+
+
 
 # power_by_squaring; slightly modified from base/intfuncs.jl
 # Licensed under MIT "Expat"
@@ -83,8 +88,9 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 
+
 ## Real power ##
-function ^(a::Taylor1, r::S) where {S<:Real}
+function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
     a0 = constant_term(a)
     aux = one(a0)^r
 
@@ -92,16 +98,15 @@ function ^(a::Taylor1, r::S) where {S<:Real}
     aa = aux*a
     r == 1 && return aa
     r == 2 && return square(aa)
-    r == 1/2 && return sqrt(aa)
+    r == 0.5 && return sqrt(aa)
 
     l0 = findfirst(a)
     lnull = trunc(Int, r*l0 )
-    if (a.order-lnull < 0) || (lnull > a.order)
-        return Taylor1( zero(aux), a.order)
-    end
+    (lnull > a.order) && return Taylor1( zero(aux), a.order)
+
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
-    for k = 0:c_order
+    for k in eachindex(c)
         pow!(c, aa, r, k)
     end
 
@@ -117,17 +122,42 @@ function ^(a::TaylorN, r::S) where {S<:Real}
     aa = aux*a
     r == 1 && return aa
     r == 2 && return square(aa)
-    r == one(r)/2 && return sqrt(aa)
-    isinteger(r) && return aa^round(Int,r)
+    r == 0.5 && return sqrt(aa)
+    isinteger(r) && return aa^round(Int,r) # uses power_by_squaring
 
-    # @assert !iszero(a0)
     iszero(a0) && throw(DomainError(a,
         """The 0-th order TaylorN coefficient must be non-zero
         in order to expand `^` around 0."""))
 
-    c = TaylorN( a0^r, a.order)
-    for ord in 1:a.order
+    c = TaylorN( zero(aux), a.order)
+    for ord in eachindex(a)
         pow!(c, aa, r, ord)
+    end
+
+    return c
+end
+
+function ^(a::Taylor1{TaylorN{T}}, r::S) where {T<:NumberNotSeries, S<:Real}
+    a0 = constant_term(a)
+    aux = one(a0)^r
+
+    iszero(r) && return Taylor1(aux, a.order)
+    aa = aux*a
+    r == 1 && return aa
+    r == 2 && return square(aa)
+    r == 0.5 && return sqrt(aa)
+    # Is the following needed?
+    # isinteger(r) && r > 0 && iszero(constant_term(a[0])) &&
+    #     return power_by_squaring(aa, round(Int,r))
+
+    l0 = findfirst(a)
+    lnull = trunc(Int, r*l0 )
+    (lnull > a.order) && return Taylor1( zero(aux), a.order)
+
+    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
+    c = Taylor1(zero(aux), c_order)
+    for k in eachindex(c)
+        pow!(c, aa, r, k)
     end
 
     return c
@@ -152,7 +182,8 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int) where {T<:Number,S<:Real}
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int) where
+        {T<:Number, S<:Real}
 
     if r == 0
         return one!(c, a, k)
@@ -164,12 +195,12 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
         return sqrt!(c, a, k)
     end
 
+    # Sanity
+    zero!(c, a, k)
+
     # First non-zero coefficient
     l0 = findfirst(a)
-    if l0 < 0
-        c[k] = zero(a[0])
-        return nothing
-    end
+    l0 < 0 && return nothing
 
     # The first non-zero coefficient of the result; must be integer
     !isinteger(r*l0) && throw(DomainError(a,
@@ -177,16 +208,10 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0 )
     kprime = k-lnull
-    if (kprime < 0) || (lnull > a.order)
-        @inbounds c[k] = zero(a[0])
-        return nothing
-    end
+    (kprime < 0 || lnull > a.order) && return nothing
 
     # Relevant for positive integer r, to avoid round-off errors
-    if isinteger(r) && r > 0 && (k > r*findlast(a))
-        @inbounds c[k] = zero(a[0])
-        return nothing
-    end
+    isinteger(r) && r > 0 && (k > r*findlast(a)) && return nothing
 
     if k == lnull
         @inbounds c[k] = (a[l0])^r
@@ -196,8 +221,6 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     # The recursion formula
     if l0+kprime ≤ a.order
         @inbounds c[k] = r * kprime * c[lnull] * a[l0+kprime]
-    else
-        @inbounds c[k] = zero(a[0])
     end
     for i = 1:k-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
@@ -209,7 +232,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 end
 
 @inline function pow!(c::TaylorN{T}, a::TaylorN{T}, r::S, k::Int) where
-        {T<:NumberNotSeriesN,S<:Real}
+        {T<:NumberNotSeriesN, S<:Real}
 
     if r == 0
         return one!(c, a, k)
@@ -226,6 +249,10 @@ end
         return nothing
     end
 
+    # Sanity
+    zero!(c, a, k)
+
+    # The recursion formula
     for i = 0:k-1
         aux = r*(k-i) - i
         mul!(c[k], aux*a[k-i], c[i])
@@ -235,6 +262,60 @@ end
     return nothing
 end
 
+@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, r::S,
+        ordT::Int) where {T<:NumberNotSeries, S<:Real}
+
+    if r == 0
+        return one!(res, a, ordT)
+    elseif r == 1
+        return identity!(res, a, ordT)
+    elseif r == 2
+        return sqr!(res, a, ordT)
+    elseif r == 0.5
+        return sqrt!(res, a, ordT)
+    end
+
+    # Sanity
+    zero!(res, a, ordT)
+
+    # First non-zero coefficient
+    l0 = findfirst(a)
+    l0 < 0 && return nothing
+
+    # The first non-zero coefficient of the result; must be integer
+    !isinteger(r*l0) && throw(DomainError(a,
+        """The 0-th order Taylor1 coefficient must be non-zero
+        to raise the Taylor1 polynomial to a non-integer exponent."""))
+    lnull = trunc(Int, r*l0 )
+    kprime = ordT-lnull
+    (kprime < 0 || lnull > a.order) && return nothing
+
+    # Relevant for positive integer r, to avoid round-off errors
+    isinteger(r) && r > 0 && (ordT > r*findlast(a)) && return nothing
+
+    if ordT == lnull
+        res[ordT] = a[l0]^r # if r is integer, uses power_by_squaring internally
+        return nothing
+    end
+
+    # The recursion formula
+    tmp =  TaylorN( zero(constant_term(a[ordT])), a[0].order)
+    tmp1 = TaylorN( zero(constant_term(a[ordT])), a[0].order)
+    for i = 0:ordT-lnull-1
+        ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
+        aux = r*(kprime-i) - i
+        @inbounds for ordQ in eachindex(tmp)
+            tmp1[ordQ] = aux * res[i+lnull][ordQ]
+            mul!(tmp, tmp1, a[l0+kprime-i], ordQ)
+        end
+    end
+    @inbounds for ordQ in eachindex(tmp)
+        tmp1[ordQ] = tmp[ordQ]/kprime
+        div!(res[ordT], tmp1, a[l0], ordQ)
+    end
+
+    return nothing
+end
 
 
 ## Square ##
@@ -255,11 +336,19 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function square(a::HomogeneousPolynomial)
-    order = 2*a.order
-    order > get_order() && return HomogeneousPolynomial(zero(a[1]), get_order())
-
+    order = 2*get_order(a)
+    # NOTE: the following returns order 0, but could be get_order(), or get_order(a)
+    order > get_order() && return HomogeneousPolynomial(zero(a[1]), 0)
     res = HomogeneousPolynomial(zero(a[1]), order)
-    sqr!(res, a)
+    accsqr!(res, a)
+    return res
+end
+
+function square(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    res = Taylor1(zero(a[0]), a.order)
+    for ordT in eachindex(a)
+        sqr!(res, a, ordT)
+    end
     return res
 end
 
@@ -292,8 +381,12 @@ for T = (:Taylor1, :TaylorN)
                 return nothing
             end
 
+            # Sanity
+            zero!(c, a, k)
+
+            # Recursion formula
             kodd = k%2
-            kend = div(k - 2 + kodd, 2)
+            kend = (k - 2 + kodd) >> 1
             @inbounds for i = 0:kend
                 if $T == Taylor1
                     c[k] += a[i] * a[k-i]
@@ -305,9 +398,9 @@ for T = (:Taylor1, :TaylorN)
             kodd == 1 && return nothing
 
             if $T == Taylor1
-                @inbounds c[k] += a[div(k,2)]^2
+                @inbounds c[k] += a[k >> 1]^2
             else
-                sqr!(c[k], a[div(k,2)])
+                accsqr!(c[k], a[k >> 1])
             end
 
             return nothing
@@ -315,14 +408,47 @@ for T = (:Taylor1, :TaylorN)
     end
 end
 
+@inline function sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        ordT::Int) where {T<:NumberNotSeries}
+    # Sanity
+    zero!(res, a, ordT)
+    if ordT == 0
+        @inbounds for ordQ in eachindex(a[0])
+            @inbounds sqr!(res[0], a[0], ordQ)
+        end
+        return nothing
+    end
+
+    # Recursion formula
+    kodd = ordT%2
+    kend = (ordT - 2 + kodd) >> 1
+    tmp = TaylorN( zero(constant_term(a[0])), a[0].order )
+    for i = 0:kend
+        @inbounds for ordQ in eachindex(a[ordT])
+            mul!(tmp, a[i], a[ordT-i], ordQ)
+        end
+    end
+    @inbounds for ordQ in eachindex(a[ordT])
+        res[ordT][ordQ] = 2 * tmp[ordQ]
+    end
+    kodd == 1 && return nothing
+
+    @inbounds for ordQ in eachindex(a[0])
+        sqr!(tmp, a[ordT >> 1], ordQ)
+        add!(res[ordT], res[ordT], tmp, ordQ)
+    end
+
+    return nothing
+end
+
 
 """
-    sqr!(c, a)
+    accsqr!(c, a)
 
-Return `c = a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
+Returns `c += a*a` with no allocation; all parameters are `HomogeneousPolynomial`.
 
 """
-@inline function sqr!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where
+@inline function accsqr!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where
         {T<:NumberNotSeriesN}
     iszero(a) && return nothing
 
@@ -352,26 +478,24 @@ end
 
 
 ## Square root ##
-function sqrt(a::Taylor1)
-
+function sqrt(a::Taylor1{T}) where {T<:Number}
     # First non-zero coefficient
     l0nz = findfirst(a)
     aux = zero(sqrt( constant_term(a) ))
     if l0nz < 0
         return Taylor1(aux, a.order)
-    elseif l0nz%2 == 1 # l0nz must be pair
+    elseif isodd(l0nz) # l0nz must be pair
         throw(DomainError(a,
-        """First non-vanishing Taylor1 coefficient must correspond
-        to an **even power** in order to expand `sqrt` around 0."""))
+            """First non-vanishing Taylor1 coefficient must correspond
+            to an **even power** in order to expand `sqrt` around 0."""))
     end
 
-    # The last l0nz coefficients are set to zero.
+    # The last l0nz coefficients are dropped.
     lnull = l0nz >> 1 # integer division by 2
     c_order = l0nz == 0 ? a.order : a.order >> 1
     c = Taylor1( aux, c_order )
-    @inbounds c[lnull] = sqrt( a[l0nz] )
-    aa = one(aux) * a
-    for k = lnull+1:c_order
+    aa = convert(Taylor1{eltype(aux)}, a)
+    for k in eachindex(c)
         sqrt!(c, aa, k, lnull)
     end
 
@@ -382,18 +506,43 @@ function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( constant_term(a) )
     if iszero(p0)
         throw(DomainError(a,
-        """The 0-th order TaylorN coefficient must be non-zero
-        in order to expand `sqrt` around 0."""))
+            """The 0-th order TaylorN coefficient must be non-zero
+            in order to expand `sqrt` around 0."""))
     end
 
     c = TaylorN( p0, a.order)
-    aa = one(p0)*a
-    for k in 1:a.order
+    aa = convert(TaylorN{eltype(p0)}, a)
+    for k in eachindex(c)
         sqrt!(c, aa, k)
     end
 
     return c
 end
+
+function sqrt(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    # First non-zero coefficient
+    l0nz = findfirst(a)
+    aux = TaylorN( zero(sqrt(constant_term(a[0]))), a[0].order )
+    if l0nz < 0
+        return Taylor1( aux, a.order )
+    elseif isodd(l0nz) # l0nz must be pair
+        throw(DomainError(a,
+            """First non-vanishing Taylor1 coefficient must correspond
+            to an **even power** in order to expand `sqrt` around 0."""))
+    end
+
+    # The last l0nz coefficients are dropped.
+    lnull = l0nz >> 1 # integer division by 2
+    c_order = l0nz == 0 ? a.order : a.order >> 1
+    c = Taylor1( aux, c_order )
+    aa = convert(Taylor1{eltype(aux)}, a)
+    for k in eachindex(c)
+        sqrt!(c, aa, k, lnull)
+    end
+
+    return c
+end
+
 
 # Homogeneous coefficients for the square-root
 @doc doc"""
@@ -419,14 +568,20 @@ coefficient, which must be even.
 """ sqrt!
 
 @inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T<:Number}
+    # Sanity
+    zero!(c, a, k)
+
+    k < k0 && return nothing
 
     if k == k0
         @inbounds c[k] = sqrt(a[2*k0])
         return nothing
     end
 
+    # Recursion formula
     kodd = (k - k0)%2
-    kend = div(k - k0 - 2 + kodd, 2)
+    # kend = div(k - k0 - 2 + kodd, 2)
+    kend = (k - k0 - 2 + kodd) >> 1
     imax = min(k0+kend, a.order)
     imin = max(k0+1, k+k0-a.order)
     imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
@@ -447,14 +602,17 @@ coefficient, which must be even.
 end
 
 @inline function sqrt!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:NumberNotSeriesN}
+    # Sanity
+    zero!(c, a, k)
 
     if k == 0
         @inbounds c[0] = sqrt( constant_term(a) )
         return nothing
     end
 
+    # Recursion formula
     kodd = k%2
-    kend = div(k - 2 + kodd, 2)
+    kend = (k - 2 + kodd) >> 1
     @inbounds for i = 1:kend
         mul!(c[k], c[i], c[k-i])
     end
@@ -463,6 +621,53 @@ end
         @inbounds aux = aux - (c[kend+1])^2
     end
     @inbounds c[k] = aux / (2*constant_term(c))
+
+    return nothing
+end
+
+@inline function sqrt!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ordT::Int,
+        ordT0::Int=0) where {T<:NumberNotSeries}
+    # Sanity
+    zero!(res, a, ordT)
+    ordT < ordT0 && return nothing
+
+    if ordT == ordT0
+        for ordQ in eachindex(a[0])
+            sqrt!(res[ordT], a[2*ordT0], ordQ)
+        end
+        return nothing
+    end
+
+    # Recursion formula
+    @inbounds tmp = TaylorN( zero( constant_term(a[ordT])), a[0].order)
+    @inbounds tmp1 = TaylorN( zero( constant_term(a[ordT])), a[0].order)
+    ordT_odd = (ordT - ordT0)%2
+    ordT_end = (ordT - ordT0 - 2 + ordT_odd) >> 1
+    imax = min(ordT0+ordT_end, a.order)
+    imin = max(ordT0+1, ordT+ordT0-a.order)
+    if imin ≤ imax
+        @inbounds for ordQ in eachindex(a[0])
+            mul!(tmp, res[imin], res[ordT+ordT0-imin], ordQ)
+        end
+    end
+    for i = imin+1:imax
+        @inbounds for ordQ in eachindex(a[0])
+            mul!(tmp, res[i], res[ordT+ordT0-i], ordQ)
+        end
+    end
+
+    @inbounds for ordQ in eachindex(a[0])
+        tmp[ordQ] = -2 * tmp[ordQ]
+        if ordT+ordT0 ≤ a.order
+            add!(tmp, a[ordT+ordT0], tmp, ordQ)
+        end
+        if ordT_odd == 0
+            sqr!(tmp1, res[ordT_end+ordT0+1], ordQ)
+            subst!(tmp, tmp, tmp1, ordQ)
+        end
+        tmp1[ordQ] = 2*res[ordT0][ordQ]
+        div!(res[ordT], tmp, tmp1, ordQ)
+    end
 
     return nothing
 end

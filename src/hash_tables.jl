@@ -121,8 +121,8 @@ List the indices and corresponding of a `HomogeneousPolynomial`
 of degree `ord`.
 """
 function show_monomials(ord::Int)
-    z = zeros(Int, TaylorSeries.size_table[ord+1])
-    for (index, value) in enumerate(TaylorSeries.coeff_table[ord+1])
+    z = zeros(Int, TS.size_table[ord+1])
+    for (index, value) in enumerate(TS.coeff_table[ord+1])
         z[index] = 1
         pol = HomogeneousPolynomial(z)
         println(" $index  -->  $(homogPol2str(pol)[4:end])")
