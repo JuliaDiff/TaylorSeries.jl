@@ -94,6 +94,23 @@ function evaluate(a::Taylor1{TaylorN{T}}, dx::S) where
     return suma
 end
 
+function evaluate(a::Taylor1{T}, dx::TaylorN{T}) where {T<:NumberNotSeries}
+    @inbounds suma = TaylorN( zero(T), get_order(dx) )
+    @inbounds for k in reverse(eachindex(a))
+        suma = suma*dx + a[k]
+    end
+    return suma
+end
+
+function evaluate(a::Taylor1{TaylorN{T}}, dx::TaylorN{T}) where {T<:NumberNotSeries}
+    order = min(minimum(get_order.(a[:])), get_order(dx))
+    @inbounds suma = TaylorN( zero(T), order )
+    @inbounds for k in reverse(eachindex(a))
+        suma = suma*dx + a[k]
+    end
+    return suma
+end
+
 #function-like behavior for Taylor1
 (p::Taylor1)(x) = evaluate(p, x)
 (p::Taylor1)() = evaluate(p)
