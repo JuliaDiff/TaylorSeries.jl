@@ -203,30 +203,6 @@ end
 ones(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
     ones( HomogeneousPolynomial([one(T)], 0), order)
 
-function zero!(a::Taylor1{T}) where {T<:NumberNotSeries}
-    a.coeffs .= zero.(a.coeffs)
-    return nothing
-end
-
-function zero!(a::HomogeneousPolynomial{T}) where {T<:NumberNotSeries}
-    a.coeffs .= zero.(a.coeffs)
-    return nothing
-end
-
-function zero!(a::TaylorN{T}) where {T<:NumberNotSeries}
-    for i in 0:a.order
-        zero!(a[i])
-    end
-    return nothing
-end
-
-function zero!(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    for i in 0:a.order
-        zero!(a[i])
-    end
-    return nothing
-end
-
 
 
 ## Addition and subtraction ##
@@ -502,8 +478,6 @@ for T in (:Taylor1, :TaylorN)
         return nothing
     end
 end
-
-########
 
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
         ordT::Int) where {T<:NumberNotSeries}
