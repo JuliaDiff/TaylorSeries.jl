@@ -666,14 +666,14 @@ end
 end
 
 @inline function zero!(a::TaylorN{T}) where {T<:NumberNotSeries}
-    for i in 0:a.order
+    for i in eachindex(a)
         zero!(a[i])
     end
     return nothing
 end
 
 @inline function zero!(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    for i in 0:a.order
+    for i in eachindex(a)
         zero!(a[i])
     end
     return nothing
