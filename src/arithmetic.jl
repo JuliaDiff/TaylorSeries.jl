@@ -758,7 +758,7 @@ end
         @inbounds res[0] = cdivfact
         return nothing
     end
-    zero!(res, a, ordT)
+    zero!(res[ordT])
     imin = max(0, ordT+ordfact-b.order)
     aux = TaylorN(zero(a[ordT][0][1]), a[ordT].order)
     for k in imin:ordT-1

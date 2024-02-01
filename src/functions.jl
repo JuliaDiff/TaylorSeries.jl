@@ -690,7 +690,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[k][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[i][ordQ]
@@ -712,7 +712,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[k][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     # i=0 term of sum
     @inbounds for ordQ in eachindex(a[0])
         one!(tmp, a[0], ordQ)
@@ -741,14 +741,14 @@ end
         return nothing
     elseif k == 1
         @inbounds for ordQ in eachindex(a[0])
-            zero!(res[k], a[0], ordQ)
+            zero!(res[k][ordQ])
             div!(res[k], a[1], a[0], ordQ)
         end
         return nothing
     end
     # The recursion formula
     tmp = TaylorN( zero(a[k][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -758,7 +758,7 @@ end
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, a[0], ordQ)
     end
     return nothing
@@ -774,7 +774,7 @@ end
         return nothing
     end
     tmp1 = TaylorN( zero(a[k][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     @inbounds for ordQ in eachindex(a[0])
         # zero!(res[k], a[0], ordQ)
         one!(tmp1, a[0], ordQ)
@@ -797,7 +797,7 @@ end
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, tmp1, ordQ)
     end
     return nothing
@@ -813,8 +813,8 @@ end
     end
     # The recursion formula
     x = TaylorN( a[1][0][1], a[0].order )
-    zero!(s, a, k)
-    zero!(c, a, k)
+    zero!(s[k])
+    zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
             x[ordQ] = i * a[i][ordQ]
@@ -855,7 +855,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res2[i][ordQ]
@@ -889,7 +889,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -899,7 +899,7 @@ end
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Compute auxiliary term s=1-a^2
@@ -934,7 +934,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -945,7 +945,7 @@ end
     @inbounds for ordQ in eachindex(a[0])
         add!(tmp, a[k], res[k], ordQ)
         subst!(tmp, tmp, ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Compute auxiliary term s=1-a^2
@@ -974,7 +974,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order )
-    zero!(res, a, k)
+    zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -985,10 +985,10 @@ end
         # zero!(tmp, res[k], ordQ)
         tmp[ordQ] = - res[k][ordQ] / k
         add!(tmp, a[k], tmp, ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
-    zero!(r, a, k)
+    zero!(r[k])
     sqr!(r, a, k)
     return nothing
 end
@@ -1003,8 +1003,8 @@ end
     end
     # The recursion formula
     x = TaylorN( a[k][0][1], a[0].order )
-    zero!(s, a, k)
-    zero!(c, a, k)
+    zero!(s[k])
+    zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
             x[ordQ] = i * a[i][ordQ]
@@ -1027,7 +1027,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res2[i][ordQ]
@@ -1039,7 +1039,7 @@ end
         tmp[ordQ] = res[k][ordQ] / k
         subst!(res[k], a[k], tmp, ordQ)
     end
-    zero!(res2, res, k)
+    zero!(res2[k])
     sqr!(res2, res, k)
     return nothing
 end
@@ -1061,7 +1061,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -1071,7 +1071,7 @@ end
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Compute auxiliary term s=1+a^2
@@ -1105,7 +1105,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-    zero!(res, a, k)
+    zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -1115,7 +1115,7 @@ end
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Compute auxiliary term s=a^2-1
@@ -1143,7 +1143,7 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order )
-    zero!(res, a, k)
+    zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -1154,10 +1154,10 @@ end
         # zero!(tmp, res[k], ordQ)
         tmp[ordQ] = res[k][ordQ] / k
         add!(tmp, a[k], tmp, ordQ)
-        zero!(res[k], a[0], ordQ)
+        zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
-    zero!(r, a, k)
+    zero!(r[k])
     sqr!(r, a, k)
     return nothing
 end

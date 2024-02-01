@@ -276,7 +276,7 @@ end
     end
 
     # Sanity
-    zero!(res, a, ordT)
+    zero!(res[ordT])
 
     # First non-zero coefficient
     l0 = findfirst(a)
@@ -411,7 +411,7 @@ end
 @inline function sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         ordT::Int) where {T<:NumberNotSeries}
     # Sanity
-    zero!(res, a, ordT)
+    zero!(res[ordT])
     if ordT == 0
         @inbounds for ordQ in eachindex(a[0])
             @inbounds sqr!(res[0], a[0], ordQ)
@@ -628,7 +628,7 @@ end
 @inline function sqrt!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ordT::Int,
         ordT0::Int=0) where {T<:NumberNotSeries}
     # Sanity
-    zero!(res, a, ordT)
+    zero!(res[ordT])
     ordT < ordT0 && return nothing
 
     if ordT == ordT0
