@@ -655,26 +655,50 @@ end
 
 
 # Mutating functions for Taylor1{TaylorN{T}}
+@inline function zero!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
+    a[k] = zero(a[k])
+    return nothing
+end
+
 @inline function zero!(a::Taylor1{T}) where {T<:NumberNotSeries}
-    a.coeffs .= zero.(a.coeffs)
-    return nothing
-end
-
-@inline function zero!(a::HomogeneousPolynomial{T}) where {T<:NumberNotSeries}
-    a.coeffs .= zero.(a.coeffs)
-    return nothing
-end
-
-@inline function zero!(a::TaylorN{T}) where {T<:NumberNotSeries}
-    for i in eachindex(a)
-        zero!(a[i])
+    for k in eachindex(a)
+        zero!(a, k)
     end
     return nothing
 end
 
+@inline function zero!(a::HomogeneousPolynomial{T}, k::Int) where {T<:NumberNotSeries}
+    a[k] = zero(a[k])
+    return nothing
+end
+
+@inline function zero!(a::HomogeneousPolynomial{T}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::TaylorN{T}, k::Int) where {T<:NumberNotSeries}
+    zero!(a[k])
+    return nothing
+end
+
+@inline function zero!(a::TaylorN{T}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    zero!(a[k])
+    return nothing
+end
+
 @inline function zero!(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    for i in eachindex(a)
-        zero!(a[i])
+    for k in eachindex(a)
+        zero!(a, k)
     end
     return nothing
 end
