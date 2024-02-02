@@ -196,7 +196,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     end
 
     # Sanity
-    zero!(c, a, k)
+    zero!(c, k)
 
     # First non-zero coefficient
     l0 = findfirst(a)
@@ -250,7 +250,7 @@ end
     end
 
     # Sanity
-    zero!(c, a, k)
+    zero!(c, k)
 
     # The recursion formula
     for i = 0:k-1
@@ -382,7 +382,7 @@ for T = (:Taylor1, :TaylorN)
             end
 
             # Sanity
-            zero!(c, a, k)
+            zero!(c, k)
 
             # Recursion formula
             kodd = k%2
@@ -569,7 +569,7 @@ coefficient, which must be even.
 
 @inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T<:Number}
     # Sanity
-    zero!(c, a, k)
+    zero!(c, k)
 
     k < k0 && return nothing
 
@@ -603,7 +603,7 @@ end
 
 @inline function sqrt!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:NumberNotSeriesN}
     # Sanity
-    zero!(c, a, k)
+    zero!(c, k)
 
     if k == 0
         @inbounds c[0] = sqrt( constant_term(a) )

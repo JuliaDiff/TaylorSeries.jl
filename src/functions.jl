@@ -247,7 +247,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function one!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            zero!(c, a, k)
+            zero!(c, k)
             if k == 0
                 @inbounds c[0] = one(a[0])
             end
@@ -275,7 +275,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[0] = exp(constant_term(a))
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c[0]
             else
@@ -297,7 +297,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[0] = expm1(constant_term(a))
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             c0 = c[0]+one(c[0])
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c0
@@ -323,7 +323,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c[1] = a[1] / constant_term(a)
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * a[1] * c[k-1]
             else
@@ -353,7 +353,7 @@ for T in (:Taylor1, :TaylorN)
             end
             a0 = constant_term(a)
             a0p1 = a0+one(a0)
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * a[1] * c[k-1]
             else
@@ -377,8 +377,8 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             x = a[1]
-            zero!(s, a, k)
-            zero!(c, a, k)
+            zero!(s, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds s[k] = x * c[k-1]
                 @inbounds c[k] = -x * s[k-1]
@@ -423,7 +423,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c2[0] = aux^2
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c2[0]
             else
@@ -449,7 +449,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( 1 - a0^2 )
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -474,7 +474,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( 1 - a0^2 )
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -499,7 +499,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = 1 + a0^2
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -524,8 +524,8 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             x = a[1]
-            zero!(s, a, k)
-            zero!(c, a, k)
+            zero!(s, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds s[k] = x * c[k-1]
                 @inbounds c[k] = x * s[k-1]
@@ -555,7 +555,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds c2[0] = aux^2
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c2[0]
             else
@@ -581,7 +581,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( a0^2 + 1 )
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -606,7 +606,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = sqrt( a0^2 - 1 )
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -631,7 +631,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds r[0] = 1 - a0^2
                 return nothing
             end
-            zero!(c, a, k)
+            zero!(c, k)
             if $T == Taylor1
                 @inbounds c[k] = (k-1) * r[1] * c[k-1]
             else
@@ -657,6 +657,13 @@ end
 # Mutating functions for Taylor1{TaylorN{T}}
 @inline function zero!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
     a[k] = zero(a[k])
+    return nothing
+end
+
+@inline function zero!(a::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(a[k])
+        zero!(a[k], l)
+    end
     return nothing
 end
 
@@ -699,6 +706,13 @@ end
 @inline function zero!(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     for k in eachindex(a)
         zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::TaylorN{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(a[k])
+        zero!(a[k][l])
     end
     return nothing
 end
@@ -841,7 +855,7 @@ end
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            x[ordQ] = i * a[i][ordQ]
+            x[ordQ].coeffs .= i .* a[i][ordQ].coeffs
             mul!(s[k], x, c[k-i], ordQ)
             mul!(c[k], x, s[k-i], ordQ)
         end
