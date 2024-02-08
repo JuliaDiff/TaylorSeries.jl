@@ -482,7 +482,7 @@ end
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
         ordT::Int) where {T<:NumberNotSeries}
     # Sanity
-    zero!(res[ordT])
+    zero!(res, ordT)
     for k in 0:ordT
         @inbounds for ordQ in eachindex(a[ordT])
             mul!(res[ordT], a[k], b[ordT-k], ordQ)
@@ -736,15 +736,19 @@ div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
 
 # NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
+    @show c
     if k==0
         @inbounds c[0] = a[0] / constant_term(b)
         return nothing
     end
+    @show c
 
     @inbounds for i = 0:k-1
         mul!(c[k], c[i], b[k-i])
     end
+    @show c
     @inbounds c[k] = (a[k] - c[k]) / constant_term(b)
+    @show c
     return nothing
 end
 
@@ -758,7 +762,7 @@ end
         @inbounds res[0] = cdivfact
         return nothing
     end
-    zero!(res[ordT])
+    zero!(res, ordT)
     imin = max(0, ordT+ordfact-b.order)
     aux = TaylorN(zero(a[ordT][0][1]), a[ordT].order)
     for k in imin:ordT-1
