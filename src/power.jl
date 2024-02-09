@@ -179,7 +179,7 @@ end
 # TODO: get rid of allocations
 function ^(a::TaylorN, r::S) where {S<:Real}
     a0 = constant_term(a)
-    aux = one(a0^r)
+    aux = one(a0)^r
 
     iszero(r) && return TaylorN(aux, a.order)
     aa = aux*a

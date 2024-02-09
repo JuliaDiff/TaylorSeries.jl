@@ -40,7 +40,11 @@ using Test
     @test p5(x,-a) == (x-a)^5
     @test p4(x,-b) == (x-b)^4
     for ind in eachindex(p5(x,-b))
-        @test all(issubset_interval.((p5(x,-b)[ind]).coeffs, (((x-b)^5)[ind]).coeffs))
+        r1 = p5(x,-b)[ind]
+        r2 = ((x-b)^5)[ind]
+        @test all(issubset_interval.(r1.coeffs, r2.coeffs))
+        @test all(isguaranteed.(getfield(r1, :coeffs)))
+        @test all(isguaranteed.(getfield(r2, :coeffs)))
     end
 
 
@@ -72,7 +76,7 @@ using Test
 
     ii = interval(0, 6)
     t = Taylor1(4)
-    f(x) = 0.1 * x^3 - 0.5*x^2 + 1
+    f(x) = 0.1 * x^3 - 0.5 * x^2 + 1
     ft = f(t)
     f1 = normalize_taylor(ft, ii, true)
     f2 = normalize_taylor(ft, ii, false)
@@ -92,13 +96,25 @@ using Test
     ii = c
     t = Taylor1(5)
     g(x) = 1 - x^4 + x^5
-    gt = g(t)
-    g1 = normalize_taylor(gt, c, true)
+    gt1 = g(t)
+    gn1 = normalize_taylor(gt1, c, true)
     @test issubset_interval(interval(g(4/5), 1), g(ii))
+    @test issubset_interval(interval(g(4/5), 1), gt1(ii))
+    @test issubset_interval(interval(g(4/5), 1), gn1(b))
+    @test isinterior(gn1(b), g(ii))
+    @test diam(gn1(b)) < diam(gt1(ii))
+    #
+    ti = Taylor1(typeof(c), 5)
+    gg(x) = interval(1) - x^4 + x^5
+    gt = gg(ti)
+    @test all(isguaranteed.(getfield(gt, :coeffs)))
+    gn2 = normalize_taylor(gt, c, true)
+    @test all(isguaranteed.(getfield(gn2, :coeffs)))
+    @test issubset_interval(interval(g(4/5), 1), gg(ii))
     @test issubset_interval(interval(g(4/5), 1), gt(ii))
-    @test issubset_interval(interval(g(4/5), 1), g1(b))
-    @test isinterior(g1(b), g(ii))
-    @test diam(g1(b)) < diam(gt(ii))
+    @test issubset_interval(interval(g(4/5), 1), gn2(b))
+    @test isinterior(gn2(b), g(ii))
+    @test diam(gn2(b)) < diam(gt(ii))
 
 
     # Test display for Taylor1{Complex{Interval{T}}}
