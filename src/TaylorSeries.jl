@@ -26,11 +26,7 @@ end
 
 using LinearAlgebra: norm, mul!,
     lu, lu!, LinearAlgebra.lutype, LinearAlgebra.copy_oftype,
-    LinearAlgebra.issuccess
-
-if VERSION >= v"1.7.0-DEV.1188"
-    using LinearAlgebra: NoPivot, RowMaximum
-end
+    LinearAlgebra.issuccess, NoPivot, RowMaximum
 
 import LinearAlgebra: norm, mul!, lu
 
