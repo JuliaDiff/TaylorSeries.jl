@@ -32,7 +32,7 @@ Requires = "0.5.2, 1"
 SparseArrays = "<0.0.1, 1"
 StaticArrays = "1"
 Test = "<0.0.1, 1"
-julia = "1"
+julia = "1.9"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
