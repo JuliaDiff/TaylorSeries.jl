@@ -480,6 +480,16 @@ using Test
     c = Taylor1(constant_term(b),0)
     c[0][0][1] = 0.0
     b == bcopy
+
+    #347
+    a = Taylor1([1.0+X,-X, Y, X-Y,X])
+    b = deepcopy(a)
+    b[0] = zero(a[0])
+    b.coeffs[2:end] .= zero(b.coeffs[1])
+    @test iszero(b)
+    @test b.coeffs[2] === b.coeffs[3]
+    b.coeffs[2:end] .= zero.(b.coeffs[1])
+    @test !(b.coeffs[2] === b.coeffs[3])
 end
 
 @testset "Tests with nested Taylor1s" begin
