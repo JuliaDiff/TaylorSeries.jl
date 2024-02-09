@@ -311,7 +311,6 @@ end
     end
     @inbounds for ordQ in eachindex(tmp)
         tmp1[ordQ] = tmp[ordQ]/kprime
-        @show @which div!(res[ordT], tmp1, a[l0], ordQ)
         div!(res[ordT], tmp1, a[l0], ordQ)
     end
 
@@ -657,7 +656,6 @@ end
         end
     end
 
-    @show res
     @inbounds for ordQ in eachindex(a[0])
         tmp[ordQ] = -2 * tmp[ordQ]
         if ordT+ordT0 ≤ a.order
@@ -670,7 +668,6 @@ end
         tmp1[ordQ] = 2*res[ordT0][ordQ]
         div!(res[ordT], tmp, tmp1, ordQ)
     end
-    @show res
 
     return nothing
 end

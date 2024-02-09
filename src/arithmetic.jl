@@ -736,19 +736,15 @@ div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
 
 # NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
-    @show c
     if k==0
         @inbounds c[0] = a[0] / constant_term(b)
         return nothing
     end
-    @show c
 
     @inbounds for i = 0:k-1
         mul!(c[k], c[i], b[k-i])
     end
-    @show c
     @inbounds c[k] = (a[k] - c[k]) / constant_term(b)
-    @show c
     return nothing
 end
 
@@ -787,7 +783,28 @@ end
     return nothing
 end
 
+@inline function mul!(res::Taylor1{TaylorN{T}}, a::NumberNotSeries,
+        b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(b[k])
+        for m in eachindex(b[k][l])
+            res[k][l][m] = a*b[k][l][m]
+        end
+    end
+    return nothing
+end
 
+mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+    b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
+
+@inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(b[k])
+        for m in eachindex(b[k][l])
+            res[k][l][m] = a[k][l][m]/b
+        end
+    end
+    return nothing
+end
 
 
 """
