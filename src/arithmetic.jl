@@ -798,8 +798,8 @@ mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
 
 @inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
-    for l in eachindex(b[k])
-        for m in eachindex(b[k][l])
+    for l in eachindex(a[k])
+        for m in eachindex(a[k][l])
             res[k][l][m] = a[k][l][m]/b
         end
     end
