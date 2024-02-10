@@ -732,7 +732,7 @@ end
 end
 
 div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
-    div!(v::Taylor1, Taylor1(b, a.order), a, k)
+    div!(v::Taylor1, b*one(a), a, k)
 
 # NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
