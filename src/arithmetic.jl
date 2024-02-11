@@ -731,8 +731,24 @@ end
     return nothing
 end
 
-div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
-    div!(v::Taylor1, b*one(a), a, k)
+@inline function div!(c::Taylor1, a::NumberNotSeries,
+        b::Taylor1, k::Int)
+    # order and coefficient of first factorized term
+    # In this case, since a[k]=0 for k>0, we can simplify to:
+    # ordfact, cdivfact = 0, a/b[0]
+    if k == 0
+        @inbounds c[0] = a/b[0]
+        return nothing
+    end
+
+    imin = max(0, k-b.order)
+    @inbounds c[k] = c[imin] * b[k-imin]
+    @inbounds for i = imin+1:k-1
+        c[k] += c[i] * b[k-i]
+    end
+    @inbounds c[k] = -c[k]/b[0]
+    return nothing
+end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
@@ -805,6 +821,27 @@ mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
     end
     return nothing
 end
+
+# ### TODO: use non-allocating div!(::TaylorN,::TaylorN,::TaylorN)
+# @inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
+#         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+#     # order and coefficient of first factorized term
+#     # In this case, since a[k]=0 for k>0, we can simplify to:
+#     # ordfact, cdivfact = 0, a/b[0]
+#     if k == 0
+#         @inbounds c[0] = a/b[0]
+#         return nothing
+#     end
+
+#     imin = max(0, k-b.order)
+#     @inbounds c[k] = c[imin] * b[k-imin]
+#     @inbounds for i = imin+1:k-1
+#         c[k] += c[i] * b[k-i]
+#     end
+#     @inbounds c[k] = -c[k]/b[0]
+#     return nothing
+# end
+
 
 
 """
