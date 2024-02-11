@@ -667,6 +667,13 @@ end
     return nothing
 end
 
+@inline function zero!(a::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
 @inline function zero!(a::Taylor1{T}) where {T<:NumberNotSeries}
     for k in eachindex(a)
         zero!(a, k)
