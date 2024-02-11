@@ -665,6 +665,19 @@ function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSe
     return res
 end
 
+function /(a::NumberNotSeries, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    iszero(a) && !iszero(b) && return zero(a)
+
+    # order and coefficient of first factorized term
+    # In this case, since a[k]=0 for k>0, we can simplify to:
+    # ordfact, cdivfact = 0, a/b[0]
+
+    res = Taylor1(a/b[0], b.order)
+    for ordT in eachindex(res)
+        div!(res, a, b, ordT)
+    end
+    return res
+end
 
 @inline function divfactorization(a1::Taylor1, b1::Taylor1)
     # order of first factorized term; a1 and b1 assumed to be of the same order
@@ -733,6 +746,7 @@ end
 
 @inline function div!(c::Taylor1, a::NumberNotSeries,
         b::Taylor1, k::Int)
+    iszero(a) && !iszero(b) && zero!(c, k)
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
     # ordfact, cdivfact = 0, a/b[0]
