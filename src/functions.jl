@@ -242,7 +242,8 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function zero!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            @inbounds c[k] = zero(a[k])
+            # @inbounds c[k] = zero(a[k])
+            @inbounds zero!(c, k)
             return nothing
         end
 

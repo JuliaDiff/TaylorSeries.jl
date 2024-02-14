@@ -665,8 +665,9 @@ function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSe
     return res
 end
 
-function /(a::NumberNotSeries, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    iszero(a) && !iszero(b) && return zero(a)
+function /(a::S, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries, S<:Union{T,TaylorN{T}}}
+    R = promote_type(S, TaylorN{T})
+    iszero(a) && !iszero(b) && return convert(Taylor1{R}, zero(b))
 
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
@@ -744,8 +745,27 @@ end
     return nothing
 end
 
-@inline function div!(c::Taylor1, a::NumberNotSeries,
-        b::Taylor1, k::Int)
+@inline function div!(c::Taylor1{T}, a::NumberNotSeries,
+        b::Taylor1{T}, k::Int) where {T<:Number}
+    iszero(a) && !iszero(b) && zero!(c, k)
+    # order and coefficient of first factorized term
+    # In this case, since a[k]=0 for k>0, we can simplify to:
+    # ordfact, cdivfact = 0, a/b[0]
+    if k == 0
+        @inbounds c[0] = a/b[0]
+        return nothing
+    end
+
+    @inbounds c[k] = c[0] * b[k]
+    @inbounds for i = 1:k-1
+        c[k] += c[i] * b[k-i]
+    end
+    @inbounds c[k] = -c[k]/b[0]
+    return nothing
+end
+
+@inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
+        b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     ### TODO: use non-allocating div!(::TaylorN,::TaylorN,::TaylorN)
     iszero(a) && !iszero(b) && zero!(c, k)
     # order and coefficient of first factorized term
@@ -756,9 +776,8 @@ end
         return nothing
     end
 
-    imin = max(0, k-b.order)
-    @inbounds c[k] = c[imin] * b[k-imin]
-    @inbounds for i = imin+1:k-1
+    @inbounds c[k] = c[0] * b[k]
+    @inbounds for i = 1:k-1
         c[k] += c[i] * b[k-i]
     end
     @inbounds c[k] = -c[k]/b[0]
@@ -814,6 +833,16 @@ end
     return nothing
 end
 
+@inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(a[k])
+        for m in eachindex(a[k][l])
+            res[k][l][m] = a[k][l][m]/b
+        end
+    end
+    return nothing
+end
+
 @inline function mul!(res::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     for l in eachindex(b[k])
@@ -826,16 +855,6 @@ end
 
 mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
     b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
-
-@inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
-        b::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
-    for l in eachindex(a[k])
-        for m in eachindex(a[k][l])
-            res[k][l][m] = a[k][l][m]/b
-        end
-    end
-    return nothing
-end
 
 
 
