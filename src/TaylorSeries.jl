@@ -16,6 +16,7 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
+using InteractiveUtils
 using SparseArrays: SparseMatrixCSC
 using Markdown
 

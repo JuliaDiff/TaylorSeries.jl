@@ -772,31 +772,95 @@ end
     # In this case, since a[k]=0 for k>0, we can simplify to:
     # ordfact, cdivfact = 0, a/b[0]
     if k == 0
-        @inbounds c[0] = a/b[0]
+        @inbounds div!(c[0], a, b[0])
         return nothing
     end
 
-    @inbounds c[k] = c[0] * b[k]
+    @inbounds mul!(c[k], c[0], b[k])
     @inbounds for i = 1:k-1
         c[k] += c[i] * b[k-i]
     end
     @inbounds c[k] = -c[k]/b[0]
+    # @inbounds divsubst!(c[k], b[0])
     return nothing
 end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0
-        @inbounds c[0] = a[0] / constant_term(b)
+        @inbounds c[0][1] = constant_term(a) / constant_term(b)
         return nothing
     end
 
     @inbounds for i = 0:k-1
         mul!(c[k], c[i], b[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]) / constant_term(b)
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = (a[k][i] - c[k][i]) / constant_term(b)
+    end
     return nothing
 end
+
+# NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
+@inline function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int)
+    if k==0
+        @inbounds c[0][1] = a / constant_term(b)
+        return nothing
+    end
+
+    @inbounds for i = 0:k-1
+        mul!(c[k], c[i], b[k-i])
+    end
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = ( -c[k][i] ) / constant_term(b)
+    end
+    return nothing
+end
+
+# in-place division (assumes equal order among TaylorNs)
+function div!(c::TaylorN, a::TaylorN, b::TaylorN)
+    for k in eachindex(c)
+        div!(c, a, b, k)
+    end
+end
+
+function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
+    for k in eachindex(c)
+        div!(c, a, b, k)
+    end
+end
+
+# inplace multiplication TaylorNs
+function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
+    for k in eachindex(c)
+        mul!(c, a, b, k)
+    end
+end
+
+# # inplace method for computing c = -c/b
+# # NOTE: Here `divsubst!` *accumulates* the result inplace
+# @inline function divsubst!(c::TaylorN, b::TaylorN, k::Int)
+#     if k==0
+#         @inbounds for i in eachindex(c[0])
+#             c[0][i] = -c[0][i] / constant_term(b)
+#         end
+#         return nothing
+#     end
+
+#     @inbounds for i = 0:k-1
+#         mul!(c[k], c[i], b[k-i])
+#     end
+#     @inbounds for i in eachindex(c[k])
+#         c[k][i] = (-2c[k][i]) / constant_term(b)
+#     end
+#     return nothing
+# end
+
+# function divsubst!(c::TaylorN, b::TaylorN)
+#     for k in eachindex(c)
+#         divsubst!(c, b, k)
+#     end
+# end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
 @inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
