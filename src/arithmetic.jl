@@ -665,17 +665,32 @@ function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSe
     return res
 end
 
-function /(a::S, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries, S<:Union{T,TaylorN{T}}}
-    R = promote_type(S, TaylorN{T})
-    iszero(a) && !iszero(b) && return convert(Taylor1{R}, zero(b))
+function /(a::S, b::Taylor1{TaylorN{T}}) where {S<:NumberNotSeries, T<:NumberNotSeries}
+    R = promote_type(TaylorN{S}, TaylorN{T})
+    res = convert(Taylor1{R}, zero(b))
+    iszero(a) && !iszero(b) && return res
 
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
     # ordfact, cdivfact = 0, a/b[0]
 
-    res = Taylor1(a/b[0], b.order)
     for ordT in eachindex(res)
         div!(res, a, b, ordT)
+    end
+    return res
+end
+
+function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    res = zero(b)
+    iszero(a) && !iszero(b) && return res
+
+    # order and coefficient of first factorized term
+    # In this case, since a[k]=0 for k>0, we can simplify to:
+    # ordfact, cdivfact = 0, a/b[0]
+
+    aa = Taylor1(a, b.order)
+    for ordT in eachindex(res)
+        div!(res, aa, b, ordT)
     end
     return res
 end

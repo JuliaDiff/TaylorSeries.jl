@@ -490,6 +490,10 @@ using Test
     @test b.coeffs[2] === b.coeffs[3]
     b.coeffs[2:end] .= zero.(b.coeffs[1])
     @test !(b.coeffs[2] === b.coeffs[3])
+    x = Taylor1([1.0+X,-X, Y, X-Y,X])
+    z = zero(x)
+    two = 2one(x[0])
+    @test two/x == 2/x == 2.0/x
 end
 
 @testset "Tests with nested Taylor1s" begin
