@@ -796,7 +796,6 @@ end
         c[k] += c[i] * b[k-i]
     end
     @inbounds c[k] = -c[k]/b[0]
-    # @inbounds divsubst!(c[k], b[0])
     return nothing
 end
 
@@ -851,31 +850,6 @@ function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
         mul!(c, a, b, k)
     end
 end
-
-# # inplace method for computing c = -c/b
-# # NOTE: Here `divsubst!` *accumulates* the result inplace
-# @inline function divsubst!(c::TaylorN, b::TaylorN, k::Int)
-#     if k==0
-#         @inbounds for i in eachindex(c[0])
-#             c[0][i] = -c[0][i] / constant_term(b)
-#         end
-#         return nothing
-#     end
-
-#     @inbounds for i = 0:k-1
-#         mul!(c[k], c[i], b[k-i])
-#     end
-#     @inbounds for i in eachindex(c[k])
-#         c[k][i] = (-2c[k][i]) / constant_term(b)
-#     end
-#     return nothing
-# end
-
-# function divsubst!(c::TaylorN, b::TaylorN)
-#     for k in eachindex(c)
-#         divsubst!(c, b, k)
-#     end
-# end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
 @inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},

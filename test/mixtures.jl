@@ -494,6 +494,7 @@ using Test
     z = zero(x)
     two = 2one(x[0])
     @test two/x == 2/x == 2.0/x
+    @test (2one(x))/x == 2/x
 end
 
 @testset "Tests with nested Taylor1s" begin
