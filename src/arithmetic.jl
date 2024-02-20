@@ -691,10 +691,6 @@ function /(a::S, b::Taylor1{TaylorN{T}}) where {S<:NumberNotSeries, T<:NumberNot
     res = convert(Taylor1{R}, zero(b))
     iszero(a) && !iszero(b) && return res
 
-    # order and coefficient of first factorized term
-    # In this case, since a[k]=0 for k>0, we can simplify to:
-    # ordfact, cdivfact = 0, a/b[0]
-
     for ordT in eachindex(res)
         div!(res, a, b, ordT)
     end
@@ -704,10 +700,6 @@ end
 function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     res = zero(b)
     iszero(a) && !iszero(b) && return res
-
-    # order and coefficient of first factorized term
-    # In this case, since a[k]=0 for k>0, we can simplify to:
-    # ordfact, cdivfact = 0, a/b[0]
 
     aa = Taylor1(a, b.order)
     for ordT in eachindex(res)
