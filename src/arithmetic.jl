@@ -491,6 +491,20 @@ function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{Taylo
     return nothing
 end
 
+@inline function mul!(res::Taylor1{TaylorN{T}}, a::NumberNotSeries,
+    b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+for l in eachindex(b[k])
+    for m in eachindex(b[k][l])
+        res[k][l][m] = a*b[k][l][m]
+    end
+end
+return nothing
+end
+
+mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
+
+
 
 @doc doc"""
     mul!(c, a, b, k::Int) --> nothing
@@ -779,9 +793,13 @@ end
     return nothing
 end
 
+# TODO: get rid of remaining allocations here.
+#       This can either be achieved via pre-allocating auxiliary variables
+#       with can be passed here as arguments, or adding allocation-free in-place
+#       methods for operations such as `a += a*b` and `a = -a/b`, where a and b are
+#       TaylorN variables. See #347 for further discussion.
 @inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    ### TODO: use non-allocating div!(::TaylorN,::TaylorN,::TaylorN)
     iszero(a) && !iszero(b) && zero!(c, k)
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
@@ -895,19 +913,6 @@ end
     end
     return nothing
 end
-
-@inline function mul!(res::Taylor1{TaylorN{T}}, a::NumberNotSeries,
-        b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    for l in eachindex(b[k])
-        for m in eachindex(b[k][l])
-            res[k][l][m] = a*b[k][l][m]
-        end
-    end
-    return nothing
-end
-
-mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
-    b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
 
 
 

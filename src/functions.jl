@@ -234,6 +234,75 @@ end
 
 
 # Recursive functions (homogeneous coefficients)
+@inline function zero!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
+    a[k] = zero(a[k])
+    return nothing
+end
+
+@inline function zero!(a::Taylor1{T}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::HomogeneousPolynomial{T}, k::Int) where {T<:NumberNotSeries}
+    a[k] = zero(a[k])
+    return nothing
+end
+
+@inline function zero!(a::HomogeneousPolynomial{T}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::TaylorN{T}, k::Int) where {T<:NumberNotSeries}
+    zero!(a[k])
+    return nothing
+end
+
+@inline function zero!(a::TaylorN{T}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(a[k])
+        zero!(a[k], l)
+    end
+    return nothing
+end
+
+@inline function zero!(a::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    zero!(a[k])
+    return nothing
+end
+
+@inline function zero!(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
+@inline function zero!(a::TaylorN{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(a[k])
+        zero!(a[k][l])
+    end
+    return nothing
+end
+
 for T in (:Taylor1, :TaylorN)
     @eval begin
         @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
@@ -242,7 +311,6 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function zero!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            # @inbounds c[k] = zero(a[k])
             @inbounds zero!(c, k)
             return nothing
         end
@@ -656,75 +724,6 @@ end
 
 
 # Mutating functions for Taylor1{TaylorN{T}}
-@inline function zero!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    a[k] = zero(a[k])
-    return nothing
-end
-
-@inline function zero!(a::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
-    for l in eachindex(a[k])
-        zero!(a[k], l)
-    end
-    return nothing
-end
-
-@inline function zero!(a::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function zero!(a::Taylor1{T}) where {T<:NumberNotSeries}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function zero!(a::HomogeneousPolynomial{T}, k::Int) where {T<:NumberNotSeries}
-    a[k] = zero(a[k])
-    return nothing
-end
-
-@inline function zero!(a::HomogeneousPolynomial{T}) where {T<:NumberNotSeries}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function zero!(a::TaylorN{T}, k::Int) where {T<:NumberNotSeries}
-    zero!(a[k])
-    return nothing
-end
-
-@inline function zero!(a::TaylorN{T}) where {T<:NumberNotSeries}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function zero!(a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    zero!(a[k])
-    return nothing
-end
-
-@inline function zero!(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function zero!(a::TaylorN{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
-    for l in eachindex(a[k])
-        zero!(a[k][l])
-    end
-    return nothing
-end
-
 @inline function exp!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
     if k == 0
