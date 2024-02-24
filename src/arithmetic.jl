@@ -482,7 +482,7 @@ end
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
         ordT::Int) where {T<:NumberNotSeries}
     # Sanity
-    zero!(res, a, ordT)
+    zero!(res, ordT)
     for k in 0:ordT
         @inbounds for ordQ in eachindex(a[ordT])
             mul!(res[ordT], a[k], b[ordT-k], ordQ)
@@ -490,6 +490,27 @@ function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{Taylo
     end
     return nothing
 end
+
+@inline function mul!(res::Taylor1{TaylorN{T}}, a::NumberNotSeries,
+    b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+for l in eachindex(b[k])
+    for m in eachindex(b[k][l])
+        res[k][l][m] = a*b[k][l][m]
+    end
+end
+return nothing
+end
+
+mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
+
+# in-place division (assumes equal order among TaylorNs)
+function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
+    for k in eachindex(c)
+        mul!(c, a, b, k)
+    end
+end
+
 
 
 @doc doc"""
@@ -665,6 +686,27 @@ function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSe
     return res
 end
 
+function /(a::S, b::Taylor1{TaylorN{T}}) where {S<:NumberNotSeries, T<:NumberNotSeries}
+    R = promote_type(TaylorN{S}, TaylorN{T})
+    res = convert(Taylor1{R}, zero(b))
+    iszero(a) && !iszero(b) && return res
+
+    for ordT in eachindex(res)
+        div!(res, a, b, ordT)
+    end
+    return res
+end
+
+function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    res = zero(b)
+    iszero(a) && !iszero(b) && return res
+
+    aa = Taylor1(a, b.order)
+    for ordT in eachindex(res)
+        div!(res, aa, b, ordT)
+    end
+    return res
+end
 
 @inline function divfactorization(a1::Taylor1, b1::Taylor1)
     # order of first factorized term; a1 and b1 assumed to be of the same order
@@ -731,21 +773,92 @@ end
     return nothing
 end
 
-div!(v::Taylor1, b::NumberNotSeries, a::Taylor1, k::Int) =
-    div!(v::Taylor1, Taylor1(b, a.order), a, k)
+@inline function div!(c::Taylor1{T}, a::NumberNotSeries,
+        b::Taylor1{T}, k::Int) where {T<:Number}
+    iszero(a) && !iszero(b) && zero!(c, k)
+    # order and coefficient of first factorized term
+    # In this case, since a[k]=0 for k>0, we can simplify to:
+    # ordfact, cdivfact = 0, a/b[0]
+    if k == 0
+        @inbounds c[0] = a/b[0]
+        return nothing
+    end
+
+    @inbounds c[k] = c[0] * b[k]
+    @inbounds for i = 1:k-1
+        c[k] += c[i] * b[k-i]
+    end
+    @inbounds c[k] = -c[k]/b[0]
+    return nothing
+end
+
+# TODO: get rid of remaining allocations here.
+#       This can either be achieved via pre-allocating auxiliary variables
+#       with can be passed here as arguments, or adding allocation-free in-place
+#       methods for operations such as `a += a*b` and `a = -a/b`, where a and b are
+#       TaylorN variables. See #347 for further discussion.
+@inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
+        b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    iszero(a) && !iszero(b) && zero!(c, k)
+    # order and coefficient of first factorized term
+    # In this case, since a[k]=0 for k>0, we can simplify to:
+    # ordfact, cdivfact = 0, a/b[0]
+    if k == 0
+        @inbounds div!(c[0], a, b[0])
+        return nothing
+    end
+
+    @inbounds mul!(c[k], c[0], b[k])
+    @inbounds for i = 1:k-1
+        c[k] += c[i] * b[k-i]
+    end
+    @inbounds c[k] = -c[k]/b[0]
+    return nothing
+end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0
-        @inbounds c[0] = a[0] / constant_term(b)
+        @inbounds c[0][1] = constant_term(a) / constant_term(b)
         return nothing
     end
 
     @inbounds for i = 0:k-1
         mul!(c[k], c[i], b[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]) / constant_term(b)
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = (a[k][i] - c[k][i]) / constant_term(b)
+    end
     return nothing
+end
+
+# NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
+@inline function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int)
+    if k==0
+        @inbounds c[0][1] = a / constant_term(b)
+        return nothing
+    end
+
+    @inbounds for i = 0:k-1
+        mul!(c[k], c[i], b[k-i])
+    end
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = ( -c[k][i] ) / constant_term(b)
+    end
+    return nothing
+end
+
+# in-place division (assumes equal order among TaylorNs)
+function div!(c::TaylorN, a::TaylorN, b::TaylorN)
+    for k in eachindex(c)
+        div!(c, a, b, k)
+    end
+end
+
+function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
+    for k in eachindex(c)
+        div!(c, a, b, k)
+    end
 end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
@@ -758,7 +871,7 @@ end
         @inbounds res[0] = cdivfact
         return nothing
     end
-    zero!(res, a, ordT)
+    zero!(res, ordT)
     imin = max(0, ordT+ordfact-b.order)
     aux = TaylorN(zero(a[ordT][0][1]), a[ordT].order)
     for k in imin:ordT-1
@@ -783,6 +896,15 @@ end
     return nothing
 end
 
+@inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
+    for l in eachindex(a[k])
+        for m in eachindex(a[k][l])
+            res[k][l][m] = a[k][l][m]/b
+        end
+    end
+    return nothing
+end
 
 
 
