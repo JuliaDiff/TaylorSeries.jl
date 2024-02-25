@@ -810,7 +810,10 @@ end
 
     @inbounds mul!(c[k], c[0], b[k])
     @inbounds for i = 1:k-1
-        c[k] += c[i] * b[k-i]
+        # c[k] += c[i] * b[k-i]
+        for ord in eachindex(c[k])
+            mul!(c[k], c[i], b[k-i], ord)
+        end
     end
     @inbounds c[k] = -c[k]/b[0]
     return nothing
