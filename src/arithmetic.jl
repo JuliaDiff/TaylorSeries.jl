@@ -504,7 +504,7 @@ end
 mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
 b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
 
-# in-place division (assumes equal order among TaylorNs)
+# in-place product (assumes equal order among TaylorNs)
 function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
     for k in eachindex(c)
         mul!(c, a, b, k)
@@ -811,9 +811,7 @@ end
     @inbounds mul!(c[k], c[0], b[k])
     @inbounds for i = 1:k-1
         # c[k] += c[i] * b[k-i]
-        for ord in eachindex(c[k])
-            mul!(c[k], c[i], b[k-i], ord)
-        end
+        mul!(c[k], c[i], b[k-i])
     end
     @inbounds c[k] = -c[k]/b[0]
     return nothing
