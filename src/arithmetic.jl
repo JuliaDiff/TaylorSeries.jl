@@ -813,7 +813,8 @@ end
         # c[k] += c[i] * b[k-i]
         mul!(c[k], c[i], b[k-i])
     end
-    @inbounds c[k] = -c[k]/b[0]
+    # @inbounds c[k] = -c[k]/b[0]
+    @inbounds divsubst!(c[k], b[0])
     return nothing
 end
 
@@ -829,6 +830,53 @@ end
     end
     @inbounds for i in eachindex(c[k])
         c[k][i] = (a[k][i] - c[k][i]) / constant_term(b)
+    end
+    return nothing
+end
+
+# in-place division and assignment: c = c / a
+# NOTE: Here `div!` *accumulates* the result of c / a in c[k] (k > 0)
+#
+# Recursion algorithm:
+#
+# k = 0: c[0] <-  c[0]/a[0]
+# k = 1: c[1] <- -c[1]
+#        c[1] <-  c[1] + c[0]*a[1]
+#        c[1] <- -c[1]/a[0]
+# k = 2: c[2] <- -c[2]
+#        c[2] <-  c[2] + c[0]*a[2] + c[1]*a[1]
+#        c[2] <- -c[2]/a[0]
+# etc.
+@inline function div!(c::TaylorN, a::TaylorN, k::Int)
+    if k==0
+        @inbounds c[0][1] = constant_term(c) / constant_term(a)
+        return nothing
+    end
+
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = -c[k][i]
+    end
+    @inbounds for i = 0:k-1
+        mul!(c[k], c[i], a[k-i])
+    end
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = (-c[k][i]) / constant_term(a)
+    end
+    return nothing
+end
+
+# In-place, allocation-free, computation of k-th order coefficient of c = - c / a
+@inline function divsubst!(c::TaylorN, a::TaylorN, k::Int)
+    if k==0
+        @inbounds c[0][1] = - constant_term(c) / constant_term(a)
+        return nothing
+    end
+
+    @inbounds for i = 0:k-1
+        mul!(c[k], c[i], a[k-i])
+    end
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = (-c[k][i]) / constant_term(a)
     end
     return nothing
 end
@@ -850,6 +898,12 @@ end
 end
 
 # in-place division (assumes equal order among TaylorNs)
+function div!(c::TaylorN, a::TaylorN)
+    for k in eachindex(c)
+        div!(c, a, k)
+    end
+end
+
 function div!(c::TaylorN, a::TaylorN, b::TaylorN)
     for k in eachindex(c)
         div!(c, a, b, k)
@@ -859,6 +913,12 @@ end
 function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
     for k in eachindex(c)
         div!(c, a, b, k)
+    end
+end
+
+function divsubst!(c::TaylorN, a::TaylorN)
+    for k in eachindex(c)
+        divsubst!(c, a, k)
     end
 end
 
