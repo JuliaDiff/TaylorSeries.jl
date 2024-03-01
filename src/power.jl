@@ -255,7 +255,8 @@ end
     # The recursion formula
     for i = 0:k-1
         aux = r*(k-i) - i
-        mul!(c[k], aux*a[k-i], c[i])
+        # c[k] += a[k-i]*c[i]*aux
+        mul!(c[k], a[k-i], c[i], aux)
     end
     @inbounds for i in eachindex(c[k])
         c[k][i] = c[k][i] / (k * constant_term(a))

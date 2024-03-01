@@ -260,9 +260,22 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return nothing
             end
 
-            function ($fc)(v::$T, a::$T, b::$T, k::Int)
-                @inbounds v[k] = ($f)(a[k], b[k])
-                return nothing
+            # function ($fc)(v::$T, a::$T, b::$T, k::Int)
+            #     @inbounds v[k] = ($f)(a[k], b[k])
+            #     return nothing
+            # end
+            if $T == Taylor1
+                function ($fc)(v::$T, a::$T, b::$T, k::Int)
+                    @inbounds v[k] = ($f)(a[k], b[k])
+                    return nothing
+                end
+            else
+                function ($fc)(v::$T, a::$T, b::$T, k::Int)
+                    @inbounds for i in eachindex(v[k])
+                        v[k][i] = ($f)(a[k][i], b[k][i])
+                    end
+                    return nothing
+                end
             end
 
             function ($fc)(v::$T, a::$T, b::Number, k::Int)
@@ -348,6 +361,29 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             return c
         end
 
+    end
+end
+
+for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
+    @eval begin
+        function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+            if a.order != b.order || a[0].order != b[0].order
+                a, b = fixorder(a, b)
+            end
+            c = zero(a)
+            for k in eachindex(a)
+                ($fc)(c, a, b, k)
+            end
+            return c
+        end
+        function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+            @inbounds for i in eachindex(v[k])
+                for j in eachindex(v[k][i])
+                    v[k][i][j] = ($f)(a[k][i][j], b[k][i][j])
+                end
+            end
+            return nothing
+        end
     end
 end
 
@@ -555,14 +591,14 @@ c_k = \sum_{j=0}^k a_j b_{k-j}.
 
 
 """
-    mul!(c, a, b) --> nothing
+    mul!(c, a, b, d=1) --> nothing
 
-Accumulates in `c[k]` the result of `a*b` with minimum allocation; all arguments
-are `HomogeneousPolynomial`.
+Accumulates in `c` the result of `a*b*d` with minimum allocation. Arguments
+c, a and b are `HomogeneousPolynomial`; d is a NumberNotSeries whose default value is 1.
 
 """
 @inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
-        b::HomogeneousPolynomial)
+        b::HomogeneousPolynomial, d::T=1) where {T<:NumberNotSeries}
 
     (iszero(b) || iszero(a)) && return nothing
 
@@ -585,7 +621,7 @@ are `HomogeneousPolynomial`.
             indb = indTb[nb]
 
             pos = posTb[inda + indb]
-            c[pos] += ca * cb
+            c[pos] += d * ca * cb
         end
     end
 
@@ -817,11 +853,6 @@ end
     return nothing
 end
 
-# TODO: get rid of remaining allocations here.
-#       This can either be achieved via pre-allocating auxiliary variables
-#       with can be passed here as arguments, or adding allocation-free in-place
-#       methods for operations such as `a += a*b` and `a = -a/b`, where a and b are
-#       TaylorN variables. See #347 for further discussion.
 @inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     iszero(a) && !iszero(b) && zero!(c, k)
@@ -849,6 +880,8 @@ end
         @inbounds c[0][1] = constant_term(a) / constant_term(b)
         return nothing
     end
+
+    zero!(c, k)
 
     @inbounds for i = 0:k-1
         mul!(c[k], c[i], b[k-i])
@@ -958,37 +991,46 @@ function divsubst!(c::TaylorN, a::TaylorN)
 end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
-@inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
-        b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeriesN}
+@inline function div!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeriesN}
 
     # order and coefficient of first factorized term
-    ordfact, cdivfact = divfactorization(a, b)
-    if ordT == 0
-        @inbounds res[0] = cdivfact
+    # ordfact, cdivfact = divfactorization(a, b)
+    anz = findfirst(a)
+    bnz = findfirst(b)
+    anz = anz ≥ 0 ? anz : a.order
+    bnz = bnz ≥ 0 ? bnz : a.order
+    ordfact = min(anz, bnz)
+
+    # Is the polynomial factorizable?
+    iszero(b[ordfact]) && throw( ArgumentError(
+        """Division does not define a Taylor1 polynomial;
+        order k=$(ordfact) => coeff[$(ordfact)]=$(cdivfact).""") )
+
+    if k == 0
+        # @inbounds c[0] = a[ordfact]/b[ordfact]
+        @inbounds div!(c[0], a[ordfact], b[ordfact])
         return nothing
     end
-    zero!(res, ordT)
-    imin = max(0, ordT+ordfact-b.order)
-    aux = TaylorN(zero(a[ordT][0][1]), a[ordT].order)
-    for k in imin:ordT-1
-        @inbounds for ordQ in eachindex(a[ordT])
-            mul!(aux, res[k], b[ordT+ordfact-k], ordQ)
-        end
-    end
 
-    if ordT+ordfact ≤ b.order
-        for ordQ in eachindex(a[ordT])
-            subst!(aux, a[ordT+ordfact], aux, ordQ)
+    zero!(c, k)
+
+    imin = max(0, k+ordfact-b.order)
+    @inbounds mul!(c[k], c[imin], b[k+ordfact-imin])
+    @inbounds for i = imin+1:k-1
+        mul!(c[k], c[i], b[k+ordfact-i])
+    end
+    if k+ordfact ≤ b.order
+        for i in eachindex(c[k])
+            for j in eachindex(c[k][i])
+                c[k][i][j] = a[k+ordfact][i][j]-c[k][i][j]
+            end
         end
+        div!(c[k], b[ordfact])
+        # @inbounds c[k] = (a[k+ordfact]-c[k]) / b[ordfact]
     else
-        for ordQ in eachindex(a[ordT])
-            subst!(aux, aux, ordQ)
-        end
+        @inbounds divsubst!(c[k], b[ordfact])
     end
-    for ordQ in eachindex(res[ordT])
-        div!(res[ordT], aux, b[ordfact], ordQ)
-    end
-
     return nothing
 end
 
