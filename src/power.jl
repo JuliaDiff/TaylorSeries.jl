@@ -356,17 +356,13 @@ function square(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
 end
 
 #auxiliary function to avoid allocations
-for T = (:Taylor1, :TaylorN)
-    @eval begin
-        @inline function sqr_orderzero!(c::$T{T}, a::$T{T}) where {T<:NumberNotSeries}
-            if $T == Taylor1
-                @inbounds c[0] = constant_term(a)^2
-            else
-                @inbounds c[0][1] = constant_term(a)^2
-            end
-            return nothing
-        end
-    end
+@inline function sqr_orderzero!(c::Taylor1{T}, a::Taylor1{T}) where {T<:NumberNotSeries}
+    @inbounds c[0] = constant_term(a)^2
+    return nothing
+end
+@inline function sqr_orderzero!(c::TaylorN{T}, a::TaylorN{T}) where {T<:NumberNotSeries}
+    @inbounds c[0][1] = constant_term(a)^2
+    return nothing
 end
 @inline function sqr_orderzero!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     @inbounds c[0][0][1] = constant_term(a)^2
@@ -633,7 +629,7 @@ end
     zero!(c, k)
 
     if k == 0
-        @inbounds c[0] = sqrt( constant_term(a) )
+        @inbounds c[0][1] = sqrt( constant_term(a) )
         return nothing
     end
 
@@ -652,49 +648,39 @@ end
     return nothing
 end
 
-@inline function sqrt!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ordT::Int,
-        ordT0::Int=0) where {T<:NumberNotSeries}
+@inline function sqrt!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int,
+        k0::Int=0) where {T<:NumberNotSeries}
     # Sanity
-    zero!(res, ordT)
-    ordT < ordT0 && return nothing
+    zero!(c, k)
 
-    if ordT == ordT0
-        for ordQ in eachindex(a[0])
-            sqrt!(res[ordT], a[2*ordT0], ordQ)
+    k < k0 && return nothing
+
+    if k == k0
+        @inbounds for l in eachindex(c[k])
+            sqrt!(c[k], a[2*k0], l)
         end
         return nothing
     end
 
     # Recursion formula
-    @inbounds tmp = TaylorN( zero( constant_term(a[ordT])), a[0].order)
-    @inbounds tmp1 = TaylorN( zero( constant_term(a[ordT])), a[0].order)
-    ordT_odd = (ordT - ordT0)%2
-    ordT_end = (ordT - ordT0 - 2 + ordT_odd) >> 1
-    imax = min(ordT0+ordT_end, a.order)
-    imin = max(ordT0+1, ordT+ordT0-a.order)
-    if imin ≤ imax
-        @inbounds for ordQ in eachindex(a[0])
-            mul!(tmp, res[imin], res[ordT+ordT0-imin], ordQ)
-        end
+    kodd = (k - k0)%2
+    # kend = div(k - k0 - 2 + kodd, 2)
+    kend = (k - k0 - 2 + kodd) >> 1
+    imax = min(k0+kend, a.order)
+    imin = max(k0+1, k+k0-a.order)
+    imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
+    @inbounds for i = imin+1:imax
+        c[k] += c[i] * c[k+k0-i]
     end
-    for i = imin+1:imax
-        @inbounds for ordQ in eachindex(a[0])
-            mul!(tmp, res[i], res[ordT+ordT0-i], ordQ)
-        end
+    if k+k0 ≤ a.order
+        @inbounds aux = a[k+k0] - 2*c[k]
+    else
+        @inbounds aux = - 2*c[k]
     end
-
-    @inbounds for ordQ in eachindex(a[0])
-        tmp[ordQ] = -2 * tmp[ordQ]
-        if ordT+ordT0 ≤ a.order
-            add!(tmp, a[ordT+ordT0], tmp, ordQ)
-        end
-        if ordT_odd == 0
-            sqr!(tmp1, res[ordT_end+ordT0+1], ordQ)
-            subst!(tmp, tmp, tmp1, ordQ)
-        end
-        tmp1[ordQ] = 2*res[ordT0][ordQ]
-        div!(res[ordT], tmp, tmp1, ordQ)
+    if kodd == 0
+        @inbounds aux = aux - (c[kend+k0+1])^2
     end
+    @inbounds c[k] = aux / (2*c[k0])
 
     return nothing
 end
