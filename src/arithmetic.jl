@@ -470,11 +470,36 @@ for T in (:Taylor1, :TaylorN)
     end
 
     @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
-        @inbounds v[k] = a[k] * b
+        if $T == Taylor1
+            @inbounds v[k] = a[k] * b
+        else
+            for i in eachindex(v[k])
+                v[k][i] = a[k][i] * b
+            end
+        end
         return nothing
     end
     @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
-        @inbounds v[k] = a * b[k]
+        if $T == Taylor1
+            @inbounds v[k] = a * b[k]
+        else
+            for i in eachindex(v[k])
+                v[k][i] = a * b[k][i]
+            end
+        end
+        return nothing
+    end
+
+    @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries)
+        for k in eachindex(v)
+            mul!(v, a, b, k)
+        end
+        return nothing
+    end
+    @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T)
+        for k in eachindex(v)
+            mul!(v, a, b, k)
+        end
         return nothing
     end
 end
@@ -834,7 +859,7 @@ end
     return nothing
 end
 
-# in-place division and assignment: c = c / a
+# In-place division and assignment: c = c / a
 # NOTE: Here `div!` *accumulates* the result of c / a in c[k] (k > 0)
 #
 # Recursion algorithm:
@@ -865,7 +890,17 @@ end
     return nothing
 end
 
-# In-place, allocation-free, computation of k-th order coefficient of c = - c / a
+# In-place computation of k-th order coefficient of c = - c / a
+# NOTE: Here `divsubst!` *accumulates* the result of - c / a in c[k] (k > 0)
+#
+# Recursion algorithm:
+#
+# k = 0: c[0] <- -c[0]/a[0]
+# k = 1: c[1] <-  c[1] + c[0]*a[1]
+#        c[1] <- -c[1]/a[0]
+# k = 2: c[2] <-  c[2] + c[0]*a[2] + c[1]*a[1]
+#        c[2] <- -c[2]/a[0]
+# etc.
 @inline function divsubst!(c::TaylorN, a::TaylorN, k::Int)
     if k==0
         @inbounds c[0][1] = - constant_term(c) / constant_term(a)

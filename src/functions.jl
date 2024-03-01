@@ -303,6 +303,14 @@ end
     return nothing
 end
 
+@inline function one!(c::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    zero!(c, k)
+    if k == 0
+        @inbounds c[0][0][1] = one(constant_term(c[0][0][1]))
+    end
+    return nothing
+end
+
 for T in (:Taylor1, :TaylorN)
     @eval begin
         @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}

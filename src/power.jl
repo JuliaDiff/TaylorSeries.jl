@@ -257,7 +257,9 @@ end
         aux = r*(k-i) - i
         mul!(c[k], aux*a[k-i], c[i])
     end
-    @inbounds c[k] = c[k] / (k * constant_term(a))
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = c[k][i] / (k * constant_term(a))
+    end
 
     return nothing
 end
@@ -266,7 +268,7 @@ end
         ordT::Int) where {T<:NumberNotSeries, S<:Real}
 
     if r == 0
-        return one!(res, a, ordT)
+        return one!(res, ordT)
     elseif r == 1
         return identity!(res, a, ordT)
     elseif r == 2
@@ -352,6 +354,27 @@ function square(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     return res
 end
 
+#auxiliary function to avoid allocations
+for T = (:Taylor1, :TaylorN)
+    @eval begin
+        @inline function sqr_orderzero!(c::$T{T}, a::$T{T}) where {T<:NumberNotSeries}
+            if $T == Taylor1
+                @inbounds c[0] = constant_term(a)^2
+            else
+                @inbounds c[0][1] = constant_term(a)^2
+            end
+            return nothing
+        end
+    end
+end
+@inline function sqr_orderzero!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    @inbounds c[0][0][1] = constant_term(a)^2
+    return nothing
+end
+@inline function sqr_orderzero!(c::TaylorN{Taylor1{T}}, a::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
+    @inbounds c[0][1][0] = constant_term(a)^2
+    return nothing
+end
 
 # Homogeneous coefficients for square
 @doc doc"""
@@ -377,7 +400,7 @@ for T = (:Taylor1, :TaylorN)
     @eval begin
         @inline function sqr!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
-                @inbounds c[0] = constant_term(a)^2
+                sqr_orderzero!(c, a)
                 return nothing
             end
 
@@ -394,7 +417,11 @@ for T = (:Taylor1, :TaylorN)
                     mul!(c[k], a[i], a[k-i])
                 end
             end
-            @inbounds c[k] = 2 * c[k]
+            if $T == Taylor1
+                @inbounds c[k] = 2 * c[k]
+            else
+                @inbounds mul!(c, 2, c, k)
+            end
             kodd == 1 && return nothing
 
             if $T == Taylor1
@@ -422,20 +449,19 @@ end
     # Recursion formula
     kodd = ordT%2
     kend = (ordT - 2 + kodd) >> 1
-    tmp = TaylorN( zero(constant_term(a[0])), a[0].order )
+    (kodd == 0) && @inbounds for ordQ in eachindex(a[0])
+        sqr!(res[ordT], a[ordT >> 1], ordQ)
+        mul!(res[ordT], 0.5, res[ordT], ordQ)
+    end
+
     for i = 0:kend
         @inbounds for ordQ in eachindex(a[ordT])
-            mul!(tmp, a[i], a[ordT-i], ordQ)
+            # mul! accumulates the result in res[ordT]
+            mul!(res[ordT], a[i], a[ordT-i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[ordT])
-        res[ordT][ordQ] = 2 * tmp[ordQ]
-    end
-    kodd == 1 && return nothing
-
-    @inbounds for ordQ in eachindex(a[0])
-        sqr!(tmp, a[ordT >> 1], ordQ)
-        add!(res[ordT], res[ordT], tmp, ordQ)
+        mul!(res[ordT], 2, res[ordT], ordQ)
     end
 
     return nothing
