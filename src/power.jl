@@ -636,14 +636,20 @@ end
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
-    @inbounds for i = 1:kend
-        mul!(c[k], c[i], c[k-i])
+    # c[k] <- a[k]
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = a[k][i]
     end
-    @inbounds aux = a[k] - 2*c[k]
     if kodd == 0
-        @inbounds aux = aux - (c[kend+1])^2
+        # @inbounds c[k] <- c[k] - (c[kend+1])^2
+        @inbounds mul!(c[k], c[kend+1], c[kend+1], -1)
     end
-    @inbounds c[k] = aux / (2*constant_term(c))
+    @inbounds for i = 1:kend
+        # c[k] <- c[k] - 2*c[i]*c[k-i]
+        mul!(c[k], c[i], c[k-i], -2)
+    end
+    # @inbounds c[k] = c[k] / (2*c[0])
+    div!(c[k], c[k], 2*constant_term(c))
 
     return nothing
 end
@@ -662,25 +668,52 @@ end
         return nothing
     end
 
+    # # Recursion formula
+    # kodd = (k - k0)%2
+    # # kend = div(k - k0 - 2 + kodd, 2)
+    # kend = (k - k0 - 2 + kodd) >> 1
+    # imax = min(k0+kend, a.order)
+    # imin = max(k0+1, k+k0-a.order)
+    # imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
+    # @inbounds for i = imin+1:imax
+    #     c[k] += c[i] * c[k+k0-i]
+    # end
+    # if k+k0 ≤ a.order
+    #     @inbounds aux = a[k+k0] - 2*c[k]
+    # else
+    #     @inbounds aux = - 2*c[k]
+    # end
+    # if kodd == 0
+    #     @inbounds aux = aux - (c[kend+k0+1])^2
+    # end
+    # @inbounds c[k] = aux / (2*c[k0])
+
     # Recursion formula
     kodd = (k - k0)%2
     # kend = div(k - k0 - 2 + kodd, 2)
     kend = (k - k0 - 2 + kodd) >> 1
     imax = min(k0+kend, a.order)
     imin = max(k0+1, k+k0-a.order)
-    imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
-    @inbounds for i = imin+1:imax
-        c[k] += c[i] * c[k+k0-i]
-    end
     if k+k0 ≤ a.order
-        @inbounds aux = a[k+k0] - 2*c[k]
-    else
-        @inbounds aux = - 2*c[k]
+        # @inbounds c[k] += a[k+k0]
+        ### TODO: add in-place add! method for Taylor1, TaylorN and mixtures: c[k] += a[k] -> add!(c, a, k)
+        ###       and/or add identity! method such that each coeff is copied individually,
+        ###       otherwise memory-mixing issues happen
+        @inbounds for l in eachindex(c[k])
+            for m in eachindex(c[k][l])
+                # we can either += or =, since c is zero at this point
+                # using identity was avoided since it created issues with memory addresses
+                c[k][l][m] += a[k+k0][l][m]
+            end
+        end
     end
     if kodd == 0
-        @inbounds aux = aux - (c[kend+k0+1])^2
+        @inbounds c[k] += (-1)*c[kend+k0+1]*c[kend+k0+1]
     end
-    @inbounds c[k] = aux / (2*c[k0])
+    @inbounds for i = imin:imax
+        c[k] += (-2) * c[i] * c[k+k0-i]
+    end
+    @inbounds c[k] = c[k] / (2*c[k0])
 
     return nothing
 end

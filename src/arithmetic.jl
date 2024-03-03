@@ -566,6 +566,7 @@ mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
 b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
 
 # in-place product (assumes equal order among TaylorNs)
+# NOTE: the result of the product is *accumulated* in c[k]
 function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
     for k in eachindex(c)
         mul!(c, a, b, k)
@@ -871,6 +872,14 @@ end
     end
     # @inbounds c[k] = -c[k]/b[0]
     @inbounds divsubst!(c[k], b[0])
+    return nothing
+end
+
+# TODO: avoid allocations when T isa Taylor1
+@inline function div!(v::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}, b::T) where {T <: Number}
+    @inbounds for k in eachindex(v)
+        v[k] = a[k] / b
+    end
     return nothing
 end
 
