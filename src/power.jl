@@ -256,7 +256,7 @@ end
     for i = 0:k-1
         aux = r*(k-i) - i
         # c[k] += a[k-i]*c[i]*aux
-        mul!(c[k], a[k-i], c[i], aux)
+        mul!(c[k], a[k-i], c[i], scalar=aux)
     end
     @inbounds for i in eachindex(c[k])
         c[k][i] = c[k][i] / (k * constant_term(a))
@@ -642,11 +642,11 @@ end
     end
     if kodd == 0
         # @inbounds c[k] <- c[k] - (c[kend+1])^2
-        @inbounds mul!(c[k], c[kend+1], c[kend+1], -1)
+        @inbounds mul!(c[k], c[kend+1], c[kend+1], scalar=-1)
     end
     @inbounds for i = 1:kend
         # c[k] <- c[k] - 2*c[i]*c[k-i]
-        mul!(c[k], c[i], c[k-i], -2)
+        mul!(c[k], c[i], c[k-i], scalar=-2)
     end
     # @inbounds c[k] = c[k] / (2*c[0])
     div!(c[k], c[k], 2*constant_term(c))
@@ -708,12 +708,17 @@ end
         end
     end
     if kodd == 0
-        @inbounds c[k] += (-1)*c[kend+k0+1]*c[kend+k0+1]
+        # @inbounds mul!(c[k], c[kend+1], c[kend+1], -1)
+        @inbounds mul!(c[k], c[kend+k0+1], c[kend+k0+1], scalar=-1)
     end
     @inbounds for i = imin:imax
-        c[k] += (-2) * c[i] * c[k+k0-i]
+        # c[k] += (-2) * c[i] * c[k+k0-i]
+        mul!(c[k], c[i], c[k+k0-i], scalar=-2)
     end
-    @inbounds c[k] = c[k] / (2*c[k0])
+    # @inbounds c[k] <- c[k] / c[k0]
+    @inbounds div!(c[k], c[k0])
+    # @inbounds c[k] <- c[k] / 2
+    @inbounds mul!(c[k], 0.5, c[k])
 
     return nothing
 end

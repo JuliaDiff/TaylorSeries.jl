@@ -489,17 +489,17 @@ end
 # Internal multiplication functions
 for T in (:Taylor1, :TaylorN)
     # NOTE: For $T = TaylorN, `mul!` *accumulates* the result of a * b in c[k]
-    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
+    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int; scalar::NumberNotSeries=1) where {T<:Number}
         if $T == Taylor1
             @inbounds c[k] = a[0] * b[k]
         else
-            @inbounds mul!(c[k], a[0], b[k])
+            @inbounds mul!(c[k], a[0], b[k]; scalar)
         end
         @inbounds for i = 1:k
             if $T == Taylor1
                 c[k] += a[i] * b[k-i]
             else
-                mul!(c[k], a[i], b[k-i])
+                mul!(c[k], a[i], b[k-i]; scalar)
             end
         end
         return nothing
@@ -567,9 +567,9 @@ b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
 
 # in-place product (assumes equal order among TaylorNs)
 # NOTE: the result of the product is *accumulated* in c[k]
-function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
+function mul!(c::TaylorN, a::TaylorN, b::TaylorN; scalar::NumberNotSeries=1)
     for k in eachindex(c)
-        mul!(c, a, b, k)
+        mul!(c, a, b, k; scalar)
     end
 end
 
@@ -592,14 +592,14 @@ c_k = \sum_{j=0}^k a_j b_{k-j}.
 
 
 """
-    mul!(c, a, b, d=1) --> nothing
+    mul!(c, a, b; scalar=1) --> nothing
 
-Accumulates in `c` the result of `a*b*d` with minimum allocation. Arguments
-c, a and b are `HomogeneousPolynomial`; d is a NumberNotSeries whose default value is 1.
+Accumulates in `c` the result of `scalar*b*d` with minimum allocation. Arguments
+c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries whose default value is 1.
 
 """
 @inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
-        b::HomogeneousPolynomial, d::T=1) where {T<:NumberNotSeries}
+        b::HomogeneousPolynomial; scalar::NumberNotSeries=1)
 
     (iszero(b) || iszero(a)) && return nothing
 
@@ -622,7 +622,7 @@ c, a and b are `HomogeneousPolynomial`; d is a NumberNotSeries whose default val
             indb = indTb[nb]
 
             pos = posTb[inda + indb]
-            c[pos] += d * ca * cb
+            c[pos] += scalar * ca * cb
         end
     end
 
