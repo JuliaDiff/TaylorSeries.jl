@@ -260,10 +260,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return nothing
             end
 
-            # function ($fc)(v::$T, a::$T, b::$T, k::Int)
-            #     @inbounds v[k] = ($f)(a[k], b[k])
-            #     return nothing
-            # end
             if $T == Taylor1
                 function ($fc)(v::$T, a::$T, b::$T, k::Int)
                     @inbounds v[k] = ($f)(a[k], b[k])
@@ -883,7 +879,7 @@ end
     return nothing
 end
 
-# NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
+# NOTE: Due to the use of `zero!`, this `div!` method does *not* accumulate the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0
         @inbounds c[0][1] = constant_term(a) / constant_term(b)
@@ -906,13 +902,11 @@ end
 #
 # Recursion algorithm:
 #
-# k = 0: c[0] <-  c[0]/a[0]
-# k = 1: c[1] <- -c[1]
-#        c[1] <-  c[1] + c[0]*a[1]
-#        c[1] <- -c[1]/a[0]
-# k = 2: c[2] <- -c[2]
-#        c[2] <-  c[2] + c[0]*a[2] + c[1]*a[1]
-#        c[2] <- -c[2]/a[0]
+# k = 0: c[0] <- c[0]/a[0]
+# k = 1: c[1] <- c[1] - c[0]*a[1]
+#        c[1] <- c[1]/a[0]
+# k = 2: c[2] <- c[2] - c[0]*a[2] - c[1]*a[1]
+#        c[2] <- c[2]/a[0]
 # etc.
 @inline function div!(c::TaylorN, a::TaylorN, k::Int)
     if k==0
@@ -920,14 +914,11 @@ end
         return nothing
     end
 
-    @inbounds for i in eachindex(c[k])
-        c[k][i] = -c[k][i]
-    end
     @inbounds for i = 0:k-1
-        mul!(c[k], c[i], a[k-i])
+        mul!(c[k], c[i], a[k-i], scalar=-1)
     end
     @inbounds for i in eachindex(c[k])
-        c[k][i] = (-c[k][i]) / constant_term(a)
+        c[k][i] = c[k][i] / constant_term(a)
     end
     return nothing
 end
