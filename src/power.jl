@@ -683,11 +683,12 @@ end
         end
     end
     if kodd == 0
-        # @inbounds mul!(c[k], c[kend+1], c[kend+1], -1)
+        # c[k] <- c[k] - c[kend+1]^2
+        # TODO: use accsqr! here?
         @inbounds mul!(c[k], c[kend+k0+1], c[kend+k0+1], scalar=-1)
     end
     @inbounds for i = imin:imax
-        # c[k] += (-2) * c[i] * c[k+k0-i]
+        # c[k] <- c[k] - 2 * c[i] * c[k+k0-i]
         mul!(c[k], c[i], c[k+k0-i], scalar=-2)
     end
     # @inbounds c[k] <- c[k] / (2*c[k0])
