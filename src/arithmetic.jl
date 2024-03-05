@@ -363,7 +363,7 @@ end
 for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     @eval begin
         function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-            if a.order != b.order || a[0].order != b[0].order
+            if a.order != b.order || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
                 a, b = fixorder(a, b)
             end
             c = zero(a)
@@ -867,7 +867,7 @@ end
         mul!(c[k], c[i], b[k-i])
     end
     # @inbounds c[k] = -c[k]/b[0]
-    @inbounds divsubst!(c[k], b[0])
+    @inbounds div!(c[k], b[0], scalar=-1)
     return nothing
 end
 
@@ -897,54 +897,29 @@ end
     return nothing
 end
 
-# In-place division and assignment: c = c / a
-# NOTE: Here `div!` *accumulates* the result of c / a in c[k] (k > 0)
+# In-place division and assignment: c = scalar * c / a
+# NOTE: Here `div!` *accumulates* the result of scalar * c / a in c[k] (k > 0)
 #
 # Recursion algorithm:
 #
-# k = 0: c[0] <- c[0]/a[0]
-# k = 1: c[1] <- c[1] - c[0]*a[1]
+# k = 0: c[0] <- scalar*c[0]/a[0]
+# k = 1: c[1] <- scalar*c[1] - c[0]*a[1]
 #        c[1] <- c[1]/a[0]
-# k = 2: c[2] <- c[2] - c[0]*a[2] - c[1]*a[1]
+# k = 2: c[2] <- scalar*c[2] - c[0]*a[2] - c[1]*a[1]
 #        c[2] <- c[2]/a[0]
 # etc.
-@inline function div!(c::TaylorN, a::TaylorN, k::Int)
+@inline function div!(c::TaylorN, a::TaylorN, k::Int; scalar::NumberNotSeries=1)
     if k==0
-        @inbounds c[0][1] = constant_term(c) / constant_term(a)
+        @inbounds c[0][1] = scalar*constant_term(c) / constant_term(a)
         return nothing
     end
 
+    @inbounds mul!(c, scalar, c, k)
     @inbounds for i = 0:k-1
         mul!(c[k], c[i], a[k-i], scalar=-1)
     end
     @inbounds for i in eachindex(c[k])
         c[k][i] = c[k][i] / constant_term(a)
-    end
-    return nothing
-end
-
-# In-place computation of k-th order coefficient of c = - c / a
-# NOTE: Here `divsubst!` *accumulates* the result of - c / a in c[k] (k > 0)
-#
-# Recursion algorithm:
-#
-# k = 0: c[0] <- -c[0]/a[0]
-# k = 1: c[1] <-  c[1] + c[0]*a[1]
-#        c[1] <- -c[1]/a[0]
-# k = 2: c[2] <-  c[2] + c[0]*a[2] + c[1]*a[1]
-#        c[2] <- -c[2]/a[0]
-# etc.
-@inline function divsubst!(c::TaylorN, a::TaylorN, k::Int)
-    if k==0
-        @inbounds c[0][1] = - constant_term(c) / constant_term(a)
-        return nothing
-    end
-
-    @inbounds for i = 0:k-1
-        mul!(c[k], c[i], a[k-i])
-    end
-    @inbounds for i in eachindex(c[k])
-        c[k][i] = (-c[k][i]) / constant_term(a)
     end
     return nothing
 end
@@ -965,29 +940,33 @@ end
     return nothing
 end
 
-# in-place division (assumes equal order among TaylorNs)
-function div!(c::TaylorN, a::TaylorN)
-    for k in eachindex(c)
-        div!(c, a, k)
+# in-place division c <- scalar*c/a (assumes equal order among TaylorNs)
+function div!(c::TaylorN, a::TaylorN; scalar::NumberNotSeries=1)
+    @inbounds for k in eachindex(c)
+        div!(c, a, k; scalar)
     end
+    return nothing
 end
 
 function div!(c::TaylorN, a::TaylorN, b::TaylorN)
-    for k in eachindex(c)
+    @inbounds for k in eachindex(c)
         div!(c, a, b, k)
     end
+    return nothing
 end
 
 function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
-    for k in eachindex(c)
+    @inbounds for k in eachindex(c)
         div!(c, a, b, k)
     end
+    return nothing
 end
 
-function divsubst!(c::TaylorN, a::TaylorN)
-    for k in eachindex(c)
-        divsubst!(c, a, k)
+function div!(c::TaylorN, a::TaylorN, b::NumberNotSeries)
+    @inbounds for k in eachindex(c)
+        div!(c[k], a[k], b)
     end
+    return nothing
 end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
@@ -1013,23 +992,22 @@ end
         return nothing
     end
 
-    zero!(c, k)
+    @inbounds zero!(c, k)
 
     imin = max(0, k+ordfact-b.order)
     @inbounds mul!(c[k], c[imin], b[k+ordfact-imin])
     @inbounds for i = imin+1:k-1
         mul!(c[k], c[i], b[k+ordfact-i])
     end
-    if k+ordfact ≤ b.order
-        for i in eachindex(c[k])
-            for j in eachindex(c[k][i])
-                c[k][i][j] = a[k+ordfact][i][j]-c[k][i][j]
-            end
-        end
-        div!(c[k], b[ordfact])
+        if k+ordfact ≤ b.order
         # @inbounds c[k] = (a[k+ordfact]-c[k]) / b[ordfact]
+        @inbounds for l in eachindex(c[k])
+            subst!(c[k], a[k+ordfact], c[k], l)
+        end
+        @inbounds div!(c[k], b[ordfact])
     else
-        @inbounds divsubst!(c[k], b[ordfact])
+        # @inbounds c[k] = (-c[k]) / b[ordfact]
+        @inbounds div!(c[k], b[ordfact], scalar=-1)
     end
     return nothing
 end

@@ -245,7 +245,7 @@ end
     end
 
     if k == 0
-        @inbounds c[0] = ( constant_term(a) )^r
+        @inbounds c[0][1] = ( constant_term(a) )^r
         return nothing
     end
 
@@ -253,14 +253,13 @@ end
     zero!(c, k)
 
     # The recursion formula
-    for i = 0:k-1
+    @inbounds for i = 0:k-1
         aux = r*(k-i) - i
         # c[k] += a[k-i]*c[i]*aux
         mul!(c[k], a[k-i], c[i], scalar=aux)
     end
-    @inbounds for i in eachindex(c[k])
-        c[k][i] = c[k][i] / (k * constant_term(a))
-    end
+    # c[k] <- c[k]/(k * constant_term(a))
+    @inbounds div!(c[k], c[k], k * constant_term(a))
 
     return nothing
 end
@@ -302,19 +301,15 @@ end
     end
 
     # The recursion formula
-    tmp =  TaylorN( zero(constant_term(a[ordT])), a[0].order)
-    tmp1 = TaylorN( zero(constant_term(a[ordT])), a[0].order)
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         aux = r*(kprime-i) - i
-        @inbounds for ordQ in eachindex(tmp)
-            tmp1[ordQ] = aux * res[i+lnull][ordQ]
-            mul!(tmp, tmp1, a[l0+kprime-i], ordQ)
+        @inbounds for ordQ in eachindex(res[ordT])
+            mul!(res[ordT], res[i+lnull], a[l0+kprime-i], ordQ, scalar=aux)
         end
     end
-    @inbounds for ordQ in eachindex(tmp)
-        tmp1[ordQ] = tmp[ordQ]/kprime
-        div!(res[ordT], tmp1, a[l0], ordQ)
+    @inbounds for ordQ in eachindex(res[ordT])
+        div!(res[ordT], a[l0], ordQ, scalar=1/kprime)
     end
 
     return nothing
@@ -648,7 +643,7 @@ end
         # c[k] <- c[k] - 2*c[i]*c[k-i]
         mul!(c[k], c[i], c[k-i], scalar=-2)
     end
-    # @inbounds c[k] = c[k] / (2*c[0])
+    # @inbounds c[k] <- c[k] / (2*c[0])
     div!(c[k], c[k], 2*constant_term(c))
 
     return nothing
@@ -668,26 +663,6 @@ end
         return nothing
     end
 
-    # # Recursion formula
-    # kodd = (k - k0)%2
-    # # kend = div(k - k0 - 2 + kodd, 2)
-    # kend = (k - k0 - 2 + kodd) >> 1
-    # imax = min(k0+kend, a.order)
-    # imin = max(k0+1, k+k0-a.order)
-    # imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
-    # @inbounds for i = imin+1:imax
-    #     c[k] += c[i] * c[k+k0-i]
-    # end
-    # if k+k0 ≤ a.order
-    #     @inbounds aux = a[k+k0] - 2*c[k]
-    # else
-    #     @inbounds aux = - 2*c[k]
-    # end
-    # if kodd == 0
-    #     @inbounds aux = aux - (c[kend+k0+1])^2
-    # end
-    # @inbounds c[k] = aux / (2*c[k0])
-
     # Recursion formula
     kodd = (k - k0)%2
     # kend = div(k - k0 - 2 + kodd, 2)
@@ -701,7 +676,7 @@ end
         ###       otherwise memory-mixing issues happen
         @inbounds for l in eachindex(c[k])
             for m in eachindex(c[k][l])
-                # we can either += or =, since c is zero at this point
+                # here, we can either += or =, since c is zero at this point
                 # using identity was avoided since it created issues with memory addresses
                 c[k][l][m] += a[k+k0][l][m]
             end
@@ -715,10 +690,8 @@ end
         # c[k] += (-2) * c[i] * c[k+k0-i]
         mul!(c[k], c[i], c[k+k0-i], scalar=-2)
     end
-    # @inbounds c[k] <- c[k] / c[k0]
-    @inbounds div!(c[k], c[k0])
-    # @inbounds c[k] <- c[k] / 2
-    @inbounds mul!(c[k], 0.5, c[k])
+    # @inbounds c[k] <- c[k] / (2*c[k0])
+    @inbounds div!(c[k], c[k0], scalar=0.5)
 
     return nothing
 end
