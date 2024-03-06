@@ -114,6 +114,7 @@ function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
 end
 
 ## Real power ##
+# TODO: get rid of allocations
 function ^(a::TaylorN, r::S) where {S<:Real}
     a0 = constant_term(a)
     aux = one(a0^r)
@@ -296,6 +297,7 @@ end
     isinteger(r) && r > 0 && (ordT > r*findlast(a)) && return nothing
 
     if ordT == lnull
+        # TODO: get rid of allocations in ^(a::TaylorN, r::S) where {S<:Real}
         res[ordT] = a[l0]^r # if r is integer, uses power_by_squaring internally
         return nothing
     end

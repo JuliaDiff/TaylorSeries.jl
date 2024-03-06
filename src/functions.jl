@@ -311,10 +311,27 @@ end
     return nothing
 end
 
+@inline function identity!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}, k::Int) where {T<:NumberNotSeries}
+    @inbounds c[k] = identity(a[k])
+    return nothing
+end
+
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            @inbounds c[k] = identity(a[k])
+        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:NumberNotSeries}
+            if $T == Taylor1
+                @inbounds c[k] = identity(a[k])
+            else
+                @inbounds for l in eachindex(c[k])
+                    identity!(c[k], a[k], l)
+                end
+            end
+            return nothing
+        end
+        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:AbstractSeries}
+            @inbounds for l in eachindex(c[k])
+                identity!(c[k], a[k], l)
+            end
             return nothing
         end
 
