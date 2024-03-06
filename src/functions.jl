@@ -1229,7 +1229,7 @@ f^{-1}(t) = \sum_{n=1}^{N} \frac{t^n}{n!} \left.
 """ inverse
 
 function inverse(f::Taylor1{T}) where {T<:Number}
-    if f[0] != zero(T)
+    if !iszero(f[0])
         throw(DomainError(f,
         """
         Evaluation of Taylor1 series at 0 is non-zero. For high accuracy, revert
