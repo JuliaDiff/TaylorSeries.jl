@@ -251,7 +251,13 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
             ## add! and subst! ##
             function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-                @inbounds v[k] = ($f)(a[k])
+                if $T == Taylor1
+                    @inbounds v[k] = ($f)(a[k])
+                else
+                    @inbounds for l in eachindex(v[k])
+                        v[k][l] = ($f)(a[k][l])
+                    end
+                end
                 return nothing
             end
 
@@ -376,6 +382,14 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             @inbounds for i in eachindex(v[k])
                 for j in eachindex(v[k][i])
                     v[k][i][j] = ($f)(a[k][i][j], b[k][i][j])
+                end
+            end
+            return nothing
+        end
+        function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+            @inbounds for l in eachindex(v[k])
+                for m in eachindex(v[k][l])
+                    v[k][l][m] = ($f)(a[k][l][m])
                 end
             end
             return nothing
@@ -505,7 +519,7 @@ for T in (:Taylor1, :TaylorN)
         if $T == Taylor1
             @inbounds v[k] = a[k] * b
         else
-            for i in eachindex(v[k])
+            @inbounds for i in eachindex(v[k])
                 v[k][i] = a[k][i] * b
             end
         end
@@ -515,7 +529,7 @@ for T in (:Taylor1, :TaylorN)
         if $T == Taylor1
             @inbounds v[k] = a * b[k]
         else
-            for i in eachindex(v[k])
+            @inbounds for i in eachindex(v[k])
                 v[k][i] = a * b[k][i]
             end
         end
@@ -872,7 +886,7 @@ end
 end
 
 # TODO: avoid allocations when T isa Taylor1
-@inline function div!(v::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}, b::T) where {T <: Number}
+@inline function div!(v::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}, b::NumberNotSeriesN) where {T <: Number}
     @inbounds for k in eachindex(v)
         v[k] = a[k] / b
     end
