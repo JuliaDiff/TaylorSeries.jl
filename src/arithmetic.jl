@@ -386,6 +386,14 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             end
             return nothing
         end
+        function ($fc)(v::Taylor1{TaylorN{T}}, a::NumberNotSeries, b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+            @inbounds for i in eachindex(v[k])
+                for j in eachindex(v[k][i])
+                    v[k][i][j] = ($f)(k==0 && i==0 && j==1 ? a : zero(a), b[k][i][j])
+                end
+            end
+            return nothing
+        end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
             @inbounds for l in eachindex(v[k])
                 for m in eachindex(v[k][l])

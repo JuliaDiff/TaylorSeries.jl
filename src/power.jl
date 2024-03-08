@@ -366,7 +366,7 @@ end
     return nothing
 end
 @inline function sqr_orderzero!(c::TaylorN{Taylor1{T}}, a::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
-    @inbounds c[0][1][0] = constant_term(a)^2
+    @inbounds c[0][1][0] = a[0][1][0]^2
     return nothing
 end
 

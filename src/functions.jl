@@ -558,7 +558,24 @@ for T in (:Taylor1, :TaylorN)
                     mul!(c[k], r[i], c[k-i], scalar=k-i)
                 end
             end
-            sqrt!(r, 1-a^2, k)
+            # sqrt!(r, 1-a^2, k)
+            # Compute auxiliary term s=1-a^2
+            s = ($T)(zero(a[0]), a.order)
+            one_s = one(s)
+            for i = 0:k
+                sqr!(s, a, i)
+                subst!(s, s, i)
+                if i == 0
+                    if $T == Taylor1
+                        s[0] = one(s[0]) - s[0]
+                    else
+                        s[0][1] = one(s[0][1]) - s[0][1]
+                    end
+                    add!(s, one_s, s, 0)
+                end
+            end
+            # Update aux term r = sqrt(s) = sqrt(1-a^2)
+            sqrt!(r, s, k)
             if $T == Taylor1
                 @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
             else
@@ -928,20 +945,19 @@ end
         end
     end
     div!(res, res, k, k)
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        subst!(res[k], a[k], res[k], ordQ)
+        div!(res[k], r[0], ordQ)
     end
     # Compute auxiliary term s=1-a^2
-    s = Taylor1(zero(a[0]), a.order)
+    s = Taylor1(zero(a[0]), a.order) ### TODO: avoid this allocation
+    one_s0 = one(s[0][0][1])
     for i = 0:k
         sqr!(s, a, i)
         subst!(s, s, i)
         if i == 0
-            s[0] = one(s[0]) - s[0]
-            add!(s, one(s), s, 0)
+            s[0][0][1] = one(s[0][0][1]) - s[0][0][1]
+            add!(s, one_s0, s, 0)
         end
     end
     # Update aux term r = sqrt(s) = sqrt(1-a^2)
@@ -972,21 +988,20 @@ end
         end
     end
     div!(res, res, k, k)
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     @inbounds for ordQ in eachindex(a[0])
-        add!(tmp, a[k], res[k], ordQ)
-        subst!(tmp, tmp, ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        add!(res[k], a[k], res[k], ordQ)
+        subst!(res[k], res[k], ordQ)
+        div!(res[k], r[0], ordQ)
     end
     # Compute auxiliary term s=1-a^2
-    s = Taylor1(zero(a[0]), a.order)
+    s = Taylor1(zero(a[0]), a.order) ### TODO: avoid this allocation
+    one_s0 = one(s[0][0][1])
     for i = 0:k
         sqr!(s, a, i)
         subst!(s, s, i)
         if i == 0
-            s[0] = one(s[0]) - s[0]
-            add!(s, one(s), s, 0)
+            s[0][0][1] = one(s[0][0][1]) - s[0][0][1]
+            add!(s, one_s0, s, 0)
         end
     end
     # Update aux term r = sqrt(s) = sqrt(1-a^2)
