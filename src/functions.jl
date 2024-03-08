@@ -374,7 +374,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * a[k-i] * c[i]
                 else
-                    mul!(c[k], a[k-i], c[i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, a[k-i], c[i])
                 end
             end
             if $T == Taylor1
@@ -395,13 +395,13 @@ for T in (:Taylor1, :TaylorN)
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c0
             else
-                @inbounds mul!(c[k], a[k], c0, scalar=k)
+                @inbounds mul_scalar!(c[k], k, a[k], c0)
             end
             @inbounds for i = 1:k-1
                 if $T == Taylor1
                     c[k] += (k-i) * a[k-i] * c[i]
                 else
-                    mul!(c[k], a[k-i], c[i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, a[k-i], c[i])
                 end
             end
             if $T == Taylor1
@@ -425,7 +425,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * a[i] * c[k-i]
                 else
-                    mul!(c[k], a[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, a[i], c[k-i])
                 end
             end
             @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
@@ -450,7 +450,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * a[i] * c[k-i]
                 else
-                    mul!(c[k], a[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, a[i], c[k-i])
                 end
             end
             @inbounds c[k] = (a[k] - c[k]/k) / a0p1
@@ -475,8 +475,8 @@ for T in (:Taylor1, :TaylorN)
                     s[k] += x * c[k-i]
                     c[k] -= x * s[k-i]
                 else
-                    mul!(s[k], a[i], c[k-i], scalar=i)
-                    mul!(c[k], a[i], s[k-i], scalar=-i)
+                    mul_scalar!(s[k],  i, a[i], c[k-i])
+                    mul_scalar!(c[k], -i, a[i], s[k-i])
                 end
             end
 
@@ -522,7 +522,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * a[k-i] * c2[i]
                 else
-                    mul!(c[k], a[k-i], c2[i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, a[k-i], c2[i])
                 end
             end
             # c[k] <- c[k]/k
@@ -555,7 +555,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k], r[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             # sqrt!(r, 1-a^2, k)
@@ -598,7 +598,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k], r[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             sqrt!(r, 1-a^2, k)
@@ -618,7 +618,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k], r[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             @inbounds sqr!(r, a, k)
@@ -662,7 +662,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * a[k-i] * c2[i]
                 else
-                    mul!(c[k], a[k-i], c2[i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, a[k-i], c2[i])
                 end
             end
             @inbounds c[k] = a[k] - c[k]/k
@@ -683,7 +683,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k], r[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             sqrt!(r, a^2+1, k)
@@ -703,7 +703,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k], r[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             sqrt!(r, a^2-1, k)
@@ -723,7 +723,7 @@ for T in (:Taylor1, :TaylorN)
                 if $T == Taylor1
                     c[k] += (k-i) * r[i] * c[k-i]
                 else
-                    mul!(c[k], r[i], c[k-i], scalar=k-i)
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             @inbounds sqr!(r, a, k)
@@ -750,7 +750,7 @@ end
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res[i], a[k-i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res[i], a[k-i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -874,8 +874,8 @@ end
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
             # x[ordQ].coeffs .= i .* a[i][ordQ].coeffs
-            mul!(s[k], a[i], c[k-i], ordQ, scalar=i)
-            mul!(c[k], a[i], s[k-i], ordQ, scalar=i)
+            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
+            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
         end
     end
     div!(s, s, k, k)
@@ -913,7 +913,7 @@ end
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res2[i], a[k-i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[0])
@@ -941,7 +941,7 @@ end
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res[k-i], r[i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -984,7 +984,7 @@ end
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res[k-i], r[i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -1022,7 +1022,7 @@ end
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res[k-i], r[i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     tmp = TaylorN( zero(a[0][0][1]), a[0].order )
@@ -1051,8 +1051,8 @@ end
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            mul!(s[k], a[i], c[k-i], ordQ, scalar=i)
-            mul!(c[k], a[i], s[k-i], ordQ, scalar=i)
+            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
+            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
         end
     end
     div!(s, s, k, k)
@@ -1072,7 +1072,7 @@ end
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res2[i], a[k-i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
@@ -1105,7 +1105,7 @@ end
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res[k-i], r[i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -1148,7 +1148,7 @@ end
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res[k-i], r[i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -1186,7 +1186,7 @@ end
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul!(res[k], res[k-i], r[i], ordQ, scalar=k-i)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[0])

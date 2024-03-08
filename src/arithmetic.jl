@@ -507,17 +507,33 @@ end
 # Internal multiplication functions
 for T in (:Taylor1, :TaylorN)
     # NOTE: For $T = TaylorN, `mul!` *accumulates* the result of a * b in c[k]
-    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int; scalar::NumberNotSeries=1) where {T<:Number}
+    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
         if $T == Taylor1
             @inbounds c[k] = a[0] * b[k]
         else
-            @inbounds mul!(c[k], a[0], b[k]; scalar)
+            @inbounds mul!(c[k], a[0], b[k])
         end
         @inbounds for i = 1:k
             if $T == Taylor1
                 c[k] += a[i] * b[k-i]
             else
-                mul!(c[k], a[i], b[k-i]; scalar)
+                mul!(c[k], a[i], b[k-i])
+            end
+        end
+        return nothing
+    end
+
+    @eval @inline function mul_scalar!(c::$T{T}, scalar::NumberNotSeries, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
+        if $T == Taylor1
+            @inbounds c[k] = a[0] * b[k]
+        else
+            @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
+        end
+        @inbounds for i = 1:k
+            if $T == Taylor1
+                c[k] += a[i] * b[k-i]
+            else
+                mul_scalar!(c[k], scalar, a[i], b[k-i])
             end
         end
         return nothing
@@ -585,12 +601,17 @@ b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
 
 # in-place product (assumes equal order among TaylorNs)
 # NOTE: the result of the product is *accumulated* in c[k]
-function mul!(c::TaylorN, a::TaylorN, b::TaylorN; scalar::NumberNotSeries=1)
+function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
     for k in eachindex(c)
-        mul!(c, a, b, k; scalar)
+        mul!(c, a, b, k)
     end
 end
 
+function mul_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN, b::TaylorN)
+    for k in eachindex(c)
+        mul_scalar!(c, scalar, a, b, k)
+    end
+end
 
 
 @doc doc"""
@@ -610,14 +631,53 @@ c_k = \sum_{j=0}^k a_j b_{k-j}.
 
 
 """
-    mul!(c, a, b; scalar=1) --> nothing
+    mul!(c, a, b) --> nothing
 
-Accumulates in `c` the result of `scalar*b*d` with minimum allocation. Arguments
-c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries whose default value is 1.
+Accumulates in `c` the result of `a*b` with minimum allocation. Arguments
+c, a and b are `HomogeneousPolynomial`.
 
 """
 @inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
-        b::HomogeneousPolynomial; scalar::NumberNotSeries=1)
+        b::HomogeneousPolynomial)
+
+    (iszero(b) || iszero(a)) && return nothing
+
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs_b = size_table[b.order+1]
+
+    @inbounds posTb = pos_table[c.order+1]
+
+    @inbounds indTa = index_table[a.order+1]
+    @inbounds indTb = index_table[b.order+1]
+
+    @inbounds for na in 1:num_coeffs_a
+        ca = a[na]
+        # iszero(ca) && continue
+        inda = indTa[na]
+
+        @inbounds for nb in 1:num_coeffs_b
+            cb = b[nb]
+            # iszero(cb) && continue
+            indb = indTb[nb]
+
+            pos = posTb[inda + indb]
+            c[pos] += ca * cb
+        end
+    end
+
+    return nothing
+end
+
+
+"""
+    mul_scalar!(c, scalar, a, b) --> nothing
+
+Accumulates in `c` the result of `scalar*a*b` with minimum allocation. Arguments
+c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
+
+"""
+@inline function mul_scalar!(c::HomogeneousPolynomial, scalar::NumberNotSeries, a::HomogeneousPolynomial,
+        b::HomogeneousPolynomial)
 
     (iszero(b) || iszero(a)) && return nothing
 
@@ -938,7 +998,7 @@ end
 
     @inbounds mul!(c, scalar, c, k)
     @inbounds for i = 0:k-1
-        mul!(c[k], c[i], a[k-i], scalar=-1)
+        mul_scalar!(c[k], -1, c[i], a[k-i])
     end
     @inbounds for i in eachindex(c[k])
         c[k][i] = c[k][i] / constant_term(a)

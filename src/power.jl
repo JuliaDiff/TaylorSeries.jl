@@ -257,7 +257,7 @@ end
     @inbounds for i = 0:k-1
         aux = r*(k-i) - i
         # c[k] += a[k-i]*c[i]*aux
-        mul!(c[k], a[k-i], c[i], scalar=aux)
+        mul_scalar!(c[k], aux, a[k-i], c[i])
     end
     # c[k] <- c[k]/(k * constant_term(a))
     @inbounds div!(c[k], c[k], k * constant_term(a))
@@ -307,7 +307,7 @@ end
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         aux = r*(kprime-i) - i
         @inbounds for ordQ in eachindex(res[ordT])
-            mul!(res[ordT], res[i+lnull], a[l0+kprime-i], ordQ, scalar=aux)
+            mul_scalar!(res[ordT], aux, res[i+lnull], a[l0+kprime-i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(res[ordT])
@@ -639,11 +639,11 @@ end
     end
     if kodd == 0
         # @inbounds c[k] <- c[k] - (c[kend+1])^2
-        @inbounds mul!(c[k], c[kend+1], c[kend+1], scalar=-1)
+        @inbounds mul_scalar!(c[k], -1, c[kend+1], c[kend+1])
     end
     @inbounds for i = 1:kend
         # c[k] <- c[k] - 2*c[i]*c[k-i]
-        mul!(c[k], c[i], c[k-i], scalar=-2)
+        mul_scalar!(c[k], -2, c[i], c[k-i])
     end
     # @inbounds c[k] <- c[k] / (2*c[0])
     div!(c[k], c[k], 2*constant_term(c))
@@ -687,11 +687,11 @@ end
     if kodd == 0
         # c[k] <- c[k] - c[kend+1]^2
         # TODO: use accsqr! here?
-        @inbounds mul!(c[k], c[kend+k0+1], c[kend+k0+1], scalar=-1)
+        @inbounds mul_scalar!(c[k], -1, c[kend+k0+1], c[kend+k0+1])
     end
     @inbounds for i = imin:imax
         # c[k] <- c[k] - 2 * c[i] * c[k+k0-i]
-        mul!(c[k], c[i], c[k+k0-i], scalar=-2)
+        mul_scalar!(c[k], -2, c[i], c[k+k0-i])
     end
     # @inbounds c[k] <- c[k] / (2*c[k0])
     @inbounds div!(c[k], c[k0], scalar=0.5)
