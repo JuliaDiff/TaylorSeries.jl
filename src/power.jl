@@ -306,13 +306,11 @@ end
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         aux = r*(kprime-i) - i
-        @inbounds for ordQ in eachindex(res[ordT])
-            mul_scalar!(res[ordT], aux, res[i+lnull], a[l0+kprime-i], ordQ)
-        end
+        # res[ordT] += aux*res[i+lnull]*a[l0+kprime-i]
+        @inbounds mul_scalar!(res[ordT], aux, res[i+lnull], a[l0+kprime-i])
     end
-    @inbounds for ordQ in eachindex(res[ordT])
-        div!(res[ordT], a[l0], ordQ, scalar=1/kprime)
-    end
+    # res[ordT] /= a[l0]*kprime
+    @inbounds div_scalar!(res[ordT], 1/kprime, a[l0])
 
     return nothing
 end
@@ -694,7 +692,7 @@ end
         mul_scalar!(c[k], -2, c[i], c[k+k0-i])
     end
     # @inbounds c[k] <- c[k] / (2*c[k0])
-    @inbounds div!(c[k], c[k0], scalar=0.5)
+    @inbounds div_scalar!(c[k], 0.5, c[k0])
 
     return nothing
 end

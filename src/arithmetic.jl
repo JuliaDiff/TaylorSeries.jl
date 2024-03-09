@@ -949,7 +949,7 @@ end
         mul!(c[k], c[i], b[k-i])
     end
     # @inbounds c[k] = -c[k]/b[0]
-    @inbounds div!(c[k], b[0], scalar=-1)
+    @inbounds div_scalar!(c[k], -1, b[0])
     return nothing
 end
 
@@ -979,8 +979,34 @@ end
     return nothing
 end
 
-# In-place division and assignment: c = scalar * c / a
-# NOTE: Here `div!` *accumulates* the result of scalar * c / a in c[k] (k > 0)
+# In-place division and assignment: c[k] = c[k] / a[k]
+# NOTE: Here `div!` *accumulates* the result of c[k] / a[k] in c[k] (k > 0)
+#
+# Recursion algorithm:
+#
+# k = 0: c[0] <- c[0]/a[0]
+# k = 1: c[1] <- c[1] - c[0]*a[1]
+#        c[1] <- c[1]/a[0]
+# k = 2: c[2] <- c[2] - c[0]*a[2] - c[1]*a[1]
+#        c[2] <- c[2]/a[0]
+# etc.
+@inline function div!(c::TaylorN, a::TaylorN, k::Int)
+    if k==0
+        @inbounds c[0][1] = constant_term(c) / constant_term(a)
+        return nothing
+    end
+
+    @inbounds for i = 0:k-1
+        mul_scalar!(c[k], -1, c[i], a[k-i])
+    end
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = c[k][i] / constant_term(a)
+    end
+    return nothing
+end
+
+# In-place division and assignment: c[k] <- scalar * c[k] / a[k]
+# NOTE: Here `div!` *accumulates* the result of scalar * c[k] / a[k] in c[k] (k > 0)
 #
 # Recursion algorithm:
 #
@@ -990,7 +1016,7 @@ end
 # k = 2: c[2] <- scalar*c[2] - c[0]*a[2] - c[1]*a[1]
 #        c[2] <- c[2]/a[0]
 # etc.
-@inline function div!(c::TaylorN, a::TaylorN, k::Int; scalar::NumberNotSeries=1)
+@inline function div_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN, k::Int)
     if k==0
         @inbounds c[0][1] = scalar*constant_term(c) / constant_term(a)
         return nothing
@@ -1006,7 +1032,7 @@ end
     return nothing
 end
 
-# NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
+# NOTE: Here `div!` *accumulates* the result of a[k] / b[k] in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int)
     if k==0
         @inbounds c[0][1] = a / constant_term(b)
@@ -1022,14 +1048,23 @@ end
     return nothing
 end
 
-# in-place division c <- scalar*c/a (assumes equal order among TaylorNs)
-function div!(c::TaylorN, a::TaylorN; scalar::NumberNotSeries=1)
+# in-place division c <- c/a (assumes equal order among TaylorNs)
+function div!(c::TaylorN, a::TaylorN)
     @inbounds for k in eachindex(c)
-        div!(c, a, k; scalar)
+        div!(c, a, k)
     end
     return nothing
 end
 
+# in-place division c <- scalar*c/a (assumes equal order among TaylorNs)
+function div_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN)
+    @inbounds for k in eachindex(c)
+        div_scalar!(c, scalar, a, k)
+    end
+    return nothing
+end
+
+# c[k] <- a[k]/b[k]
 function div!(c::TaylorN, a::TaylorN, b::TaylorN)
     @inbounds for k in eachindex(c)
         div!(c, a, b, k)
@@ -1089,7 +1124,7 @@ end
         @inbounds div!(c[k], b[ordfact])
     else
         # @inbounds c[k] = (-c[k]) / b[ordfact]
-        @inbounds div!(c[k], b[ordfact], scalar=-1)
+        @inbounds div_scalar!(c[k], -1, b[ordfact])
     end
     return nothing
 end
