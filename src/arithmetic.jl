@@ -979,8 +979,8 @@ end
     return nothing
 end
 
-# In-place division and assignment: c[k] = c[k] / a[k]
-# NOTE: Here `div!` *accumulates* the result of c[k] / a[k] in c[k] (k > 0)
+# In-place division and assignment: c[k] = (c/a)[k]
+# NOTE: Here `div!` *accumulates* the result of (c/a)[k] in c[k] (k > 0)
 #
 # Recursion algorithm:
 #
@@ -1005,8 +1005,8 @@ end
     return nothing
 end
 
-# In-place division and assignment: c[k] <- scalar * c[k] / a[k]
-# NOTE: Here `div!` *accumulates* the result of scalar * c[k] / a[k] in c[k] (k > 0)
+# In-place division and assignment: c[k] <- scalar * (c/a)[k]
+# NOTE: Here `div!` *accumulates* the result of scalar * (c/a)[k] in c[k] (k > 0)
 #
 # Recursion algorithm:
 #
@@ -1064,7 +1064,7 @@ function div_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN)
     return nothing
 end
 
-# c[k] <- a[k]/b[k]
+# c[k] <- (a/b)[k]
 function div!(c::TaylorN, a::TaylorN, b::TaylorN)
     @inbounds for k in eachindex(c)
         div!(c, a, b, k)
@@ -1072,6 +1072,7 @@ function div!(c::TaylorN, a::TaylorN, b::TaylorN)
     return nothing
 end
 
+# c[k] <- (a/b)[k], where a is a scalar
 function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
     @inbounds for k in eachindex(c)
         div!(c, a, b, k)
@@ -1079,6 +1080,7 @@ function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
     return nothing
 end
 
+# c[k] <- a[k]/b, where b is a scalar
 function div!(c::TaylorN, a::TaylorN, b::NumberNotSeries)
     @inbounds for k in eachindex(c)
         div!(c[k], a[k], b)

@@ -586,8 +586,6 @@ coefficient, which must be even.
 """ sqrt!
 
 @inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T<:Number}
-    # Sanity
-    zero!(c, k)
 
     k < k0 && return nothing
 
@@ -602,26 +600,22 @@ coefficient, which must be even.
     kend = (k - k0 - 2 + kodd) >> 1
     imax = min(k0+kend, a.order)
     imin = max(k0+1, k+k0-a.order)
-    imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
-    @inbounds for i = imin+1:imax
-        c[k] += c[i] * c[k+k0-i]
-    end
     if k+k0 ≤ a.order
-        @inbounds aux = a[k+k0] - 2*c[k]
-    else
-        @inbounds aux = - 2*c[k]
+        @inbounds c[k] = a[k+k0]
     end
     if kodd == 0
-        @inbounds aux = aux - (c[kend+k0+1])^2
+        @inbounds c[k] -= (c[kend+k0+1])^2
     end
-    @inbounds c[k] = aux / (2*c[k0])
+    imin ≤ imax && ( @inbounds c[k] -= 2 * c[imin] * c[k+k0-imin] )
+    @inbounds for i = imin+1:imax
+        c[k] -= 2 * c[i] * c[k+k0-i]
+    end
+    @inbounds c[k] = c[k] / (2*c[k0])
 
     return nothing
 end
 
 @inline function sqrt!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:NumberNotSeriesN}
-    # Sanity
-    zero!(c, k)
 
     if k == 0
         @inbounds c[0][1] = sqrt( constant_term(a) )
@@ -651,8 +645,6 @@ end
 
 @inline function sqrt!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int,
         k0::Int=0) where {T<:NumberNotSeries}
-    # Sanity
-    zero!(c, k)
 
     k < k0 && return nothing
 
@@ -676,9 +668,7 @@ end
         ###       otherwise memory-mixing issues happen
         @inbounds for l in eachindex(c[k])
             for m in eachindex(c[k][l])
-                # here, we can either += or =, since c is zero at this point
-                # using identity was avoided since it created issues with memory addresses
-                c[k][l][m] += a[k+k0][l][m]
+                c[k][l][m] = a[k+k0][l][m]
             end
         end
     end
