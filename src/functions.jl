@@ -601,7 +601,24 @@ for T in (:Taylor1, :TaylorN)
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
-            sqrt!(r, 1-a^2, k)
+            # sqrt!(r, 1-a^2, k)
+            # Compute auxiliary term s=1-a^2
+            s = ($T)(zero(a[0]), a.order)
+            one_s = one(s)
+            for i = 0:k
+                sqr!(s, a, i)
+                subst!(s, s, i)
+                if i == 0
+                    if $T == Taylor1
+                        s[0] = one(s[0]) - s[0]
+                    else
+                        s[0][1] = one(s[0][1]) - s[0][1]
+                    end
+                    add!(s, one_s, s, 0)
+                end
+            end
+            # Update aux term r = sqrt(s) = sqrt(1-a^2)
+            sqrt!(r, s, k)
             @inbounds c[k] = -(a[k] + c[k]/k) / constant_term(r)
             return nothing
         end
