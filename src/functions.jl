@@ -370,16 +370,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i = 0:k-1
-                if $T == Taylor1
-                    c[k] += (k-i) * a[k-i] * c[i]
-                else
-                    mul_scalar!(c[k], k-i, a[k-i], c[i])
-                end
-            end
             if $T == Taylor1
+                @inbounds for i = 0:k-1
+                    c[k] += (k-i) * a[k-i] * c[i]
+                end
                 @inbounds div!(c, c, k, k)
             else
+                @inbounds for i = 0:k-1
+                    mul_scalar!(c[k], k-i, a[k-i], c[i])
+                end
                 @inbounds div!(c[k], c[k], k)
             end
             return nothing
@@ -394,19 +393,15 @@ for T in (:Taylor1, :TaylorN)
             c0 = c[0]+one(c[0])
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c0
-            else
-                @inbounds mul_scalar!(c[k], k, a[k], c0)
-            end
-            @inbounds for i = 1:k-1
-                if $T == Taylor1
+                @inbounds for i = 1:k-1
                     c[k] += (k-i) * a[k-i] * c[i]
-                else
-                    mul_scalar!(c[k], k-i, a[k-i], c[i])
                 end
-            end
-            if $T == Taylor1
                 @inbounds div!(c, c, k, k)
             else
+                @inbounds mul_scalar!(c[k], k, a[k], c0)
+                @inbounds for i = 1:k-1
+                    mul_scalar!(c[k], k-i, a[k-i], c[i])
+                end
                 @inbounds div!(c[k], c[k], k)
             end
             return nothing
@@ -421,10 +416,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i = 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 1:k-1
                     c[k] += (k-i) * a[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i = 1:k-1
                     mul_scalar!(c[k], k-i, a[i], c[k-i])
                 end
             end
@@ -446,10 +443,12 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             a0p1 = a0+one(a0)
             zero!(c, k)
-            @inbounds for i = 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 1:k-1
                     c[k] += (k-i) * a[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i = 1:k-1
                     mul_scalar!(c[k], k-i, a[i], c[k-i])
                 end
             end
@@ -469,12 +468,14 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(s, k)
             zero!(c, k)
-            @inbounds for i = 1:k
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 1:k
                     x = i * a[i]
                     s[k] += x * c[k-i]
                     c[k] -= x * s[k-i]
-                else
+                end
+            else
+                @inbounds for i = 1:k
                     mul_scalar!(s[k],  i, a[i], c[k-i])
                     mul_scalar!(c[k], -i, a[i], s[k-i])
                 end
@@ -518,10 +519,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i = 0:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c2[i]
-                else
+                end
+            else
+                @inbounds for i = 0:k-1
                     mul_scalar!(c[k], k-i, a[k-i], c2[i])
                 end
             end
@@ -551,10 +554,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i in 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i in 1:k-1
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
@@ -586,10 +591,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i in 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i in 1:k-1
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
@@ -616,10 +623,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i in 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i in 1:k-1
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
@@ -643,12 +652,14 @@ for T in (:Taylor1, :TaylorN)
             x = a[1]
             zero!(s, k)
             zero!(c, k)
-            @inbounds for i = 1:k
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 1:k
                     x = i * a[i]
                     s[k] += x * c[k-i]
                     c[k] += x * s[k-i]
-                else
+                end
+            else
+                @inbounds for i = 1:k
                     mul_scalar!(s[k], i, a[i], c[k-i])
                     mul_scalar!(c[k], i, a[i], s[k-i])
                 end
@@ -671,10 +682,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i = 0:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c2[i]
-                else
+                end
+            else
+                @inbounds for i = 0:k-1
                     mul_scalar!(c[k], k-i, a[k-i], c2[i])
                 end
             end
@@ -698,10 +711,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i in 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i in 1:k-1
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
@@ -718,10 +733,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i in 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i in 1:k-1
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
@@ -738,10 +755,12 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             zero!(c, k)
-            @inbounds for i in 1:k-1
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
+                end
+            else
+                @inbounds for i in 1:k-1
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
