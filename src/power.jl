@@ -297,8 +297,21 @@ end
     isinteger(r) && r > 0 && (ordT > r*findlast(a)) && return nothing
 
     if ordT == lnull
-        # TODO: get rid of allocations in ^(a::TaylorN, r::S) where {S<:Real}
-        res[ordT] = a[l0]^r # if r is integer, uses power_by_squaring internally
+        if isinteger(r)
+            # TODO: get rid of allocations here
+            res[ordT] = a[l0]^round(Int,r) # uses power_by_squaring
+            return nothing
+        end
+
+        a0 = constant_term(a[l0])
+        iszero(a0) && throw(DomainError(a[l0],
+            """The 0-th order TaylorN coefficient must be non-zero
+            in order to expand `^` around 0."""))
+
+        for ordQ in eachindex(a[l0])
+            pow!(res[ordT], a[l0], r, ordQ)
+        end
+
         return nothing
     end
 
