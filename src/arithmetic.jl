@@ -251,7 +251,13 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
             ## add! and subst! ##
             function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-                @inbounds v[k] = ($f)(a[k])
+                if $T == Taylor1
+                    @inbounds v[k] = ($f)(a[k])
+                else
+                    @inbounds for l in eachindex(v[k])
+                        v[k][l] = ($f)(a[k][l])
+                    end
+                end
                 return nothing
             end
 
@@ -260,9 +266,18 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return nothing
             end
 
-            function ($fc)(v::$T, a::$T, b::$T, k::Int)
-                @inbounds v[k] = ($f)(a[k], b[k])
-                return nothing
+            if $T == Taylor1
+                function ($fc)(v::$T, a::$T, b::$T, k::Int)
+                    @inbounds v[k] = ($f)(a[k], b[k])
+                    return nothing
+                end
+            else
+                function ($fc)(v::$T, a::$T, b::$T, k::Int)
+                    @inbounds for i in eachindex(v[k])
+                        v[k][i] = ($f)(a[k][i], b[k][i])
+                    end
+                    return nothing
+                end
             end
 
             function ($fc)(v::$T, a::$T, b::Number, k::Int)
@@ -348,6 +363,45 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             return c
         end
 
+    end
+end
+
+for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
+    @eval begin
+        function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+            if a.order != b.order || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
+                a, b = fixorder(a, b)
+            end
+            c = zero(a)
+            for k in eachindex(a)
+                ($fc)(c, a, b, k)
+            end
+            return c
+        end
+        function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+            @inbounds for i in eachindex(v[k])
+                for j in eachindex(v[k][i])
+                    v[k][i][j] = ($f)(a[k][i][j], b[k][i][j])
+                end
+            end
+            return nothing
+        end
+        function ($fc)(v::Taylor1{TaylorN{T}}, a::NumberNotSeries, b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+            @inbounds for i in eachindex(v[k])
+                for j in eachindex(v[k][i])
+                    v[k][i][j] = ($f)(k==0 && i==0 && j==1 ? a : zero(a), b[k][i][j])
+                end
+            end
+            return nothing
+        end
+        function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+            @inbounds for l in eachindex(v[k])
+                for m in eachindex(v[k][l])
+                    v[k][l][m] = ($f)(a[k][l][m])
+                end
+            end
+            return nothing
+        end
     end
 end
 
@@ -456,25 +510,64 @@ for T in (:Taylor1, :TaylorN)
     @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
         if $T == Taylor1
             @inbounds c[k] = a[0] * b[k]
+            @inbounds for i = 1:k
+                c[k] += a[i] * b[k-i]
+            end
         else
             @inbounds mul!(c[k], a[0], b[k])
-        end
-        @inbounds for i = 1:k
-            if $T == Taylor1
-                c[k] += a[i] * b[k-i]
-            else
+            @inbounds for i = 1:k
                 mul!(c[k], a[i], b[k-i])
             end
         end
         return nothing
     end
 
+    @eval @inline function mul_scalar!(c::$T{T}, scalar::NumberNotSeries, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
+        if $T == Taylor1
+            @inbounds c[k] = scalar * a[0] * b[k]
+            @inbounds for i = 1:k
+                c[k] += scalar * a[i] * b[k-i]
+            end
+        else
+            @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
+            @inbounds for i = 1:k
+                mul_scalar!(c[k], scalar, a[i], b[k-i])
+            end
+        end
+        return nothing
+    end
+
     @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
-        @inbounds v[k] = a[k] * b
+        if $T == Taylor1
+            @inbounds v[k] = a[k] * b
+        else
+            @inbounds for i in eachindex(v[k])
+                v[k][i] = a[k][i] * b
+            end
+        end
         return nothing
     end
     @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
-        @inbounds v[k] = a * b[k]
+        if $T == Taylor1
+            @inbounds v[k] = a * b[k]
+        else
+            @inbounds for i in eachindex(v[k])
+                v[k][i] = a * b[k][i]
+            end
+        end
+        return nothing
+    end
+
+    @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries)
+        for k in eachindex(v)
+            mul!(v, a, b, k)
+        end
+        return nothing
+    end
+    @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T)
+        for k in eachindex(v)
+            mul!(v, a, b, k)
+        end
         return nothing
     end
 end
@@ -504,13 +597,19 @@ end
 mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
 b::NumberNotSeries, k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
 
-# in-place division (assumes equal order among TaylorNs)
+# in-place product (assumes equal order among TaylorNs)
+# NOTE: the result of the product is *accumulated* in c[k]
 function mul!(c::TaylorN, a::TaylorN, b::TaylorN)
     for k in eachindex(c)
         mul!(c, a, b, k)
     end
 end
 
+function mul_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN, b::TaylorN)
+    for k in eachindex(c)
+        mul_scalar!(c, scalar, a, b, k)
+    end
+end
 
 
 @doc doc"""
@@ -532,8 +631,8 @@ c_k = \sum_{j=0}^k a_j b_{k-j}.
 """
     mul!(c, a, b) --> nothing
 
-Accumulates in `c[k]` the result of `a*b` with minimum allocation; all arguments
-are `HomogeneousPolynomial`.
+Accumulates in `c` the result of `a*b` with minimum allocation. Arguments
+c, a and b are `HomogeneousPolynomial`.
 
 """
 @inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
@@ -561,6 +660,45 @@ are `HomogeneousPolynomial`.
 
             pos = posTb[inda + indb]
             c[pos] += ca * cb
+        end
+    end
+
+    return nothing
+end
+
+
+"""
+    mul_scalar!(c, scalar, a, b) --> nothing
+
+Accumulates in `c` the result of `scalar*a*b` with minimum allocation. Arguments
+c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
+
+"""
+@inline function mul_scalar!(c::HomogeneousPolynomial, scalar::NumberNotSeries, a::HomogeneousPolynomial,
+        b::HomogeneousPolynomial)
+
+    (iszero(b) || iszero(a)) && return nothing
+
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs_b = size_table[b.order+1]
+
+    @inbounds posTb = pos_table[c.order+1]
+
+    @inbounds indTa = index_table[a.order+1]
+    @inbounds indTb = index_table[b.order+1]
+
+    @inbounds for na in 1:num_coeffs_a
+        ca = a[na]
+        # iszero(ca) && continue
+        inda = indTa[na]
+
+        @inbounds for nb in 1:num_coeffs_b
+            cb = b[nb]
+            # iszero(cb) && continue
+            indb = indTb[nb]
+
+            pos = posTb[inda + indb]
+            c[pos] += scalar * ca * cb
         end
     end
 
@@ -792,11 +930,6 @@ end
     return nothing
 end
 
-# TODO: get rid of remaining allocations here.
-#       This can either be achieved via pre-allocating auxiliary variables
-#       with can be passed here as arguments, or adding allocation-free in-place
-#       methods for operations such as `a += a*b` and `a = -a/b`, where a and b are
-#       TaylorN variables. See #347 for further discussion.
 @inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     iszero(a) && !iszero(b) && zero!(c, k)
@@ -810,18 +943,30 @@ end
 
     @inbounds mul!(c[k], c[0], b[k])
     @inbounds for i = 1:k-1
-        c[k] += c[i] * b[k-i]
+        # c[k] += c[i] * b[k-i]
+        mul!(c[k], c[i], b[k-i])
     end
-    @inbounds c[k] = -c[k]/b[0]
+    # @inbounds c[k] = -c[k]/b[0]
+    @inbounds div_scalar!(c[k], -1, b[0])
     return nothing
 end
 
-# NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
+# TODO: avoid allocations when T isa Taylor1
+@inline function div!(v::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}, b::NumberNotSeriesN) where {T <: Number}
+    @inbounds for k in eachindex(v)
+        v[k] = a[k] / b
+    end
+    return nothing
+end
+
+# NOTE: Due to the use of `zero!`, this `div!` method does *not* accumulate the result of a / b in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     if k==0
         @inbounds c[0][1] = constant_term(a) / constant_term(b)
         return nothing
     end
+
+    zero!(c, k)
 
     @inbounds for i = 0:k-1
         mul!(c[k], c[i], b[k-i])
@@ -832,7 +977,60 @@ end
     return nothing
 end
 
-# NOTE: Here `div!` *accumulates* the result of a / b in c[k] (k > 0)
+# In-place division and assignment: c[k] = (c/a)[k]
+# NOTE: Here `div!` *accumulates* the result of (c/a)[k] in c[k] (k > 0)
+#
+# Recursion algorithm:
+#
+# k = 0: c[0] <- c[0]/a[0]
+# k = 1: c[1] <- c[1] - c[0]*a[1]
+#        c[1] <- c[1]/a[0]
+# k = 2: c[2] <- c[2] - c[0]*a[2] - c[1]*a[1]
+#        c[2] <- c[2]/a[0]
+# etc.
+@inline function div!(c::TaylorN, a::TaylorN, k::Int)
+    if k==0
+        @inbounds c[0][1] = constant_term(c) / constant_term(a)
+        return nothing
+    end
+
+    @inbounds for i = 0:k-1
+        mul_scalar!(c[k], -1, c[i], a[k-i])
+    end
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = c[k][i] / constant_term(a)
+    end
+    return nothing
+end
+
+# In-place division and assignment: c[k] <- scalar * (c/a)[k]
+# NOTE: Here `div!` *accumulates* the result of scalar * (c/a)[k] in c[k] (k > 0)
+#
+# Recursion algorithm:
+#
+# k = 0: c[0] <- scalar*c[0]/a[0]
+# k = 1: c[1] <- scalar*c[1] - c[0]*a[1]
+#        c[1] <- c[1]/a[0]
+# k = 2: c[2] <- scalar*c[2] - c[0]*a[2] - c[1]*a[1]
+#        c[2] <- c[2]/a[0]
+# etc.
+@inline function div_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN, k::Int)
+    if k==0
+        @inbounds c[0][1] = scalar*constant_term(c) / constant_term(a)
+        return nothing
+    end
+
+    @inbounds mul!(c, scalar, c, k)
+    @inbounds for i = 0:k-1
+        mul_scalar!(c[k], -1, c[i], a[k-i])
+    end
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = c[k][i] / constant_term(a)
+    end
+    return nothing
+end
+
+# NOTE: Here `div!` *accumulates* the result of a[k] / b[k] in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int)
     if k==0
         @inbounds c[0][1] = a / constant_term(b)
@@ -848,51 +1046,86 @@ end
     return nothing
 end
 
-# in-place division (assumes equal order among TaylorNs)
-function div!(c::TaylorN, a::TaylorN, b::TaylorN)
-    for k in eachindex(c)
-        div!(c, a, b, k)
+# in-place division c <- c/a (assumes equal order among TaylorNs)
+function div!(c::TaylorN, a::TaylorN)
+    @inbounds for k in eachindex(c)
+        div!(c, a, k)
     end
+    return nothing
 end
 
-function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
-    for k in eachindex(c)
+# in-place division c <- scalar*c/a (assumes equal order among TaylorNs)
+function div_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN)
+    @inbounds for k in eachindex(c)
+        div_scalar!(c, scalar, a, k)
+    end
+    return nothing
+end
+
+# c[k] <- (a/b)[k]
+function div!(c::TaylorN, a::TaylorN, b::TaylorN)
+    @inbounds for k in eachindex(c)
         div!(c, a, b, k)
     end
+    return nothing
+end
+
+# c[k] <- (a/b)[k], where a is a scalar
+function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
+    @inbounds for k in eachindex(c)
+        div!(c, a, b, k)
+    end
+    return nothing
+end
+
+# c[k] <- a[k]/b, where b is a scalar
+function div!(c::TaylorN, a::TaylorN, b::NumberNotSeries)
+    @inbounds for k in eachindex(c)
+        div!(c[k], a[k], b)
+    end
+    return nothing
 end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
-@inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
-        b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeriesN}
+@inline function div!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeriesN}
 
     # order and coefficient of first factorized term
-    ordfact, cdivfact = divfactorization(a, b)
-    if ordT == 0
-        @inbounds res[0] = cdivfact
+    # ordfact, cdivfact = divfactorization(a, b)
+    anz = findfirst(a)
+    bnz = findfirst(b)
+    anz = anz ≥ 0 ? anz : a.order
+    bnz = bnz ≥ 0 ? bnz : a.order
+    ordfact = min(anz, bnz)
+
+    # Is the polynomial factorizable?
+    iszero(b[ordfact]) && throw( ArgumentError(
+        """Division does not define a Taylor1 polynomial;
+        order k=$(ordfact) => coeff[$(ordfact)]=$(cdivfact).""") )
+
+    if k == 0
+        # @inbounds c[0] = a[ordfact]/b[ordfact]
+        @inbounds div!(c[0], a[ordfact], b[ordfact])
         return nothing
     end
-    zero!(res, ordT)
-    imin = max(0, ordT+ordfact-b.order)
-    aux = TaylorN(zero(a[ordT][0][1]), a[ordT].order)
-    for k in imin:ordT-1
-        @inbounds for ordQ in eachindex(a[ordT])
-            mul!(aux, res[k], b[ordT+ordfact-k], ordQ)
-        end
-    end
 
-    if ordT+ordfact ≤ b.order
-        for ordQ in eachindex(a[ordT])
-            subst!(aux, a[ordT+ordfact], aux, ordQ)
+    @inbounds zero!(c, k)
+
+    imin = max(0, k+ordfact-b.order)
+    @inbounds mul!(c[k], c[imin], b[k+ordfact-imin])
+    @inbounds for i = imin+1:k-1
+        mul!(c[k], c[i], b[k+ordfact-i])
+    end
+        if k+ordfact ≤ b.order
+        # @inbounds c[k] = (a[k+ordfact]-c[k]) / b[ordfact]
+        @inbounds for l in eachindex(c[k])
+            subst!(c[k], a[k+ordfact], c[k], l)
         end
+        @inbounds div!(c[k], b[ordfact])
     else
-        for ordQ in eachindex(a[ordT])
-            subst!(aux, aux, ordQ)
-        end
+        # @inbounds c[k] = (-c[k]) / b[ordfact]
+        @inbounds div_scalar!(c[k], -1, b[ordfact])
     end
-    for ordQ in eachindex(res[ordT])
-        div!(res[ordT], aux, b[ordfact], ordQ)
-    end
-
     return nothing
 end
 

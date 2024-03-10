@@ -114,6 +114,7 @@ function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
 end
 
 ## Real power ##
+# TODO: get rid of allocations
 function ^(a::TaylorN, r::S) where {S<:Real}
     a0 = constant_term(a)
     aux = one(a0^r)
@@ -245,7 +246,7 @@ end
     end
 
     if k == 0
-        @inbounds c[0] = ( constant_term(a) )^r
+        @inbounds c[0][1] = ( constant_term(a) )^r
         return nothing
     end
 
@@ -253,11 +254,13 @@ end
     zero!(c, k)
 
     # The recursion formula
-    for i = 0:k-1
+    @inbounds for i = 0:k-1
         aux = r*(k-i) - i
-        mul!(c[k], aux*a[k-i], c[i])
+        # c[k] += a[k-i]*c[i]*aux
+        mul_scalar!(c[k], aux, a[k-i], c[i])
     end
-    @inbounds c[k] = c[k] / (k * constant_term(a))
+    # c[k] <- c[k]/(k * constant_term(a))
+    @inbounds div!(c[k], c[k], k * constant_term(a))
 
     return nothing
 end
@@ -266,7 +269,7 @@ end
         ordT::Int) where {T<:NumberNotSeries, S<:Real}
 
     if r == 0
-        return one!(res, a, ordT)
+        return one!(res, ordT)
     elseif r == 1
         return identity!(res, a, ordT)
     elseif r == 2
@@ -294,25 +297,33 @@ end
     isinteger(r) && r > 0 && (ordT > r*findlast(a)) && return nothing
 
     if ordT == lnull
-        res[ordT] = a[l0]^r # if r is integer, uses power_by_squaring internally
+        if isinteger(r)
+            # TODO: get rid of allocations here
+            res[ordT] = a[l0]^round(Int,r) # uses power_by_squaring
+            return nothing
+        end
+
+        a0 = constant_term(a[l0])
+        iszero(a0) && throw(DomainError(a[l0],
+            """The 0-th order TaylorN coefficient must be non-zero
+            in order to expand `^` around 0."""))
+
+        for ordQ in eachindex(a[l0])
+            pow!(res[ordT], a[l0], r, ordQ)
+        end
+
         return nothing
     end
 
     # The recursion formula
-    tmp =  TaylorN( zero(constant_term(a[ordT])), a[0].order)
-    tmp1 = TaylorN( zero(constant_term(a[ordT])), a[0].order)
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         aux = r*(kprime-i) - i
-        @inbounds for ordQ in eachindex(tmp)
-            tmp1[ordQ] = aux * res[i+lnull][ordQ]
-            mul!(tmp, tmp1, a[l0+kprime-i], ordQ)
-        end
+        # res[ordT] += aux*res[i+lnull]*a[l0+kprime-i]
+        @inbounds mul_scalar!(res[ordT], aux, res[i+lnull], a[l0+kprime-i])
     end
-    @inbounds for ordQ in eachindex(tmp)
-        tmp1[ordQ] = tmp[ordQ]/kprime
-        div!(res[ordT], tmp1, a[l0], ordQ)
-    end
+    # res[ordT] /= a[l0]*kprime
+    @inbounds div_scalar!(res[ordT], 1/kprime, a[l0])
 
     return nothing
 end
@@ -352,6 +363,23 @@ function square(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     return res
 end
 
+#auxiliary function to avoid allocations
+@inline function sqr_orderzero!(c::Taylor1{T}, a::Taylor1{T}) where {T<:NumberNotSeries}
+    @inbounds c[0] = constant_term(a)^2
+    return nothing
+end
+@inline function sqr_orderzero!(c::TaylorN{T}, a::TaylorN{T}) where {T<:NumberNotSeries}
+    @inbounds c[0][1] = constant_term(a)^2
+    return nothing
+end
+@inline function sqr_orderzero!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    @inbounds c[0][0][1] = constant_term(a)^2
+    return nothing
+end
+@inline function sqr_orderzero!(c::TaylorN{Taylor1{T}}, a::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
+    @inbounds c[0][1][0] = a[0][1][0]^2
+    return nothing
+end
 
 # Homogeneous coefficients for square
 @doc doc"""
@@ -377,7 +405,7 @@ for T = (:Taylor1, :TaylorN)
     @eval begin
         @inline function sqr!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
-                @inbounds c[0] = constant_term(a)^2
+                sqr_orderzero!(c, a)
                 return nothing
             end
 
@@ -387,14 +415,17 @@ for T = (:Taylor1, :TaylorN)
             # Recursion formula
             kodd = k%2
             kend = (k - 2 + kodd) >> 1
-            @inbounds for i = 0:kend
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 0:kend
                     c[k] += a[i] * a[k-i]
-                else
+                end
+                @inbounds c[k] = 2 * c[k]
+            else
+                @inbounds for i = 0:kend
                     mul!(c[k], a[i], a[k-i])
                 end
+                @inbounds mul!(c, 2, c, k)
             end
-            @inbounds c[k] = 2 * c[k]
             kodd == 1 && return nothing
 
             if $T == Taylor1
@@ -422,20 +453,19 @@ end
     # Recursion formula
     kodd = ordT%2
     kend = (ordT - 2 + kodd) >> 1
-    tmp = TaylorN( zero(constant_term(a[0])), a[0].order )
+    (kodd == 0) && @inbounds for ordQ in eachindex(a[0])
+        sqr!(res[ordT], a[ordT >> 1], ordQ)
+        mul!(res[ordT], 0.5, res[ordT], ordQ)
+    end
+
     for i = 0:kend
         @inbounds for ordQ in eachindex(a[ordT])
-            mul!(tmp, a[i], a[ordT-i], ordQ)
+            # mul! accumulates the result in res[ordT]
+            mul!(res[ordT], a[i], a[ordT-i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[ordT])
-        res[ordT][ordQ] = 2 * tmp[ordQ]
-    end
-    kodd == 1 && return nothing
-
-    @inbounds for ordQ in eachindex(a[0])
-        sqr!(tmp, a[ordT >> 1], ordQ)
-        add!(res[ordT], res[ordT], tmp, ordQ)
+        mul!(res[ordT], 2, res[ordT], ordQ)
     end
 
     return nothing
@@ -568,8 +598,6 @@ coefficient, which must be even.
 """ sqrt!
 
 @inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T<:Number}
-    # Sanity
-    zero!(c, k)
 
     k < k0 && return nothing
 
@@ -584,90 +612,89 @@ coefficient, which must be even.
     kend = (k - k0 - 2 + kodd) >> 1
     imax = min(k0+kend, a.order)
     imin = max(k0+1, k+k0-a.order)
-    imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
-    @inbounds for i = imin+1:imax
-        c[k] += c[i] * c[k+k0-i]
-    end
     if k+k0 ≤ a.order
-        @inbounds aux = a[k+k0] - 2*c[k]
-    else
-        @inbounds aux = - 2*c[k]
+        @inbounds c[k] = a[k+k0]
     end
     if kodd == 0
-        @inbounds aux = aux - (c[kend+k0+1])^2
+        @inbounds c[k] -= (c[kend+k0+1])^2
     end
-    @inbounds c[k] = aux / (2*c[k0])
+    imin ≤ imax && ( @inbounds c[k] -= 2 * c[imin] * c[k+k0-imin] )
+    @inbounds for i = imin+1:imax
+        c[k] -= 2 * c[i] * c[k+k0-i]
+    end
+    @inbounds c[k] = c[k] / (2*c[k0])
 
     return nothing
 end
 
 @inline function sqrt!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:NumberNotSeriesN}
-    # Sanity
-    zero!(c, k)
 
     if k == 0
-        @inbounds c[0] = sqrt( constant_term(a) )
+        @inbounds c[0][1] = sqrt( constant_term(a) )
         return nothing
     end
 
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
-    @inbounds for i = 1:kend
-        mul!(c[k], c[i], c[k-i])
+    # c[k] <- a[k]
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = a[k][i]
     end
-    @inbounds aux = a[k] - 2*c[k]
     if kodd == 0
-        @inbounds aux = aux - (c[kend+1])^2
+        # @inbounds c[k] <- c[k] - (c[kend+1])^2
+        @inbounds mul_scalar!(c[k], -1, c[kend+1], c[kend+1])
     end
-    @inbounds c[k] = aux / (2*constant_term(c))
+    @inbounds for i = 1:kend
+        # c[k] <- c[k] - 2*c[i]*c[k-i]
+        mul_scalar!(c[k], -2, c[i], c[k-i])
+    end
+    # @inbounds c[k] <- c[k] / (2*c[0])
+    div!(c[k], c[k], 2*constant_term(c))
 
     return nothing
 end
 
-@inline function sqrt!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ordT::Int,
-        ordT0::Int=0) where {T<:NumberNotSeries}
-    # Sanity
-    zero!(res, ordT)
-    ordT < ordT0 && return nothing
+@inline function sqrt!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int,
+        k0::Int=0) where {T<:NumberNotSeries}
 
-    if ordT == ordT0
-        for ordQ in eachindex(a[0])
-            sqrt!(res[ordT], a[2*ordT0], ordQ)
+    k < k0 && return nothing
+
+    if k == k0
+        @inbounds for l in eachindex(c[k])
+            sqrt!(c[k], a[2*k0], l)
         end
         return nothing
     end
 
     # Recursion formula
-    @inbounds tmp = TaylorN( zero( constant_term(a[ordT])), a[0].order)
-    @inbounds tmp1 = TaylorN( zero( constant_term(a[ordT])), a[0].order)
-    ordT_odd = (ordT - ordT0)%2
-    ordT_end = (ordT - ordT0 - 2 + ordT_odd) >> 1
-    imax = min(ordT0+ordT_end, a.order)
-    imin = max(ordT0+1, ordT+ordT0-a.order)
-    if imin ≤ imax
-        @inbounds for ordQ in eachindex(a[0])
-            mul!(tmp, res[imin], res[ordT+ordT0-imin], ordQ)
+    kodd = (k - k0)%2
+    # kend = div(k - k0 - 2 + kodd, 2)
+    kend = (k - k0 - 2 + kodd) >> 1
+    imax = min(k0+kend, a.order)
+    imin = max(k0+1, k+k0-a.order)
+    if k+k0 ≤ a.order
+        # @inbounds c[k] += a[k+k0]
+        ### TODO: add in-place add! method for Taylor1, TaylorN and mixtures: c[k] += a[k] -> add!(c, a, k)
+        ###       and/or add identity! method such that each coeff is copied individually,
+        ###       otherwise memory-mixing issues happen
+        @inbounds for l in eachindex(c[k])
+            for m in eachindex(c[k][l])
+                c[k][l][m] = a[k+k0][l][m]
+            end
         end
     end
-    for i = imin+1:imax
-        @inbounds for ordQ in eachindex(a[0])
-            mul!(tmp, res[i], res[ordT+ordT0-i], ordQ)
-        end
+    if kodd == 0
+        # c[k] <- c[k] - c[kend+1]^2
+        # TODO: use accsqr! here?
+        @inbounds mul_scalar!(c[k], -1, c[kend+k0+1], c[kend+k0+1])
     end
-
-    @inbounds for ordQ in eachindex(a[0])
-        tmp[ordQ] = -2 * tmp[ordQ]
-        if ordT+ordT0 ≤ a.order
-            add!(tmp, a[ordT+ordT0], tmp, ordQ)
-        end
-        if ordT_odd == 0
-            sqr!(tmp1, res[ordT_end+ordT0+1], ordQ)
-            subst!(tmp, tmp, tmp1, ordQ)
-        end
-        tmp1[ordQ] = 2*res[ordT0][ordQ]
-        div!(res[ordT], tmp, tmp1, ordQ)
+    @inbounds for i = imin:imax
+        # c[k] <- c[k] - 2 * c[i] * c[k+k0-i]
+        mul_scalar!(c[k], -2, c[i], c[k+k0-i])
     end
+    # @inbounds c[k] <- c[k] / (2*c[k0])
+    @inbounds div_scalar!(c[k], 0.5, c[k0])
 
     return nothing
 end

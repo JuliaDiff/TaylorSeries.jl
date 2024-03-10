@@ -303,10 +303,35 @@ end
     return nothing
 end
 
+@inline function one!(c::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    zero!(c, k)
+    if k == 0
+        @inbounds c[0][0][1] = one(constant_term(c[0][0][1]))
+    end
+    return nothing
+end
+
+@inline function identity!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}, k::Int) where {T<:NumberNotSeries}
+    @inbounds c[k] = identity(a[k])
+    return nothing
+end
+
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            @inbounds c[k] = identity(a[k])
+        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:NumberNotSeries}
+            if $T == Taylor1
+                @inbounds c[k] = identity(a[k])
+            else
+                @inbounds for l in eachindex(c[k])
+                    identity!(c[k], a[k], l)
+                end
+            end
+            return nothing
+        end
+        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:AbstractSeries}
+            @inbounds for l in eachindex(c[k])
+                identity!(c[k], a[k], l)
+            end
             return nothing
         end
 
@@ -346,18 +371,16 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = k * a[k] * c[0]
-            else
-                @inbounds mul!(c[k], k * a[k], c[0])
-            end
-            @inbounds for i = 1:k-1
-                if $T == Taylor1
+                @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c[i]
-                else
-                    mul!(c[k], (k-i) * a[k-i], c[i])
                 end
+                @inbounds div!(c, c, k, k)
+            else
+                @inbounds for i = 0:k-1
+                    mul_scalar!(c[k], k-i, a[k-i], c[i])
+                end
+                @inbounds div!(c[k], c[k], k)
             end
-            @inbounds c[k] = c[k] / k
             return nothing
         end
 
@@ -370,17 +393,17 @@ for T in (:Taylor1, :TaylorN)
             c0 = c[0]+one(c[0])
             if $T == Taylor1
                 @inbounds c[k] = k * a[k] * c0
-            else
-                @inbounds mul!(c[k], k * a[k], c0)
-            end
-            @inbounds for i = 1:k-1
-                if $T == Taylor1
+                @inbounds for i = 1:k-1
                     c[k] += (k-i) * a[k-i] * c[i]
-                else
-                    mul!(c[k], (k-i) * a[k-i], c[i])
                 end
+                @inbounds div!(c, c, k, k)
+            else
+                @inbounds mul_scalar!(c[k], k, a[k], c0)
+                @inbounds for i = 1:k-1
+                    mul_scalar!(c[k], k-i, a[k-i], c[i])
+                end
+                @inbounds div!(c[k], c[k], k)
             end
-            @inbounds c[k] = c[k] / k
             return nothing
         end
 
@@ -394,15 +417,12 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * a[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1)*a[1], c[k-1])
-            end
-            @inbounds for i = 2:k-1
-                if $T == Taylor1
+                @inbounds for i = 1:k-1
                     c[k] += (k-i) * a[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i)*a[i], c[k-i])
+                end
+            else
+                @inbounds for i = 1:k-1
+                    mul_scalar!(c[k], k-i, a[i], c[k-i])
                 end
             end
             @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
@@ -424,15 +444,12 @@ for T in (:Taylor1, :TaylorN)
             a0p1 = a0+one(a0)
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * a[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1)*a[1], c[k-1])
-            end
-            @inbounds for i = 2:k-1
-                if $T == Taylor1
+                @inbounds for i = 1:k-1
                     c[k] += (k-i) * a[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i)*a[i], c[k-i])
+                end
+            else
+                @inbounds for i = 1:k-1
+                    mul_scalar!(c[k], k-i, a[i], c[k-i])
                 end
             end
             @inbounds c[k] = (a[k] - c[k]/k) / a0p1
@@ -442,70 +459,81 @@ for T in (:Taylor1, :TaylorN)
         @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
-                @inbounds s[0], c[0] = sincos( a0 )
+                if $T == Taylor1
+                    @inbounds s[0], c[0] = sincos( a0 )
+                else
+                    @inbounds s[0][1], c[0][1] = sincos( a0 )
+                end
                 return nothing
             end
-            x = a[1]
             zero!(s, k)
             zero!(c, k)
             if $T == Taylor1
-                @inbounds s[k] = x * c[k-1]
-                @inbounds c[k] = -x * s[k-1]
-            else
-                mul!(s[k], x, c[k-1])
-                mul!(c[k], -x, s[k-1])
-            end
-            @inbounds for i = 2:k
-                x = i * a[i]
-                if $T == Taylor1
+                @inbounds for i = 1:k
+                    x = i * a[i]
                     s[k] += x * c[k-i]
                     c[k] -= x * s[k-i]
-                else
-                    mul!(s[k], x, c[k-i])
-                    mul!(c[k], -x, s[k-i])
+                end
+            else
+                @inbounds for i = 1:k
+                    mul_scalar!(s[k],  i, a[i], c[k-i])
+                    mul_scalar!(c[k], -i, a[i], s[k-i])
                 end
             end
 
-            @inbounds s[k] = s[k] / k
-            @inbounds c[k] = c[k] / k
+            if $T == Taylor1
+                s[k] = s[k] / k
+                c[k] = c[k] / k
+            else
+                @inbounds div!(s[k], s[k], k)
+                @inbounds div!(c[k], c[k], k)
+            end
             return nothing
         end
 
         @inline function sincospi!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
-                @inbounds s[0], c[0] = sincospi( a0 )
+                if $T == Taylor1
+                    @inbounds s[0], c[0] = sincospi( a0 )
+                else
+                    @inbounds s[0][1], c[0][1] = sincospi( a0 )
+                end
                 return nothing
             end
-            aa = $T(pi * a[0], a.order)
-            @inbounds for ordQ in eachindex(a)
-                aa[ordQ] = pi * a[ordQ]
-            end
-            sincos!(s, c, aa, k)
+            mul!(a, pi, a, k)
+            sincos!(s, c, a, k)
             return nothing
         end
 
         @inline function tan!(c::$T{T}, a::$T{T}, c2::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 @inbounds aux = tan( constant_term(a) )
-                @inbounds c[0] = aux
-                @inbounds c2[0] = aux^2
+                if $T == Taylor1
+                    @inbounds c[0] = aux
+                    @inbounds c2[0] = aux^2
+                else
+                    @inbounds c[0][1] = aux
+                    @inbounds c2[0][1] = aux^2
+                end
                 return nothing
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = k * a[k] * c2[0]
-            else
-                @inbounds mul!(c[k], k * a[k], c2[0])
-            end
-            @inbounds for i = 1:k-1
-                if $T == Taylor1
+                @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c2[i]
-                else
-                    mul!(c[k], (k-i) * a[k-i], c2[i])
                 end
+                # c[k] <- c[k]/k
+                div!(c, c, k, k)
+            else
+                @inbounds for i = 0:k-1
+                    mul_scalar!(c[k], k-i, a[k-i], c2[i])
+                end
+                # c[k] <- c[k]/k
+                div!(c[k], c[k], k)
             end
-            @inbounds c[k] = a[k] + c[k]/k
+            # c[k] <- c[k] + a[k]
+            add!(c, a, c, k)
             sqr!(c2, c, k)
 
             return nothing
@@ -514,50 +542,74 @@ for T in (:Taylor1, :TaylorN)
         @inline function asin!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
-                @inbounds c[0] = asin( a0 )
-                @inbounds r[0] = sqrt( 1 - a0^2 )
+                if $T == Taylor1
+                    @inbounds c[0] = asin( a0 )
+                    @inbounds r[0] = sqrt( 1 - a0^2 )
+                else
+                    @inbounds c[0][1] = asin( a0 )
+                    @inbounds r[0][1] = sqrt( 1 - a0^2 )
+                end
                 return nothing
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * r[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
-            end
-            @inbounds for i in 2:k-1
-                if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            else
+                @inbounds for i in 1:k-1
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
-            sqrt!(r, 1-a^2, k)
-            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+            # Compute k-th coefficient of auxiliary term s=1-a^2
+            zero!(r, k) # r[k] <- 0
+            sqr!(r, a, k) # r[k] <- (a^2)[k]
+            subst!(r, r, k) # r[k] <- -r[k]
+            sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+            if $T == Taylor1
+                @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+            else
+                for l in eachindex(c[k])
+                    @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
+                end
+            end
             return nothing
         end
 
         @inline function acos!(c::$T{T}, a::$T{T}, r::$T{T}, k::Int) where {T<:Number}
             if k == 0
                 a0 = constant_term(a)
-                @inbounds c[0] = acos( a0 )
-                @inbounds r[0] = sqrt( 1 - a0^2 )
+                if $T == Taylor1
+                    @inbounds c[0] = acos( a0 )
+                    @inbounds r[0] = sqrt( 1 - a0^2 )
+                else
+                    @inbounds c[0][1] = acos( a0 )
+                    @inbounds r[0][1] = sqrt( 1 - a0^2 )
+                end
                 return nothing
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * r[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
-            end
-            @inbounds for i in 2:k-1
-                if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            else
+                @inbounds for i in 1:k-1
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
-            sqrt!(r, 1-a^2, k)
-            @inbounds c[k] = -(a[k] + c[k]/k) / constant_term(r)
+            # Compute k-th coefficient of auxiliary term s=1-a^2
+            zero!(r, k) # r[k] <- 0
+            sqr!(r, a, k) # r[k] <- (a^2)[k]
+            subst!(r, r, k) # r[k] <- -r[k]
+            sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+            if $T == Taylor1
+                @inbounds c[k] = -(a[k] + c[k]/k) / constant_term(r)
+            else
+                for l in eachindex(c[k])
+                    @inbounds c[k][l] = -(a[k][l] + c[k][l]/k) / constant_term(r)
+                end
+            end
             return nothing
         end
 
@@ -570,19 +622,20 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * r[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
-            end
-            @inbounds for i in 2:k-1
-                if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+                @inbounds sqr!(r, a, k)
+                @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+            else
+                @inbounds for i in 1:k-1
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
+                end
+                @inbounds sqr!(r, a, k)
+                for l in eachindex(c[k])
+                    @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
                 end
             end
-            @inbounds sqr!(r, a, k)
-            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
             return nothing
         end
 
@@ -596,24 +649,21 @@ for T in (:Taylor1, :TaylorN)
             zero!(s, k)
             zero!(c, k)
             if $T == Taylor1
-                @inbounds s[k] = x * c[k-1]
-                @inbounds c[k] = x * s[k-1]
-            else
-                @inbounds mul!(s[k], x, c[k-1])
-                @inbounds mul!(c[k], x, s[k-1])
-            end
-            @inbounds for i = 2:k
-                x = i * a[i]
-                if $T == Taylor1
+                @inbounds for i = 1:k
+                    x = i * a[i]
                     s[k] += x * c[k-i]
                     c[k] += x * s[k-i]
-                else
-                    mul!(s[k], x, c[k-i])
-                    mul!(c[k], x, s[k-i])
                 end
+                @inbounds div!(s, s, k, k)
+                @inbounds div!(c, c, k, k)
+            else
+                @inbounds for i = 1:k
+                    mul_scalar!(s[k], i, a[i], c[k-i])
+                    mul_scalar!(c[k], i, a[i], s[k-i])
+                end
+                @inbounds div!(s[k], s[k], k)
+                @inbounds div!(c[k], c[k], k)
             end
-            s[k] = s[k] / k
-            c[k] = c[k] / k
             return nothing
         end
 
@@ -626,18 +676,18 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = k * a[k] * c2[0]
-            else
-                @inbounds mul!(c[k], k * a[k], c2[0])
-            end
-            @inbounds for i = 1:k-1
-                if $T == Taylor1
+                @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c2[i]
-                else
-                    mul!(c[k], (k-i) * a[k-i], c2[i])
+                end
+                @inbounds c[k] = a[k] - c[k]/k
+            else
+                @inbounds for i = 0:k-1
+                    mul_scalar!(c[k], k-i, a[k-i], c2[i])
+                end
+                @inbounds for l in eachindex(c[k])
+                    c[k][l] = a[k][l] - c[k][l]/k
                 end
             end
-            @inbounds c[k] = a[k] - c[k]/k
             sqr!(c2, c, k)
 
             return nothing
@@ -652,15 +702,12 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * r[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
-            end
-            @inbounds for i in 2:k-1
-                if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            else
+                @inbounds for i in 1:k-1
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             sqrt!(r, a^2+1, k)
@@ -677,15 +724,12 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * r[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
-            end
-            @inbounds for i in 2:k-1
-                if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            else
+                @inbounds for i in 1:k-1
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             sqrt!(r, a^2-1, k)
@@ -702,15 +746,12 @@ for T in (:Taylor1, :TaylorN)
             end
             zero!(c, k)
             if $T == Taylor1
-                @inbounds c[k] = (k-1) * r[1] * c[k-1]
-            else
-                @inbounds mul!(c[k], (k-1) * r[1], c[k-1])
-            end
-            @inbounds for i in 2:k-1
-                if $T == Taylor1
+                @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
-                else
-                    mul!(c[k], (k-i) * r[i], c[k-i])
+                end
+            else
+                @inbounds for i in 1:k-1
+                    mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
             end
             @inbounds sqr!(r, a, k)
@@ -734,12 +775,10 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[i][ordQ]
-            mul!(res[k], tmp, a[k-i], ordQ)
+            mul_scalar!(res[k], k-i, res[i], a[k-i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -857,14 +896,14 @@ end
         return nothing
     end
     # The recursion formula
-    x = TaylorN( a[1][0][1], a[0].order )
+    # x = TaylorN( a[1][0][1], a[0].order )
     zero!(s[k])
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            x[ordQ].coeffs .= i .* a[i][ordQ].coeffs
-            mul!(s[k], x, c[k-i], ordQ)
-            mul!(c[k], x, s[k-i], ordQ)
+            # x[ordQ].coeffs .= i .* a[i][ordQ].coeffs
+            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
+            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
         end
     end
     div!(s, s, k, k)
@@ -899,20 +938,16 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res2[i][ordQ]
-            mul!(res[k], tmp, a[k-i], ordQ)
+            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[0])
-        # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = res[k][ordQ] / k
-        add!(res[k], a[k], tmp, ordQ)
+        div!(res[k][ordQ], res[k][ordQ], k)
+        add!(res[k], a[k], res[k], ordQ)
     end
-    # zero!(res2, res, k)
     sqr!(res2, res, k)
     return nothing
 end
@@ -920,91 +955,57 @@ end
 @inline function asin!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     if k == 0
-        @inbounds res[0] = asin( a[0] )
-        # r[0] = sqrt(1-a[0]^2)
-        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-        r[0] = square(a[0])
-        for ordQ in eachindex(a[0])
-            one!(tmp, a[0], ordQ)
-            subst!(tmp, tmp, r[0], ordQ)
-            # zero!(r[0], tmp, ordQ)
-            sqrt!(r[0], tmp, ordQ)
+        @inbounds for ordQ in eachindex(res[0])
+            asin!(res[0], a[0], r[0], ordQ)
         end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-    zero!(res[k])
-    for i in 1:k-1
-        @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, r[i], ordQ)
+    @inbounds zero!(res[k])
+    @inbounds for i in 1:k-1
+        for ordQ in eachindex(a[0])
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
-    div!(res, res, k, k)
+    @inbounds div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        subst!(res[k], a[k], res[k], ordQ)
+        div!(res[k], r[0], ordQ)
     end
-    # Compute auxiliary term s=1-a^2
-    s = Taylor1(zero(a[0]), a.order)
-    for i = 0:k
-        sqr!(s, a, i)
-        subst!(s, s, i)
-        if i == 0
-            s[0] = one(s[0]) - s[0]
-            add!(s, one(s), s, 0)
-        end
-    end
-    # Update aux term r = sqrt(s) = sqrt(1-a^2)
-    sqrt!(r, s, k)
+    # Compute k-th coefficient of auxiliary term s=1-a^2
+    @inbounds zero!(r, k) # r[k] <- 0
+    @inbounds sqr!(r, a, k) # r[k] <- (a^2)[k]
+    @inbounds subst!(r, r, k) # r[k] <- -r[k]
+    @inbounds sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
     return nothing
 end
 
 @inline function acos!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     if k == 0
-        @inbounds res[0] = acos( a[0] )
-        # r[0] = sqrt(1-a[0]^2)
-        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
-        r[0] = square(a[0])
-        for ordQ in eachindex(a[0])
-            one!(tmp, a[0], ordQ)
-            subst!(tmp, tmp, r[0], ordQ)
-            # zero!(r[0], tmp, ordQ)
-            sqrt!(r[0], tmp, ordQ)
+        @inbounds for ordQ in eachindex(res[0])
+            acos!(res[0], a[0], r[0], ordQ)
         end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, r[i], ordQ)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
-        add!(tmp, a[k], res[k], ordQ)
-        subst!(tmp, tmp, ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        add!(res[k], a[k], res[k], ordQ)
+        subst!(res[k], res[k], ordQ)
+        div!(res[k], r[0], ordQ)
     end
-    # Compute auxiliary term s=1-a^2
-    s = Taylor1(zero(a[0]), a.order)
-    for i = 0:k
-        sqr!(s, a, i)
-        subst!(s, s, i)
-        if i == 0
-            s[0] = one(s[0]) - s[0]
-            add!(s, one(s), s, 0)
-        end
-    end
-    # Update aux term r = sqrt(s) = sqrt(1-a^2)
-    sqrt!(r, s, k)
+    # Compute k-th coefficient of auxiliary term s=1-a^2
+    @inbounds zero!(r, k) # r[k] <- 0
+    @inbounds sqr!(r, a, k) # r[k] <- (a^2)[k]
+    @inbounds subst!(r, r, k) # r[k] <- -r[k]
+    @inbounds sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
     return nothing
 end
 
@@ -1018,14 +1019,13 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order )
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, r[i], ordQ)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order )
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
         tmp[ordQ] = - res[k][ordQ] / k
@@ -1047,14 +1047,12 @@ end
         return nothing
     end
     # The recursion formula
-    x = TaylorN( a[k][0][1], a[0].order )
     zero!(s[k])
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            x[ordQ] = i * a[i][ordQ]
-            mul!(s[k], x, c[k-i], ordQ)
-            mul!(c[k], x, s[k-i], ordQ)
+            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
+            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
         end
     end
     div!(s, s, k, k)
@@ -1071,14 +1069,13 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res2[i][ordQ]
-            mul!(res[k], tmp, a[k-i], ordQ)
+            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
         tmp[ordQ] = res[k][ordQ] / k
@@ -1105,15 +1102,14 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, r[i], ordQ)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
@@ -1149,15 +1145,14 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, r[i], ordQ)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
+    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
@@ -1191,8 +1186,7 @@ end
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, r[i], ordQ)
+            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[0])

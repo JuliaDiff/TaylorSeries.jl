@@ -72,6 +72,7 @@ resize_coeffsHP!
 numtype
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)
+mul_scalar!(::HomogeneousPolynomial, ::NumberNotSeries, ::HomogeneousPolynomial, ::HomogeneousPolynomial)
 mul!(::Vector{Taylor1{T}}, ::Union{Matrix{T},SparseMatrixCSC{T}},::Vector{Taylor1{T}}) where {T<:Number}
 div!
 pow!
