@@ -529,10 +529,12 @@ for T in (:Taylor1, :TaylorN)
         else
             @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
         end
-        @inbounds for i = 1:k
-            if $T == Taylor1
+        if $T == Taylor1
+            @inbounds for i = 1:k
                 c[k] += a[i] * b[k-i]
-            else
+            end
+        else
+            @inbounds for i = 1:k
                 mul_scalar!(c[k], scalar, a[i], b[k-i])
             end
         end

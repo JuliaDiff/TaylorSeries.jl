@@ -523,16 +523,14 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c2[i]
                 end
+                # c[k] <- c[k]/k
+                div!(c, c, k, k)
             else
                 @inbounds for i = 0:k-1
                     mul_scalar!(c[k], k-i, a[k-i], c2[i])
                 end
-            end
-            # c[k] <- c[k]/k
-            if $T == Taylor1
-                div!(c, c, k, k) # Taylor1
-            else
-                div!(c[k], c[k], k) # TaylorN
+                # c[k] <- c[k]/k
+                div!(c[k], c[k], k)
             end
             # c[k] <- c[k] + a[k]
             add!(c, a, c, k)
@@ -658,16 +656,13 @@ for T in (:Taylor1, :TaylorN)
                     s[k] += x * c[k-i]
                     c[k] += x * s[k-i]
                 end
+                @inbounds div!(s, s, k, k)
+                @inbounds div!(c, c, k, k)
             else
                 @inbounds for i = 1:k
                     mul_scalar!(s[k], i, a[i], c[k-i])
                     mul_scalar!(c[k], i, a[i], s[k-i])
                 end
-            end
-            if $T == Taylor1
-                @inbounds div!(s, s, k, k)
-                @inbounds div!(c, c, k, k)
-            else
                 @inbounds div!(s[k], s[k], k)
                 @inbounds div!(c[k], c[k], k)
             end
@@ -686,14 +681,11 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c2[i]
                 end
+                @inbounds c[k] = a[k] - c[k]/k
             else
                 @inbounds for i = 0:k-1
                     mul_scalar!(c[k], k-i, a[k-i], c2[i])
                 end
-            end
-            if $T == Taylor1
-                @inbounds c[k] = a[k] - c[k]/k
-            else
                 @inbounds for l in eachindex(c[k])
                     c[k][l] = a[k][l] - c[k][l]/k
                 end
