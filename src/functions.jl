@@ -625,15 +625,13 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds for i in 1:k-1
                     c[k] += (k-i) * r[i] * c[k-i]
                 end
+                @inbounds sqr!(r, a, k)
+                @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
             else
                 @inbounds for i in 1:k-1
                     mul_scalar!(c[k], k-i, r[i], c[k-i])
                 end
-            end
-            @inbounds sqr!(r, a, k)
-            if $T == Taylor1
-                @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
-            else
+                @inbounds sqr!(r, a, k)
                 for l in eachindex(c[k])
                     @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
                 end

@@ -415,16 +415,15 @@ for T = (:Taylor1, :TaylorN)
             # Recursion formula
             kodd = k%2
             kend = (k - 2 + kodd) >> 1
-            @inbounds for i = 0:kend
-                if $T == Taylor1
-                    c[k] += a[i] * a[k-i]
-                else
-                    mul!(c[k], a[i], a[k-i])
-                end
-            end
             if $T == Taylor1
+                @inbounds for i = 0:kend
+                    c[k] += a[i] * a[k-i]
+                end
                 @inbounds c[k] = 2 * c[k]
             else
+                @inbounds for i = 0:kend
+                    mul!(c[k], a[i], a[k-i])
+                end
                 @inbounds mul!(c, 2, c, k)
             end
             kodd == 1 && return nothing

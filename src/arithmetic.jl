@@ -510,13 +510,12 @@ for T in (:Taylor1, :TaylorN)
     @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
         if $T == Taylor1
             @inbounds c[k] = a[0] * b[k]
+            @inbounds for i = 1:k
+                c[k] += a[i] * b[k-i]
+            end
         else
             @inbounds mul!(c[k], a[0], b[k])
-        end
-        @inbounds for i = 1:k
-            if $T == Taylor1
-                c[k] += a[i] * b[k-i]
-            else
+            @inbounds for i = 1:k
                 mul!(c[k], a[i], b[k-i])
             end
         end
@@ -525,15 +524,12 @@ for T in (:Taylor1, :TaylorN)
 
     @eval @inline function mul_scalar!(c::$T{T}, scalar::NumberNotSeries, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
         if $T == Taylor1
-            @inbounds c[k] = a[0] * b[k]
-        else
-            @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
-        end
-        if $T == Taylor1
+            @inbounds c[k] = scalar * a[0] * b[k]
             @inbounds for i = 1:k
-                c[k] += a[i] * b[k-i]
+                c[k] += scalar * a[i] * b[k-i]
             end
         else
+            @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
             @inbounds for i = 1:k
                 mul_scalar!(c[k], scalar, a[i], b[k-i])
             end
