@@ -4,7 +4,7 @@
 using TaylorSeries, IntervalArithmetic
 
 using Test
-eeuler = Base.MathConstants.e
+# eeuler = Base.MathConstants.e
 
 @testset "Tests Taylor1 and TaylorN expansions over Intervals" begin
     a = 1..2
@@ -99,6 +99,12 @@ eeuler = Base.MathConstants.e
     displayBigO(true)
     @test string(Taylor1(vc, 5)) ==
         " ( [1.5, 2] + [0, 0]im ) - ( [1, 2] + [-1, 1]im ) t + ( [-1, 1.5] + [-1, 1.5]im ) t² + ( [0, 0] + [-1, 1.5]im ) t³ + 𝒪(t⁶)"
+
+    # Iss 351 (inspired by a test in ReachabilityAnalysis)
+    p1 = Taylor1([0 .. 0, (0 .. 0.1) + (0 .. 0.01) * y], 4)
+    p2 = Taylor1([0 .. 0, (0 .. 0.5) + (0 .. 0.02) * x + (0 .. 0.03) * y], 4)
+    @test evaluate([p1, p2], 0 .. 1) == [p1[1], p2[1]]
+    @test typeof(p1(0 .. 1)) == TaylorN{Interval{Float64}}
 
     # Tests related to Iss #311
     # `sqrt` and `pow` defined on Interval(0,Inf)
