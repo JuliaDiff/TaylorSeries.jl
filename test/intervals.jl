@@ -137,10 +137,10 @@ using Test
 
 
     # Iss 351 (inspired by a test in ReachabilityAnalysis)
-    p1 = Taylor1([0 .. 0, (0 .. 0.1) + (0 .. 0.01) * y], 4)
-    p2 = Taylor1([0 .. 0, (0 .. 0.5) + (0 .. 0.02) * x + (0 .. 0.03) * y], 4)
-    @test evaluate([p1, p2], 0 .. 1) == [p1[1], p2[1]]
-    @test typeof(p1(0 .. 1)) == TaylorN{Interval{Float64}}
+    p1 = Taylor1([interval(0, 0), interval(0, 0.1) + interval(0, 0.01) * y], 4)
+    p2 = Taylor1([interval(0, 0), interval(0, 0.5) + interval(0, 0.02) * x + interval(0, 0.03) * y], 4)
+    @test evaluate([p1, p2], interval(0, 1)) == [p1[1], p2[1]]
+    @test typeof(p1(interval(0, 1))) == TaylorN{Interval{Float64}}
 
     # Tests related to Iss #311
     # `sqrt` and `pow` defined on Interval(0,Inf)
