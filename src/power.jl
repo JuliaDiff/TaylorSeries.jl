@@ -117,7 +117,7 @@ end
 # TODO: get rid of allocations
 function ^(a::TaylorN, r::S) where {S<:Real}
     a0 = constant_term(a)
-    aux = one(a0^r)
+    aux = one(a0)^r
 
     iszero(r) && return TaylorN(aux, a.order)
     aa = aux*a
@@ -489,13 +489,13 @@ Returns `c += a*a` with no allocation; all parameters are `HomogeneousPolynomial
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
-        iszero(ca) && continue
+        _isthinzero(ca) && continue
         inda = idxTb[na]
         pos = posTb[2*inda]
         c[pos] += ca^2
         @inbounds for nb = na+1:num_coeffs_a
             cb = a[nb]
-            iszero(cb) && continue
+            _isthinzero(cb) && continue
             indb = idxTb[nb]
             pos = posTb[inda+indb]
             c[pos] += 2 * ca * cb
@@ -534,7 +534,7 @@ end
 
 function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( constant_term(a) )
-    if iszero(p0)
+    if TS._isthinzero(p0)
         throw(DomainError(a,
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `sqrt` around 0."""))
