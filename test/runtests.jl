@@ -11,7 +11,8 @@ testfiles = (
     "intervals.jl",
     "broadcasting.jl",
     "identities_Euler.jl",
-    "fateman40.jl"
+    "fateman40.jl",
+    "staticarrays.jl"
     )
 
 for file in testfiles
