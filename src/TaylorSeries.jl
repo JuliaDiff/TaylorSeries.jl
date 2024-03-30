@@ -49,6 +49,8 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero, isless,
     power_by_squaring,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 
+import Base.float
+
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries, TS
 
 export getcoeff, derivative, integrate, differentiate,

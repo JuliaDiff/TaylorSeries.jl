@@ -625,6 +625,17 @@ Base.iszero(::SymbNumber) = false
     # Test fallback pretty_print
     st = Taylor1([SymbNumber(:x₀), SymbNumber(:x₁)])
     @test string(st) == " SymbNumber(:x₀) + SymbNumber(:x₁) t + 𝒪(t²)"
+
+    @testset "Test Base.float overloads for Taylor1" begin
+        @test float(Taylor1(-3, 2)) == Taylor1(-3.0, 2)
+        @test float(Taylor1(-1//2, 2)) == Taylor1(-0.5, 2)
+        @test float(Taylor1(3 - 0im, 2)) == Taylor1(3.0 - 0.0im, 2)
+        x = Taylor1(rand(5))
+        @test float(x) == x
+        @test float(Taylor1{Int32}) == Taylor1{Float64}
+        @test float(Taylor1{Int}) == Taylor1{Float64}
+        @test float(Taylor1{Complex{Int}}) == Taylor1{ComplexF64}
+    end
 end
 
 @testset "Test inv for Matrix{Taylor1{Float64}}" begin

@@ -782,6 +782,15 @@ end
     # Lexicographic tests with 4 vars
     @test 1 > dx[1] > dx[2] > dx[3] > dx[4]
     @test dx[4]^2 < dx[3]*dx[4] < dx[3]^2 < dx[2]*dx[4] < dx[2]*dx[3] < dx[2]^2 < dx[1]*dx[4] < dx[1]*dx[3] < dx[1]*dx[2] < dx[1]^2
+
+    @testset "Test Base.float overloads for HomogeneousPolynomial and TaylorN" begin
+        @test float(HomogeneousPolynomial(-7, 2)) == HomogeneousPolynomial(-7.0, 2)
+        @test float(HomogeneousPolynomial(1+im, 2)) == HomogeneousPolynomial(float(1+im), 2)
+        @test float(TaylorN(Int, 2)) == TaylorN(2)
+        @test float(TaylorN(Complex{Rational}, 2)) == TaylorN(float(Complex{Rational}), 2)
+        @test float(HomogeneousPolynomial{Complex{Int}}) == float(HomogeneousPolynomial{Complex{Float64}})
+        @test float(TaylorN{Complex{Rational}}) == float(TaylorN{Complex{Float64}})
+    end
 end
 
 @testset "Integrate for several variables" begin
