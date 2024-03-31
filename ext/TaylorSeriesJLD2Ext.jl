@@ -4,10 +4,8 @@ import Base: convert
 using TaylorSeries
 
 if isdefined(Base, :get_extension)
-    using JLD2
     import JLD2: writeas
 else
-    using ..JLD2
     import ..JLD2: writeas
 end
 
@@ -72,7 +70,6 @@ function convert(::Type{TaylorN{T}}, eph::TaylorNSerialization{T}) where {T}
     L = varorder + 1
     # Number of coefficients in each HomogeneousPolynomial
     M = binomial(n + varorder, varorder)
-    # M = sum(binomial(n + i_1 - 1, i_1) for i_1 in 0:varorder)
 
     # Set variables
     if TS.get_variable_names() != vars
