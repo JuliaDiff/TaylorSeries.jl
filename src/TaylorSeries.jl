@@ -49,6 +49,8 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero, isless,
     power_by_squaring,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
 
+import Base.float
+
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries, TS
 
 export getcoeff, derivative, integrate, differentiate,
@@ -83,6 +85,9 @@ function __init__()
     @static if !isdefined(Base, :get_extension)
         @require IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253" begin
             include("../ext/TaylorSeriesIAExt.jl")
+        end
+        @require StaticArrays = "90137ffa-7385-5640-81b9-e52037218182" begin
+            include("../ext/TaylorSeriesSAExt.jl")
         end
     end
 end

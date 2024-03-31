@@ -3,7 +3,6 @@
 # Tests for TaylorSeries
 
 testfiles = (
-    "aqua.jl",
     "onevariable.jl",
     "manyvariables.jl",
     "mixtures.jl",
@@ -11,7 +10,8 @@ testfiles = (
     "intervals.jl",
     "broadcasting.jl",
     "identities_Euler.jl",
-    "fateman40.jl"
+    "fateman40.jl",
+    "staticarrays.jl"
     )
 
 for file in testfiles

@@ -495,6 +495,17 @@ using Test
     two = 2one(x[0])
     @test two/x == 2/x == 2.0/x
     @test (2one(x))/x == 2/x
+
+    @testset "Test Base.float overloads for Taylor1 and TaylorN mixtures" begin
+        q = get_variables(Int)
+        x1N = Taylor1(q)
+        @test float(x1N) == Taylor1(float.(q))
+        xN1 = convert(TaylorN{Taylor1{Int}}, x1N)
+        @test float(xN1) == convert(TaylorN{Taylor1{Float64}}, Taylor1(float.(q)))
+        @test float(Taylor1{TaylorN{Int}}) == Taylor1{TaylorN{Float64}}
+        @test float(TaylorN{Taylor1{Int}}) == TaylorN{Taylor1{Float64}}
+        @test float(TaylorN{Taylor1{Complex{Int}}}) == TaylorN{Taylor1{Complex{Float64}}}
+    end
 end
 
 @testset "Tests with nested Taylor1s" begin

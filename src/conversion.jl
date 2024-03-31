@@ -201,3 +201,12 @@ function promote(a::Taylor1{Taylor1{T}}, b::Taylor1{T}) where {T<:NumberNotSerie
 end
 promote(b::Taylor1{T}, a::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN} =
     reverse(promote(a, b))
+
+# float
+float(::Type{Taylor1{T}}) where T<:Number = Taylor1{float(T)}
+float(::Type{HomogeneousPolynomial{T}}) where T<:Number = HomogeneousPolynomial{float(T)}
+float(::Type{TaylorN{T}}) where T<:Number = TaylorN{float(T)}
+
+float(x::Taylor1{T}) where T<:Number = convert(Taylor1{float(T)}, x)
+float(x::HomogeneousPolynomial{T}) where T<:Number = convert(HomogeneousPolynomial{float(T)}, x)
+float(x::TaylorN{T}) where T<:Number = convert(TaylorN{float(T)}, x)
