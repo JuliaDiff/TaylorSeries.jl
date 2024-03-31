@@ -4,7 +4,6 @@
 using TaylorSeries, StaticArrays
 
 using Test
-# eeuler = Base.MathConstants.e
 
 @testset "Tests TaylorSeries operations over StaticArrays types" begin
     q = set_variables("q", order=2, numvars=2)
