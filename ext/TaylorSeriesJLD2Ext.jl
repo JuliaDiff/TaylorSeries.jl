@@ -40,7 +40,6 @@ function convert(::Type{TaylorNSerialization{T}}, eph::TaylorN{T}) where {T}
     L = varorder + 1
     # Number of coefficients in each HomogeneousPolynomial
     M = binomial(n + varorder, varorder)
-    # M = sum(binomial(n + i_3 - 1, i_3) for i_3 in 0:varorder)
 
     # Vector of coefficients
     x = Vector{T}(undef, M)
