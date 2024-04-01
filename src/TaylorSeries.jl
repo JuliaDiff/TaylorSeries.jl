@@ -89,6 +89,9 @@ function __init__()
         @require StaticArrays = "90137ffa-7385-5640-81b9-e52037218182" begin
             include("../ext/TaylorSeriesSAExt.jl")
         end
+        @require JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819" begin
+            include("../ext/TaylorSeriesJLD2Ext.jl")
+        end
     end
 end
 
