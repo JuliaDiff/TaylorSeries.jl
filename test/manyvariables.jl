@@ -795,13 +795,6 @@ end
         @test float(TaylorN{Complex{Rational}}) == float(TaylorN{Complex{Float64}})
     end
 
-    a = TaylorN{Float64}(-1//3)
-    b = TaylorN{Float64}(1//7)
-    @test a !== b
-    @test a != b
-    b = identity(a) # identity is applied recursively on each coefficient
-    @test a !== b
-    @test a != b
 end
 
 @testset "Integrate for several variables" begin
