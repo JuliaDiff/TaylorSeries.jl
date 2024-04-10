@@ -6,6 +6,9 @@ using Test
 # using LinearAlgebra
 
 @testset "Test hash tables" begin
+    a = TaylorN{Float64}(9//10)
+    a isa TaylorN{Float64}
+    @test constant_term(a) == Float64(9//10)
     # Issue #85 is solved!
     set_variables("x", numvars=66, order=1)
     @test TS._params_TaylorN_.order == get_order() == 1
@@ -791,6 +794,14 @@ end
         @test float(HomogeneousPolynomial{Complex{Int}}) == float(HomogeneousPolynomial{Complex{Float64}})
         @test float(TaylorN{Complex{Rational}}) == float(TaylorN{Complex{Float64}})
     end
+
+    a = TaylorN{Float64}(-1//3)
+    b = TaylorN{Float64}(1//7)
+    @test a !== b
+    @test a != b
+    b = identity(a) # identity is applied recursively on each coefficient
+    @test a !== b
+    @test a != b
 end
 
 @testset "Integrate for several variables" begin
