@@ -9,6 +9,9 @@ using Test
     a = TaylorN{Float64}(9//10)
     a isa TaylorN{Float64}
     @test constant_term(a) == Float64(9//10)
+    b = TaylorN{Complex{Float64}}(-4//7im)
+    @test b isa TaylorN{Complex{Float64}}
+    @test_throws MethodError TaylorN(-4//7im)
     # Issue #85 is solved!
     set_variables("x", numvars=66, order=1)
     @test TS._params_TaylorN_.order == get_order() == 1
