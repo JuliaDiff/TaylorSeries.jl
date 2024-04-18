@@ -458,6 +458,9 @@ end
     @test ptxy(:x₁ => -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     @test evaluate(ptxy, :x₁ => -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     @test evaluate(ptxy, :x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
+    @test isa(evaluate(ptxy, :x₁, 1), TaylorN{Float64})
+    @test evaluate(ptxy, :x₁, xT) == ptxy
+    @test evaluate(ptxy, :x₁, yT) == 2*(yT + (4/3)*yT^3)
     v = zeros(Int, 2)
     @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
     @test v == ones(2)
