@@ -12,7 +12,8 @@ testfiles = (
     "identities_Euler.jl",
     "fateman40.jl",
     "staticarrays.jl",
-    "jld2.jl"
+    "jld2.jl",
+    "rat.jl"
     )
 
 for file in testfiles
