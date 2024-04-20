@@ -497,10 +497,10 @@ using Test
     @test (2one(x))/x == 2/x
 
     dq = get_variables()
-    x = Taylor1.(exp.(dq), 5)
+    x = Taylor1(exp.(dq), 5)
     x[1] = sin(dq[1]*dq[2])
-    @test x[1] == sin(dq[1])
-    @test x[1] !== sin(dq[1])
+    @test x[1] == sin(dq[1]*dq[2])
+    @test x[1] !== sin(dq[1]*dq[2])
 
     @testset "Test Base.float overloads for Taylor1 and TaylorN mixtures" begin
         q = get_variables(Int)
