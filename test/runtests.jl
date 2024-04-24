@@ -13,11 +13,11 @@ testfiles = (
     "fateman40.jl",
     "staticarrays.jl",
     "jld2.jl",
-    "rat.jl"
+    "rat.jl",
+    # Run Aqua tests at the very end
+    "aqua.jl",
     )
 
 for file in testfiles
     include(file)
 end
-# After `using intervalArithmetic` new ambiguities may arise
-include("aqua.jl")
