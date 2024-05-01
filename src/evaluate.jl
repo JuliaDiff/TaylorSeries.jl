@@ -67,6 +67,9 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
 end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:NumberNotSeriesN}
+    if a.order != x.order
+        a, x = fixorder(a, x)
+    end
     @inbounds suma = a[end]*zero(x)
     aux = zero(suma)
     _horner!(suma, a, x, aux)
@@ -74,6 +77,9 @@ function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:NumberNotSeri
 end
 
 function evaluate(a::Taylor1{T}, x::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
+    if a.order != x.order
+        a, x = fixorder(a, x)
+    end
     @inbounds suma = a[end]*zero(x)
     aux = zero(suma)
     _horner!(suma, a, x, aux)
@@ -92,6 +98,9 @@ function evaluate(a::Taylor1{T}, dx::TaylorN{T}) where {T<:NumberNotSeries}
 end
 
 function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    if a.order != dx.order
+        a, dx = fixorder(a, x)
+    end
     suma = Taylor1( zero(dx[0]), a.order)
     aux  = Taylor1( zero(dx[0]), a.order)
     _horner!(suma, a, dx, aux)
@@ -104,9 +113,6 @@ end
 function evaluate(a::Taylor1{TaylorN{T}}, dx::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
     @assert length(dx) == get_numvars()
     suma = Taylor1( zero(a[0]), a.order)
-    # @inbounds for i in eachindex(a)
-    #     suma[i] = evaluate(a[i], dx)
-    # end
     suma.coeffs .= evaluate.(a, Ref(dx))
     return suma
 end
