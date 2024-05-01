@@ -103,6 +103,23 @@ function evaluate(a::Taylor1{T}, dx::TaylorN{T}) where {T<:NumberNotSeries}
     return suma
 end
 
+function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    suma = Taylor1( zero(dx[0]), a.order)
+    aux  = Taylor1( zero(dx[0]), a.order)
+    @inbounds for k in reverse(eachindex(a))
+        # aux = suma * dx
+        for ord in eachindex(aux)
+            zero!(aux, ord)
+            mul!(aux, suma, dx, ord)
+        end
+        for ord in eachindex(aux)
+            identity!(suma, aux, ord)
+        end
+        add!(suma, suma, a[k], 0)
+    end
+    return suma
+end
+
 
 # Evaluate mixtures Taylor1{TaylorN{T}} on Vector{TaylorN} is interpreted
 # as a substitution on the TaylorN vars
