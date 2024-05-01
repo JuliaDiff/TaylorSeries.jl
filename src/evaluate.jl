@@ -17,7 +17,7 @@ equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
     @inbounds suma = zero(a[end])
     @inbounds for k in reverse(eachindex(a))
-        suma = suma*dx + a[k]
+        suma = suma * dx + a[k]
     end
     return suma
 end
@@ -25,7 +25,7 @@ end
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     suma = a[end]*zero(dx)
     @inbounds for k in reverse(eachindex(a))
-        suma = suma*dx + a[k]
+        suma = suma * dx + a[k]
     end
     return suma
 end
@@ -61,25 +61,22 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
         a, x = fixorder(a, x)
     end
     @inbounds suma = a[end]*zero(x)
-    @inbounds for k in reverse(eachindex(a))
-        suma = suma*x + a[k]
-    end
+    aux = zero(suma)
+    _horner!(suma, a, x, aux)
     return suma
 end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:NumberNotSeriesN}
     @inbounds suma = a[end]*zero(x)
-    @inbounds for k in reverse(eachindex(a))
-        suma = suma*x + a[k]
-    end
+    aux = zero(suma)
+    _horner!(suma, a, x, aux)
     return suma
 end
 
 function evaluate(a::Taylor1{T}, x::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
     @inbounds suma = a[end]*zero(x)
-    @inbounds for k in reverse(eachindex(a))
-        suma = suma*x + a[k]
-    end
+    aux = zero(suma)
+    _horner!(suma, a, x, aux)
     return suma
 end
 
@@ -90,47 +87,28 @@ evaluate(p::Taylor1{T}, x::AbstractArray{S}) where {T<:Number, S<:Number} =
 function evaluate(a::Taylor1{T}, dx::TaylorN{T}) where {T<:NumberNotSeries}
     suma = TaylorN( zero(T), dx.order)
     aux = TaylorN( zero(T), dx.order)
-    @inbounds for k in reverse(eachindex(a))
-        for ordQ in eachindex(suma)
-            zero!(aux, ordQ)
-            mul!(aux, suma, dx, ordQ)
-        end
-        for ordQ in eachindex(suma)
-            identity!(suma, aux, ordQ)
-        end
-        add!(suma, suma, a[k], 0)
-    end
+    _horner!(suma, a, dx, aux)
     return suma
 end
 
 function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     suma = Taylor1( zero(dx[0]), a.order)
     aux  = Taylor1( zero(dx[0]), a.order)
-    @inbounds for k in reverse(eachindex(a))
-        # aux = suma * dx
-        for ord in eachindex(aux)
-            zero!(aux, ord)
-            mul!(aux, suma, dx, ord)
-        end
-        for ord in eachindex(aux)
-            identity!(suma, aux, ord)
-        end
-        add!(suma, suma, a[k], 0)
-    end
+    _horner!(suma, a, dx, aux)
     return suma
 end
 
 
-# Evaluate mixtures Taylor1{TaylorN{T}} on Vector{TaylorN} is interpreted
+# Evaluate a Taylor1{TaylorN{T}} on Vector{TaylorN} is interpreted
 # as a substitution on the TaylorN vars
 function evaluate(a::Taylor1{TaylorN{T}}, dx::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
     @assert length(dx) == get_numvars()
-    orderT = a.order
-    coeffs = Array{TaylorN{T}}(undef, orderT+1)
-    for i in eachindex(a)
-        coeffs[i+1] = evaluate(a[i], dx)
-    end
-    return Taylor1(coeffs)
+    suma = Taylor1( zero(a[0]), a.order)
+    # @inbounds for i in eachindex(a)
+    #     suma[i] = evaluate(a[i], dx)
+    # end
+    suma.coeffs .= evaluate.(a, Ref(dx))
+    return suma
 end
 
 #function-like behavior for Taylor1
@@ -283,7 +261,7 @@ end
 
 function evaluate(a::TaylorN{T}, s::Symbol, val::TaylorN) where {T<:Number}
     a, val = promote(a, val)
-    vars = get_variables(T)
+    vars = get_variables(numtype(val))
     ind = lookupvar(s)
     @assert ind != 0 "Symbol is not a TaylorN variable; see `get_variable_names()`"
     # @inbounds vars[ind] = val + zero(vars[ind])
@@ -431,3 +409,77 @@ end
 #     return nothing
 # end
 
+# In-place Horner methods, used when the result of an evaluation (substitution)
+# is Taylor1{}
+function _horner!(suma::Taylor1{T}, a::Taylor1{T}, x::Taylor1{T},
+        aux::Taylor1{T}) where {T<:Number}
+    @inbounds for k in reverse(eachindex(a))
+        for ord in eachindex(aux)
+            mul!(aux, suma, x, ord)
+        end
+        for ord in eachindex(aux)
+            identity!(suma, aux, ord)
+        end
+        add!(suma, suma, a[k], 0)
+    end
+    return nothing
+end
+
+function _horner!(suma::Taylor1{T}, a::Taylor1{Taylor1{T}}, x::Taylor1{T},
+        aux::Taylor1{T}) where {T<:Number}
+    @inbounds for k in reverse(eachindex(a))
+        for ord in eachindex(aux)
+            mul!(aux, suma, x, ord)
+        end
+        for ord in eachindex(aux)
+            identity!(suma, aux, ord)
+            add!(suma, suma, a[k], ord)
+        end
+    end
+    return nothing
+end
+
+function _horner!(suma::Taylor1{Taylor1{T}}, a::Taylor1{T}, x::Taylor1{Taylor1{T}},
+        aux::Taylor1{Taylor1{T}}) where {T<:Number}
+    @inbounds for k in reverse(eachindex(a))
+        for ord in eachindex(aux)
+            mul!(aux, suma, x, ord)
+        end
+        for ord in eachindex(aux)
+            identity!(suma, aux, ord)
+            add!(suma, suma, a[k], ord)
+        end
+    end
+    return nothing
+end
+
+function _horner!(suma::TaylorN{T}, a::Taylor1{T}, dx::TaylorN{T},
+        aux::TaylorN{T})  where {T<:NumberNotSeries}
+    @inbounds for k in reverse(eachindex(a))
+        for ordQ in eachindex(suma)
+            zero!(aux, ordQ)
+            mul!(aux, suma, dx, ordQ)
+        end
+        for ordQ in eachindex(suma)
+            identity!(suma, aux, ordQ)
+        end
+        add!(suma, suma, a[k], 0)
+    end
+    return nothing
+end
+
+function _horner!(suma::Taylor1{TaylorN{T}}, a::Taylor1{T}, dx::Taylor1{TaylorN{T}},
+        aux::Taylor1{TaylorN{T}})  where {T<:NumberNotSeries}
+    @inbounds for k in reverse(eachindex(a))
+        # aux = suma * dx
+        for ord in eachindex(aux)
+            zero!(aux, ord)
+            mul!(aux, suma, dx, ord)
+        end
+        for ord in eachindex(aux)
+            identity!(suma, aux, ord)
+        end
+        add!(suma, suma, a[k], 0)
+    end
+    return suma
+end
