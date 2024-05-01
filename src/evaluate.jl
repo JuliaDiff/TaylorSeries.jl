@@ -86,8 +86,26 @@ end
 evaluate(p::Taylor1{T}, x::AbstractArray{S}) where {T<:Number, S<:Number} =
     evaluate.(Ref(p), x)
 
-# Evaluate mixtures on Vector{TaylorN} is interpreted
-# as an evaluation on the TaylorN vars
+# Substitute a TaylorN into a Taylor1
+function evaluate(a::Taylor1{T}, dx::TaylorN{T}) where {T<:NumberNotSeries}
+    suma = TaylorN( zero(T), dx.order)
+    aux = TaylorN( zero(T), dx.order)
+    @inbounds for k in reverse(eachindex(a))
+        for ordQ in eachindex(suma)
+            zero!(aux, ordQ)
+            mul!(aux, suma, dx, ordQ)
+        end
+        for ordQ in eachindex(suma)
+            identity!(suma, aux, ordQ)
+        end
+        add!(suma, suma, a[k], 0)
+    end
+    return suma
+end
+
+
+# Evaluate mixtures Taylor1{TaylorN{T}} on Vector{TaylorN} is interpreted
+# as a substitution on the TaylorN vars
 function evaluate(a::Taylor1{TaylorN{T}}, dx::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
     @assert length(dx) == get_numvars()
     orderT = a.order
@@ -343,17 +361,13 @@ end
 ## In place evaluation of multivariable arrays
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{T,1},
         x0::AbstractArray{T}) where {T<:Number}
-    @inbounds for i in eachindex(x, x0)
-        x0[i] = evaluate( x[i], δx )
-    end
+    x0 .= evaluate.( x, Ref(δx) )
     return nothing
 end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
         x0::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
-    @inbounds for i in eachindex(x, x0)
-        x0[i] = _evaluate( x[i], δx, Val(sorting) )
-    end
+    x0 .= _evaluate.( x, Ref(δx), Ref(Val(sorting)) )
     return nothing
 end
 
