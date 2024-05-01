@@ -99,7 +99,7 @@ end
 
 function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     if a.order != dx.order
-        a, dx = fixorder(a, x)
+        a, dx = fixorder(a, dx)
     end
     suma = Taylor1( zero(dx[0]), a.order)
     aux  = Taylor1( zero(dx[0]), a.order)
