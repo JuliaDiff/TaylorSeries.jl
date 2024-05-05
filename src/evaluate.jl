@@ -113,7 +113,7 @@ end
 function evaluate(a::Taylor1{TaylorN{T}}, dx::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
     @assert length(dx) == get_numvars()
     suma = Taylor1( zero(a[0]), a.order)
-    suma.coeffs .= evaluate.(a, Ref(dx))
+    suma.coeffs .= evaluate.(a[:], Ref(dx))
     return suma
 end
 
@@ -121,7 +121,9 @@ function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::T) where {T<:NumberNotSe
     @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     suma = Taylor1( zero(a[0]), a.order)
     for ord in eachindex(suma)
-        _evaluate!(suma[ord], a[ord], ind, dx)
+        for ordQ in eachindex(a[0])
+            _evaluate!(suma[ord], a[ord][ordQ], ind, dx)
+        end
     end
     return suma
 end
@@ -129,8 +131,11 @@ end
 function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::TaylorN{T}) where {T<:NumberNotSeries}
     @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     suma = Taylor1( zero(a[0]), a.order)
+    aux = zero(dx)
     for ord in eachindex(suma)
-        _evaluate!(suma[ord], a[ord], ind, dx)
+        for ordQ in eachindex(a[0])
+            _evaluate!(suma[ord], a[ord][ordQ], ind, dx, aux)
+        end
     end
     return suma
 end
@@ -339,7 +344,7 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}) where {N,T<:Number}
 end
 
 
-function _evaluate(a::TaylorN{T}, ind::Int, val::T) where {T<:Number}
+function _evaluate(a::TaylorN{T}, ind::Int, val::T) where {T<:NumberNotSeriesN}
     suma = TaylorN(zero(a[0]*val), a.order)
     vval = convert(numtype(suma), val)
     suma, a = promote(suma, a)
@@ -358,7 +363,8 @@ function _evaluate(a::TaylorN{T}, ind::Int, val::TaylorN{T}) where {T<:NumberNot
     return suma
 end
 
-function _evaluate!(suma::TaylorN, a::HomogeneousPolynomial{T}, ind::Int, val::T) where {T}
+function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int, val::T) where
+        {T<:NumberNotSeriesN}
     order = a.order
     if order == 0
         suma[0] = a[1]*one(val)
@@ -384,7 +390,7 @@ function _evaluate!(suma::TaylorN, a::HomogeneousPolynomial{T}, ind::Int, val::T
 end
 
 function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
-        val::TaylorN{T}, aux::TaylorN{T}) where {T}
+        val::TaylorN{T}, aux::TaylorN{T}) where {T<:NumberNotSeriesN}
     order = a.order
     if order == 0
         suma[0] = a[1]
