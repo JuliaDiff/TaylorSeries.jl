@@ -77,7 +77,7 @@ end
     @test eachindex(x) == 0:6
     @test iterate(x) == (HomogeneousPolynomial([0.0], 0), 1)
     @test iterate(y, 1) == (HomogeneousPolynomial([0.0, 1.0], 1), 2)
-    @test iterate(x, 7) == nothing
+    @test isnothing(iterate(x, 7))
 
     @test x.order == 6
     @test TS.name_taylorNvar(1) == " x"
@@ -460,11 +460,11 @@ end
     @test evaluate(ptxy, :x₁, -1.0) == -1 + yT + (-1.0+yT^3)/3 + yT - yT^2
     @test isa(evaluate(ptxy, :x₁, 1), TaylorN{Float64})
     @test evaluate(ptxy, :x₁, xT) == ptxy
-    @test evaluate(ptxy, :x₁, yT) == 2*(yT + (4/3)*yT^3)
+    @test evaluate(ptxy, 1, 1-yT) ≈ 4/3 + zero(yT)
     v = zeros(Int, 2)
-    @test evaluate!([xT, yT], ones(Int, 2), v) == nothing
+    @test isnothing(evaluate!([xT, yT], ones(Int, 2), v))
     @test v == ones(2)
-    @test evaluate!([xT, yT][1:2], ones(Int, 2), v) == nothing
+    @test isnothing(evaluate!([xT, yT][1:2], ones(Int, 2), v))
     @test v == ones(2)
     A_TN = [xT 2xT 3xT; yT 2yT 3yT]
     @test evaluate(A_TN, ones(2)) == [1.0 2.0 3.0; 1.0 2.0 3.0]
@@ -816,7 +816,7 @@ end
 
 end
 
-@testset "Consistency of coeff_table (differentiate)" begin
+@testset "Consistency of coeff_table" begin
     order = 20
     x, y, z, w = set_variables(Int128, "x y z w", numvars=4, order=2order)
     ctab = deepcopy(TS.coeff_table);
@@ -843,8 +843,7 @@ end
     end
 
     f = fun(order);
-    df_exact = 4*20*fun(order-1);
-    fint_exact = 4*fun(order+1)/(order+1);
+    df_exact = 4*order*fun(order-1);
 
     df1 = diffs1(f);
     @test ctab == TS.coeff_table
@@ -854,28 +853,48 @@ end
     @test ctab == TS.coeff_table
     @test df1 == df_exact
 
-    # function integ1(f)
-    #     f1 = integrate(f, 1)
-    #     f2 = integrate(f, 2)
-    #     f3 = integrate(f, 3)
-    #     f4 = integrate(f, 4)
-    #     return f1 + f2 + f3 + f4
-    # end
-    #
-    # function integ2(f)
-    #     vder = zeros(typeof(f), get_numvars())
-    #     Threads.@threads for i = 1:get_numvars()
-    #         vder[i] = integrate(f, i)
-    #     end
-    #     return sum(vder)
-    # end
-    #
-    # ii1 = integ1(f);
-    # @test ctab == TS.coeff_table
-    # @test ii1 == fint_exact
-    #
-    # ii2 = integ2(f);
-    # @test ctab == TS.coeff_table
-    # @test ii2 == fint_exact
+    function integ1(f)
+        f1 = integrate(f, 1)
+        f2 = integrate(f, 2)
+        f3 = integrate(f, 3)
+        f4 = integrate(f, 4)
+        return f1 + f2 + f3 + f4
+    end
+
+    function integ2(f)
+        T = typeof(integrate(f, 1))
+        vinteg = zeros(T, get_numvars())
+        Threads.@threads for i = 1:get_numvars()
+            vinteg[i] = integrate(f, i)
+        end
+        return sum(vinteg)
+    end
+
+    ii1 = integ1(f);
+    ii2 = integ2(f);
+    @test ctab == TS.coeff_table
+    @test ii1 == ii2
+
+    function ev1(f)
+        f1 = f(1, 1.0)
+        f2 = f(2, 1.0)
+        f3 = f(3, 1.0)
+        f4 = f(4, 1.0)
+        return f1 + f2 + f3 + f4
+    end
+
+    function ev2(f)
+        T = typeof(evaluate(f, 1, 1.0))
+        veval = zeros(T, get_numvars())
+        Threads.@threads for i = 1:get_numvars()
+            veval[i] = evaluate(f, i, 1.0)
+        end
+        return sum(veval)
+    end
+
+    ee1 = ev1(f);
+    ee2 = ev2(f);
+    @test ctab == TS.coeff_table
+    @test ee1 == ee2
 
 end

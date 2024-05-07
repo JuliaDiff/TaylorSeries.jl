@@ -200,12 +200,14 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,<:TaylorN{T}}) wh
     ct = coeff_table[a.order+1]
     suma = TaylorN(zero(T), vals[1].order)
     #
-    vv = power_by_squaring.(vals, ct[1])
+    # vv = power_by_squaring.(vals, ct[1])
+    vv = vals .^ ct[1]
     tmp = zero(suma)
     aux = one(suma)
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        @inbounds vv .= power_by_squaring.(vals, ct[i])
+        # @inbounds vv .= power_by_squaring.(vals, ct[i])
+        vv .= vals .^ ct[i]
         # tmp = prod( vv )
         for ord in eachindex(tmp)
             @inbounds one!(aux, vv[1], ord)
@@ -370,7 +372,7 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int, val
         suma[0] = a[1]*one(val)
         return nothing
     end
-    vv = power_by_squaring.(val, 0:order)
+    vv = val .^ (0:order)
     ct = @isonethread coeff_table[order+1]
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
@@ -396,8 +398,8 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
         suma[0] = a[1]
         return nothing
     end
+    vv = zero(suma)
     ct = coeff_table[order+1]
-    vv = power_by_squaring.(Ref(val), 0:order)
     za = zero(a)
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
@@ -410,8 +412,17 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
         _evaluate!(aux, za, ind, one(T))
         za[i] = zero(T)
         vpow = ct[i][ind]
+        # vv = val ^ vpow
+        if constant_term(val) == 0
+            vv = val ^ vpow
+        else
+            for ordQ in eachindex(val)
+                zero!(vv, ordQ)
+                pow!(vv, val, vpow, ordQ)
+            end
+        end
         for ordQ in eachindex(suma)
-            mul!(suma, vv[vpow+1], aux, ordQ)
+            mul!(suma, vv, aux, ordQ)
         end
     end
     return nothing
@@ -434,7 +445,7 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)
 (p::TaylorN)() = evaluate(p)
-(p::TaylorN)(s::Symbol, x) = evaluate(p, s, x)
+(p::TaylorN)(s::S, x) where {S<:Union{Symbol, Int}}= evaluate(p, s, x)
 (p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
 (p::TaylorN)(x, v::Vararg{T}) where {T} = evaluate(p, (x, v...,))
 (p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
