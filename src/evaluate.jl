@@ -373,10 +373,11 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int, val
         return nothing
     end
     vv = val .^ (0:order)
-    ct = @isonethread coeff_table[order+1]
+    # ct = @isonethread coeff_table[order+1]
+    ct = deepcopy(coeff_table[order+1])
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        if coeff_table[order+1][i][ind] == 0
+        if ct[i][ind] == 0
             suma[order][i] += a_coeff
             continue
         end
