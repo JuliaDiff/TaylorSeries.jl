@@ -141,9 +141,10 @@ function differentiate(a::HomogeneousPolynomial, r::Int)
     coeffs = zeros(T, num_coeffs)
     @inbounds posTb = pos_table[a.order]
     @inbounds num_coeffs = size_table[a.order+1]
-
+    ct = deepcopy(coeff_table[a.order+1])
     @inbounds for i = 1:num_coeffs
-        iind = @isonethread coeff_table[a.order+1][i]
+        # iind = @isonethread coeff_table[a.order+1][i]
+        iind = ct[i]
         n = iind[r]
         n == 0 && continue
         iind[r] -= 1
@@ -370,9 +371,10 @@ function integrate(a::HomogeneousPolynomial, r::Int)
 
     T = promote_type(TS.numtype(a), TS.numtype(a[1]/1))
     coeffs = zeros(T, size_table[a.order+2])
-
+    ct = deepcopy(coeff_table[a.order+1])
     @inbounds for i = 1:num_coeffs
-        iind = @isonethread coeff_table[a.order+1][i]
+        # iind = @isonethread coeff_table[a.order+1][i]
+        iind = ct[i]
         n = iind[r]
         n == order_max && continue
         iind[r] += 1

@@ -64,16 +64,18 @@ end
 # Licensed under MIT "Expat"
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function power_by_squaring(x::$T, p::Integer)
-        p == 1 && return copy(x)
-        p == 0 && return one(x)
-        p == 2 && return square(x)
+        if p == 1
+            return copy(x)
+        elseif p == 0
+            return one(x)
+        elseif p == 2
+            return square(x)
+        end
         t = trailing_zeros(p) + 1
         p >>= t
-
         while (t -= 1) > 0
             x = square(x)
         end
-
         y = x
         while p > 0
             t = trailing_zeros(p) + 1
@@ -83,7 +85,6 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
             end
             y *= x
         end
-
         return y
     end
 end
@@ -338,8 +339,8 @@ Return `a^2`; see [`TaylorSeries.sqr!`](@ref).
 
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
-        c = $T( constant_term(a)^2, a.order)
-        for k in 1:a.order
+        c = $T( zero(constant_term(a)), a.order)
+        for k in eachindex(a)
             sqr!(c, a, k)
         end
         return c
@@ -365,19 +366,29 @@ end
 
 #auxiliary function to avoid allocations
 @inline function sqr_orderzero!(c::Taylor1{T}, a::Taylor1{T}) where {T<:NumberNotSeries}
-    @inbounds c[0] = constant_term(a)^2
+    @inbounds c[0] = a[0]^2
     return nothing
 end
 @inline function sqr_orderzero!(c::TaylorN{T}, a::TaylorN{T}) where {T<:NumberNotSeries}
-    @inbounds c[0][1] = constant_term(a)^2
+    @inbounds c[0][1] = a[0][1]^2
     return nothing
 end
 @inline function sqr_orderzero!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    @inbounds c[0][0][1] = constant_term(a)^2
+    @inbounds for ord in eachindex(c[0])
+        sqr!(c[0], a[0], ord)
+    end
     return nothing
 end
 @inline function sqr_orderzero!(c::TaylorN{Taylor1{T}}, a::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
-    @inbounds c[0][1][0] = a[0][1][0]^2
+    @inbounds for ord in eachindex(c[0][1])
+        sqr!(c[0][1], a[0][1], ord)
+    end
+    return nothing
+end
+@inline function sqr_orderzero!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
+    @inbounds for ord in eachindex(c[0])
+        sqr!(c[0], a[0], ord)
+    end
     return nothing
 end
 

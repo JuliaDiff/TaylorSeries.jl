@@ -259,7 +259,7 @@ end
 ## fixorder ##
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        @inline function fixorder(a::$T{T}, b::$T{T}) where {T<:Number}
+        @inline function fixorder(a::$T, b::$T)
             a.order == b.order && return a, b
             minorder = _minorder(a, b)
             return $T(copy(a.coeffs), minorder), $T(copy(b.coeffs), minorder)

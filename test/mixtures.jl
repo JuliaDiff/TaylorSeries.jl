@@ -162,6 +162,12 @@ using Test
     @test v == [TaylorN(1), TaylorN(1)^2]
     @test tN1() == t
     @test evaluate(tN1, :x₁ => 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
+    @test evaluate(tN1, 1, 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
+    @test evaluate(t, t1N) == t1N
+    @test evaluate(t1N, 0.5) == t1N[0] + t1N[1]/2 + t1N[2]/4
+    @test evaluate(t1N, [t1N[0], zero(t1N[0])]) == Taylor1([t1N[0], t1N[1]], t.order)
+    @test evaluate(t1N, 2, 0.0) == Taylor1([t1N[0], t1N[1]], t.order)
+    @test evaluate(t1N, 1, 0.0) == Taylor1([zero(t1N[0]), t1N[1], t1N[2]], t.order)
 
     # Tests for functions of mixtures
     t1N = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 6)
@@ -325,6 +331,14 @@ using Test
     @test atanh(tanh(-1+xx+tt)) ≈ -1 + xx + tt
     @test tanh(atanh(xx*tt)) ≈ xx * tt
     @test_throws DomainError atanh(xx+tt)
+
+    # pp = xx*yy*(1+tt)^4
+    @test evaluate(pp, 1, 0.0) == yy*(1+tt)^4
+    @test evaluate(pp, 2, 0.0) == xx*(1+tt)^4
+    @test evaluate(t, tt) == tt
+    @test evaluate(tt, t) == tt
+    @test evaluate(xx, 2, δy) == xx
+    @test evaluate(xx, 1, δy) == yy
 
     #testing evaluate and function-like behavior of Taylor1, TaylorN for mixtures:
     t = Taylor1(25)

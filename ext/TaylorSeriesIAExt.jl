@@ -159,7 +159,7 @@ for T in (:Taylor1, :TaylorN)
 end
 
 
-function evaluate(a::Taylor1{T}, dx::Interval{S}) where {T<:Real, S<:Real}
+function evaluate(a::Taylor1, dx::Interval{S}) where {S<:Real}
     order = a.order
     uno = one(dx)
     dx2 = dx^2
@@ -183,33 +183,12 @@ function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {T<:Real,N}
     @assert N == get_numvars()
     a_length = length(a)
     suma = zero(constant_term(a)) + Interval{T}(0, 0)
-    @inbounds for homPol in length(a):-1:1
-        suma += evaluate(a.coeffs[homPol], dx)
+    @inbounds for homPol in reverse(eachindex(a))
+        suma += evaluate(a[homPol], dx)
     end
 
     return suma
 end
-
-function evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Real}
-    order = a.order
-    uno = one(dx)
-    dx2 = dx^2
-    if iseven(order)
-        kend = order-2
-        @inbounds sum_even = a[end]*uno
-        @inbounds sum_odd = a[end-1]*zero(dx)
-    else
-        kend = order-3
-        @inbounds sum_odd = a[end]*uno
-        @inbounds sum_even = a[end-1]*uno
-    end
-    @inbounds for k in kend:-2:0
-        sum_odd = sum_odd*dx2 + a[k+1]
-        sum_even = sum_even*dx2 + a[k]
-    end
-    return sum_even + sum_odd*dx
-end
-
 
 function evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}) where {T<:Real,N}
     @assert N == get_numvars()
@@ -226,16 +205,16 @@ function _evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}, ::Val{true} )
     @inbounds suma = a[1]*Interval{T}(0,0)
 
     Ieven = Interval{T}(0,1)
-    for (i,a_coeff) in enumerate(a.coeffs)
+    for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
         if isodd(sum(ct[i]))
-            suma += sum(a_coeff) * dx[1]
-            continue
-        end
-        @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
-        for n in 2:N
-            @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
-            tmp *= vv
+            tmp = dx[1]
+        else
+            tmp = Ieven
+            for n in eachindex(ct[i])
+                iseven(ct[i][n]) && continue
+                tmp *= dx[1]
+            end
         end
         suma += a_coeff * tmp
     end
