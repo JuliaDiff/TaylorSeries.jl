@@ -80,7 +80,6 @@ function ^(a::Taylor1{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
     # aa = one(aux) * a
     aa = convert(Taylor1{typeof(aux)}, a)
     aa[0] = one(aux) * a0
-    @show(aa)
     r == 1 && return aa
     r == 2 && return TS.square(aa)
     r == 1/2 && return sqrt(aa)
