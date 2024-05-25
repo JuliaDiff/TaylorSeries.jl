@@ -6,6 +6,8 @@ using TaylorSeries, IntervalArithmetic
 using Test
 # eeuler = Base.MathConstants.e
 
+setdisplay(:full)
+
 @testset "Tests Taylor1 and TaylorN expansions over Intervals" begin
     a = interval(1, 2)
     b = interval(-1, 1)
@@ -175,8 +177,8 @@ using Test
     @test_throws DomainError acosh(interval(0.0, 1.0) + x)
     @test acosh(interval(0.0, 2.0) + x) == acosh(interval(1.0, 2.0) + x)
     # atanh defined on interval(-1,1)
-    @test_logs (:warn, "invalid interval, empty interval is returned") @test_throws DomainError atanh(interval(1.0, 1.0) + ti)
+    @test_logs (:warn, "ill-formed bare interval [a, b] with a = Inf, b = Inf. Empty interval is returned") @test_throws DomainError atanh(interval(1.0, 1.0) + ti)
     @test atanh(interval(-2.0, 0.0) + ti) == atanh(interval(-1.0, 0.0) + ti)
-    @test_logs (:warn, "invalid interval, empty interval is returned") @test_throws DomainError atanh(interval(1.0, 1.0) + y)
+    @test_logs (:warn, "ill-formed bare interval [a, b] with a = Inf, b = Inf. Empty interval is returned") @test_throws DomainError atanh(interval(1.0, 1.0) + y)
     @test atanh(interval(-2.0, 0.0) + y) == atanh(interval(-1.0, 0.0) + y)
 end
