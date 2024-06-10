@@ -54,7 +54,7 @@ import Base.float
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries, TS
 
 export getcoeff, derivative, integrate, differentiate,
-    evaluate, evaluate!, inverse, set_taylor1_varname,
+    evaluate, evaluate!, inverse, inverse_map, set_taylor1_varname,
     show_params_TaylorN, show_monomials, displayBigO, use_show_default,
     get_order, get_numvars,
     set_variables, get_variables,
