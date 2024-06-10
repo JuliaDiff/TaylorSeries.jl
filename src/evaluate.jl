@@ -331,8 +331,7 @@ end
 
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:Number}) where {N,T<:Number}
     R = promote_type(T, typeof(vals[1]))
-    a_length = length(a)
-    suma = zeros(R, a_length)
+    suma = zeros(R, length(a))
     @inbounds for homPol in eachindex(a)
         suma[homPol+1] = _evaluate(a[homPol], vals)
     end
@@ -499,7 +498,7 @@ end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
         x0::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
-    x0 .= _evaluate.( x, Ref(δx), Ref(Val(sorting)) )
+    x0 .= evaluate.( x, Ref(δx), sorting = sorting)
     return nothing
 end
 

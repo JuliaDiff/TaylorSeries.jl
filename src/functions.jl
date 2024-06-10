@@ -1228,7 +1228,7 @@ end
     inverse(f)
 
 Return the Taylor expansion of ``f^{-1}(t)``, of order `N = f.order`,
-for `f::Taylor1` polynomial if the first coefficient of `f` is zero.
+for `f::Taylor1` polynomial, assuming the first coefficient of `f` is zero.
 Otherwise, a `DomainError` is thrown.
 
 The algorithm implements Lagrange inversion at ``t=0`` if ``f(0)=0``:
@@ -1246,23 +1246,84 @@ function inverse(f::Taylor1{T}) where {T<:Number}
     if !iszero(f[0])
         throw(DomainError(f,
         """
-        Evaluation of Taylor1 series at 0 is non-zero. For high accuracy, revert
-        a Taylor1 series with first coefficient 0 and re-expand about f(0).
+        Evaluation of Taylor1 series at 0 is non-zero; revert
+        a Taylor1 series with constant coefficient 0 and re-expand about f(0).
         """))
     end
-    z = Taylor1(T,f.order)
+    z = Taylor1(T, f.order)
     zdivf = z/f
     zdivfpown = zdivf
-    S = TS.numtype(zdivf)
-    coeffs = zeros(S,f.order+1)
+    res = Taylor1(zero(TS.numtype(zdivf)), f.order)
 
-    @inbounds for n in 1:f.order
-        coeffs[n+1] = zdivfpown[n-1]/n
+    @inbounds for ord in 1:f.order
+        res[ord] = zdivfpown[ord-1]/ord
         zdivfpown *= zdivf
     end
-    Taylor1(coeffs, f.order)
+    return res
 end
 
+
+@doc doc"""
+    inverse_map(f)
+
+Return the Taylor expansion of ``f^{-1}(t)``, of order `N = f.order`,
+for `Taylor1` or `TaylorN` polynomials, assuming the first coefficient of `f` is zero.
+Otherwise, a `DomainError` is thrown.
+
+This method is based in the algorithm by M. Berz, Modern map methods in
+Particle Beam Physics, Academic Press (1999), Sect 2.3.1.
+See [`inverse`](@ref) (for `f::Taylor1`).
+
+"""
+function inverse_map(p::Taylor1)
+    if !iszero(constant_term(p))
+        throw(DomainError(p,
+        """
+        Evaluation of Taylor1 series at 0 is non-zero; revert
+        a Taylor1 series with constant coefficient 0 and re-expand about f(0).
+        """))
+    end
+    inv_m_pol = inv(linear_polynomial(p)[1])
+    n_pol = inv_m_pol * nonlinear_polynomial(p)
+    ident = inv_m_pol * Taylor1(p.order)
+    res = ident
+    aux1 = zero(res)
+    aux2 = zero(res)
+    for ord in 1:p.order
+        _horner!(aux2, n_pol, res, aux1)
+        res[ord] = ident[ord] - aux2[ord]
+    end
+    return res
+end
+
+function inverse_map(p::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
+    if !iszero(constant_term(p))
+        throw(DomainError(p,
+        """
+        Evaluation of Taylor1 series at 0 is non-zero; revert
+        a Taylor1 series with constant coefficient 0 and re-expand about f(0).
+        """))
+    end
+    @assert length(p) == get_numvars()
+    inv_m_pol = inv(jacobian(p))
+    n_pol = inv_m_pol * nonlinear_polynomial(p)
+    ident = inv_m_pol * TaylorN.(1:get_numvars(), order=get_order(p[1]))
+    res = deepcopy(ident)
+    aux = zero(res)
+    vhps = zeros(TaylorN{numtype(res[1])}, length(p[1]))
+    for ord in 1:get_order(p[1])
+        t_res = (res...,)
+        for i = 1:get_numvars()
+            aux[i] = sum( _evaluate(n_pol[i], t_res) )
+            if ord == 1
+                subst!(res[i], ident[i], aux[i], ord)
+            else
+                subst!(res[i], aux[i], ord)
+            end
+        end
+    end
+    return res
+end
 
 
 # Documentation for the recursion relations
