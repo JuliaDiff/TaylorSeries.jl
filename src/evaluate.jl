@@ -67,9 +67,6 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
 end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:NumberNotSeriesN}
-    if a.order != x.order
-        a, x = fixorder(a, x)
-    end
     @inbounds suma = a[end]*zero(x)
     aux = zero(suma)
     _horner!(suma, a, x, aux)
@@ -77,9 +74,6 @@ function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:NumberNotSeri
 end
 
 function evaluate(a::Taylor1{T}, x::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
-    if a.order != x.order
-        a, x = fixorder(a, x)
-    end
     @inbounds suma = a[end]*zero(x)
     aux = zero(suma)
     _horner!(suma, a, x, aux)
@@ -472,7 +466,12 @@ function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
     x0 .= evaluate.( x, δt )
     return nothing
 end
-
+# function evaluate!(x::AbstractArray{Taylor1{Taylor1{T}}}, δt::Taylor1{T},
+#         x0::AbstractArray{Taylor1{T}}) where {T<:Number}
+#     x0 .= evaluate.( x, Ref(δt) )
+#     # x0 .= evaluate.( x, δt )
+#     return nothing
+# end
 
 ## In place evaluation of multivariable arrays
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{T,1},
