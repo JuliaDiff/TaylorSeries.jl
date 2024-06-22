@@ -569,4 +569,9 @@ end
     @test get_order(tti[0]) == get_order(ti)-1
     @test isapprox(abs2(exp(im*to)), one(to))
     @test isapprox(abs(exp(im*to)), one(to))
+    to = Taylor1([1/(1+ti), one(ti)], 9)
+    @test to(1.0) == 1 + 1/(1+ti)
+    @test cos(to)(0.0) == cos(to[0])
+    @test to(ti) == to[0] + ti
+    @test evaluate(to*ti, ti) == to[0]*ti + ti^2
 end
