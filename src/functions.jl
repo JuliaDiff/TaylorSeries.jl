@@ -318,12 +318,14 @@ end
 
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:NumberNotSeries}
+        @inline @generated function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:NumberNotSeries}
             if $T == Taylor1
-                @inbounds c[k] = identity(a[k])
+                return :(@inbounds c[k] = identity(a[k]))
             else
-                @inbounds for l in eachindex(c[k])
-                    identity!(c[k], a[k], l)
+                return quote
+                    @inbounds for l in eachindex(c[k])
+                        identity!(c[k], a[k], l)
+                    end
                 end
             end
             return nothing
@@ -364,69 +366,93 @@ for T in (:Taylor1, :TaylorN)
 
         @inline abs2!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number} = sqr!(c, a, k)
 
-        @inline function exp!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            if k == 0
-                @inbounds c[0] = exp(constant_term(a))
-                return nothing
-            end
-            zero!(c, k)
-            if $T == Taylor1
+        if $T == Taylor1
+            @inline function exp!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+                if k == 0
+                    @inbounds c[0] = exp(constant_term(a))
+                    return nothing
+                end
+                zero!(c, k)
                 @inbounds for i = 0:k-1
                     c[k] += (k-i) * a[k-i] * c[i]
                 end
                 @inbounds div!(c, c, k, k)
-            else
+                return nothing
+            end
+        else
+            @inline function exp!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+                if k == 0
+                    @inbounds c[0] = exp(constant_term(a))
+                    return nothing
+                end
+                zero!(c, k)
                 @inbounds for i = 0:k-1
                     mul_scalar!(c[k], k-i, a[k-i], c[i])
                 end
                 @inbounds div!(c[k], c[k], k)
+                return nothing
             end
-            return nothing
         end
 
-        @inline function expm1!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            if k == 0
-                @inbounds c[0] = expm1(constant_term(a))
-                return nothing
+        @inline @generated function expm1!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            ex1 = quote
+                if k == 0
+                    @inbounds c[0] = expm1(constant_term(a))
+                    return nothing
+                end
+                zero!(c, k)
+                c0 = c[0]+one(c[0])
             end
-            zero!(c, k)
-            c0 = c[0]+one(c[0])
             if $T == Taylor1
-                @inbounds c[k] = k * a[k] * c0
-                @inbounds for i = 1:k-1
-                    c[k] += (k-i) * a[k-i] * c[i]
+                ex2 = quote
+                    @inbounds c[k] = k * a[k] * c0
+                    @inbounds for i = 1:k-1
+                        c[k] += (k-i) * a[k-i] * c[i]
+                    end
+                    @inbounds div!(c, c, k, k)
                 end
-                @inbounds div!(c, c, k, k)
             else
-                @inbounds mul_scalar!(c[k], k, a[k], c0)
-                @inbounds for i = 1:k-1
-                    mul_scalar!(c[k], k-i, a[k-i], c[i])
+                ex2 = quote
+                    @inbounds mul_scalar!(c[k], k, a[k], c0)
+                    @inbounds for i = 1:k-1
+                        mul_scalar!(c[k], k-i, a[k-i], c[i])
+                    end
+                    @inbounds div!(c[k], c[k], k)
                 end
-                @inbounds div!(c[k], c[k], k)
             end
-            return nothing
+            ex3 = :(return nothing)
+            return Expr(:block, ex1, ex2, ex3)
         end
 
-        @inline function log!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            if k == 0
-                @inbounds c[0] = log(constant_term(a))
-                return nothing
-            elseif k == 1
-                @inbounds c[1] = a[1] / constant_term(a)
-                return nothing
+        @inline @generated function log!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            ex1 = quote
+                if k == 0
+                    @inbounds c[0] = log(constant_term(a))
+                    return nothing
+                elseif k == 1
+                    @inbounds c[1] = a[1] / constant_term(a)
+                    return nothing
+                end
+                zero!(c, k)
             end
-            zero!(c, k)
             if $T == Taylor1
-                @inbounds for i = 1:k-1
-                    c[k] += (k-i) * a[i] * c[k-i]
+                ex2 = quote
+                    @inbounds for i = 1:k-1
+                        c[k] += (k-i) * a[i] * c[k-i]
+                    end
                 end
             else
-                @inbounds for i = 1:k-1
-                    mul_scalar!(c[k], k-i, a[i], c[k-i])
+                ex2 = quote
+                    @inbounds for i = 1:k-1
+                        mul_scalar!(c[k], k-i, a[i], c[k-i])
+                    end
                 end
             end
-            @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
-            return nothing
+            ex3 = quote
+                @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
+                return nothing
+            end
+            return Expr(:block, ex1, ex2, ex3)
         end
 
         @inline function log1p!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
@@ -456,40 +482,43 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            if k == 0
-                a0 = constant_term(a)
-                if $T == Taylor1
-                    @inbounds s[0], c[0] = sincos( a0 )
-                else
-                    @inbounds s[0][1], c[0][1] = sincos( a0 )
-                end
-                return nothing
-            end
-            zero!(s, k)
-            zero!(c, k)
-            if $T == Taylor1
-                @inbounds for i = 1:k
-                    x = i * a[i]
-                    s[k] += x * c[k-i]
-                    c[k] -= x * s[k-i]
-                end
-            else
-                @inbounds for i = 1:k
-                    mul_scalar!(s[k],  i, a[i], c[k-i])
-                    mul_scalar!(c[k], -i, a[i], s[k-i])
-                end
-            end
 
             if $T == Taylor1
-                s[k] = s[k] / k
-                c[k] = c[k] / k
+                @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+                    if k == 0
+                        a0 = constant_term(a)
+                        @inbounds s[0], c[0] = sincos( a0 )
+                        return nothing
+                    end
+                    zero!(s, k)
+                    zero!(c, k)
+                    @inbounds for i = 1:k
+                        x = i * a[i]
+                        s[k] += x * c[k-i]
+                        c[k] -= x * s[k-i]
+                    end
+                    s[k] = s[k] / k
+                    c[k] = c[k] / k
+                    return nothing
+                end
             else
-                @inbounds div!(s[k], s[k], k)
-                @inbounds div!(c[k], c[k], k)
+                @inline function sincos!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+                    if k == 0
+                        a0 = constant_term(a)
+                        @inbounds s[0][1], c[0][1] = sincos( a0 )
+                        return nothing
+                    end
+                    zero!(s, k)
+                    zero!(c, k)
+                    @inbounds for i = 1:k
+                        mul_scalar!(s[k],  i, a[i], c[k-i])
+                        mul_scalar!(c[k], -i, a[i], s[k-i])
+                    end
+                    @inbounds div!(s[k], s[k], k)
+                    @inbounds div!(c[k], c[k], k)
+                    return nothing
+                end
             end
-            return nothing
-        end
 
         @inline function sincospi!(s::$T{T}, c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             if k == 0

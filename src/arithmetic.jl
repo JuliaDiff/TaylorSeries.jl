@@ -250,15 +250,18 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             end
 
             ## add! and subst! ##
-            function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-                if $T == Taylor1
+            if $T == Taylor1
+                function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
                     @inbounds v[k] = ($f)(a[k])
-                else
+                    return nothing
+                end
+            else
+                function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
                     @inbounds for l in eachindex(v[k])
                         v[k][l] = ($f)(a[k][l])
                     end
+                    return nothing
                 end
-                return nothing
             end
 
             function ($fc)(v::$T{T}, a::T, k::Int) where {T<:Number}
@@ -507,52 +510,64 @@ end
 # Internal multiplication functions
 for T in (:Taylor1, :TaylorN)
     # NOTE: For $T = TaylorN, `mul!` *accumulates* the result of a * b in c[k]
-    @eval @inline function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
+    @eval @inline @generated function mul!(c::$T{T}, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
         if $T == Taylor1
-            @inbounds c[k] = a[0] * b[k]
-            @inbounds for i = 1:k
-                c[k] += a[i] * b[k-i]
+            return quote
+                @inbounds c[k] = a[0] * b[k]
+                @inbounds for i = 1:k
+                    c[k] += a[i] * b[k-i]
+                end
             end
         else
-            @inbounds mul!(c[k], a[0], b[k])
-            @inbounds for i = 1:k
-                mul!(c[k], a[i], b[k-i])
+            return quote
+                @inbounds mul!(c[k], a[0], b[k])
+                @inbounds for i = 1:k
+                    mul!(c[k], a[i], b[k-i])
+                end
             end
         end
         return nothing
     end
 
-    @eval @inline function mul_scalar!(c::$T{T}, scalar::NumberNotSeries, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
+    @eval @inline @generated function mul_scalar!(c::$T{T}, scalar::NumberNotSeries, a::$T{T}, b::$T{T}, k::Int) where {T<:Number}
         if $T == Taylor1
-            @inbounds c[k] = scalar * a[0] * b[k]
-            @inbounds for i = 1:k
-                c[k] += scalar * a[i] * b[k-i]
+            return quote
+                @inbounds c[k] = scalar * a[0] * b[k]
+                @inbounds for i = 1:k
+                    c[k] += scalar * a[i] * b[k-i]
+                end
             end
         else
-            @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
-            @inbounds for i = 1:k
-                mul_scalar!(c[k], scalar, a[i], b[k-i])
+            return quote
+                @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
+                @inbounds for i = 1:k
+                    mul_scalar!(c[k], scalar, a[i], b[k-i])
+                end
             end
         end
         return nothing
     end
 
-    @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+    @eval @inline @generated function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
         if $T == Taylor1
-            @inbounds v[k] = a[k] * b
+            return :(@inbounds v[k] = a[k] * b)
         else
-            @inbounds for i in eachindex(v[k])
-                v[k][i] = a[k][i] * b
+            return quote
+                @inbounds for i in eachindex(v[k])
+                    v[k][i] = a[k][i] * b
+                end
             end
         end
         return nothing
     end
-    @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
+    @eval @inline @generated function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
         if $T == Taylor1
-            @inbounds v[k] = a * b[k]
+            return :(@inbounds v[k] = a * b[k])
         else
-            @inbounds for i in eachindex(v[k])
-                v[k][i] = a * b[k][i]
+            return quote
+                @inbounds for i in eachindex(v[k])
+                    v[k][i] = a * b[k][i]
+                end
             end
         end
         return nothing
