@@ -156,7 +156,7 @@ struct TaylorN{T<:Number} <: AbstractSeries{T}
     order   :: Int
 
     function TaylorN{T}(v::Array{HomogeneousPolynomial{T},1}, order::Int) where T<:Number
-        coeffs = zeros(HomogeneousPolynomial{T}, order)
+        coeffs = isempty(v) ? zeros(HomogeneousPolynomial{T}, order) : zeros(v[1], order)
         @inbounds for i in eachindex(v)
             ord = v[i].order
             if ord ≤ order

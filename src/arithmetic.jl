@@ -162,7 +162,12 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 for T in (:Taylor1, :TaylorN)
-    @eval zero(a::$T) = $T(zero.(a.coeffs))
+    @eval function zero(a::$T)
+        return $T(zero.(a.coeffs))
+        # za = deepcopy(a)
+        # zero!(za)
+        return za
+    end
     @eval function one(a::$T)
         b = zero(a)
         b[0] = one(b[0])
@@ -660,6 +665,39 @@ c, a and b are `HomogeneousPolynomial`.
 
             pos = posTb[inda + indb]
             c[pos] += ca * cb
+        end
+    end
+
+    return nothing
+end
+
+@inline function mul_non_accumulating!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
+        b::HomogeneousPolynomial)
+
+    (iszero(b) || iszero(a)) && return nothing
+
+    @inbounds num_coeffs_a = size_table[a.order+1]
+    @inbounds num_coeffs_b = size_table[b.order+1]
+
+    @inbounds posTb = pos_table[c.order+1]
+
+    @inbounds indTa = index_table[a.order+1]
+    @inbounds indTb = index_table[b.order+1]
+
+    count = 0
+    @inbounds for na in 1:num_coeffs_a
+        ca = a[na]
+        # iszero(ca) && continue
+        inda = indTa[na]
+
+        @inbounds for nb in 1:num_coeffs_b
+            cb = b[nb]
+            # iszero(cb) && continue
+            indb = indTb[nb]
+
+            pos = posTb[inda + indb]
+            (count == 0) ? (c[pos] = ca * cb) : (c[pos] += ca * cb)
+            count += 1
         end
     end
 

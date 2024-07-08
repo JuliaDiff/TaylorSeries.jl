@@ -59,31 +59,91 @@ end
 ^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} = a^(r.num/r.den)
 
 
+# in-place form of power_by_squaring
+function power_by_squaring!(y::TaylorN, x::TaylorN, aux1::TaylorN, aux2::TaylorN, p::Integer)
+    # this method assumes `y`, `aux1` and `aux2` are initialized to zero(x)
+    t = trailing_zeros(p) + 1
+    p >>= t
+    # aux1 = x
+    for k in eachindex(aux1)
+        identity!(aux1, x, k)
+    end
+    while (t -= 1) > 0
+        # TODO: square x in-place (in appropriate method)
+        # y = square(aux1)
+        for k in eachindex(y)
+            sqr!(y, aux1, k)
+        end
+        # aux1 = y
+        for k in eachindex(aux1)
+            identity!(aux1, y, k)
+        end
+    end
+    # y = aux1
+    for k in eachindex(y)
+        identity!(y, aux1, k)
+    end
+    while p > 0
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) ≥ 0
+            # TODO: square x in-place (in appropriate method)
+            # aux2 = square(aux1)
+            for k in eachindex(aux2)
+                sqr!(aux2, aux1, k)
+            end
+            # aux1 = aux2
+            for k in eachindex(aux1)
+                identity!(aux1, aux2, k)
+            end
+        end
+        # aux2 = y
+        for k in eachindex(aux2)
+            identity!(aux2, y, k)
+        end
+        # y = aux2 * aux1
+        # if $T == Taylor1
+        #     for k in eachindex(y)
+        #         mul!(y, aux2, aux1, k)
+        #     end
+        # end
+        zero!(y)
+        for k in eachindex(y)
+            mul!(y, aux2, aux1, k)
+        end
+    end
+    return nothing
+end
 
 # power_by_squaring; slightly modified from base/intfuncs.jl
 # Licensed under MIT "Expat"
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval function power_by_squaring(x::$T, p::Integer)
-        if p == 1
-            return copy(x)
-        elseif p == 0
-            return one(x)
-        elseif p == 2
-            return square(x)
-        end
-        t = trailing_zeros(p) + 1
-        p >>= t
-        while (t -= 1) > 0
-            x = square(x)
-        end
-        y = x
-        while p > 0
+    @eval power_by_squaring(x::$T, p::Integer) = power_by_squaring(x, Val(p))
+    @eval power_by_squaring(x::$T, ::Val{0}) = one(x)
+    @eval power_by_squaring(x::$T, ::Val{1}) = copy(x)
+    @eval power_by_squaring(x::$T, ::Val{2}) = square(x)
+    @eval function power_by_squaring(x::$T, ::Val{P}) where P
+        p = P # copy static parameter `P` into local variable `p`
+        if $T == TaylorN
+            y = zero(x)
+            aux1 = zero(x)
+            aux2 = zero(x)
+            power_by_squaring!(y, x, aux1, aux2, p)
+        else
             t = trailing_zeros(p) + 1
             p >>= t
-            while (t -= 1) ≥ 0
+            while (t -= 1) > 0
                 x = square(x)
             end
-            y *= x
+            y = x
+            while p > 0
+                t = trailing_zeros(p) + 1
+                p >>= t
+                while (t -= 1) ≥ 0
+                    x = square(x)
+                end
+                y *= x
+            end
         end
         return y
     end
@@ -300,7 +360,7 @@ end
     if ordT == lnull
         if isinteger(r)
             # TODO: get rid of allocations here
-            res[ordT] = a[l0]^round(Int,r) # uses power_by_squaring
+            @time res[ordT] = a[l0]^round(Int,r) # uses power_by_squaring
             return nothing
         end
 
@@ -339,7 +399,10 @@ Return `a^2`; see [`TaylorSeries.sqr!`](@ref).
 
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
-        c = $T( zero(constant_term(a)), a.order)
+        # c = $T( zero(constant_term(a)), a.order)
+        # c = deepcopy(a)
+        # zero!(c)
+        c = zero(a)
         for k in eachindex(a)
             sqr!(c, a, k)
         end
@@ -443,6 +506,45 @@ for T = (:Taylor1, :TaylorN)
                 @inbounds c[k] += a[k >> 1]^2
             else
                 accsqr!(c[k], a[k >> 1])
+            end
+
+            return nothing
+        end
+
+        # in-place squaring: given `c`, compute expansion of `c^2` and save back into `c`
+        @inline function sqr!(c::$T{T}, k::Int) where {T<:NumberNotSeries}
+            if k == 0
+                sqr_orderzero!(c, c)
+                return nothing
+            end
+
+            # Recursion formula
+            kodd = k%2
+            kend = (k - 2 + kodd) >> 1
+            if $T == Taylor1
+                ck = deepcopy(c[k])
+                (kodd == 0) && ( @inbounds c[k] = (c[k >> 1]^2)/2 )
+                c[k] = c[0] * ck
+                @inbounds for i = 1:kend
+                    c[k] += c[i] * c[k-i]
+                end
+                @inbounds c[k] = 2 * c[k]
+            else
+                # zz = deepcopy(c[k])
+                # zero!(c[k])
+                # @show c[0][1], typeof(c[0][1])
+                # _2c01 = 2c[0][1]
+                # @inbounds mul!(c, _2c01, c, k)
+                # mul!(c[k], zz, c[0])
+                (kend ≥ 0) && mul!(c, c[0][1], c, k)
+                @inbounds for i = 1:kend
+                    mul!(c[k], c[i], c[k-i])
+                end
+                @inbounds mul!(c, 2, c, k)
+                if (kodd == 0)
+                    accsqr!(c[k], c[k >> 1])
+                    # mul!(c, 0.5, c, k)
+                end
             end
 
             return nothing

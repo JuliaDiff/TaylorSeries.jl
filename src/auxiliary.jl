@@ -18,9 +18,8 @@ function resize_coeffs1!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     lencoef = length(coeffs)
     resize!(coeffs, order+1)
     if order > lencoef-1
-        z = zero(coeffs[1])
         @simd for ord in lencoef+1:order+1
-            @inbounds coeffs[ord] = z
+            @inbounds coeffs[ord] = zero(coeffs[1])
         end
     end
     return nothing
@@ -39,9 +38,8 @@ function resize_coeffsHP!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     @assert order ≤ get_order() && lencoef ≤ num_coeffs
     num_coeffs == lencoef && return nothing
     resize!(coeffs, num_coeffs)
-    z = zero(coeffs[1])
     @simd for ord in lencoef+1:num_coeffs
-        @inbounds coeffs[ord] = z
+        @inbounds coeffs[ord] = zero(coeffs[1])
     end
     return nothing
 end
