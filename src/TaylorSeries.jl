@@ -28,8 +28,6 @@ using LinearAlgebra: norm, mul!,
     lu, lu!, LinearAlgebra.lutype, LinearAlgebra.copy_oftype,
     LinearAlgebra.issuccess
 
-using InteractiveUtils
-
 if VERSION >= v"1.7.0-DEV.1188"
     using LinearAlgebra: NoPivot, RowMaximum
 end
