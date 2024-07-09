@@ -58,7 +58,6 @@ end
 
 ^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} = a^(r.num/r.den)
 
-
 # in-place form of power_by_squaring
 # this method assumes `y`, `x` and `aux1` are of same order
 function power_by_squaring!(y::TaylorN{T}, x::TaylorN{T}, aux1::TaylorN{T}, p::Integer) where {T<:NumberNotSeries}
