@@ -60,8 +60,8 @@ end
 
 
 # in-place form of power_by_squaring
-function power_by_squaring!(y::TaylorN, x::TaylorN, aux1::TaylorN, aux2::TaylorN, p::Integer)
-    # this method assumes `y`, `aux1` and `aux2` are initialized to zero(x)
+# this method assumes `y`, `x` and `aux1` are of same order
+function power_by_squaring!(y::TaylorN{T}, x::TaylorN{T}, aux1::TaylorN{T}, p::Integer) where {T<:NumberNotSeries}
     t = trailing_zeros(p) + 1
     p >>= t
     # aux1 = x
@@ -69,14 +69,9 @@ function power_by_squaring!(y::TaylorN, x::TaylorN, aux1::TaylorN, aux2::TaylorN
         identity!(aux1, x, k)
     end
     while (t -= 1) > 0
-        # TODO: square x in-place (in appropriate method)
-        # y = square(aux1)
-        for k in eachindex(y)
-            sqr!(y, aux1, k)
-        end
-        # aux1 = y
-        for k in eachindex(aux1)
-            identity!(aux1, y, k)
+        # aux1 = square(aux1)
+        for k in reverse(eachindex(aux1))
+            sqr!(aux1, k)
         end
     end
     # y = aux1
@@ -87,33 +82,17 @@ function power_by_squaring!(y::TaylorN, x::TaylorN, aux1::TaylorN, aux2::TaylorN
         t = trailing_zeros(p) + 1
         p >>= t
         while (t -= 1) ≥ 0
-            # TODO: square x in-place (in appropriate method)
-            # aux2 = square(aux1)
-            for k in eachindex(aux2)
-                sqr!(aux2, aux1, k)
-            end
-            # aux1 = aux2
-            for k in eachindex(aux1)
-                identity!(aux1, aux2, k)
+            # aux1 = square(aux1)
+            for k in reverse(eachindex(aux1))
+                sqr!(aux1, k)
             end
         end
-        # aux2 = y
-        for k in eachindex(aux2)
-            identity!(aux2, y, k)
-        end
-        # y = aux2 * aux1
-        # if $T == Taylor1
-        #     for k in eachindex(y)
-        #         mul!(y, aux2, aux1, k)
-        #     end
-        # end
-        zero!(y)
-        for k in eachindex(y)
-            mul!(y, aux2, aux1, k)
-        end
+        # y = y * aux1
+        mul!(y, aux1)
     end
     return nothing
 end
+
 
 # power_by_squaring; slightly modified from base/intfuncs.jl
 # Licensed under MIT "Expat"
@@ -127,8 +106,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         if $T == TaylorN
             y = zero(x)
             aux1 = zero(x)
-            aux2 = zero(x)
-            power_by_squaring!(y, x, aux1, aux2, p)
+            power_by_squaring!(y, x, aux1, p)
         else
             t = trailing_zeros(p) + 1
             p >>= t
@@ -149,6 +127,24 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 
+function power_by_squaring(x::TaylorN{Taylor1{T}}, ::Val{P}) where {P, T<:NumberNotSeries}
+    p = P # copy static parameter `P` into local variable `p`
+    t = trailing_zeros(p) + 1
+    p >>= t
+    while (t -= 1) > 0
+        x = square(x)
+    end
+    y = x
+    while p > 0
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) ≥ 0
+            x = square(x)
+        end
+        y *= x
+    end
+    return y
+end
 
 ## Real power ##
 function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
@@ -360,7 +356,8 @@ end
     if ordT == lnull
         if isinteger(r)
             # TODO: get rid of allocations here
-            @time res[ordT] = a[l0]^round(Int,r) # uses power_by_squaring
+            aux1 = deepcopy(res[ordT])
+            power_by_squaring!(res[ordT], a[l0], aux1, round(Int,r))
             return nothing
         end
 
@@ -399,9 +396,6 @@ Return `a^2`; see [`TaylorSeries.sqr!`](@ref).
 
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
-        # c = $T( zero(constant_term(a)), a.order)
-        # c = deepcopy(a)
-        # zero!(c)
         c = zero(a)
         for k in eachindex(a)
             sqr!(c, a, k)
@@ -522,20 +516,13 @@ for T = (:Taylor1, :TaylorN)
             kodd = k%2
             kend = (k - 2 + kodd) >> 1
             if $T == Taylor1
-                ck = deepcopy(c[k])
                 (kodd == 0) && ( @inbounds c[k] = (c[k >> 1]^2)/2 )
-                c[k] = c[0] * ck
+                c[k] = c[0] * c[k]
                 @inbounds for i = 1:kend
                     c[k] += c[i] * c[k-i]
                 end
                 @inbounds c[k] = 2 * c[k]
             else
-                # zz = deepcopy(c[k])
-                # zero!(c[k])
-                # @show c[0][1], typeof(c[0][1])
-                # _2c01 = 2c[0][1]
-                # @inbounds mul!(c, _2c01, c, k)
-                # mul!(c[k], zz, c[0])
                 (kend ≥ 0) && mul!(c, c[0][1], c, k)
                 @inbounds for i = 1:kend
                     mul!(c[k], c[i], c[k-i])
@@ -543,7 +530,6 @@ for T = (:Taylor1, :TaylorN)
                 @inbounds mul!(c, 2, c, k)
                 if (kodd == 0)
                     accsqr!(c[k], c[k >> 1])
-                    # mul!(c, 0.5, c, k)
                 end
             end
 
