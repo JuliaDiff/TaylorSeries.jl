@@ -126,6 +126,9 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 
+power_by_squaring(x::TaylorN{Taylor1{T}}, ::Val{0}) where {T<:NumberNotSeries} = one(x)
+power_by_squaring(x::TaylorN{Taylor1{T}}, ::Val{1}) where {T<:NumberNotSeries} = copy(x)
+power_by_squaring(x::TaylorN{Taylor1{T}}, ::Val{2}) where {T<:NumberNotSeries} = square(x)
 function power_by_squaring(x::TaylorN{Taylor1{T}}, ::Val{P}) where {P, T<:NumberNotSeries}
     p = P # copy static parameter `P` into local variable `p`
     t = trailing_zeros(p) + 1
