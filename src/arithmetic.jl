@@ -164,8 +164,6 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function zero(a::$T)
         return $T(zero.(a.coeffs))
-        # za = deepcopy(a)
-        # zero!(za)
         return za
     end
     @eval function one(a::$T)
@@ -577,6 +575,19 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
+# in-place product: `a` <- `a*b`
+# this method computes the product `a*b` and saves it back into `a`
+# assumes `a` and `b` are of same order
+function mul!(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
+    for k in reverse(eachindex(a))
+        mul!(a, a, b[0][1], k)
+        for l in 1:k
+            mul!(a[k], a[k-l], b[l])
+        end
+    end
+    return nothing
+end
+
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
         ordT::Int) where {T<:NumberNotSeries}
     # Sanity
@@ -665,39 +676,6 @@ c, a and b are `HomogeneousPolynomial`.
 
             pos = posTb[inda + indb]
             c[pos] += ca * cb
-        end
-    end
-
-    return nothing
-end
-
-@inline function mul_non_accumulating!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
-        b::HomogeneousPolynomial)
-
-    (iszero(b) || iszero(a)) && return nothing
-
-    @inbounds num_coeffs_a = size_table[a.order+1]
-    @inbounds num_coeffs_b = size_table[b.order+1]
-
-    @inbounds posTb = pos_table[c.order+1]
-
-    @inbounds indTa = index_table[a.order+1]
-    @inbounds indTb = index_table[b.order+1]
-
-    count = 0
-    @inbounds for na in 1:num_coeffs_a
-        ca = a[na]
-        # iszero(ca) && continue
-        inda = indTa[na]
-
-        @inbounds for nb in 1:num_coeffs_b
-            cb = b[nb]
-            # iszero(cb) && continue
-            indb = indTb[nb]
-
-            pos = posTb[inda + indb]
-            (count == 0) ? (c[pos] = ca * cb) : (c[pos] += ca * cb)
-            count += 1
         end
     end
 
