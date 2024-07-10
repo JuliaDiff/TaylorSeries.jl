@@ -164,7 +164,6 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function zero(a::$T)
         return $T(zero.(a.coeffs))
-        return za
     end
     @eval function one(a::$T)
         b = zero(a)
