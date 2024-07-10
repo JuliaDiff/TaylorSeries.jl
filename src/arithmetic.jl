@@ -578,7 +578,7 @@ end
 # this method computes the product `a*b` and saves it back into `a`
 # assumes `a` and `b` are of same order
 function mul!(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
-    for k in reverse(eachindex(a))
+    @inbounds for k in reverse(eachindex(a))
         mul!(a, a, b[0][1], k)
         for l in 1:k
             mul!(a[k], a[k-l], b[l])
