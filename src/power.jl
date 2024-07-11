@@ -59,37 +59,37 @@ end
 ^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} = a^(r.num/r.den)
 
 # in-place form of power_by_squaring
-# this method assumes `y`, `x` and `aux1` are of same order
+# this method assumes `y`, `x` and `aux` are of same order
 for T in (:Taylor1, :TaylorN)
-    @eval function power_by_squaring!(y::$T{T}, x::$T{T}, aux1::$T{T},
+    @eval function power_by_squaring!(y::$T{T}, x::$T{T}, aux::$T{T},
             p::Integer) where {T<:NumberNotSeries}
         t = trailing_zeros(p) + 1
         p >>= t
-        # aux1 = x
-        for k in eachindex(aux1)
-            identity!(aux1, x, k)
+        # aux = x
+        for k in eachindex(aux)
+            identity!(aux, x, k)
         end
         while (t -= 1) > 0
-            # aux1 = square(aux1)
-            for k in reverse(eachindex(aux1))
-                sqr!(aux1, k)
+            # aux = square(aux)
+            for k in reverse(eachindex(aux))
+                sqr!(aux, k)
             end
         end
-        # y = aux1
+        # y = aux
         for k in eachindex(y)
-            identity!(y, aux1, k)
+            identity!(y, aux, k)
         end
         while p > 0
             t = trailing_zeros(p) + 1
             p >>= t
             while (t -= 1) ≥ 0
-                # aux1 = square(aux1)
-                for k in reverse(eachindex(aux1))
-                    sqr!(aux1, k)
+                # aux = square(aux)
+                for k in reverse(eachindex(aux))
+                    sqr!(aux, k)
                 end
             end
-            # y = y * aux1
-            mul!(y, aux1)
+            # y = y * aux
+            mul!(y, aux)
         end
         return nothing
     end
@@ -107,8 +107,8 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         p = P # copy static parameter `P` into local variable `p`
         if $T != HomogeneousPolynomial
             y = zero(x)
-            aux1 = zero(x)
-            power_by_squaring!(y, x, aux1, p)
+            aux = zero(x)
+            power_by_squaring!(y, x, aux, p)
         else
             t = trailing_zeros(p) + 1
             p >>= t
@@ -168,8 +168,9 @@ function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
 
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
+    aux0 = deepcopy(c[0])
     for k in eachindex(c)
-        pow!(c, aa, r, k)
+        pow!(c, aa, aux0, r, k)
     end
 
     return c
@@ -193,8 +194,9 @@ function ^(a::TaylorN, r::S) where {S<:Real}
         in order to expand `^` around 0."""))
 
     c = TaylorN( zero(aux), a.order)
+    aux = deepcopy(c)
     for ord in eachindex(a)
-        pow!(c, aa, r, ord)
+        pow!(c, aa, aux, r, ord)
     end
 
     return c
@@ -219,8 +221,9 @@ function ^(a::Taylor1{TaylorN{T}}, r::S) where {T<:NumberNotSeries, S<:Real}
 
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
+    aux0 = deepcopy(c[0])
     for k in eachindex(c)
-        pow!(c, aa, r, k)
+        pow!(c, aa, aux0, r, k)
     end
 
     return c
@@ -245,7 +248,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int) where
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, ::T, r::S, k::Int) where
         {T<:Number, S<:Real}
 
     if r == 0
@@ -294,7 +297,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     return nothing
 end
 
-@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, r::S, k::Int) where
+@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, r::S, k::Int) where
         {T<:NumberNotSeriesN, S<:Real}
 
     if r == 0
@@ -327,7 +330,7 @@ end
     return nothing
 end
 
-@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, r::S,
+@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::TaylorN{T}, r::S,
         ordT::Int) where {T<:NumberNotSeries, S<:Real}
 
     if r == 0
@@ -361,8 +364,7 @@ end
     if ordT == lnull
         if isinteger(r)
             # TODO: get rid of allocations here
-            aux1 = deepcopy(res[ordT])
-            power_by_squaring!(res[ordT], a[l0], aux1, round(Int,r))
+            power_by_squaring!(res[ordT], a[l0], aux, round(Int,r))
             return nothing
         end
 
@@ -372,7 +374,7 @@ end
             in order to expand `^` around 0."""))
 
         for ordQ in eachindex(a[l0])
-            pow!(res[ordT], a[l0], r, ordQ)
+            pow!(res[ordT], a[l0], aux, r, ordQ)
         end
 
         return nothing

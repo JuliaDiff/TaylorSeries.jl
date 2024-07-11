@@ -30,7 +30,8 @@ using Test
     # Some examples
     t1 = Taylor1(5)
     t2 = zero(t1)
-    TS.pow!(t2, t1, 2, 2)
+    t10 = deepcopy(t1[0])
+    TS.pow!(t2, t1, t10, 2, 2)
     @test t2[2] == 1.0
     #
     res = zero(t1)

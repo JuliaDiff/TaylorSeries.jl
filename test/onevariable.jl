@@ -407,26 +407,28 @@ Base.iszero(::SymbNumber) = false
     @test tt[0] == 1.0
     TS.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 1.5, 0)
+    aux = deepcopy(tt[0])
+    TS.pow!(tt, 1.0+t, aux, 1.5, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 0.0*t, 1.5, 0)
+    TS.pow!(tt, 0.0*t, aux, 1.5, 0)
     @test tt[0] == 0.0
-    TS.pow!(tt, 0.0+t, 18, 0)
+    TS.pow!(tt, 0.0+t, aux, 18, 0)
     @test tt[0] == 0.0
-    TS.pow!(tt, 1.0+t, 1.5, 0)
+    TS.pow!(tt, 1.0+t, aux, 1.5, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 0.5, 1)
+    TS.pow!(tt, 1.0+t, aux, 0.5, 1)
     @test tt[1] == 0.5
-    TS.pow!(tt, 1.0+t, 0, 0)
+    TS.pow!(tt, 1.0+t, aux, 0, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 1, 1)
+    TS.pow!(tt, 1.0+t, aux, 1, 1)
     @test tt[1] == 1.0
     tt = zero(ut)
-    TS.pow!(tt, 1.0+t, 2, 0)
+    aux = deepcopy(tt[0])
+    TS.pow!(tt, 1.0+t, aux, 2, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 2, 1)
+    TS.pow!(tt, 1.0+t, aux, 2, 1)
     @test tt[1] == 2.0
-    TS.pow!(tt, 1.0+t, 2, 2)
+    TS.pow!(tt, 1.0+t, aux, 2, 2)
     @test tt[2] == 1.0
     TS.sqrt!(tt, 1.0+t, 0, 0)
     @test tt[0] == 1.0
