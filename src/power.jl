@@ -168,7 +168,7 @@ function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
 
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
-    aux0 = deepcopy(c[0])
+    aux0 = deepcopy(c)
     for k in eachindex(c)
         pow!(c, aa, aux0, r, k)
     end
@@ -221,7 +221,7 @@ function ^(a::Taylor1{TaylorN{T}}, r::S) where {T<:NumberNotSeries, S<:Real}
 
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
-    aux0 = deepcopy(c[0])
+    aux0 = deepcopy(c)
     for k in eachindex(c)
         pow!(c, aa, aux0, r, k)
     end
@@ -248,7 +248,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, ::T, r::S, k::Int) where
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, r::S, k::Int) where
         {T<:Number, S<:Real}
 
     if r == 0
@@ -330,7 +330,7 @@ end
     return nothing
 end
 
-@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::TaylorN{T}, r::S,
+@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::Taylor1{TaylorN{T}}, r::S,
         ordT::Int) where {T<:NumberNotSeries, S<:Real}
 
     if r == 0
@@ -364,7 +364,7 @@ end
     if ordT == lnull
         if isinteger(r)
             # TODO: get rid of allocations here
-            power_by_squaring!(res[ordT], a[l0], aux, round(Int,r))
+            power_by_squaring!(res[ordT], a[l0], aux[0], round(Int,r))
             return nothing
         end
 
@@ -374,7 +374,7 @@ end
             in order to expand `^` around 0."""))
 
         for ordQ in eachindex(a[l0])
-            pow!(res[ordT], a[l0], aux, r, ordQ)
+            pow!(res[ordT], a[l0], aux[0], r, ordQ)
         end
 
         return nothing
@@ -528,7 +528,7 @@ for T = (:Taylor1, :TaylorN)
                     c[k] += c[i] * c[k-i]
                 end
                 @inbounds c[k] = 2 * c[k]
-                (kodd == 0) && ( @inbounds c[k] = c[k >> 1]^2 )
+                (kodd == 0) && ( @inbounds c[k] += c[k >> 1]^2 )
             else
                 (kend ≥ 0) && ( @inbounds mul!(c, c[0][1], c, k) )
                 @inbounds for i = 1:kend

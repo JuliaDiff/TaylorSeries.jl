@@ -407,7 +407,7 @@ Base.iszero(::SymbNumber) = false
     @test tt[0] == 1.0
     TS.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
-    aux = deepcopy(tt[0])
+    aux = tt
     TS.pow!(tt, 1.0+t, aux, 1.5, 0)
     @test tt[0] == 1.0
     TS.pow!(tt, 0.0*t, aux, 1.5, 0)
@@ -423,7 +423,7 @@ Base.iszero(::SymbNumber) = false
     TS.pow!(tt, 1.0+t, aux, 1, 1)
     @test tt[1] == 1.0
     tt = zero(ut)
-    aux = deepcopy(tt[0])
+    aux = tt
     TS.pow!(tt, 1.0+t, aux, 2, 0)
     @test tt[0] == 1.0
     TS.pow!(tt, 1.0+t, aux, 2, 1)
