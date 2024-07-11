@@ -586,6 +586,29 @@ function mul!(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
     end
     return nothing
 end
+function mul!(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
+    @inbounds for k in reverse(eachindex(a))
+        # a[k] <- a[k]*b[0]
+        mul!(a, a, b[0], k)
+        for l in 1:k
+            # a[k] <- a[k] + a[k-l] * b[l]
+            a[k] += a[k-l] * b[l]
+        end
+    end
+    return nothing
+end
+function mul!(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    @inbounds for k in reverse(eachindex(a))
+        mul!(a, a, b[0], k)
+        for l in 1:k
+            # a[k] += a[k-l] * b[l]
+            for m in eachindex(a[k])
+                mul!(a[k], a[k-l], b[l], m)
+            end
+        end
+    end
+    return nothing
+end
 
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
         ordT::Int) where {T<:NumberNotSeries}

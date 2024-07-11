@@ -60,36 +60,39 @@ end
 
 # in-place form of power_by_squaring
 # this method assumes `y`, `x` and `aux1` are of same order
-function power_by_squaring!(y::TaylorN{T}, x::TaylorN{T}, aux1::TaylorN{T}, p::Integer) where {T<:NumberNotSeries}
-    t = trailing_zeros(p) + 1
-    p >>= t
-    # aux1 = x
-    for k in eachindex(aux1)
-        identity!(aux1, x, k)
-    end
-    while (t -= 1) > 0
-        # aux1 = square(aux1)
-        for k in reverse(eachindex(aux1))
-            sqr!(aux1, k)
-        end
-    end
-    # y = aux1
-    for k in eachindex(y)
-        identity!(y, aux1, k)
-    end
-    while p > 0
+for T in (:Taylor1, :TaylorN)
+    @eval function power_by_squaring!(y::$T{T}, x::$T{T}, aux1::$T{T},
+            p::Integer) where {T<:NumberNotSeries}
         t = trailing_zeros(p) + 1
         p >>= t
-        while (t -= 1) ≥ 0
+        # aux1 = x
+        for k in eachindex(aux1)
+            identity!(aux1, x, k)
+        end
+        while (t -= 1) > 0
             # aux1 = square(aux1)
             for k in reverse(eachindex(aux1))
                 sqr!(aux1, k)
             end
         end
-        # y = y * aux1
-        mul!(y, aux1)
+        # y = aux1
+        for k in eachindex(y)
+            identity!(y, aux1, k)
+        end
+        while p > 0
+            t = trailing_zeros(p) + 1
+            p >>= t
+            while (t -= 1) ≥ 0
+                # aux1 = square(aux1)
+                for k in reverse(eachindex(aux1))
+                    sqr!(aux1, k)
+                end
+            end
+            # y = y * aux1
+            mul!(y, aux1)
+        end
+        return nothing
     end
-    return nothing
 end
 
 
@@ -102,7 +105,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval power_by_squaring(x::$T, ::Val{2}) = square(x)
     @eval function power_by_squaring(x::$T, ::Val{P}) where P
         p = P # copy static parameter `P` into local variable `p`
-        if $T == TaylorN
+        if $T != HomogeneousPolynomial
             y = zero(x)
             aux1 = zero(x)
             power_by_squaring!(y, x, aux1, p)
@@ -518,14 +521,14 @@ for T = (:Taylor1, :TaylorN)
             kodd = k%2
             kend = (k - 2 + kodd) >> 1
             if $T == Taylor1
-                (kodd == 0) && ( @inbounds c[k] = (c[k >> 1]^2)/2 )
-                c[k] = c[0] * c[k]
+                (kend ≥ 0) && ( @inbounds c[k] = c[0] * c[k] )
                 @inbounds for i = 1:kend
                     c[k] += c[i] * c[k-i]
                 end
                 @inbounds c[k] = 2 * c[k]
+                (kodd == 0) && ( @inbounds c[k] = c[k >> 1]^2 )
             else
-                (kend ≥ 0) && mul!(c, c[0][1], c, k)
+                (kend ≥ 0) && ( @inbounds mul!(c, c[0][1], c, k) )
                 @inbounds for i = 1:kend
                     mul!(c[k], c[i], c[k-i])
                 end
