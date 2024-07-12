@@ -254,18 +254,24 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, r::S, k::Int) where
-        {T<:Number, S<:Real}
+# pow! main dispatcher
+@inline pow!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, r::S, k::Int) where
+        {T<:Number, S <: Real} = pow!(c, a, b, Val(r), k)
+# pow! dispatches by value
+@inline pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, ::Val{0}, k::Int) where
+        {T<:Number} = one!(c, a, k)
+@inline pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, ::Val{1}, k::Int) where
+        {T<:Number} = identity!(c, a, k)
+@inline pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, ::Val{2}, k::Int) where
+        {T<:Number} = sqr!(c, a, k)
+@inline pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, ::Val{0.5}, k::Int) where
+        {T<:Number} = sqrt!(c, a, k)
+# fallback pow! method
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, ::Val{R}, k::Int) where
+        {T<:Number, R}
 
-    if r == 0
-        return one!(c, a, k)
-    elseif r == 1
-        return identity!(c, a, k)
-    elseif r == 2
-        return sqr!(c, a, k)
-    elseif r == 0.5
-        return sqrt!(c, a, k)
-    end
+    # copy static parameter `R` into local variable `r`
+    r = R
 
     # Sanity
     zero!(c, k)
@@ -303,18 +309,24 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     return nothing
 end
 
-@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, r::S, k::Int) where
-        {T<:NumberNotSeriesN, S<:Real}
+# pow! main dispatcher
+@inline pow!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T}, r::S, k::Int) where
+        {T<:NumberNotSeriesN, S <: Real} = pow!(c, a, b, Val(r), k)
+# pow! dispatches by value
+@inline pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, ::Val{0}, k::Int) where
+        {T<:NumberNotSeriesN} = one!(c, a, k)
+@inline pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, ::Val{1}, k::Int) where
+        {T<:NumberNotSeriesN} = identity!(c, a, k)
+@inline pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, ::Val{2}, k::Int) where
+        {T<:NumberNotSeriesN} = sqr!(c, a, k)
+@inline pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, ::Val{0.5}, k::Int) where
+        {T<:NumberNotSeriesN} = sqrt!(c, a, k)
+# fallback pow! method
+@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, ::Val{R}, k::Int) where
+        {T<:NumberNotSeriesN, R}
 
-    if r == 0
-        return one!(c, a, k)
-    elseif r == 1
-        return identity!(c, a, k)
-    elseif r == 2
-        return sqr!(c, a, k)
-    elseif r == 0.5
-        return sqrt!(c, a, k)
-    end
+    # copy static parameter `R` into local variable `r`
+    r = R
 
     if k == 0
         @inbounds c[0][1] = ( constant_term(a) )^r
@@ -336,18 +348,24 @@ end
     return nothing
 end
 
-@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::Taylor1{TaylorN{T}}, r::S,
-        ordT::Int) where {T<:NumberNotSeries, S<:Real}
+# pow! main dispatcher for `Taylor1{TaylorN{T}}`
+@inline pow!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}, r::S, k::Int) where
+        {T<:NumberNotSeries, S <: Real} = pow!(c, a, b, Val(r), k)
+# pow! dispatches by value for `Taylor1{TaylorN{T}}`
+@inline pow!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ::Taylor1{TaylorN{T}}, ::Val{0}, k::Int) where
+        {T<:NumberNotSeries} = one!(c, a, k)
+@inline pow!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ::Taylor1{TaylorN{T}}, ::Val{1}, k::Int) where
+        {T<:NumberNotSeries} = identity!(c, a, k)
+@inline pow!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ::Taylor1{TaylorN{T}}, ::Val{2}, k::Int) where
+        {T<:NumberNotSeries} = sqr!(c, a, k)
+@inline pow!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ::Taylor1{TaylorN{T}}, ::Val{0.5}, k::Int) where
+        {T<:NumberNotSeries} = sqrt!(c, a, k)
+# fallback pow! method for `Taylor1{TaylorN{T}}`
+@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::Taylor1{TaylorN{T}}, ::Val{R},
+        ordT::Int) where {T<:NumberNotSeries, R}
 
-    if r == 0
-        return one!(res, ordT)
-    elseif r == 1
-        return identity!(res, a, ordT)
-    elseif r == 2
-        return sqr!(res, a, ordT)
-    elseif r == 0.5
-        return sqrt!(res, a, ordT)
-    end
+    # copy static parameter `R` into local variable `r`
+    r = R
 
     # Sanity
     zero!(res, ordT)
