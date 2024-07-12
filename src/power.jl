@@ -99,35 +99,41 @@ end
 # power_by_squaring; slightly modified from base/intfuncs.jl
 # Licensed under MIT "Expat"
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval power_by_squaring(x::$T, p::Integer) = power_by_squaring(x, Val(p))
-    @eval power_by_squaring(x::$T, ::Val{0}) = one(x)
-    @eval power_by_squaring(x::$T, ::Val{1}) = copy(x)
-    @eval power_by_squaring(x::$T, ::Val{2}) = square(x)
-    @eval function power_by_squaring(x::$T, ::Val{P}) where P
-        p = P # copy static parameter `P` into local variable `p`
+    @eval begin
+        power_by_squaring(x::$T, p::Integer) = power_by_squaring(x, Val(p))
+        power_by_squaring(x::$T, ::Val{0}) = one(x)
+        power_by_squaring(x::$T, ::Val{1}) = copy(x)
+        power_by_squaring(x::$T, ::Val{2}) = square(x)
         if $T != HomogeneousPolynomial
-            y = zero(x)
-            aux = zero(x)
-            power_by_squaring!(y, x, aux, p)
-        else
-            t = trailing_zeros(p) + 1
-            p >>= t
-            while (t -= 1) > 0
-                x = square(x)
-            end
-            y = x
-            while p > 0
-                t = trailing_zeros(p) + 1
-                p >>= t
-                while (t -= 1) ≥ 0
-                    x = square(x)
-                end
-                y *= x
+            function power_by_squaring(x::$T, ::Val{P}) where P
+                p = P # copy static parameter `P` into local variable `p`
+                y = zero(x)
+                aux = zero(x)
+                power_by_squaring!(y, x, aux, p)
+                return y
             end
         end
-        return y
     end
 end
+function power_by_squaring(x::HomogeneousPolynomial, ::Val{P}) where P
+    p = P # copy static parameter `P` into local variable `p`
+    t = trailing_zeros(p) + 1
+    p >>= t
+    while (t -= 1) > 0
+        x = square(x)
+    end
+    y = x
+    while p > 0
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) ≥ 0
+            x = square(x)
+        end
+        y *= x
+    end
+    return y
+end
+
 
 power_by_squaring(x::TaylorN{Taylor1{T}}, ::Val{0}) where {T<:NumberNotSeries} = one(x)
 power_by_squaring(x::TaylorN{Taylor1{T}}, ::Val{1}) where {T<:NumberNotSeries} = copy(x)
