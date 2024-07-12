@@ -82,7 +82,7 @@ getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
     view(a.coeffs, u[:] .+ 1)
 
 setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
-setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} = setindex!(a.coeffs, deepcopy(x), n+1)
+setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} = setindex!(a.coeffs, x, n+1)
 setindex!(a::Taylor1{T}, x::T, u::UnitRange{Int}) where {T<:Number} =
     a.coeffs[u .+ 1] .= x
 function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange{Int}) where {T<:Number}
