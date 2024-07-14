@@ -60,6 +60,7 @@ end
 
 # in-place form of power_by_squaring
 # this method assumes `y`, `x` and `aux` are of same order
+# TODO: add power_by_squaring! method for HomogeneousPolynomial
 for T in (:Taylor1, :TaylorN)
     @eval function power_by_squaring!(y::$T{T}, x::$T{T}, aux::$T{T},
             p::Integer) where {T<:NumberNotSeries}
@@ -389,7 +390,6 @@ end
 
     if ordT == lnull
         if isinteger(r)
-            # TODO: get rid of allocations here
             power_by_squaring!(res[ordT], a[l0], aux[0], round(Int,r))
             return nothing
         end
