@@ -618,6 +618,14 @@ Base.iszero(::SymbNumber) = false
     #     @test a[i]*(180/pi) == b[i]
     # end
 
+    x = Taylor1([5.0,-1.5,3.0,-2.0,-20.0])
+    @test x*x == x^2
+    @test x*x*x == x*(x^2) == TaylorSeries.power_by_squaring(x, 3)
+    @test x*x*x*x == (x^2)*(x^2) == TaylorSeries.power_by_squaring(x, 4)
+    @test (x - 1.0)^2 == 1 - 2x + x^2
+    @test (x - 1.0)^3 == -1 + 3x - 3x^2 + x^3
+    @test (x - 1.0)^4 == 1 - 4x + 6x^2 - 4x^3 + x^4
+
     # Test additional Taylor1 constructors
     @test Taylor1{Float64}(true) == Taylor1([1.0])
     @test Taylor1{Float64}(false) == Taylor1([0.0])
