@@ -162,9 +162,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 for T in (:Taylor1, :TaylorN)
-    @eval function zero(a::$T)
-        return $T(zero.(a.coeffs))
-    end
+    @eval zero(a::$T) = $T(zero.(a.coeffs))
     @eval function one(a::$T)
         b = zero(a)
         b[0] = one(b[0])
@@ -539,25 +537,50 @@ for T in (:Taylor1, :TaylorN)
         return nothing
     end
 
-    @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+    @eval begin
         if $T == Taylor1
-            @inbounds v[k] = a[k] * b
+            @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+                @inbounds v[k] = a[k] * b
+                return nothing
+            end
+            @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
+                @inbounds v[k] = a * b[k]
+                return nothing
+            end
+            @inline function muladd!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+                @inbounds v[k] += a[k] * b
+                return nothing
+            end
+            @inline function muladd!(v::$T, a::NumberNotSeries, b::$T, k::Int)
+                @inbounds v[k] += a * b[k]
+                return nothing
+            end
         else
-            @inbounds for i in eachindex(v[k])
-                v[k][i] = a[k][i] * b
+            @inline function mul!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+                @inbounds for i in eachindex(v[k])
+                    v[k][i] = a[k][i] * b
+                end
+                return nothing
+            end
+            @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
+                @inbounds for i in eachindex(v[k])
+                    v[k][i] = a * b[k][i]
+                end
+                return nothing
+            end
+            @inline function muladd!(v::$T, a::$T, b::NumberNotSeries, k::Int)
+                @inbounds for i in eachindex(v[k])
+                    v[k][i] += a[k][i] * b
+                end
+                return nothing
+            end
+            @inline function muladd!(v::$T, a::NumberNotSeries, b::$T, k::Int)
+                @inbounds for i in eachindex(v[k])
+                    v[k][i] += a * b[k][i]
+                end
+                return nothing
             end
         end
-        return nothing
-    end
-    @eval @inline function mul!(v::$T, a::NumberNotSeries, b::$T, k::Int)
-        if $T == Taylor1
-            @inbounds v[k] = a * b[k]
-        else
-            @inbounds for i in eachindex(v[k])
-                v[k][i] = a * b[k][i]
-            end
-        end
-        return nothing
     end
 
     @eval @inline function mul!(v::$T, a::$T, b::NumberNotSeries)
