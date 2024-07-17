@@ -41,7 +41,7 @@ function ^(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
     for k = 0:c_order
-        TS.pow!(c, aa, r, k)
+        TS.pow!(c, aa, c, r, k)
     end
 
     return c
@@ -66,7 +66,7 @@ function ^(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
 
     c = TaylorN( a0r, a.order)
     for ord in 1:a.order
-        TS.pow!(c, aa, r, ord)
+        TS.pow!(c, aa, c, r, ord)
     end
 
     return c

@@ -60,7 +60,7 @@ const _dict_binary_ops = Dict(
     :- => (:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)),
     :* => (:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)),
     :/ => (:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)),
-    :^ => (:pow!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 ^ float(_arg2))),
+    :^ => (:pow!, (:_res, :_arg1, :_aux, :_arg2, :_k), :(_res = _arg1 ^ float(_arg2)), :(_aux = zero(_arg1))),
 );
 
 """
@@ -196,4 +196,3 @@ internal mutating functions.
 Evaluating the entries generates symbols that represent
 the actual calls to the internal mutating functions.
 """ _dict_binary_calls
-

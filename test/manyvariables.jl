@@ -117,6 +117,26 @@ end
     @test findfirst(hpol_v) == -1
     @test findlast(hpol_v) == -1
 
+    xv = TaylorSeries.get_variables()
+    @test (xv[1] - 1.0)^3 == -1 + 3xv[1] - 3xv[1]^2 + xv[1]^3
+    @test (xv[1] - 1.0)^4 == 1 - 4xv[1] + 6xv[1]^2 - 4xv[1]^3 + xv[1]^4
+    @test (xv[2] - 1.0)^3 == -1 + 3xv[2] - 3xv[2]^2 + xv[2]^3
+    @test (xv[2] - 1.0)^4 == 1 - 4xv[2] + 6xv[2]^2 - 4xv[2]^3 + xv[2]^4
+    xN = 5.0 + 3xv[1] - 4.5xv[2] + 6.125xv[1]^2 - 7.25xv[1]*xv[2] - 5.5xv[2]^2
+    xNcopy = deepcopy(xN)
+    for k in reverse(eachindex(xNcopy))
+        TaylorSeries.sqr!(xNcopy, k)
+    end
+    @test xNcopy == xN^2
+    @test xN^2 == Base.power_by_squaring(xN, 2)
+    @test xN*xN*xN == xN*xNcopy
+    @test xN^3 == Base.power_by_squaring(xN, 3)
+    for k in reverse(eachindex(xNcopy))
+        TaylorSeries.sqr!(xNcopy, k)
+    end
+    @test xNcopy == xN^4
+    @test xN^4 == Base.power_by_squaring(xN, 4)
+
     tn_v = TaylorN(HomogeneousPolynomial(zeros(Int, 3)))
     tn_v[0] = 1
     @test tn_v == 1
@@ -507,22 +527,22 @@ end
     @test xx[1] == zero(xx[end])
     TS.div!(xx, 1.0+xT, 1.0+xT, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TS.pow!(xx, 1.0+xT, 0.5, 1)
+    TS.pow!(xx, 1.0+xT, xx, 0.5, 1)
     @test xx[1] == HomogeneousPolynomial([0.5,0.0])
     xx = 1.0*zeroT
-    TS.pow!(xx, 1.0+xT, 1.5, 0)
+    TS.pow!(xx, 1.0+xT, xx, 1.5, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TS.pow!(xx, 1.0+xT, 1.5, 1)
+    TS.pow!(xx, 1.0+xT, xx, 1.5, 1)
     @test xx[1] == HomogeneousPolynomial([1.5,0.0])
     xx = 1.0*zeroT
-    TS.pow!(xx, 1.0+xT, 0, 0)
+    TS.pow!(xx, 1.0+xT, xx, 0, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TS.pow!(xx, 1.0+xT, 1, 1)
+    TS.pow!(xx, 1.0+xT, xx, 1, 1)
     @test xx[1] == HomogeneousPolynomial([1.0,0.0])
     xx = 1.0*zeroT
-    TS.pow!(xx, 1.0+xT, 2, 0)
+    TS.pow!(xx, 1.0+xT, xx, 2, 0)
     @test xx[0] == HomogeneousPolynomial([1.0])
-    TS.pow!(xx, 1.0+xT, 2, 1)
+    TS.pow!(xx, 1.0+xT, xx, 2, 1)
     @test xx[1] == HomogeneousPolynomial([2.0,0.0])
     xx = 1.0*zeroT
     TS.sqrt!(xx, 1.0+xT, 0)

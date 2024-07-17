@@ -303,6 +303,13 @@ end
     return nothing
 end
 
+@inline function zero!(a::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
+    for k in eachindex(a)
+        zero!(a, k)
+    end
+    return nothing
+end
+
 @inline function one!(c::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     zero!(c, k)
     if k == 0
@@ -313,6 +320,13 @@ end
 
 @inline function identity!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}, k::Int) where {T<:NumberNotSeries}
     @inbounds c[k] = identity(a[k])
+    return nothing
+end
+
+@inline function identity!(c::HomogeneousPolynomial{Taylor1{T}}, a::HomogeneousPolynomial{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    @inbounds for l in eachindex(c[k])
+        identity!(c[k], a[k], l)
+    end
     return nothing
 end
 

@@ -58,37 +58,99 @@ end
 
 ^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} = a^(r.num/r.den)
 
-
-
-# power_by_squaring; slightly modified from base/intfuncs.jl
-# Licensed under MIT "Expat"
-for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval function power_by_squaring(x::$T, p::Integer)
-        if p == 1
-            return copy(x)
-        elseif p == 0
-            return one(x)
-        elseif p == 2
-            return square(x)
-        end
+# in-place form of power_by_squaring
+# this method assumes `y`, `x` and `aux` are of same order
+# TODO: add power_by_squaring! method for HomogeneousPolynomial
+for T in (:Taylor1, :TaylorN)
+    @eval function power_by_squaring!(y::$T{T}, x::$T{T}, aux::$T{T},
+            p::Integer) where {T<:NumberNotSeries}
         t = trailing_zeros(p) + 1
         p >>= t
-        while (t -= 1) > 0
-            x = square(x)
+        # aux = x
+        for k in eachindex(aux)
+            identity!(aux, x, k)
         end
-        y = x
+        while (t -= 1) > 0
+            # aux = square(aux)
+            for k in reverse(eachindex(aux))
+                sqr!(aux, k)
+            end
+        end
+        # y = aux
+        for k in eachindex(y)
+            identity!(y, aux, k)
+        end
         while p > 0
             t = trailing_zeros(p) + 1
             p >>= t
             while (t -= 1) ≥ 0
-                x = square(x)
+                # aux = square(aux)
+                for k in reverse(eachindex(aux))
+                    sqr!(aux, k)
+                end
             end
-            y *= x
+            # y = y * aux
+            mul!(y, aux)
         end
-        return y
+        return nothing
     end
 end
 
+
+# power_by_squaring; slightly modified from base/intfuncs.jl
+# Licensed under MIT "Expat"
+for T in (:Taylor1, :TaylorN)
+    @eval function power_by_squaring(x::$T, p::Integer)
+        (p == 0) && return one(x)
+        (p == 1) && return copy(x)
+        (p == 2) && return square(x)
+        (p == 3) && return x*square(x)
+        y = zero(x)
+        aux = zero(x)
+        power_by_squaring!(y, x, aux, p)
+        return y
+    end
+end
+function power_by_squaring(x::HomogeneousPolynomial, p::Integer)
+    (p == 0) && return one(x)
+    (p == 1) && return copy(x)
+    (p == 2) && return square(x)
+    (p == 3) && return x*square(x)
+    t = trailing_zeros(p) + 1
+    p >>= t
+    while (t -= 1) > 0
+        x = square(x)
+    end
+    y = x
+    while p > 0
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) ≥ 0
+            x = square(x)
+        end
+        y *= x
+    end
+    return y
+end
+
+
+function power_by_squaring(x::TaylorN{Taylor1{T}}, p::Integer) where {T<:NumberNotSeries}
+    t = trailing_zeros(p) + 1
+    p >>= t
+    while (t -= 1) > 0
+        x = square(x)
+    end
+    y = x
+    while p > 0
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) ≥ 0
+            x = square(x)
+        end
+        y *= x
+    end
+    return y
+end
 
 ## Real power ##
 function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
@@ -107,8 +169,9 @@ function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
 
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
+    aux0 = deepcopy(c)
     for k in eachindex(c)
-        pow!(c, aa, r, k)
+        pow!(c, aa, aux0, r, k)
     end
 
     return c
@@ -132,8 +195,9 @@ function ^(a::TaylorN, r::S) where {S<:Real}
         in order to expand `^` around 0."""))
 
     c = TaylorN( zero(aux), a.order)
+    aux = deepcopy(c)
     for ord in eachindex(a)
-        pow!(c, aa, r, ord)
+        pow!(c, aa, aux, r, ord)
     end
 
     return c
@@ -158,8 +222,9 @@ function ^(a::Taylor1{TaylorN{T}}, r::S) where {T<:NumberNotSeries, S<:Real}
 
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
+    aux0 = deepcopy(c)
     for k in eachindex(c)
-        pow!(c, aa, r, k)
+        pow!(c, aa, aux0, r, k)
     end
 
     return c
@@ -184,8 +249,8 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, r::S, k::Int) where
-        {T<:Number, S<:Real}
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, r::S, k::Int) where
+        {T<:Number, S <: Real}
 
     if r == 0
         return one!(c, a, k)
@@ -233,18 +298,18 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     return nothing
 end
 
-@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, r::S, k::Int) where
+@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, r::S, k::Int) where
         {T<:NumberNotSeriesN, S<:Real}
 
-    if r == 0
-        return one!(c, a, k)
-    elseif r == 1
-        return identity!(c, a, k)
-    elseif r == 2
-        return sqr!(c, a, k)
-    elseif r == 0.5
-        return sqrt!(c, a, k)
-    end
+        if r == 0
+            return one!(c, a, k)
+        elseif r == 1
+            return identity!(c, a, k)
+        elseif r == 2
+            return sqr!(c, a, k)
+        elseif r == 0.5
+            return sqrt!(c, a, k)
+        end
 
     if k == 0
         @inbounds c[0][1] = ( constant_term(a) )^r
@@ -266,11 +331,11 @@ end
     return nothing
 end
 
-@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, r::S,
+@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::Taylor1{TaylorN{T}}, r::S,
         ordT::Int) where {T<:NumberNotSeries, S<:Real}
 
     if r == 0
-        return one!(res, ordT)
+        return one!(res, a, ordT)
     elseif r == 1
         return identity!(res, a, ordT)
     elseif r == 2
@@ -299,8 +364,7 @@ end
 
     if ordT == lnull
         if isinteger(r)
-            # TODO: get rid of allocations here
-            res[ordT] = a[l0]^round(Int,r) # uses power_by_squaring
+            power_by_squaring!(res[ordT], a[l0], aux[0], round(Int,r))
             return nothing
         end
 
@@ -310,7 +374,7 @@ end
             in order to expand `^` around 0."""))
 
         for ordQ in eachindex(a[l0])
-            pow!(res[ordT], a[l0], r, ordQ)
+            pow!(res[ordT], a[l0], aux[0], r, ordQ)
         end
 
         return nothing
@@ -339,7 +403,7 @@ Return `a^2`; see [`TaylorSeries.sqr!`](@ref).
 
 for T in (:Taylor1, :TaylorN)
     @eval function square(a::$T)
-        c = $T( zero(constant_term(a)), a.order)
+        c = zero(a)
         for k in eachindex(a)
             sqr!(c, a, k)
         end
@@ -443,6 +507,37 @@ for T = (:Taylor1, :TaylorN)
                 @inbounds c[k] += a[k >> 1]^2
             else
                 accsqr!(c[k], a[k >> 1])
+            end
+
+            return nothing
+        end
+
+        # in-place squaring: given `c`, compute expansion of `c^2` and save back into `c`
+        @inline function sqr!(c::$T{T}, k::Int) where {T<:NumberNotSeries}
+            if k == 0
+                sqr_orderzero!(c, c)
+                return nothing
+            end
+
+            # Recursion formula
+            kodd = k%2
+            kend = (k - 2 + kodd) >> 1
+            if $T == Taylor1
+                (kend ≥ 0) && ( @inbounds c[k] = c[0] * c[k] )
+                @inbounds for i = 1:kend
+                    c[k] += c[i] * c[k-i]
+                end
+                @inbounds c[k] = 2 * c[k]
+                (kodd == 0) && ( @inbounds c[k] += c[k >> 1]^2 )
+            else
+                (kend ≥ 0) && ( @inbounds mul!(c, c[0][1], c, k) )
+                @inbounds for i = 1:kend
+                    mul!(c[k], c[i], c[k-i])
+                end
+                @inbounds mul!(c, 2, c, k)
+                if (kodd == 0)
+                    accsqr!(c[k], c[k >> 1])
+                end
             end
 
             return nothing

@@ -413,7 +413,7 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
         else
             for ordQ in eachindex(val)
                 zero!(vv, ordQ)
-                pow!(vv, val, vpow, ordQ)
+                pow!(vv, val, vv, vpow, ordQ)
             end
         end
         for ordQ in eachindex(suma)

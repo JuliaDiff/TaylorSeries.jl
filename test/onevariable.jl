@@ -407,26 +407,28 @@ Base.iszero(::SymbNumber) = false
     @test tt[0] == 1.0
     TS.div!(tt, 1, 1+ut, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 1.5, 0)
+    aux = tt
+    TS.pow!(tt, 1.0+t, aux, 1.5, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 0.0*t, 1.5, 0)
+    TS.pow!(tt, 0.0*t, aux, 1.5, 0)
     @test tt[0] == 0.0
-    TS.pow!(tt, 0.0+t, 18, 0)
+    TS.pow!(tt, 0.0+t, aux, 18, 0)
     @test tt[0] == 0.0
-    TS.pow!(tt, 1.0+t, 1.5, 0)
+    TS.pow!(tt, 1.0+t, aux, 1.5, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 0.5, 1)
+    TS.pow!(tt, 1.0+t, aux, 0.5, 1)
     @test tt[1] == 0.5
-    TS.pow!(tt, 1.0+t, 0, 0)
+    TS.pow!(tt, 1.0+t, aux, 0, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 1, 1)
+    TS.pow!(tt, 1.0+t, aux, 1, 1)
     @test tt[1] == 1.0
     tt = zero(ut)
-    TS.pow!(tt, 1.0+t, 2, 0)
+    aux = tt
+    TS.pow!(tt, 1.0+t, aux, 2, 0)
     @test tt[0] == 1.0
-    TS.pow!(tt, 1.0+t, 2, 1)
+    TS.pow!(tt, 1.0+t, aux, 2, 1)
     @test tt[1] == 2.0
-    TS.pow!(tt, 1.0+t, 2, 2)
+    TS.pow!(tt, 1.0+t, aux, 2, 2)
     @test tt[2] == 1.0
     TS.sqrt!(tt, 1.0+t, 0, 0)
     @test tt[0] == 1.0
@@ -615,6 +617,14 @@ Base.iszero(::SymbNumber) = false
     # for i in 0:2
     #     @test a[i]*(180/pi) == b[i]
     # end
+
+    x = Taylor1([5.0,-1.5,3.0,-2.0,-20.0])
+    @test x*x == x^2
+    @test x*x*x == x*(x^2) == TaylorSeries.power_by_squaring(x, 3)
+    @test x*x*x*x == (x^2)*(x^2) == TaylorSeries.power_by_squaring(x, 4)
+    @test (x - 1.0)^2 == 1 - 2x + x^2
+    @test (x - 1.0)^3 == -1 + 3x - 3x^2 + x^3
+    @test (x - 1.0)^4 == 1 - 4x + 6x^2 - 4x^3 + x^4
 
     # Test additional Taylor1 constructors
     @test Taylor1{Float64}(true) == Taylor1([1.0])

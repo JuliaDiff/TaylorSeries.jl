@@ -162,7 +162,9 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 for T in (:Taylor1, :TaylorN)
-    @eval zero(a::$T) = $T(zero.(a.coeffs))
+    @eval function zero(a::$T)
+        return $T(zero.(a.coeffs))
+    end
     @eval function one(a::$T)
         b = zero(a)
         b[0] = one(b[0])
@@ -570,6 +572,42 @@ for T in (:Taylor1, :TaylorN)
         end
         return nothing
     end
+end
+
+# in-place product: `a` <- `a*b`
+# this method computes the product `a*b` and saves it back into `a`
+# assumes `a` and `b` are of same order
+function mul!(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
+    @inbounds for k in reverse(eachindex(a))
+        mul!(a, a, b[0][1], k)
+        for l in 1:k
+            mul!(a[k], a[k-l], b[l])
+        end
+    end
+    return nothing
+end
+function mul!(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
+    @inbounds for k in reverse(eachindex(a))
+        # a[k] <- a[k]*b[0]
+        mul!(a, a, b[0], k)
+        for l in 1:k
+            # a[k] <- a[k] + a[k-l] * b[l]
+            a[k] += a[k-l] * b[l]
+        end
+    end
+    return nothing
+end
+function mul!(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    @inbounds for k in reverse(eachindex(a))
+        mul!(a, a, b[0], k)
+        for l in 1:k
+            # a[k] += a[k-l] * b[l]
+            for m in eachindex(a[k])
+                mul!(a[k], a[k-l], b[l], m)
+            end
+        end
+    end
+    return nothing
 end
 
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
