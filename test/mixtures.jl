@@ -574,4 +574,14 @@ end
     @test cos(to)(0.0) == cos(to[0])
     @test to(ti) == to[0] + ti
     @test evaluate(to*ti, ti) == to[0]*ti + ti^2
+
+    @testset "Test setindex! method for nested Taylor1s" begin
+        t = Taylor1(2)
+        y = one(t)
+        x = Taylor1([t,2t,t^2,0t,t^3])
+        x[3] = y
+        @test x[3] !== y
+        y[2] = -5.0
+        @test x[3][2] == 0.0
+    end
 end
