@@ -335,13 +335,13 @@ end
         ordT::Int) where {T<:NumberNotSeries, S<:Real}
 
     if r == 0
-        return one!(res, a, k)
+        return one!(res, a, ordT)
     elseif r == 1
-        return identity!(res, a, k)
+        return identity!(res, a, ordT)
     elseif r == 2
-        return sqr!(res, a, k)
+        return sqr!(res, a, ordT)
     elseif r == 0.5
-        return sqrt!(res, a, k)
+        return sqrt!(res, a, ordT)
     end
 
     # Sanity
