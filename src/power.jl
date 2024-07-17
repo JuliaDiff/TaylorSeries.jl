@@ -60,7 +60,7 @@ end
 
 # in-place form of power_by_squaring
 # this method assumes `y`, `x` and `aux` are of same order
-# TODO: add power_by_squaring! method for HomogeneousPolynomial
+# TODO: add power_by_squaring! method for HomogeneousPolynomial and mixtures
 for T in (:Taylor1, :TaylorN)
     @eval function power_by_squaring!(y::$T{T}, x::$T{T}, aux::$T{T},
             p::Integer) where {T<:NumberNotSeries}
@@ -99,8 +99,39 @@ end
 
 # power_by_squaring; slightly modified from base/intfuncs.jl
 # Licensed under MIT "Expat"
-for T in (:Taylor1, :TaylorN)
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function power_by_squaring(x::$T, p::Integer)
+        if p == 0
+            return one(x)
+        elseif p == 1
+            return copy(x)
+        elseif p == 2
+            return square(x)
+        elseif p == 3
+            return x*square(x)
+        end
+        t = trailing_zeros(p) + 1
+        p >>= t
+        while (t -= 1) > 0
+            x = square(x)
+        end
+        y = x
+        while p > 0
+            t = trailing_zeros(p) + 1
+            p >>= t
+            while (t -= 1) ≥ 0
+                x = square(x)
+            end
+            y *= x
+        end
+        return y
+    end
+end
+
+# power_by_squaring specializations for non-mixed Taylor1 and TaylorN
+# uses internally mutating method `power_by_squaring!`
+for T in (:Taylor1, :TaylorN)
+    @eval function power_by_squaring(x::$T{T}, p::Integer) where {T <: NumberNotSeries}
         (p == 0) && return one(x)
         (p == 1) && return copy(x)
         (p == 2) && return square(x)
@@ -110,46 +141,6 @@ for T in (:Taylor1, :TaylorN)
         power_by_squaring!(y, x, aux, p)
         return y
     end
-end
-function power_by_squaring(x::HomogeneousPolynomial, p::Integer)
-    (p == 0) && return one(x)
-    (p == 1) && return copy(x)
-    (p == 2) && return square(x)
-    (p == 3) && return x*square(x)
-    t = trailing_zeros(p) + 1
-    p >>= t
-    while (t -= 1) > 0
-        x = square(x)
-    end
-    y = x
-    while p > 0
-        t = trailing_zeros(p) + 1
-        p >>= t
-        while (t -= 1) ≥ 0
-            x = square(x)
-        end
-        y *= x
-    end
-    return y
-end
-
-
-function power_by_squaring(x::TaylorN{Taylor1{T}}, p::Integer) where {T<:NumberNotSeries}
-    t = trailing_zeros(p) + 1
-    p >>= t
-    while (t -= 1) > 0
-        x = square(x)
-    end
-    y = x
-    while p > 0
-        t = trailing_zeros(p) + 1
-        p >>= t
-        while (t -= 1) ≥ 0
-            x = square(x)
-        end
-        y *= x
-    end
-    return y
 end
 
 ## Real power ##
