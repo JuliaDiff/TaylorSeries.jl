@@ -469,38 +469,42 @@ c_k &= 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
 
 for T = (:Taylor1, :TaylorN)
     @eval begin
-        @inline function sqr!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            if k == 0
-                sqr_orderzero!(c, a)
-                return nothing
-            end
-
-            # Sanity
-            zero!(c, k)
-
-            # Recursion formula
-            kodd = k%2
-            kend = (k - 2 + kodd) >> 1
-            if $T == Taylor1
-                @inbounds for i = 0:kend
-                    c[k] += a[i] * a[k-i]
+        @inline @generated function sqr!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+            ex1 = quote
+                if k == 0
+                    sqr_orderzero!(c, a)
+                    return nothing
                 end
-                @inbounds c[k] = 2 * c[k]
-            else
-                @inbounds for i = 0:kend
-                    mul!(c[k], a[i], a[k-i])
-                end
-                @inbounds mul!(c, 2, c, k)
-            end
-            kodd == 1 && return nothing
 
+                # Sanity
+                zero!(c, k)
+
+                # Recursion formula
+                kodd = k%2
+                kend = (k - 2 + kodd) >> 1
+            end
             if $T == Taylor1
-                @inbounds c[k] += a[k >> 1]^2
+                ex2 = quote
+                    @inbounds for i = 0:kend
+                        c[k] += a[i] * a[k-i]
+                    end
+                    @inbounds c[k] = 2 * c[k]
+                    kodd == 1 && return nothing
+                    @inbounds c[k] += a[k >> 1]^2
+                    return nothing
+                end
             else
-                accsqr!(c[k], a[k >> 1])
+                ex2 = quote
+                    @inbounds for i = 0:kend
+                        mul!(c[k], a[i], a[k-i])
+                    end
+                    @inbounds mul!(c, 2, c, k)
+                    kodd == 1 && return nothing
+                    @inbounds c[k] += a[k >> 1]^2
+                    return nothing
+                end
             end
-
-            return nothing
+            return Expr(:block, ex1, ex2)
         end
 
         # in-place squaring: given `c`, compute expansion of `c^2` and save back into `c`
