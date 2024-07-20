@@ -974,7 +974,8 @@ end
 
 @inline function div!(c::Taylor1{T}, a::NumberNotSeries,
         b::Taylor1{T}, k::Int) where {T<:Number}
-    iszero(a) && !iszero(b) && zero!(c, k)
+    zero!(c, k)
+    iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
     # ordfact, cdivfact = 0, a/b[0]
@@ -993,7 +994,8 @@ end
 
 @inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    iszero(a) && !iszero(b) && zero!(c, k)
+    zero!(c, k)
+    iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
     # ordfact, cdivfact = 0, a/b[0]
@@ -1164,13 +1166,13 @@ end
         """Division does not define a Taylor1 polynomial;
         order k=$(ordfact) => coeff[$(ordfact)]=$(cdivfact).""") )
 
+    @inbounds zero!(c, k)
+
     if k == 0
         # @inbounds c[0] = a[ordfact]/b[ordfact]
         @inbounds div!(c[0], a[ordfact], b[ordfact])
         return nothing
     end
-
-    @inbounds zero!(c, k)
 
     imin = max(0, k+ordfact-b.order)
     @inbounds mul!(c[k], c[imin], b[k+ordfact-imin])

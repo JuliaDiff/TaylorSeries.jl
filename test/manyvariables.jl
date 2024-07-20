@@ -838,6 +838,9 @@ end
         r = [zero(x[1]) for _ in 1:n] # output vector
         radntn!.(v)
         x1 = randn(4) .+ x
+        # warmup
+        TaylorSeries.evaluate!(v, (x1...,), r)
+        evaluate.(v, Ref(x1))
         TaylorSeries.zero!.(r)
         @time TaylorSeries.evaluate!(v, (x1...,), r)
         @time r2 = evaluate.(v, Ref(x1))
