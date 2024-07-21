@@ -841,9 +841,9 @@ end
         # warmup
         TaylorSeries.evaluate!(v, (x1...,), r)
         evaluate.(v, Ref(x1))
-        TaylorSeries.zero!.(r)
-        @time TaylorSeries.evaluate!(v, (x1...,), r)
-        @time r2 = evaluate.(v, Ref(x1))
+        # TaylorSeries.zero!.(r)
+        TaylorSeries.evaluate!(v, (x1...,), r)
+        r2 = evaluate.(v, Ref(x1))
         @test r == r2
         @test iszero(norm(r-r2, Inf))
 
