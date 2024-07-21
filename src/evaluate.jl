@@ -511,10 +511,12 @@ function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}}, dest::TaylorN{T}, 
 end
 
 function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}}, dest::AbstractArray{TaylorN{T}}) where {N,T<:Number}
+    # initialize evaluation cache
     valscache = [zero(val) for val in vals]
     aux = zero(dest[1])
+    # loop over elements of `a`
     for i in eachindex(a)
-        (!iszero(a[i])) && zero!(dest[i])
+        (!iszero(dest[i])) && zero!(dest[i])
         evaluate!(a[i], vals, dest[i], valscache, aux)
     end
     return nothing
