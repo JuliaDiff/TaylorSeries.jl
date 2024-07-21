@@ -1166,7 +1166,7 @@ end
         """Division does not define a Taylor1 polynomial;
         order k=$(ordfact) => coeff[$(ordfact)]=$(cdivfact).""") )
 
-    @inbounds zero!(c, k)
+    zero!(c, k)
 
     if k == 0
         # @inbounds c[0] = a[ordfact]/b[ordfact]
