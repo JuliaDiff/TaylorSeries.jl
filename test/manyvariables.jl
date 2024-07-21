@@ -821,6 +821,33 @@ end
         @test float(TaylorN{Complex{Rational}}) == float(TaylorN{Complex{Float64}})
     end
 
+    @testset "Test evaluate! method for arrays of TaylorN" begin
+        x = set_variables("x", order=2, numvars=4)
+        function radntn!(y)
+            for k in eachindex(y)
+                for l in eachindex(y[k])
+                    y[k][l] = randn()
+                end
+            end
+            nothing
+        end
+        y = zero(x[1])
+        radntn!(y)
+        n = 10
+        v = [zero(x[1]) for _ in 1:n]
+        r = [zero(x[1]) for _ in 1:n] # output vector
+        radntn!.(v)
+        x1 = randn(4) .+ x
+        # warmup
+        TaylorSeries.evaluate!(v, (x1...,), r)
+        # call twice to make sure `r` is reset on second call
+        TaylorSeries.evaluate!(v, (x1...,), r)
+        r2 = evaluate.(v, Ref(x1))
+        @test r == r2
+        @test iszero(norm(r-r2, Inf))
+
+    end
+
 end
 
 @testset "Integrate for several variables" begin

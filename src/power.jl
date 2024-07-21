@@ -62,8 +62,15 @@ end
 # this method assumes `y`, `x` and `aux` are of same order
 # TODO: add power_by_squaring! method for HomogeneousPolynomial and mixtures
 for T in (:Taylor1, :TaylorN)
-    @eval function power_by_squaring!(y::$T{T}, x::$T{T}, aux::$T{T},
+    @eval @inline function power_by_squaring_0!(y::$T{T}, x::$T{T}) where {T<:NumberNotSeries}
+        for k in eachindex(y)
+            one!(y, x, k)
+        end
+        return nothing
+    end
+    @eval @inline function power_by_squaring!(y::$T{T}, x::$T{T}, aux::$T{T},
             p::Integer) where {T<:NumberNotSeries}
+        (p == 0) && return power_by_squaring_0!(y, x)
         t = trailing_zeros(p) + 1
         p >>= t
         # aux = x
@@ -272,7 +279,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     isinteger(r) && r > 0 && (k > r*findlast(a)) && return nothing
 
     if k == lnull
-        @inbounds c[k] = (a[l0])^r
+        @inbounds c[k] = (a[l0])^float(r)
         return nothing
     end
 

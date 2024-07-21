@@ -354,12 +354,18 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function one!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            zero!(c, k)
-            if k == 0
-                @inbounds c[0] = one(a[0])
+        if $T == Taylor1
+            @inline function one!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+                zero!(c, k)
+                (k == 0) && (@inbounds c[0] = one(constant_term(a)))
+                return nothing
             end
-            return nothing
+        else
+            @inline function one!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+                zero!(c, k)
+                (k == 0) && (@inbounds c[0][1] = one(constant_term(a)))
+                return nothing
+            end
         end
 
         @inline function abs!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}

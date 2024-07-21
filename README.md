@@ -30,7 +30,7 @@ julia> t = Taylor1(Float64, 5)
 
 julia> exp(t)
  1.0 + 1.0 t + 0.5 t² + 0.16666666666666666 t³ + 0.041666666666666664 t⁴ + 0.008333333333333333 t⁵ + 𝒪(t⁶)
- 
+
  julia> log(1 + t)
  1.0 t - 0.5 t² + 0.3333333333333333 t³ - 0.25 t⁴ + 0.2 t⁵ + 𝒪(t⁶)
  ```
@@ -40,7 +40,7 @@ julia> x, y = set_variables("x y", order=2);
 
 julia> exp(x + y)
  1.0 + 1.0 x + 1.0 y + 0.5 x² + 1.0 x y + 0.5 y² + 𝒪(‖x‖³)
- 
+
 ```
 Differential and integral calculus on Taylor series:
 ```julia
@@ -95,6 +95,6 @@ We thank the participants of the course for putting up with the half-baked
 material and contributing energy and ideas.
 
 We acknowledge financial support from DGAPA-UNAM PAPIME grants
-PE-105911 and PE-107114, and DGAPA-PAPIIT grants IG-101113, 
-IG-100616, and IG-100819.
+PE-105911 and PE-107114, and DGAPA-PAPIIT grants IG-101113,
+IG-100616, IG-100819 and IG-101122.
 LB acknowledges support through a *Cátedra Moshinsky* (2013).

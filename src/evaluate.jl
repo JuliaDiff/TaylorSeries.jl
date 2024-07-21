@@ -187,43 +187,42 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple) where {T}
     return suma
 end
 
+function _evaluate!(res::TaylorN{T}, a::HomogeneousPolynomial{T}, vals::NTuple{N,<:TaylorN{T}},
+            valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:NumberNotSeries}
+    ct = coeff_table[a.order+1]
+    for el in eachindex(valscache)
+        power_by_squaring!(valscache[el], vals[el], aux, ct[1][el])
+    end
+    for (i, a_coeff) in enumerate(a.coeffs)
+        iszero(a_coeff) && continue
+        # valscache .= vals .^ ct[i]
+        @inbounds for el in eachindex(valscache)
+            power_by_squaring!(valscache[el], vals[el], aux, ct[i][el])
+        end
+        # aux = one(valscache[1])
+        for ord in eachindex(aux)
+            @inbounds one!(aux, valscache[1], ord)
+        end
+        for j in eachindex(valscache)
+            # aux *= valscache[j]
+            mul!(aux, valscache[j])
+        end
+        # res += a_coeff * aux
+        for ord in eachindex(aux)
+            muladd!(res, a_coeff, aux, ord)
+        end
+    end
+    return nothing
+end
+
 function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,<:TaylorN{T}}) where
         {N,T<:NumberNotSeries}
     # @assert length(vals) == get_numvars()
     a.order == 0 && return a[1]*one(vals[1])
-    ct = coeff_table[a.order+1]
     suma = TaylorN(zero(T), vals[1].order)
-    #
-    # vv = power_by_squaring.(vals, ct[1])
-    vv = vals .^ ct[1]
-    tmp = zero(suma)
-    aux = one(suma)
-    for (i, a_coeff) in enumerate(a.coeffs)
-        iszero(a_coeff) && continue
-        # @inbounds vv .= power_by_squaring.(vals, ct[i])
-        vv .= vals .^ ct[i]
-        # tmp = prod( vv )
-        for ord in eachindex(tmp)
-            @inbounds one!(aux, vv[1], ord)
-        end
-        for j in eachindex(vv)
-            for ord in eachindex(tmp)
-                zero!(tmp, ord)
-                @inbounds mul!(tmp, aux, vv[j], ord)
-            end
-            for ord in eachindex(tmp)
-                identity!(aux, tmp, ord)
-            end
-        end
-        # suma += a_coeff * tmp
-        for ord in eachindex(tmp)
-            for ordQ in eachindex(tmp[ord])
-                zero!(aux[ord], ordQ)
-                aux[ord][ordQ] = a_coeff * tmp[ord][ordQ]
-                suma[ord][ordQ] += aux[ord][ordQ]
-            end
-        end
-    end
+    valscache = [zero(val) for val in vals]
+    aux = zero(suma)
+    _evaluate!(suma, a, vals, valscache, aux)
     return suma
 end
 
@@ -319,6 +318,17 @@ _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:NumberNotSeries} =
 _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number} =
     sum( _evaluate(a, vals) )
 
+function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where {N,T<:Number}
+    R = promote_type(T, TS.numtype(vals[1]))
+    res = TaylorN(zero(R), vals[1].order)
+    valscache = [zero(val) for val in vals]
+    aux = zero(res)
+    @inbounds for homPol in eachindex(a)
+        _evaluate!(res, a[homPol], vals, valscache, aux)
+    end
+    return res
+end
+
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:Number}) where {N,T<:Number}
     R = promote_type(T, typeof(vals[1]))
     a_length = length(a)
@@ -329,13 +339,20 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:Number}) where {N,T<:Number}
     return suma
 end
 
-function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}) where {N,T<:Number}
-    R = TaylorN{promote_type(T, TS.numtype(vals[1]))}
-    a_length = length(a)
-    suma = zeros(R, a_length)
+function _evaluate!(res::Vector{TaylorN{T}}, a::TaylorN{T}, vals::NTuple{N,<:TaylorN},
+        valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
     @inbounds for homPol in eachindex(a)
-        suma[homPol+1] = _evaluate(a[homPol], vals)
+        _evaluate!(res[homPol+1], a[homPol], vals, valscache, aux)
     end
+    return nothing
+end
+
+function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}) where {N,T<:Number}
+    R = promote_type(T, TS.numtype(vals[1]))
+    suma = [TaylorN(zero(R), vals[1].order) for _ in eachindex(a)]
+    valscache = [zero(val) for val in vals]
+    aux = zero(suma[1])
+    _evaluate!(suma, a, vals, valscache, aux)
     return suma
 end
 
@@ -486,6 +503,24 @@ function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
     return nothing
 end
 
+function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}}, dest::TaylorN{T}, valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
+    @inbounds for homPol in eachindex(a)
+        _evaluate!(dest, a[homPol], vals, valscache, aux)
+    end
+    return nothing
+end
+
+function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}}, dest::AbstractArray{TaylorN{T}}) where {N,T<:Number}
+    # initialize evaluation cache
+    valscache = [zero(val) for val in vals]
+    aux = zero(dest[1])
+    # loop over elements of `a`
+    for i in eachindex(a)
+        (!iszero(dest[i])) && zero!(dest[i])
+        evaluate!(a[i], vals, dest[i], valscache, aux)
+    end
+    return nothing
+end
 
 # In-place Horner methods, used when the result of an evaluation (substitution)
 # is Taylor1{}
