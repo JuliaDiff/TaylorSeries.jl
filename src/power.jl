@@ -279,7 +279,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     isinteger(r) && r > 0 && (k > r*findlast(a)) && return nothing
 
     if k == lnull
-        @inbounds c[k] = (a[l0])^r
+        @inbounds c[k] = (a[l0])^float(r)
         return nothing
     end
 
