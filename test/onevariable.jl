@@ -514,9 +514,14 @@ Base.iszero(::SymbNumber) = false
 
     @test promote(ta(0.0), t) == (ta(0.0),ta(0.0))
 
-    @test norm((inverse(exp(t)-1) - log(1+t)).coeffs) < 2tol1
+    @test inverse(exp(t)-1) ≈ log(1+t)
     cfs = [(-n)^(n-1)/factorial(n) for n = 1:15]
     @test norm(inverse(t*exp(t))[1:end]./cfs .- 1) < 4tol1
+    @test inverse(tan(t))(tan(t)) ≈ t
+    @test atan(inverse(atan(t))) ≈ t
+    @test inverse_map(sin(t))(sin(t)) ≈ t
+    @test sinh(inverse_map(sinh(t))) ≈ t
+    @test inverse_map(tanh(t)) ≈ inverse(tanh(t))
 
     @test_throws ArgumentError Taylor1([1,2,3], -2)
     @test_throws DomainError abs(ta(big(0)))
