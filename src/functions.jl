@@ -1285,13 +1285,13 @@ function inverse_map(p::Taylor1)
     end
     inv_m_pol = inv(linear_polynomial(p)[1])
     n_pol = inv_m_pol * nonlinear_polynomial(p)
-    ident = inv_m_pol * Taylor1(p.order)
-    res = ident
+    scaled_ident = inv_m_pol * Taylor1(p.order)
+    res = scaled_ident
     aux1 = zero(res)
     aux2 = zero(res)
     for ord in 1:p.order
         _horner!(aux2, n_pol, res, aux1)
-        res[ord] = ident[ord] - aux2[ord]
+        res[ord] = scaled_ident[ord] - aux2[ord]
     end
     return res
 end
@@ -1307,16 +1307,20 @@ function inverse_map(p::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
     @assert length(p) == get_numvars()
     inv_m_pol = inv(jacobian(p))
     n_pol = inv_m_pol * nonlinear_polynomial(p)
-    ident = inv_m_pol * TaylorN.(1:get_numvars(), order=get_order(p[1]))
-    res = deepcopy(ident)
-    aux = zero(res)
-    vhps = zeros(TaylorN{numtype(res[1])}, length(p[1]))
+    scaled_ident = inv_m_pol * TaylorN.(1:get_numvars(), order=get_order(p[1]))
+    res = deepcopy(scaled_ident)
+    aux = zero.(res)
+    auxvec = [zero(res[1]) for val in eachindex(res[1])]
+    valscache = [zero(val) for val in res]
+    aaux = zero(res[1])
     for ord in 1:get_order(p[1])
         t_res = (res...,)
         for i = 1:get_numvars()
-            aux[i] = sum( _evaluate(n_pol[i], t_res) )
+            zero!.(auxvec)
+            _evaluate!(auxvec, n_pol[i], t_res, valscache, aaux)
+            aux[i] = sum( auxvec )
             if ord == 1
-                subst!(res[i], ident[i], aux[i], ord)
+                subst!(res[i], scaled_ident[i], aux[i], ord)
             else
                 subst!(res[i], aux[i], ord)
             end
