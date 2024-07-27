@@ -1291,7 +1291,7 @@ function inverse_map(p::Taylor1)
     aux2 = zero(res)
     for ord in 1:p.order
         _horner!(aux2, n_pol, res, aux1)
-        res[ord] = scaled_ident[ord] - aux2[ord]
+        subst!(res, scaled_ident, aux2, ord)
     end
     return res
 end
@@ -1319,11 +1319,7 @@ function inverse_map(p::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
             zero!.(auxvec)
             _evaluate!(auxvec, n_pol[i], t_res, valscache, aaux)
             aux[i] = sum( auxvec )
-            if ord == 1
-                subst!(res[i], scaled_ident[i], aux[i], ord)
-            else
-                subst!(res[i], aux[i], ord)
-            end
+            subst!(res[i], scaled_ident[i], aux[i], ord)
         end
     end
     return res

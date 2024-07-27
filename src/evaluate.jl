@@ -502,14 +502,16 @@ function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
     return nothing
 end
 
-function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}}, dest::TaylorN{T}, valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
+function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}}, dest::TaylorN{T},
+        valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
     @inbounds for homPol in eachindex(a)
         _evaluate!(dest, a[homPol], vals, valscache, aux)
     end
     return nothing
 end
 
-function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}}, dest::AbstractArray{TaylorN{T}}) where {N,T<:Number}
+function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
+        dest::AbstractArray{TaylorN{T}}) where {N,T<:Number}
     # initialize evaluation cache
     valscache = [zero(val) for val in vals]
     aux = zero(dest[1])
