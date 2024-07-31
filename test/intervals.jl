@@ -41,12 +41,12 @@ setdisplay(:full)
     @test p4(x,-a) == (x-a)^4
     @test p5(x,-a) == (x-a)^5
     @test p4(x,-b) == (x-b)^4
+    r1 = p5(x,-b)
+    r2 = (x-b)^5
     for ind in eachindex(p5(x,-b))
-        r1 = p5(x,-b)[ind]
-        r2 = ((x-b)^5)[ind]
-        @test all(issubset_interval.(r1.coeffs, r2.coeffs))
-        @test all(isguaranteed.(getfield(r1, :coeffs)))
-        @test all(isguaranteed.(getfield(r2, :coeffs)))
+        @test all(issubset_interval.(r1[ind].coeffs, r2[ind].coeffs))
+        @test all(isguaranteed.(getfield(r1[ind], :coeffs)))
+        @test all(isguaranteed.(getfield(r2[ind], :coeffs)))
     end
 
 

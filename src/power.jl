@@ -231,10 +231,10 @@ end
 
 # Homogeneous coefficients for real power
 @doc doc"""
-    pow!(c, a, r::Real, k::Int)
+    pow!(c, a, aux, r::Real, k::Int)
 
 Update the `k`-th expansion coefficient `c[k]` of `c = a^r`, for
-both `c` and `a` either `Taylor1` or `TaylorN`.
+both `c`, `a` and `aux` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
@@ -381,9 +381,8 @@ end
     # The recursion formula
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
-        aux = r*(kprime-i) - i
-        # res[ordT] += aux*res[i+lnull]*a[l0+kprime-i]
-        @inbounds mul_scalar!(res[ordT], aux, res[i+lnull], a[l0+kprime-i])
+        aaux = r*(kprime-i) - i
+        @inbounds mul_scalar!(res[ordT], aaux, res[i+lnull], a[l0+kprime-i])
     end
     # res[ordT] /= a[l0]*kprime
     @inbounds div_scalar!(res[ordT], 1/kprime, a[l0])

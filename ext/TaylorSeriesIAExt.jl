@@ -91,7 +91,7 @@ function ^(a::Taylor1{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
     c = Taylor1(zero(aux), c_order)
     for k in eachindex(c)
-        TS.pow!(c, aa, r, k)
+        TS.pow!(c, aa, c, r, k)
     end
     return c
 end
@@ -124,30 +124,64 @@ for T = (:Taylor1, :TaylorN)
         @inline function TS.sqr!(c::$T{Interval{T}}, a::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
             if k == 0
-                @inbounds c[0] = constant_term(a)^2
+                TS.sqr_orderzero!(c, a)
                 return nothing
             end
+            # Sanity
+            TS.zero!(c, k)
+            # Recursion formula
             kodd = k%2
             kend = div(k - 2 + kodd, 2)
-            @inbounds for i = 0:kend
-                if $T == Taylor1
+            if $T == Taylor1
+                @inbounds for i = 0:kend
                     c[k] += a[i] * a[k-i]
-                else
+                end
+            else
+                @inbounds for i = 0:kend
                     TS.mul!(c[k], a[i], a[k-i])
                 end
             end
-            @inbounds c[k] = interval(2) * c[k]
+            @inbounds TS.mul!(c, interval(2), c, k)
             kodd == 1 && return nothing
             if $T == Taylor1
-                @inbounds c[k] += a[div(k,2)]^2
+                @inbounds c[k] += a[k >> 1]^2
             else
-                TS.sqr!(c[k], a[div(k,2)])
+                TS.accsqr!(c[k], a[k >> 1])
             end
+            return nothing
+        end
+
+        @inline function TS.sqr!(c::$T{Interval{T}}, k::Int) where {T<:NumTypes}
+            if k == 0
+                TS.sqr_orderzero!(c, c)
+                return nothing
+            end
+            # Recursion formula
+            kodd = k%2
+            kend = (k - 2 + kodd) >> 1
+            if $T == Taylor1
+                (kend ≥ 0) && ( @inbounds c[k] = c[0] * c[k] )
+                @inbounds for i = 1:kend
+                    c[k] += c[i] * c[k-i]
+                end
+                @inbounds c[k] = interval(2) * c[k]
+                (kodd == 0) && ( @inbounds c[k] += c[k >> 1]^2 )
+            else
+                (kend ≥ 0) && ( @inbounds TS.mul!(c, c[0][1], c, k) )
+                @inbounds for i = 1:kend
+                    TS.mul!(c[k], c[i], c[k-i])
+                end
+                @inbounds TS.mul!(c, interval(2), c, k)
+                if (kodd == 0)
+                    TS.accsqr!(c[k], c[k >> 1])
+                end
+            end
+
             return nothing
         end
     end
 end
-@inline function TS.sqr!(c::HomogeneousPolynomial{Interval{T}},
+@inline function TS.accsqr!(c::HomogeneousPolynomial{Interval{T}},
         a::HomogeneousPolynomial{Interval{T}}) where {T<:NumTypes}
     iszero(a) && return nothing
     @inbounds num_coeffs_a = TS.size_table[a.order+1]
