@@ -259,7 +259,7 @@ Base.iszero(::SymbNumber) = false
     tsq = t^2
     update!(tsq,2.0)
     @test tsq == (t+2.0)^2
-    update!(tsq,-2.0)
+    update!(tsq,-2)
     @test tsq == t^2
 
     @test log(exp(tsquare)) == tsquare

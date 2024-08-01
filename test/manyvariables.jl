@@ -763,7 +763,7 @@ end
     xysq = x^2 + y^2
     update!(xysq,[1.0,-2.0])
     @test xysq == (x+1.0)^2 + (y-2.0)^2
-    update!(xysq,[-1.0,2.0])
+    update!(xysq,[-1,2])
     @test xysq == x^2 + y^2
 
     #test function-like behavior for TaylorN

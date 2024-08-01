@@ -232,7 +232,7 @@ The former returns
 the expansion of a function around a given value `t0`, mimicking the use
 of `shift_taylor` above. In turn, `update!`
 provides an in-place update of a given Taylor polynomial, that is, it shifts
-it further by the provided amount.
+it further by the provided amount. Note that the type of the `Taylor1` polynomial and the shifted point must be compatible, in the sense that the latter must be convertable into the parametric type of the former.
 
 ```@repl userguide
 p = taylor_expand( x -> sin(x), pi/2, order=16) # 16-th order expansion of sin(t) around pi/2
