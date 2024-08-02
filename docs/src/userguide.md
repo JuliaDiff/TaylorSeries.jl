@@ -193,6 +193,8 @@ differentiate(5, exp(shift_taylor(1.0))) == exp(1.0)    # 5-th differentiate of 
 derivative(exp(1+t), 3)    # Taylor1 polynomial of the 3-rd derivative of `exp(1+t)`
 ```
 
+We also have methods to invert a `Taylor1` polynomial, using either [`inverse`](@ref), which uses Lagrange inversion, or [`inverse_map`](@ref), which uses an algorithm developed by M. Berz; the latter can also be used for `TaylorN` polynomials; see below.
+
 To evaluate a Taylor series at a given point, Horner's rule is used via the
 function `evaluate(a, dt)`. Here, `dt` is the increment from
 the point ``t_0`` around which the Taylor expansion of `a` is calculated,
@@ -230,7 +232,7 @@ The former returns
 the expansion of a function around a given value `t0`, mimicking the use
 of `shift_taylor` above. In turn, `update!`
 provides an in-place update of a given Taylor polynomial, that is, it shifts
-it further by the provided amount.
+it further by the provided amount. Note that the type of the `Taylor1` polynomial and the shifted point must be compatible, in the sense that the latter must be convertable into the parametric type of the former.
 
 ```@repl userguide
 p = taylor_expand( x -> sin(x), pi/2, order=16) # 16-th order expansion of sin(t) around pi/2
