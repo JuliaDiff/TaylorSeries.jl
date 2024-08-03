@@ -40,7 +40,7 @@ import Base: iterate, size, eachindex, firstindex, lastindex,
     eltype, length, getindex, setindex!, axes, copyto!
 
 import Base: zero, one, zeros, ones, isinf, isnan, iszero, isless,
-    convert, promote_rule, promote, show,
+    convert, promote_rule, promote, show, sum!,
     real, imag, conj, adjoint,
     rem, mod, mod2pi, abs, abs2,
     sqrt, exp, expm1, log, log1p,
