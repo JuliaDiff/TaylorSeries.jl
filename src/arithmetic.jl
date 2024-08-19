@@ -418,6 +418,15 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
+function sum!(v::TaylorN{S}, a::AbstractArray{HomogeneousPolynomial{S}}) where {S <: Number}
+    for i in eachindex(a)
+        for k in eachindex(v)
+            add!(v, v, a[i], k)
+        end
+    end
+    return nothing
+end
+
 ## Multiplication ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 
