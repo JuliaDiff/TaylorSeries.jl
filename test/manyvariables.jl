@@ -853,9 +853,9 @@ end
         radntn!.(v)
         x1 = randn(4) .+ x
         # warmup
-        TaylorSeries.evaluate!(v, (x1...,), r)
+        evaluate!(v, (x1...,), r)
         # call twice to make sure `r` is reset on second call
-        TaylorSeries.evaluate!(v, (x1...,), r)
+        evaluate!(v, (x1...,), r)
         r2 = evaluate.(v, Ref(x1))
         @test r == r2
         @test iszero(norm(r-r2, Inf))
