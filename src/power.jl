@@ -23,8 +23,11 @@ for T in (:Taylor1, :TaylorN)
         n == 2 && return square(a)
         return _pow(a, n)
     end
+
     @eval ^(a::$T, r::S) where {S<:Rational} = a^float(r)
+
     @eval ^(a::$T, b::$T) = exp( b*log(a) )
+
     @eval ^(a::$T, z::T) where {T<:Complex} = exp( z*log(a) )
 end
 
@@ -70,6 +73,7 @@ for T in (:Taylor1, :TaylorN)
         n < 0 && throw(DomainError())
         return power_by_squaring(a, n)
     end
+
     @eval function _pow(a::$T{Rational{T}}, n::Integer) where {T<:Integer}
         n < 0 && return inv( a^(-n) )
         return power_by_squaring(a, n)
@@ -175,6 +179,7 @@ end
 # uses internally mutating method `power_by_squaring!`
 for T in (:Taylor1, :TaylorN)
     @eval function power_by_squaring(x::$T{T}, p::Integer) where {T<:NumberNotSeries}
+        @assert p > 0
         (p == 0) && return one(x)
         (p == 1) && return copy(x)
         (p == 2) && return square(x)
@@ -208,19 +213,15 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 @inline function pow!(c::Taylor1{T}, a::Taylor1{T}, aux::Taylor1{T},
                       r::S, k::Int) where {T<:Number, S<:Real}
-
     (r == 0) && return one!(c, a, k)
     (r == 1) && return identity!(c, a, k)
     (r == 2) && return sqr!(c, a, k)
     (r == 0.5) && return sqrt!(c, a, k)
-
     # Sanity
     zero!(c, k)
-
     # First non-zero coefficient
     l0 = findfirst(a)
     l0 < 0 && return nothing
-
     # The first non-zero coefficient of the result; must be integer
     !isinteger(r*l0) && throw(DomainError(a,
         """The 0-th order Taylor1 coefficient must be non-zero
@@ -228,15 +229,13 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     lnull = trunc(Int, r*l0 )
     kprime = k-lnull
     (kprime < 0 || lnull > a.order) && return nothing
-
     # Relevant for positive integer r, to avoid round-off errors
     isinteger(r) && r > 0 && (k > r*findlast(a)) && return nothing
-
+    # First non-zero coeff
     if k == lnull
         @inbounds c[k] = (a[l0])^float(r)
         return nothing
     end
-
     # The recursion formula
     if l0+kprime ≤ a.order
         @inbounds c[k] = r * kprime * c[lnull] * a[l0+kprime]
@@ -252,20 +251,15 @@ end
 
 @inline function pow!(c::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
                       r::S, k::Int) where {T<:NumberNotSeriesN, S<:Real}
-
-    (r == 0) && return one!(c, a, k)
-    (r == 1) && return identity!(c, a, k)
-    (r == 2) && return sqr!(c, a, k)
+    isinteger(r) && r > 0 && return pow!(c, a, aux, Int(r), k)
     (r == 0.5) && return sqrt!(c, a, k)
-
+    # 0-th order coeff
     if k == 0
         @inbounds c[0][1] = ( constant_term(a) )^r
         return nothing
     end
-
     # Sanity
     zero!(c, k)
-
     # The recursion formula
     @inbounds for i = 0:k-1
         aux = r*(k-i) - i
@@ -274,25 +268,31 @@ end
     end
     # c[k] <- c[k]/(k * constant_term(a))
     @inbounds div!(c[k], c[k], k * constant_term(a))
-
     return nothing
 end
 
-@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::Taylor1{TaylorN{T}},
-                      r::S, ordT::Int) where {T<:NumberNotSeries, S<:Real}
+# Uses power_by_squaring!
+@inline function pow!(res::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
+        r::S, k::Int) where {T<:NumberNotSeriesN, S<:Integer}
+    (r == 0) && return one!(res, a, k)
+    (r == 1) && return identity!(res, a, k)
+    (r == 2) && return sqr!(res, a, k)
+    power_by_squaring!(res, a, aux, r)
+    return nothing
+end
 
+@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+                      aux::Taylor1{TaylorN{T}}, r::S, ordT::Int) where
+                      {T<:NumberNotSeries, S<:Real}
     (r == 0) && return one!(c, a, k)
     (r == 1) && return identity!(c, a, k)
     (r == 2) && return sqr!(c, a, k)
     (r == 0.5) && return sqrt!(c, a, k)
-
     # Sanity
     zero!(res, ordT)
-
     # First non-zero coefficient
     l0 = findfirst(a)
     l0 < 0 && return nothing
-
     # The first non-zero coefficient of the result; must be integer
     !isinteger(r*l0) && throw(DomainError(a,
         """The 0-th order Taylor1 coefficient must be non-zero
@@ -300,28 +300,23 @@ end
     lnull = trunc(Int, r*l0 )
     kprime = ordT-lnull
     (kprime < 0 || lnull > a.order) && return nothing
-
     # Relevant for positive integer r, to avoid round-off errors
     isinteger(r) && r > 0 && (ordT > r*findlast(a)) && return nothing
-
     if ordT == lnull
-        if isinteger(r)
-            power_by_squaring!(res[ordT], a[l0], aux[0], round(Int,r))
+        if isinteger(r) && r > 0
+            pow!(res[ordT], a[l0], aux[0], round(Int, r), 1)
             return nothing
         end
-
         a0 = constant_term(a[l0])
         iszero(a0) && throw(DomainError(a[l0],
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `^` around 0."""))
-
+        # Recursion formula
         for ordQ in eachindex(a[l0])
             pow!(res[ordT], a[l0], aux[0], r, ordQ)
         end
-
         return nothing
     end
-
     # The recursion formula
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
@@ -331,23 +326,7 @@ end
     end
     # res[ordT] /= a[l0]*kprime
     @inbounds div_scalar!(res[ordT], 1/kprime, a[l0])
-
     return nothing
-end
-
-for T in (:Taylor1, :TaylorN)
-    @eval begin
-        @inline function pow!(res::$T{T}, a::$T{T}, aux::$T{T},
-                              r::Integer, k::Int) where {T<:NumberNotSeries}
-            (r == 0) && return one!(res, a, k)
-            (r == 1) && return identity!(res, a, k)
-            (r == 2) && return sqr!(res, a, k)
-            # Sanity
-            zero!(res, k)
-            power_by_squaring!(res, a, aux, r)
-            return nothing
-        end
-    end
 end
 
 
