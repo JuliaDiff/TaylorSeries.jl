@@ -8,67 +8,50 @@ import TaylorSeries: evaluate, _evaluate, normalize_taylor, square
 
 isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..IntervalArithmetic)
 
-# Method used for Taylor1{Interval{T}}^n
+
+# TS._pow
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        function ^(a::$T{Interval{S}}, n::Integer) where {S<:Real}
-            n == 0 && return one(a)
-            n == 1 && return copy(a)
-            n == 2 && return square(a)
-            n < 0 && return a^float(n)
-            return power_by_squaring(a, n)
+        # Use power_by_squaring!
+        function TS._pow(a::$T{Interval{S}}, n::Integer) where {S<:Real}
+            aux = one(constant_term(a))^n
+            c = $T( zero(aux), a.order)
+            caux = zero(c)
+            TS.power_by_squaring!(c, a, caux, n)
+            return c
         end
-        ^(a::$T{Interval{S}}, r::Rational) where {S<:Real} = a^float(r)
     end
 end
 
-function ^(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
+function TS._pow(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
+    isinteger(r) && r >= 0 && return a^Int(r)
     a0 = constant_term(a) ∩ Interval(zero(T), T(Inf))
     aux = one(a0)^r
-
-    iszero(r) && return Taylor1(aux, a.order)
-    aa = one(aux) * a
-    aa[0] = one(aux) * a0
-    r == 1 && return aa
-    r == 2 && return square(aa)
-    r == 1/2 && return sqrt(aa)
-
+    a[0] = aux * a0
+    #
     l0 = findfirst(a)
     lnull = trunc(Int, r*l0 )
-    if (a.order-lnull < 0) || (lnull > a.order)
-        return Taylor1( zero(aux), a.order)
-    end
-    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
+    (lnull > a.order) && return Taylor1( zero(aux), a.order)
+    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int, r*a.order))
     c = Taylor1(zero(aux), c_order)
-    for k = 0:c_order
-        TS.pow!(c, aa, c, r, k)
+    aux0 = deepcopy(c)
+    for k in eachindex(c)
+        TS.pow!(c, a, aux0, r, k)
     end
-
     return c
 end
-function ^(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
+
+function TS._pow(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
+    isinteger(r) && r >= 0 && return a^Int(r)
     a0 = constant_term(a) ∩ Interval(zero(T), T(Inf))
-    a0r = a0^r
-    aux = one(a0r)
-
-    iszero(r) && return TaylorN(aux, a.order)
-    aa = aux * a
-    aa[0] = aux * a0
-    r == 1 && return aa
-    r == 2 && return square(aa)
-    r == 1/2 && return sqrt(aa)
-    isinteger(r) && return aa^round(Int,r)
-
-    # @assert !iszero(a0)
-    iszero(a0) && throw(DomainError(a,
-        """The 0-th order TaylorN coefficient must be non-zero
-        in order to expand `^` around 0."""))
-
-    c = TaylorN( a0r, a.order)
-    for ord in 1:a.order
-        TS.pow!(c, aa, c, r, ord)
+    aux = one(a0^r)
+    a[0] = aux * a0
+    #
+    c = TaylorN( zero(aux), a.order)
+    aux0 = zero(c)
+    for ord in eachindex(c)
+        TS.pow!(c, a, aux0, r, ord)
     end
-
     return c
 end
 

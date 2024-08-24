@@ -9,6 +9,7 @@ using Test
 @testset "Tests Taylor1 and TaylorN expansions over Intervals" begin
     a = 1..2
     b = -1 .. 1
+    p3(x, a) = x^3 + 3*a*x^2 + 3*a^2*x + a^3
     p4(x, a) = x^4 + 4*a*x^3 + 6*a^2*x^2 + 4*a^3*x + a^4
     p5(x, a) = x^5 + 5*a*x^4 + 10*a^2*x^3 + 10*a^3*x^2 + 5*a^4*x + a^5
 
@@ -24,22 +25,34 @@ using Test
     @test normalize_taylor(ti) == ti
     @test normalize_taylor(x) == x
 
-    @test p4(ti,-a) == (ti-a)^4
-    @test p5(ti,-a) == (ti-a)^5
-    @test p4(ti,-b) == (ti-b)^4
+    @test p3(ti,-a) == (ti-a)^3 == (ti-a)^3.0
+    @test p4(ti,-a) == (ti-a)^4 == (ti-a)^4.0
+    @test p5(ti,-a) == (ti-a)^5 == (ti-a)^5.0
+    @test (ti-b)^3 == (ti-b)^3.0
+    @test all((p3(ti,-b)).coeffs .⊆ ((ti-b)^3).coeffs)
+    @test p4(ti,-b) == (ti-b)^4 == (ti-b)^4.0
+    @test (ti-b)^5 == (ti-b)^5.0
     @test all((p5(ti,-b)).coeffs .⊆ ((ti-b)^5).coeffs)
 
 
-    @test p4(x,-y) == (x-y)^4
-    @test p5(x,-y) == (x-y)^5
-    @test p4(x,-a) == (x-a)^4
-    @test p5(x,-a) == (x-a)^5
+    @test p3(x,-y) == (x-y)^3 == (x-y)^3.0
+    @test p4(x,-y) == (x-y)^4 == (x-y)^4.0
+    @test p5(x,-y) == (x-y)^5 == (x-y)^5.0
+    @test p3(x,-a) == (x-a)^3 == (x-a)^3.0
+    @test p4(x,-a) == (x-a)^4 == (x-a)^4.0
+    @test p5(x,-a) == (x-a)^5 == (x-a)^5.0
+    @test (x-b)^3 == (x-b)^3.0
+    for ind in eachindex(p3(x,-b))
+        @test all((p3(x,-b)[ind]).coeffs .⊆ (((x-b)^3)[ind]).coeffs)
+    end
     @test p4(x,-b) == (x-b)^4
+    @test (x-b)^5 == (x-b)^5.0
     for ind in eachindex(p5(x,-b))
         @test all((p5(x,-b)[ind]).coeffs .⊆ (((x-b)^5)[ind]).coeffs)
     end
 
     # Tests `evaluate`
+    @test evaluate(p3(x,y), IntervalBox(a,-b)) == p3(a, -b)
     @test evaluate(p4(x,y), IntervalBox(a,-b)) == p4(a, -b)
     @test (p5(x,y))(IntervalBox(a,b)) == p5(a, b)
     @test (a-b)^4 ⊆ ((x-y)^4)(a × b)
