@@ -31,11 +31,9 @@ for T in (:Taylor1, :TaylorN)
     @eval ^(a::$T, z::T) where {T<:Complex} = exp( z*log(a) )
 end
 
-^(a::Taylor1{TaylorN{T}}, n::Integer) where {T<:NumberNotSeries} =
-    a^float(n)
+^(a::Taylor1{TaylorN{T}}, n::Integer) where {T<:NumberNotSeries} = a^float(n)
 
-^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} =
-    a^float(r)
+^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} = a^float(r)
 
 
 ## Real power ##
@@ -87,7 +85,7 @@ function _pow(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
     (lnull > a.order) && return Taylor1( zero(aux), a.order)
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int, r*a.order))
     c = Taylor1(zero(aux), c_order)
-    aux0 = deepcopy(c)
+    aux0 = zero(c)
     for k in eachindex(c)
         pow!(c, a, aux0, r, k)
     end
@@ -272,22 +270,24 @@ end
 end
 
 # Uses power_by_squaring!
-@inline function pow!(res::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
-        r::S, k::Int) where {T<:NumberNotSeriesN, S<:Integer}
-    (r == 0) && return one!(res, a, k)
-    (r == 1) && return identity!(res, a, k)
-    (r == 2) && return sqr!(res, a, k)
-    power_by_squaring!(res, a, aux, r)
-    return nothing
+for T in (:Taylor1, :TaylorN)
+    @eval @inline function pow!(res::$T{T}, a::$T{T}, aux::$T{T},
+            r::S, k::Int) where {T<:NumberNotSeriesN, S<:Integer}
+        (r == 0) && return one!(res, a, k)
+        (r == 1) && return identity!(res, a, k)
+        (r == 2) && return sqr!(res, a, k)
+        power_by_squaring!(res, a, aux, r)
+        return nothing
+    end
 end
 
 @inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                       aux::Taylor1{TaylorN{T}}, r::S, ordT::Int) where
                       {T<:NumberNotSeries, S<:Real}
-    (r == 0) && return one!(c, a, k)
-    (r == 1) && return identity!(c, a, k)
-    (r == 2) && return sqr!(c, a, k)
-    (r == 0.5) && return sqrt!(c, a, k)
+    (r == 0) && return one!(res, a, ordT)
+    (r == 1) && return identity!(res, a, ordT)
+    (r == 2) && return sqr!(res, a, ordT)
+    (r == 0.5) && return sqrt!(res, a, ordT)
     # Sanity
     zero!(res, ordT)
     # First non-zero coefficient
