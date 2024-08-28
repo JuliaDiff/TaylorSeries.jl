@@ -9,22 +9,25 @@ import TaylorSeries: evaluate, _evaluate, normalize_taylor, square
 isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..IntervalArithmetic)
 
 
-# TS._pow
+# _pow
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        # Use power_by_squaring!
+        # Uses TS.power_by_squaring! through `pow!`
         function TS._pow(a::$T{Interval{S}}, n::Integer) where {S<:Real}
-            aux = one(constant_term(a))^n
+            a0 = constant_term(a)
+            aux = one(a0)^n
+            a[0] = aux * a0
             c = $T( zero(aux), a.order)
             caux = zero(c)
-            TS.power_by_squaring!(c, a, caux, n)
+            # TS.power_by_squaring!(c, a, caux, n)
+            TS.pow!(c, a, caux, n, 1)
             return c
         end
     end
 end
 
 function TS._pow(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
-    isinteger(r) && r >= 0 && return a^Int(r)
+    isinteger(r) && r >= 0 && return TS._pow(a, Int(r))
     a0 = constant_term(a) ∩ Interval(zero(T), T(Inf))
     aux = one(a0)^r
     a[0] = aux * a0
@@ -34,7 +37,7 @@ function TS._pow(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
     (lnull > a.order) && return Taylor1( zero(aux), a.order)
     c_order = l0 == 0 ? a.order : min(a.order, trunc(Int, r*a.order))
     c = Taylor1(zero(aux), c_order)
-    aux0 = deepcopy(c)
+    aux0 = zero(c)
     for k in eachindex(c)
         TS.pow!(c, a, aux0, r, k)
     end
@@ -42,7 +45,7 @@ function TS._pow(a::Taylor1{Interval{T}}, r::S) where {T<:Real, S<:Real}
 end
 
 function TS._pow(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
-    isinteger(r) && r >= 0 && return a^Int(r)
+    isinteger(r) && r >= 0 && return TS._pow(a, Int(r))
     a0 = constant_term(a) ∩ Interval(zero(T), T(Inf))
     aux = one(a0^r)
     a[0] = aux * a0
@@ -59,7 +62,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function log(a::$T{Interval{S}}) where {S<:Real}
         iszero(constant_term(a)) && throw(DomainError(a,
-                """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
+            """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
         a0 = constant_term(a) ∩ Interval(S(0.0), S(Inf))
         order = a.order
         aux = log(a0)
