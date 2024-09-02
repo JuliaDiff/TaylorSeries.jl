@@ -94,6 +94,7 @@ asinh!
 acosh!
 atanh!
 differentiate!
+_isthinzero
 _internalmutfunc_call
 _dict_unary_ops
 _dict_binary_calls
