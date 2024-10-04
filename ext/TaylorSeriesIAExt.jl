@@ -12,7 +12,7 @@ isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..Interval
 # _pow
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        # Uses TS.power_by_squaring! through `pow!`
+        # Uses TS.power_by_squaring! through TS.pow!
         function TS._pow(a::$T{Interval{S}}, n::Integer) where {S<:Real}
             a0 = constant_term(a)
             aux = one(a0)^n
@@ -56,6 +56,17 @@ function TS._pow(a::TaylorN{Interval{T}}, r::S) where {T<:Real, S<:Real}
         TS.pow!(c, a, aux0, r, ord)
     end
     return c
+end
+
+for T in (:Taylor1, :TaylorN)
+    @eval @inline function TS.pow!(res::$T{Interval{T}}, a::$T{Interval{T}}, aux::$T{Interval{T}},
+            r::S, k::Int) where {T<:Real, S<:Integer}
+        (r == 0) && return TS.one!(res, a, k)
+        (r == 1) && return TS.identity!(res, a, k)
+        (r == 2) && return TS.sqr!(res, a, k)
+        TS.power_by_squaring!(res, a, aux, r)
+        return nothing
+    end
 end
 
 

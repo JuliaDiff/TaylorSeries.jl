@@ -37,27 +37,25 @@ end
 
 
 ## Real power ##
-function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
-    a0 = constant_term(a)
-    aux = one(a0)^r
-    iszero(r) && return Taylor1(aux, a.order)
-    aa = aux*a
-    r == 1 && return aa
-    r == 2 && return square(aa)
-    r == 0.5 && return sqrt(aa)
-    return _pow(aa, r)
-end
-
-function ^(a::TaylorN{T}, r::S) where {T<:Number, S<:Real}
-    a0 = constant_term(a)
-    aux = one(a0^r)
-    aa = aux*a
-    isinteger(r) && r ≥ 0 && return _pow(aa, round(Int, r))
-    iszero(a0) && throw(DomainError(a,
-        """The 0-th order TaylorN coefficient must be non-zero
-        in order to expand `^` around 0."""))
-    r == 0.5 && return sqrt(aa)
-    return _pow(aa, r)
+for T in (:Taylor1, :TaylorN)
+    @eval function ^(a::$T{T}, r::S) where {T<:Number, S<:Real}
+        a0 = constant_term(a)
+        aux = one(a0)^r
+        iszero(r) && return $T(aux, a.order)
+        aa = aux*a
+        r == 1 && return aa
+        r == 2 && return square(aa)
+        r == 0.5 && return sqrt(aa)
+        if $T == TaylorN
+            if iszero(aa[0])
+                isinteger(r) && r ≥ 0 && return _pow(aa, round(Int, r))
+                throw(DomainError(a,
+                """The 0-th order TaylorN coefficient must be non-zero
+                in order to expand `^` around 0."""))
+            end
+        end
+        return _pow(aa, r)
+    end
 end
 
 
@@ -79,7 +77,7 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function _pow(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
-    aux = one(constant_term(a)^r)
+    aux = one(constant_term(a))^r
     l0 = findfirst(a)
     lnull = trunc(Int, r*l0 )
     (lnull > a.order) && return Taylor1( zero(aux), a.order)
@@ -93,7 +91,7 @@ function _pow(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
 end
 
 function _pow(a::TaylorN{T}, r::S) where {T<:Number, S<:Real}
-    aux = one(constant_term(a)^r)
+    aux = one(constant_term(a))^r
     c = TaylorN( zero(aux), a.order)
     aux0 = zero(c)
     for ord in eachindex(a)
@@ -151,6 +149,7 @@ end
 # Licensed under MIT "Expat"
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function power_by_squaring(x::$T, p::Integer)
+        @assert p ≥ 0
         (p == 0) && return one(x)
         (p == 1) && return copy(x)
         (p == 2) && return square(x)
@@ -177,7 +176,7 @@ end
 # uses internally mutating method `power_by_squaring!`
 for T in (:Taylor1, :TaylorN)
     @eval function power_by_squaring(x::$T{T}, p::Integer) where {T<:NumberNotSeries}
-        @assert p > 0
+        @assert p ≥ 0
         (p == 0) && return one(x)
         (p == 1) && return copy(x)
         (p == 2) && return square(x)
@@ -249,7 +248,7 @@ end
 
 @inline function pow!(c::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
                       r::S, k::Int) where {T<:NumberNotSeriesN, S<:Real}
-    isinteger(r) && r > 0 && return pow!(c, a, aux, Int(r), k)
+    # isinteger(r) && r > 0 && return pow!(c, a, aux, Int(r), k)
     (r == 0.5) && return sqrt!(c, a, k)
     # 0-th order coeff
     if k == 0
@@ -270,15 +269,13 @@ end
 end
 
 # Uses power_by_squaring!
-for T in (:Taylor1, :TaylorN)
-    @eval @inline function pow!(res::$T{T}, a::$T{T}, aux::$T{T},
-            r::S, k::Int) where {T<:NumberNotSeriesN, S<:Integer}
-        (r == 0) && return one!(res, a, k)
-        (r == 1) && return identity!(res, a, k)
-        (r == 2) && return sqr!(res, a, k)
-        power_by_squaring!(res, a, aux, r)
-        return nothing
-    end
+@inline function pow!(res::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
+        r::S, k::Int) where {T<:NumberNotSeriesN, S<:Integer}
+    (r == 0) && return one!(res, a, k)
+    (r == 1) && return identity!(res, a, k)
+    (r == 2) && return sqr!(res, a, k)
+    power_by_squaring!(res, a, aux, r)
+    return nothing
 end
 
 @inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
