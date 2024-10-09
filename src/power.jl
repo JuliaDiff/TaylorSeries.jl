@@ -299,8 +299,8 @@ end
     if ordT == lnull
         a0 = constant_term(a[l0])
         if isinteger(r) && r > 0
-            pow!(res[ordT], a[l0], aux[0], round(Integer, r), 1)
-            # power_by_squaring!(res[ordT], a[l0], aux[0], round(Integer, r))
+            # pow!(res[ordT], a[l0], aux[0], round(Integer, r), 1)
+            power_by_squaring!(res[ordT], a[l0], aux[0], round(Integer, r))
             return nothing
         end
         iszero(a0) && throw(DomainError(a[l0],
