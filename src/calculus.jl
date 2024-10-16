@@ -252,10 +252,10 @@ evaluated at the vector `vals`. If `vals` is omitted, it is evaluated at zero.
 """
 function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
-    @assert length(vf) == numVars
-    jac = Array{T}(undef, numVars, numVars)
+    # @assert length(vf) == numVars
+    jac = Array{T}(undef, numVars, length(vf))
 
-    @inbounds for comp = 1:numVars
+    @inbounds for comp = 1:length(vf)
         jac[:,comp] = vf[comp][1][1:end]
     end
 
@@ -264,10 +264,10 @@ end
 function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where {T<:Number,S<:Number}
     R = promote_type(T,S)
     numVars = get_numvars()
-    @assert length(vf) == numVars == length(vals)
-    jac = Array{R}(undef, numVars, numVars)
+    @assert numVars == length(vals)
+    jac = Array{R}(undef, numVars, length(vf))
 
-    for comp = 1:numVars
+    for comp = 1:length(vf)
         @inbounds grad = gradient( vf[comp] )
         @inbounds for nv = 1:numVars
             jac[nv,comp] = evaluate(grad[nv], vals)
@@ -294,10 +294,10 @@ it is evaluated at zero.
 """
 function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
-    @assert length(vf) == numVars
-    @assert (numVars, numVars) == size(jac)
+    # @assert length(vf) == numVars
+    @assert (length(vf), numVars) == size(jac)
     for comp2 = 1:numVars
-        for comp1 = 1:numVars
+        for comp1 = 1:length(vf)
             @inbounds jac[comp1,comp2] = vf[comp1][1][comp2]
         end
     end
@@ -306,10 +306,10 @@ end
 function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1},
         vals::Array{T,1}) where {T<:Number}
     numVars = get_numvars()
-    @assert length(vf) == numVars == length(vals)
-    @assert (numVars, numVars) == size(jac)
+    @assert numVars == length(vals)
+    @assert (length(vf), numVars) == size(jac)
     for comp = 1:numVars
-        @inbounds for nv = 1:numVars
+        @inbounds for nv = 1:length(vf)
             jac[nv,comp] = evaluate(differentiate(vf[nv], comp), vals)
         end
     end
