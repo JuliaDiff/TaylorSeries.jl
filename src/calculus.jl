@@ -252,7 +252,6 @@ evaluated at the vector `vals`. If `vals` is omitted, it is evaluated at zero.
 """
 function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
-    # @assert length(vf) == numVars
     jac = Array{T}(undef, numVars, length(vf))
 
     @inbounds for comp = 1:length(vf)
@@ -294,7 +293,6 @@ it is evaluated at zero.
 """
 function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
-    # @assert length(vf) == numVars
     @assert (length(vf), numVars) == size(jac)
     for comp2 = 1:numVars
         for comp1 = 1:length(vf)
