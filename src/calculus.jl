@@ -254,7 +254,7 @@ function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
     jac = Array{T}(undef, numVars, length(vf))
 
-    @inbounds for comp = 1:length(vf)
+    @inbounds for comp in eachindex(vf)
         jac[:,comp] = vf[comp][1][1:end]
     end
 
@@ -266,7 +266,7 @@ function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where {T<:Number,S<
     @assert numVars == length(vals)
     jac = Array{R}(undef, numVars, length(vf))
 
-    for comp = 1:length(vf)
+    for comp in eachindex(vf)
         @inbounds grad = gradient( vf[comp] )
         @inbounds for nv = 1:numVars
             jac[nv,comp] = evaluate(grad[nv], vals)
@@ -295,7 +295,7 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
     numVars = get_numvars()
     @assert (length(vf), numVars) == size(jac)
     for comp2 = 1:numVars
-        for comp1 = 1:length(vf)
+        for comp1 in eachindex(vf)
             @inbounds jac[comp1,comp2] = vf[comp1][1][comp2]
         end
     end
@@ -307,7 +307,7 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1},
     @assert numVars == length(vals)
     @assert (length(vf), numVars) == size(jac)
     for comp = 1:numVars
-        @inbounds for nv = 1:length(vf)
+        @inbounds for nv in eachindex(vf)
             jac[nv,comp] = evaluate(differentiate(vf[nv], comp), vals)
         end
     end
