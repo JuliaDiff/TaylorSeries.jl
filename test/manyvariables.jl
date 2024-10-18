@@ -452,7 +452,7 @@ end
     @test_throws AssertionError q[end-2:2:end] = pol.coeffs[end-1:2:end]
 
     @test_throws AssertionError yT^(-2)
-    @test_throws AssertionError yT^(-2.0)
+    @test_throws DomainError yT^(-2.0)
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
     @test real(xH) == xH
     @test imag(xH) == zero(xH)
@@ -853,9 +853,9 @@ end
         radntn!.(v)
         x1 = randn(4) .+ x
         # warmup
-        TaylorSeries.evaluate!(v, (x1...,), r)
+        evaluate!(v, (x1...,), r)
         # call twice to make sure `r` is reset on second call
-        TaylorSeries.evaluate!(v, (x1...,), r)
+        evaluate!(v, (x1...,), r)
         r2 = evaluate.(v, Ref(x1))
         @test r == r2
         @test iszero(norm(r-r2, Inf))
