@@ -15,62 +15,100 @@ function ^(a::HomogeneousPolynomial, n::Integer)
     return power_by_squaring(a, n)
 end
 
-#= The following method computes `a^float(n)` (except for cases like
-Taylor1{Interval{T}}^n, where `power_by_squaring` is used), to
-use internally `pow!`.
-=#
-^(a::Taylor1, n::Integer) = a^float(n)
-
-function ^(a::TaylorN{T}, n::Integer) where {T<:Number}
-    n == 0 && return one(a)
-    n == 1 && return copy(a)
-    n == 2 && return square(a)
-    n < 0 && return inv( a^(-n) )
-    return power_by_squaring(a, n)
-end
-
 
 for T in (:Taylor1, :TaylorN)
-    @eval function ^(a::$T{T}, n::Integer) where {T<:Integer}
+    @eval function ^(a::$T, n::Integer)
         n == 0 && return one(a)
         n == 1 && return copy(a)
         n == 2 && return square(a)
-        n < 0 && throw(DomainError())
-        return power_by_squaring(a, n)
+        return _pow(a, n)
     end
 
-    @eval function ^(a::$T{Rational{T}}, n::Integer) where {T<:Integer}
-        n == 0 && return one(a)
-        n == 1 && return copy(a)
-        n == 2 && return square(a)
-        n < 0 && return inv( a^(-n) )
-        return power_by_squaring(a, n)
-    end
-
-    @eval ^(a::$T, x::S) where {S<:Rational} = a^(x.num/x.den)
+    @eval ^(a::$T, r::S) where {S<:Rational} = a^float(r)
 
     @eval ^(a::$T, b::$T) = exp( b*log(a) )
 
-    @eval ^(a::$T, x::T) where {T<:Complex} = exp( x*log(a) )
+    @eval ^(a::$T, z::T) where {T<:Complex} = exp( z*log(a) )
 end
 
-^(a::Taylor1{TaylorN{T}}, n::Integer) where {T<:NumberNotSeries} = a^float(n)
 
-^(a::Taylor1{TaylorN{T}}, r::Rational) where {T<:NumberNotSeries} = a^(r.num/r.den)
+## Real power ##
+for T in (:Taylor1, :TaylorN)
+    @eval function ^(a::$T{T}, r::S) where {T<:Number, S<:Real}
+        a0 = constant_term(a)
+        aux = a0^zero(r)
+        iszero(r) && return $T(aux, a.order)
+        aa = aux*a
+        r == 1 && return aa
+        r == 2 && return square(aa)
+        if $T == TaylorN
+            isinteger(r) && r ≥ 0 && return TS.power_by_squaring(a, Integer(r))
+        end
+        r == 0.5 && return sqrt(aa)
+        if $T == TaylorN
+            if iszero(a0)
+                throw(DomainError(a,
+                """The 0-th order TaylorN coefficient must be non-zero
+                in order to expand `^` around 0."""))
+            end
+        end
+        return _pow(aa, r)
+    end
+end
+
+
+# _pow
+_pow(a::Taylor1, n::Integer) = a^float(n)
+
+_pow(a::TaylorN, n::Integer) = power_by_squaring(a, n)
+
+for T in (:Taylor1, :TaylorN)
+    @eval _pow(a::$T{T}, n::Integer) where {T<:Integer} = power_by_squaring(a, n)
+
+    @eval function _pow(a::$T{Rational{T}}, n::Integer) where {T<:Integer}
+        n < 0 && return inv( a^(-n) )
+        return power_by_squaring(a, n)
+    end
+end
+
+function _pow(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
+    aux = one(constant_term(a))^r
+    iszero(r) && return Taylor1(aux, a.order)
+    l0 = findfirst(a)
+    lnull = trunc(Int, r*l0 )
+    (lnull > a.order) && return Taylor1( zero(aux), a.order)
+    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int, r*a.order))
+    c = Taylor1(zero(aux), c_order)
+    aux0 = zero(c)
+    for k in eachindex(c)
+        pow!(c, a, aux0, r, k)
+    end
+    return c
+end
+
+function _pow(a::TaylorN{T}, r::S) where {T<:Number, S<:Real}
+    isinteger(r) && r ≥ 0 && return power_by_squaring(a, Integer(r))
+    aux = one(constant_term(a))^r
+    c = TaylorN( zero(aux), a.order)
+    aux0 = zero(c)
+    for ord in eachindex(a)
+        pow!(c, a, aux0, r, ord)
+    end
+    return c
+end
+
 
 # in-place form of power_by_squaring
 # this method assumes `y`, `x` and `aux` are of same order
 # TODO: add power_by_squaring! method for HomogeneousPolynomial and mixtures
 for T in (:Taylor1, :TaylorN)
-    @eval @inline function power_by_squaring_0!(y::$T{T}, x::$T{T}) where {T<:NumberNotSeries}
-        for k in eachindex(y)
-            one!(y, x, k)
+    @eval function power_by_squaring!(y::$T, x::$T, aux::$T, p::Integer)
+        if p == 0
+            for k in eachindex(y)
+                one!(y, x, k)
+            end
+            return nothing
         end
-        return nothing
-    end
-    @eval @inline function power_by_squaring!(y::$T{T}, x::$T{T}, aux::$T{T},
-            p::Integer) where {T<:NumberNotSeries}
-        (p == 0) && return power_by_squaring_0!(y, x)
         t = trailing_zeros(p) + 1
         p >>= t
         # aux = x
@@ -108,15 +146,11 @@ end
 # Licensed under MIT "Expat"
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function power_by_squaring(x::$T, p::Integer)
-        if p == 0
-            return one(x)
-        elseif p == 1
-            return copy(x)
-        elseif p == 2
-            return square(x)
-        elseif p == 3
-            return x*square(x)
-        end
+        @assert p ≥ 0
+        (p == 0) && return one(x)
+        (p == 1) && return copy(x)
+        (p == 2) && return square(x)
+        (p == 3) && return x*square(x)
         t = trailing_zeros(p) + 1
         p >>= t
         while (t -= 1) > 0
@@ -135,10 +169,11 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     end
 end
 
-# power_by_squaring specializations for non-mixed Taylor1 and TaylorN
+# power_by_squaring specializations for non-mixtures of Taylor1 and TaylorN;
 # uses internally mutating method `power_by_squaring!`
 for T in (:Taylor1, :TaylorN)
-    @eval function power_by_squaring(x::$T{T}, p::Integer) where {T <: NumberNotSeries}
+    @eval function power_by_squaring(x::$T{T}, p::Integer) where {T<:NumberNotSeries}
+        @assert p ≥ 0
         (p == 0) && return one(x)
         (p == 1) && return copy(x)
         (p == 2) && return square(x)
@@ -150,83 +185,6 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-## Real power ##
-function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
-    a0 = constant_term(a)
-    aux = one(a0)^r
-
-    iszero(r) && return Taylor1(aux, a.order)
-    aa = aux*a
-    r == 1 && return aa
-    r == 2 && return square(aa)
-    r == 0.5 && return sqrt(aa)
-
-    l0 = findfirst(a)
-    lnull = trunc(Int, r*l0 )
-    (lnull > a.order) && return Taylor1( zero(aux), a.order)
-
-    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
-    c = Taylor1(zero(aux), c_order)
-    aux0 = deepcopy(c)
-    for k in eachindex(c)
-        pow!(c, aa, aux0, r, k)
-    end
-
-    return c
-end
-
-## Real power ##
-# TODO: get rid of allocations
-function ^(a::TaylorN, r::S) where {S<:Real}
-    a0 = constant_term(a)
-    aux = one(a0^r)
-
-    iszero(r) && return TaylorN(aux, a.order)
-    aa = aux*a
-    r == 1 && return aa
-    r == 2 && return square(aa)
-    r == 0.5 && return sqrt(aa)
-    isinteger(r) && return aa^round(Int,r) # uses power_by_squaring
-
-    iszero(a0) && throw(DomainError(a,
-        """The 0-th order TaylorN coefficient must be non-zero
-        in order to expand `^` around 0."""))
-
-    c = TaylorN( zero(aux), a.order)
-    aux = deepcopy(c)
-    for ord in eachindex(a)
-        pow!(c, aa, aux, r, ord)
-    end
-
-    return c
-end
-
-function ^(a::Taylor1{TaylorN{T}}, r::S) where {T<:NumberNotSeries, S<:Real}
-    a0 = constant_term(a)
-    aux = one(a0)^r
-
-    iszero(r) && return Taylor1(aux, a.order)
-    aa = aux*a
-    r == 1 && return aa
-    r == 2 && return square(aa)
-    r == 0.5 && return sqrt(aa)
-    # Is the following needed?
-    # isinteger(r) && r > 0 && iszero(constant_term(a[0])) &&
-    #     return power_by_squaring(aa, round(Int,r))
-
-    l0 = findfirst(a)
-    lnull = trunc(Int, r*l0 )
-    (lnull > a.order) && return Taylor1( zero(aux), a.order)
-
-    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
-    c = Taylor1(zero(aux), c_order)
-    aux0 = deepcopy(c)
-    for k in eachindex(c)
-        pow!(c, aa, aux0, r, k)
-    end
-
-    return c
-end
 
 
 # Homogeneous coefficients for real power
@@ -247,42 +205,31 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, r::S, k::Int) where
-        {T<:Number, S <: Real}
-
-    if r == 0
-        return one!(c, a, k)
-    elseif r == 1
-        return identity!(c, a, k)
-    elseif r == 2
-        return sqr!(c, a, k)
-    elseif r == 0.5
-        return sqrt!(c, a, k)
-    end
-
+@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, aux::Taylor1{T},
+                      r::S, k::Int) where {T<:Number, S<:Real}
+    (r == 0) && return one!(c, a, k)
+    (r == 1) && return identity!(c, a, k)
+    (r == 2) && return sqr!(c, a, k)
+    (r == 0.5) && return sqrt!(c, a, k)
     # Sanity
     zero!(c, k)
-
     # First non-zero coefficient
     l0 = findfirst(a)
     l0 < 0 && return nothing
-
-    # The first non-zero coefficient of the result; must be integer
+    # Index of first non-zero coefficient of the result; must be integer
     !isinteger(r*l0) && throw(DomainError(a,
         """The 0-th order Taylor1 coefficient must be non-zero
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0 )
     kprime = k-lnull
     (kprime < 0 || lnull > a.order) && return nothing
-
     # Relevant for positive integer r, to avoid round-off errors
     isinteger(r) && r > 0 && (k > r*findlast(a)) && return nothing
-
+    # First non-zero coeff
     if k == lnull
         @inbounds c[k] = (a[l0])^float(r)
         return nothing
     end
-
     # The recursion formula
     if l0+kprime ≤ a.order
         @inbounds c[k] = r * kprime * c[lnull] * a[l0+kprime]
@@ -296,27 +243,17 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
     return nothing
 end
 
-@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, r::S, k::Int) where
-        {T<:NumberNotSeriesN, S<:Real}
-
-        if r == 0
-            return one!(c, a, k)
-        elseif r == 1
-            return identity!(c, a, k)
-        elseif r == 2
-            return sqr!(c, a, k)
-        elseif r == 0.5
-            return sqrt!(c, a, k)
-        end
-
+@inline function pow!(c::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
+                      r::S, k::Int) where {T<:NumberNotSeriesN, S<:Real}
+    isinteger(r) && r > 0 && return pow!(c, a, aux, Integer(r), k)
+    (r == 0.5) && return sqrt!(c, a, k)
+    # 0-th order coeff
     if k == 0
         @inbounds c[0][1] = ( constant_term(a) )^r
         return nothing
     end
-
     # Sanity
     zero!(c, k)
-
     # The recursion formula
     @inbounds for i = 0:k-1
         aux = r*(k-i) - i
@@ -325,30 +262,31 @@ end
     end
     # c[k] <- c[k]/(k * constant_term(a))
     @inbounds div!(c[k], c[k], k * constant_term(a))
-
     return nothing
 end
 
-@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::Taylor1{TaylorN{T}}, r::S,
-        ordT::Int) where {T<:NumberNotSeries, S<:Real}
+# Uses power_by_squaring!
+@inline function pow!(res::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
+        r::S, k::Int) where {T<:NumberNotSeriesN, S<:Integer}
+    (r == 0) && return one!(res, a, k)
+    (r == 1) && return identity!(res, a, k)
+    (r == 2) && return sqr!(res, a, k)
+    power_by_squaring!(res, a, aux, r)
+    return nothing
+end
 
-    if r == 0
-        return one!(res, a, ordT)
-    elseif r == 1
-        return identity!(res, a, ordT)
-    elseif r == 2
-        return sqr!(res, a, ordT)
-    elseif r == 0.5
-        return sqrt!(res, a, ordT)
-    end
-
+@inline function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+                      aux::Taylor1{TaylorN{T}}, r::S, ordT::Int) where
+                      {T<:NumberNotSeries, S<:Real}
+    (r == 0) && return one!(res, a, ordT)
+    (r == 1) && return identity!(res, a, ordT)
+    (r == 2) && return sqr!(res, a, ordT)
+    (r == 0.5) && return sqrt!(res, a, ordT)
     # Sanity
     zero!(res, ordT)
-
     # First non-zero coefficient
     l0 = findfirst(a)
     l0 < 0 && return nothing
-
     # The first non-zero coefficient of the result; must be integer
     !isinteger(r*l0) && throw(DomainError(a,
         """The 0-th order Taylor1 coefficient must be non-zero
@@ -356,28 +294,24 @@ end
     lnull = trunc(Int, r*l0 )
     kprime = ordT-lnull
     (kprime < 0 || lnull > a.order) && return nothing
-
     # Relevant for positive integer r, to avoid round-off errors
     isinteger(r) && r > 0 && (ordT > r*findlast(a)) && return nothing
-
     if ordT == lnull
-        if isinteger(r)
-            power_by_squaring!(res[ordT], a[l0], aux[0], round(Int,r))
+        a0 = constant_term(a[l0])
+        if isinteger(r) && r > 0
+            # pow!(res[ordT], a[l0], aux[0], round(Integer, r), 1)
+            power_by_squaring!(res[ordT], a[l0], aux[0], round(Integer, r))
             return nothing
         end
-
-        a0 = constant_term(a[l0])
         iszero(a0) && throw(DomainError(a[l0],
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `^` around 0."""))
-
+        # Recursion formula
         for ordQ in eachindex(a[l0])
             pow!(res[ordT], a[l0], aux[0], r, ordQ)
         end
-
         return nothing
     end
-
     # The recursion formula
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
@@ -387,7 +321,6 @@ end
     end
     # res[ordT] /= a[l0]*kprime
     @inbounds div_scalar!(res[ordT], 1/kprime, a[l0])
-
     return nothing
 end
 

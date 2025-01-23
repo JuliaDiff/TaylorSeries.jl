@@ -254,39 +254,32 @@ Note that the syntax `a(vals)` is equivalent to
 `evaluate(a)`; use a(b::Bool, x) corresponds to
 evaluate(a, x, sorting=b).
 """
-function evaluate(a::TaylorN, vals::NTuple{N,<:Number};
-        sorting::Bool=true) where {N}
+function evaluate(a::TaylorN, vals::NTuple{N,<:Number}; sorting::Bool=true) where {N}
     @assert get_numvars() == N
     return _evaluate(a, vals, Val(sorting))
 end
 
-function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
-        sorting::Bool=false) where {N}
+function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries}; sorting::Bool=false) where {N}
     @assert get_numvars() == N
     return _evaluate(a, vals, Val(sorting))
 end
 
 evaluate(a::TaylorN{T}, vals::AbstractVector{<:Number};
-        sorting::Bool=true) where {T<:NumberNotSeries} =
-    evaluate(a, (vals...,); sorting=sorting)
+    sorting::Bool=true) where {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
 
 evaluate(a::TaylorN{T}, vals::AbstractVector{<:AbstractSeries};
-        sorting::Bool=false) where {T<:NumberNotSeries} =
-    evaluate(a, (vals...,); sorting=sorting)
+    sorting::Bool=false) where {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
 
 evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{S};
-        sorting::Bool=false) where {T, S} =
-    evaluate(a, (vals...,); sorting=sorting)
+    sorting::Bool=false) where {T, S} = evaluate(a, (vals...,); sorting=sorting)
 
-function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
-        {T<:Number, S<:NumberNotSeriesN}
+function evaluate(a::TaylorN{T}, s::Symbol, val::S) where {T<:Number, S<:NumberNotSeriesN}
     ind = lookupvar(s)
     @assert (1 ≤ ind ≤ get_numvars()) "Symbol is not a TaylorN variable; see `get_variable_names()`"
     return evaluate(a, ind, val)
 end
 
-function evaluate(a::TaylorN{T}, ind::Int, val::S) where
-        {T<:Number, S<:NumberNotSeriesN}
+function evaluate(a::TaylorN{T}, ind::Int, val::S) where {T<:Number, S<:NumberNotSeriesN}
     @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     R = promote_type(T,S)
     return _evaluate(convert(TaylorN{R}, a), ind, convert(R, val))
@@ -305,8 +298,7 @@ function evaluate(a::TaylorN{T}, ind::Int, val::TaylorN) where {T<:Number}
     return _evaluate(a, ind, val)
 end
 
-evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} =
-    evaluate(a, first(x), last(x))
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} = evaluate(a, first(x), last(x))
 
 evaluate(a::TaylorN{T}) where {T<:Number} = constant_term(a)
 
@@ -338,14 +330,6 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:Number}) where {N,T<:Number}
     return suma
 end
 
-function _evaluate!(res::Vector{TaylorN{T}}, a::TaylorN{T}, vals::NTuple{N,<:TaylorN},
-        valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
-    @inbounds for homPol in eachindex(a)
-        _evaluate!(res[homPol+1], a[homPol], vals, valscache, aux)
-    end
-    return nothing
-end
-
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}) where {N,T<:Number}
     R = promote_type(T, TS.numtype(vals[1]))
     suma = [TaylorN(zero(R), vals[1].order) for _ in eachindex(a)]
@@ -375,27 +359,37 @@ function _evaluate(a::TaylorN{T}, ind::Int, val::TaylorN{T}) where {T<:NumberNot
     return suma
 end
 
+function _evaluate!(res::Vector{TaylorN{T}}, a::TaylorN{T}, vals::NTuple{N,<:TaylorN},
+        valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
+    @inbounds for homPol in eachindex(a)
+        _evaluate!(res[homPol+1], a[homPol], vals, valscache, aux)
+    end
+    return nothing
+end
+
 function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int, val::T) where
         {T<:NumberNotSeriesN}
     order = a.order
+    orderTN = get_order()
     if order == 0
-        suma[0] = a[1]*one(val)
+        suma[0][1] = a[1]*one(val)
         return nothing
     end
     vv = val .^ (0:order)
-    # ct = @isonethread coeff_table[order+1]
-    ct = deepcopy(coeff_table[order+1])
+    vct = zero(coeff_table[order+1][1])
+    zct = zero(coeff_table[order+1][1])
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        if ct[i][ind] == 0
+        vpow = coeff_table[order+1][i][ind]
+        if vpow == 0
             suma[order][i] += a_coeff
             continue
         end
-        vpow = ct[i][ind]
+        vct .= coeff_table[order+1][i]
+        zct[ind] = vpow
         red_order = order - vpow
-        ct[i][ind] -= vpow
-        kdic = in_base(get_order(), ct[i])
-        ct[i][ind] += vpow
+        kdic = in_base(orderTN, vct - zct)
+        zct[ind] = 0
         pos = pos_table[red_order+1][kdic]
         suma[red_order][pos] += a_coeff * vv[vpow+1]
     end
@@ -406,32 +400,33 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
         val::TaylorN{T}, aux::TaylorN{T}) where {T<:NumberNotSeriesN}
     order = a.order
     if order == 0
-        suma[0] = a[1]
+        suma[0][1] = a[1]
         return nothing
     end
     vv = zero(suma)
-    ct = coeff_table[order+1]
+    vvaux = zero(vv)
     za = zero(a)
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        if ct[i][ind] == 0
+        vpow = coeff_table[order+1][i][ind]
+        if vpow == 0
             suma[order][i] += a_coeff
             continue
+        end
+        # vv = val ^ vpow
+        if constant_term(val) == 0
+            zero!(vvaux)
+            power_by_squaring!(vv, val, vvaux, vpow)
+        else
+            for ordQ in eachindex(val)
+                zero!(vv, ordQ)
+                pow!(vv, val, vvaux, vpow, ordQ)
+            end
         end
         za[i] = a_coeff
         zero!(aux)
         _evaluate!(aux, za, ind, one(T))
-        za[i] = zero(T)
-        vpow = ct[i][ind]
-        # vv = val ^ vpow
-        if constant_term(val) == 0
-            vv = val ^ vpow
-        else
-            for ordQ in eachindex(val)
-                zero!(vv, ordQ)
-                pow!(vv, val, vv, vpow, ordQ)
-            end
-        end
+        za[i] = zero(a_coeff)
         for ordQ in eachindex(suma)
             mul!(suma, vv, aux, ordQ)
         end
@@ -456,7 +451,7 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 #function-like behavior for TaylorN
 (p::TaylorN)(x) = evaluate(p, x)
 (p::TaylorN)() = evaluate(p)
-(p::TaylorN)(s::S, x) where {S<:Union{Symbol, Int}}= evaluate(p, s, x)
+(p::TaylorN)(s::S, x) where {S<:Union{Symbol, Int}} = evaluate(p, s, x)
 (p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
 (p::TaylorN)(x, v::Vararg{T}) where {T} = evaluate(p, (x, v...,))
 (p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
@@ -470,39 +465,33 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 
 
 """
-    evaluate!(x, δt, x0)
+    evaluate!(x, δt, dest)
 
 Evaluates each element of `x::AbstractArray{Taylor1{T}}`,
 representing the Taylor expansion for the dependent variables
-of an ODE at *time* `δt`. It updates the vector `x0` with the
+of an ODE at *time* `δt`. It updates the vector `dest` with the
 computed values.
 """
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
-        x0::AbstractArray{T}) where {T<:Number, S<:Number}
-    x0 .= evaluate.( x, δt )
+        dest::AbstractArray{T}) where {T<:Number, S<:Number}
+    dest .= evaluate.( x, δt )
     return nothing
 end
-# function evaluate!(x::AbstractArray{Taylor1{Taylor1{T}}}, δt::Taylor1{T},
-#         x0::AbstractArray{Taylor1{T}}) where {T<:Number}
-#     x0 .= evaluate.( x, Ref(δt) )
-#     # x0 .= evaluate.( x, δt )
-#     return nothing
-# end
 
 ## In place evaluation of multivariable arrays
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{T,1},
-        x0::AbstractArray{T}) where {T<:Number}
-    x0 .= evaluate.( x, Ref(δx) )
+        dest::AbstractArray{T}) where {T<:Number}
+    dest .= evaluate.( x, Ref(δx) )
     return nothing
 end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
-        x0::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
-    x0 .= evaluate.( x, Ref(δx), sorting = sorting)
+        dest::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
+    dest .= evaluate.( x, Ref(δx), sorting = sorting)
     return nothing
 end
 
-function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}}, dest::TaylorN{T},
+function _evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}}, dest::TaylorN{T},
         valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
     @inbounds for homPol in eachindex(a)
         _evaluate!(dest, a[homPol], vals, valscache, aux)
@@ -518,7 +507,7 @@ function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
     # loop over elements of `a`
     for i in eachindex(a)
         (!iszero(dest[i])) && zero!(dest[i])
-        evaluate!(a[i], vals, dest[i], valscache, aux)
+        _evaluate!(a[i], vals, dest[i], valscache, aux)
     end
     return nothing
 end
