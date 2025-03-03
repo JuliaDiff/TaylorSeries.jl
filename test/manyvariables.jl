@@ -344,6 +344,20 @@ end
     txy[2:end-1] .= ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
     @test txy[2:end-1] == ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
 
+    ident = [xT, yT]
+    pN = [x+y, x-y]
+    @test evaluate.(inverse_map(pN), Ref(pN)) == ident
+    @test evaluate.(pN, Ref(inverse_map(pN))) == ident
+    pN = [exp(xT)-1, log(1+yT)]
+    @test inverse_map(pN) ≈ [log(1+xT), exp(yT)-1]
+    @test evaluate.(pN, Ref(inverse_map(pN))) ≈ ident
+    pN = [tan(xT), atan(yT)]
+    @test evaluate.(inverse_map(pN), Ref(pN)) ≈ ident
+    @test evaluate.(pN, Ref(inverse_map(pN))) ≈ ident
+    pN = [sin(xT), asin(yT)]
+    @test evaluate.(inverse_map(pN), Ref(pN)) ≈ ident
+    @test evaluate.(pN, Ref(inverse_map(pN))) ≈ ident
+
     a = -5.0 + sin(xT+yT^2)
     b = deepcopy(a)
     @test a[:] == a[0:end]
@@ -438,7 +452,7 @@ end
     @test_throws AssertionError q[end-2:2:end] = pol.coeffs[end-1:2:end]
 
     @test_throws AssertionError yT^(-2)
-    @test_throws AssertionError yT^(-2.0)
+    @test_throws DomainError yT^(-2.0)
     @test (1+xT)^(3//2) == ((1+xT)^0.5)^3
     @test real(xH) == xH
     @test imag(xH) == zero(xH)
@@ -749,7 +763,7 @@ end
     xysq = x^2 + y^2
     update!(xysq,[1.0,-2.0])
     @test xysq == (x+1.0)^2 + (y-2.0)^2
-    update!(xysq,[-1.0,2.0])
+    update!(xysq,[-1,2])
     @test xysq == x^2 + y^2
 
     #test function-like behavior for TaylorN
@@ -839,9 +853,9 @@ end
         radntn!.(v)
         x1 = randn(4) .+ x
         # warmup
-        TaylorSeries.evaluate!(v, (x1...,), r)
+        evaluate!(v, (x1...,), r)
         # call twice to make sure `r` is reset on second call
-        TaylorSeries.evaluate!(v, (x1...,), r)
+        evaluate!(v, (x1...,), r)
         r2 = evaluate.(v, Ref(x1))
         @test r == r2
         @test iszero(norm(r-r2, Inf))

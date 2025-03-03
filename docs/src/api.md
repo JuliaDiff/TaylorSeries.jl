@@ -47,6 +47,7 @@ constant_term
 linear_polynomial
 nonlinear_polynomial
 inverse
+inverse_map
 abs
 norm
 isapprox

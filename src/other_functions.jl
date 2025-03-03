@@ -254,15 +254,23 @@ end
 
 Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
 """
-function update!(a::Taylor1, x0::T) where {T<:Number}
+function update!(a::Taylor1{T}, x0::T) where {T<:Number}
     a.coeffs .= evaluate(a, Taylor1([x0, one(x0)], a.order) ).coeffs
-    nothing
+    return nothing
+end
+function update!(a::Taylor1{T}, x0::S) where {T<:Number, S<:Number}
+    xx0 = convert(T, x0)
+    return update!(a, xx0)
 end
 
 #update! function for TaylorN
-function update!(a::TaylorN, vals::Vector{T}) where {T<:Number}
+function update!(a::TaylorN{T}, vals::Vector{T}) where {T<:Number}
     a.coeffs .= evaluate(a, get_variables(a.order) .+ vals).coeffs
-    nothing
+    return nothing
+end
+function update!(a::TaylorN{T}, vals::Vector{S}) where {T<:Number, S<:Number}
+    vv = convert(Vector{T}, vals)
+    return update!(a, vv)
 end
 
 function update!(a::Union{Taylor1,TaylorN})

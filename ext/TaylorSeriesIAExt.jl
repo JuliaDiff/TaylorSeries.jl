@@ -4,7 +4,7 @@ using TaylorSeries
 
 import Base: ^, sqrt, log, asin, acos, acosh, atanh, iszero, ==
 
-import TaylorSeries: evaluate, _evaluate, normalize_taylor
+import TaylorSeries: _pow, pow!, evaluate, _evaluate, normalize_taylor
 
 isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..IntervalArithmetic)
 
@@ -56,67 +56,78 @@ for I in (:Interval, :ComplexI)
         iszero(a::HomogeneousPolynomial{$I{T}}) where {T<:NumTypes} =
             all(TS._isthinzero.(a.coeffs))
     end
+end
 
 # Methods related to power, sqr, sqrt, ...
-    for T in (:Taylor1, :TaylorN)
-        @eval begin
-            function ^(a::$T{$I{T}}, n::S) where {T<:NumTypes, S<:Integer}
-                n == 0 && return one(a)
-                n == 1 && return copy(a)
-                n == 2 && return TS.square(a)
-                n < 0 && return a^float(n)
-                return Base.power_by_squaring(a, n)
-            end
+for T in (:Taylor1, :TaylorN)
+    @eval begin
+        function ^(a::$T{Interval{T}}, n::S) where {T<:NumTypes, S<:Integer}
+            n == 0 && return one(a)
+            n == 1 && return deepcopy(a)
+            n == 2 && return TS.square(a)
+            n < 0 && return a^float(n)
+            return Base.power_by_squaring(a, n)
+        end
 
-            ^(a::$T{$I{T}}, r::Rational) where {T<:NumTypes} = a^float(r)
+        ^(a::$T{Interval{T}}, r::Rational) where {T<:NumTypes} = a^float(r)
+
+        function ^(a::$T{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
+            isinteger(r) && r ≥ 0 && return TS.power_by_squaring(a, Integer(r))
+            a0 = _intersect_domain_nonstd(constant_term(a), interval(zero(T), T(Inf)))
+            @assert !isempty_interval(a0)
+            aux = one(a0^r)
+            aa = one(aux) * a
+            r == 0.5 && return sqrt(aa)
+            if $T == TaylorN
+                if iszero(a0)
+                    throw(DomainError(aa,
+                    """The 0-th order TaylorN coefficient must be non-zero
+                    in order to expand `^` around 0."""))
+                end
+            end
+            return _pow(aa, r)
+        end
+
+        # _pow
+        function _pow(a::$T{Interval{S}}, n::Integer) where {S<:NumTypes}
+            n < 0 && return _pow(a, float(n))
+            return TS.power_by_squaring(a, n)
+        end
+
+        function _pow(a::$T{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
+            isinteger(r) && r ≥ 0 && return TS.power_by_squaring(a, Integer(r))
+            a0 = _intersect_domain_nonstd(constant_term(a), interval(zero(T), T(Inf)))
+            @assert !isempty_interval(a0)
+            aux = one(a0^r)
+            a[0] = aux * a0
+            r == 0.5 && return sqrt(a)
+            if $T == Taylor1
+                l0 = findfirst(a)
+                # Index of first non-zero coefficient of the result; must be integer
+                !isinteger(r*l0) && throw(DomainError(a,
+                    """The 0-th order Taylor1 coefficient must be non-zero
+                    to raise the Taylor1 polynomial to a non-integer exponent."""))
+                lnull = trunc(Int, r*l0 )
+                (lnull > a.order) && return $T( zero(aux), a.order)
+                c_order = l0 == 0 ? a.order : min(a.order, trunc(Int, r*a.order))
+            else
+                if iszero(a0)
+                    throw(DomainError(a,
+                    """The 0-th order TaylorN coefficient must be non-zero
+                    in order to expand `^` around 0."""))
+                end
+                c_order = a.order
+            end
+            #
+            c = $T(zero(aux), c_order)
+            aux0 = zero(c)
+            for k in eachindex(c)
+                TS.pow!(c, a, aux0, r, k)
+            end
+            return c
         end
     end
 end
-
-function ^(a::Taylor1{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
-    a0 = intersect_interval(constant_term(a), interval(zero(T), T(Inf)))
-    aux = one(a0)^r
-    iszero(r) && return Taylor1(aux, a.order)
-    # aa = one(aux) * a
-    aa = convert(Taylor1{typeof(aux)}, a)
-    aa[0] = one(aux) * a0
-    r == 1 && return aa
-    r == 2 && return TS.square(aa)
-    r == 1/2 && return sqrt(aa)
-    l0 = findfirst(a)
-    lnull = trunc(Int, r*l0 )
-    if (a.order-lnull < 0) || (lnull > a.order)
-        return Taylor1( zero(aux), a.order)
-    end
-    c_order = l0 == 0 ? a.order : min(a.order, trunc(Int,r*a.order))
-    c = Taylor1(zero(aux), c_order)
-    for k in eachindex(c)
-        TS.pow!(c, aa, c, r, k)
-    end
-    return c
-end
-
-function ^(a::TaylorN{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
-    isinteger(r) && return a^Int(r)
-    a0 = intersect_interval(constant_term(a), interval(zero(T), T(Inf)))
-    a0r = a0^r
-    aux = one(a0r)
-    iszero(r) && return TaylorN(aux, a.order)
-    aa = aux * a
-    aa[0] = aux * a0
-    r == 1 && return aa
-    r == 2 && return TS.square(aa)
-    r == 1/2 && return sqrt(aa)
-    TS._isthinzero(a0) && throw(DomainError(a,
-        """The 0-th order TaylorN coefficient must be non-zero
-        in order to expand `^` around 0."""))
-    c = TaylorN( a0r, a.order)
-    for ord in 1:a.order
-        TS.pow!(c, aa, c, r, ord)
-    end
-    return c
-end
-
 
 # sqr!
 for T = (:Taylor1, :TaylorN)
@@ -254,7 +265,7 @@ function sqrt(a::TaylorN{Interval{T}}) where {T<:NumTypes}
 end
 
 @inline function TS.sqrt!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
-        k::Int, k0::Int=0) where {T<:AbstractFloat}
+        k::Int, k0::Int=0) where {T<:NumTypes}
     if k == k0
         @inbounds c[k] = sqrt(a[2*k0])
         return nothing
@@ -290,6 +301,7 @@ for T in (:Taylor1, :TaylorN)
             isempty_interval(aux) && throw(DomainError(a,
                 """The 0-th order coefficient must be positive in order to expand `log`."""))
             aa = convert($T{typeof(aux)}, a)
+            # aa = one(aux) * a
             aa[0] = one(aux) * a0
             order = a.order
             c = $T( aux, order )
@@ -383,7 +395,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         # Some internal functions
-        @inline function TS.exp!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:AbstractFloat}
+        @inline function TS.exp!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds c[0] = exp(constant_term(a))
                 return nothing
@@ -404,7 +416,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.expm1!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:AbstractFloat}
+        @inline function TS.expm1!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds c[0] = expm1(constant_term(a))
                 return nothing
@@ -426,7 +438,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.log!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:AbstractFloat}
+        @inline function TS.log!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds c[0] = log(constant_term(a))
                 return nothing
@@ -450,7 +462,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.log1p!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:AbstractFloat}
+        @inline function TS.log1p!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             a0 = constant_term(a)
             a0p1 = a0+one(a0)
             if k == 0
@@ -477,7 +489,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.sincos!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds s[0], c[0] = sincos( a0 )
@@ -507,7 +519,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.tan!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds aux = tan( constant_term(a) )
                 @inbounds c[0] = aux
@@ -532,7 +544,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.asin!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = asin( a0 )
@@ -557,7 +569,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.acos!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = acos( a0 )
@@ -582,7 +594,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.atan!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = atan( a0 )
@@ -607,7 +619,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.sinhcosh!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds s[0] = sinh( constant_term(a) )
                 @inbounds c[0] = cosh( constant_term(a) )
@@ -637,7 +649,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.tanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds aux = tanh( constant_term(a) )
                 @inbounds c[0] = aux
@@ -662,7 +674,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.asinh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = asinh( a0 )
@@ -687,7 +699,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.acosh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = acosh( a0 )
@@ -712,7 +724,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         @inline function TS.atanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
-                k::Int) where {T<:AbstractFloat}
+                k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
                 @inbounds c[0] = atanh( a0 )

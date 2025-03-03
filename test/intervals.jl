@@ -12,12 +12,12 @@ setdisplay(:full)
     a = interval(1, 2)
     b = interval(-1, 1)
     c = interval(0, 1)
-    # p4(x, a) = x^4 + 4*a*x^3 + 6*a^2*x^2 + 4*a^3*x + a^4
-    # p5(x, a) = x^5 + 5*a*x^4 + 10*a^2*x^3 + 10*a^3*x^2 + 5*a^4*x + a^5
+    ithree = interval(3)
     ifour = interval(4)
     ifive = interval(5)
     isix = interval(6)
     iten = interval(10)
+    p3(x, a) = x^3 + ithree*a*x^2 + ithree*a^2*x + a^3
     p4(x, a) = x^4 + ifour*a*x^3 + isix*a^2*x^2 + ifour*a^3*x + a^4
     p5(x, a) = x^5 + ifive*a*x^4 + iten*a^2*x^3 + iten*a^3*x^2 + ifive*a^4*x + a^5
 
@@ -31,16 +31,28 @@ setdisplay(:full)
     @test normalize_taylor(ti) == ti
     @test normalize_taylor(x) == x
 
-    @test p4(ti,-a) == (ti-a)^4
-    @test p5(ti,-a) == (ti-a)^5
-    @test p4(ti,-b) == (ti-b)^4
+    @test p3(ti,-a) == (ti-a)^3 == (ti-a)^3.0
+    @test p4(ti,-a) == (ti-a)^4 == (ti-a)^4.0
+    @test p5(ti,-a) == (ti-a)^5 == (ti-a)^5.0
+    @test (ti-b)^3 == (ti-b)^3.0
+    @test all(issubset_interval.((p3(ti,-b)).coeffs, ((ti-b)^3).coeffs))
+    @test p4(ti,-b) == (ti-b)^4 == (ti-b)^4.0
+    @test (ti-b)^5 == (ti-b)^5.0
     @test all(issubset_interval.((p5(ti,-b)).coeffs, ((ti-b)^5).coeffs))
 
-    @test p4(x,-y) == (x-y)^4
-    @test p5(x,-y) == (x-y)^5
-    @test p4(x,-a) == (x-a)^4
-    @test p5(x,-a) == (x-a)^5
+
+    @test p3(x,-y) == (x-y)^3 == (x-y)^3.0
+    @test p4(x,-y) == (x-y)^4 == (x-y)^4.0
+    @test p5(x,-y) == (x-y)^5 == (x-y)^5.0
+    @test p3(x,-a) == (x-a)^3 == (x-a)^3.0
+    @test p4(x,-a) == (x-a)^4 == (x-a)^4.0
+    @test p5(x,-a) == (x-a)^5 == (x-a)^5.0
+    @test (x-b)^3 == (x-b)^3.0
+    for ind in eachindex(p3(x,-b))
+        @test all(issubset_interval.((p3(x,-b)[ind]).coeffs, (((x-b)^3)[ind]).coeffs))
+    end
     @test p4(x,-b) == (x-b)^4
+    @test (x-b)^5 == (x-b)^5.0
     r1 = p5(x,-b)
     r2 = (x-b)^5
     for ind in eachindex(p5(x,-b))
@@ -51,6 +63,7 @@ setdisplay(:full)
 
 
     # Tests `evaluate`
+    @test isequal_interval(evaluate(p3(x,y), [a, -b]), p3(a, -b))
     @test isequal_interval(evaluate(p4(x,y), [a, -b]), p4(a, -b))
     @test isequal_interval((p5(x,y))([a, b]), p5(a, b))
     @test issubset_interval((a-b)^4, ((x-y)^4)([a, b]))
@@ -126,16 +139,16 @@ setdisplay(:full)
         complex(interval(0, 0), interval(-1, 1.5))]
     displayBigO(false)
     @test string(Taylor1(vc, 5)) ==
-        " ( Interval{Float64}(1.5, 2.0, com) + Interval{Float64}(0.0, 0.0, com)im ) +" *
-        " ( Interval{Float64}(-2.0, -1.0, com) + Interval{Float64}(-1.0, 1.0, com)im ) t" *
-        " + ( Interval{Float64}(-1.0, 1.5, com) + Interval{Float64}(-1.0, 1.5, com)im ) t²" *
-        " + ( Interval{Float64}(0.0, 0.0, com) + Interval{Float64}(-1.0, 1.5, com)im ) t³ "
+        " ( Interval{Float64}(1.5, 2.0, com) + im*Interval{Float64}(0.0, 0.0, com) ) +" *
+        " ( Interval{Float64}(-2.0, -1.0, com) + im*Interval{Float64}(-1.0, 1.0, com) ) t" *
+        " + ( Interval{Float64}(-1.0, 1.5, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t²" *
+        " + ( Interval{Float64}(0.0, 0.0, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t³ "
     displayBigO(true)
     @test string(Taylor1(vc, 5)) ==
-        " ( Interval{Float64}(1.5, 2.0, com) + Interval{Float64}(0.0, 0.0, com)im ) +" *
-        " ( Interval{Float64}(-2.0, -1.0, com) + Interval{Float64}(-1.0, 1.0, com)im ) t" *
-        " + ( Interval{Float64}(-1.0, 1.5, com) + Interval{Float64}(-1.0, 1.5, com)im ) t²" *
-        " + ( Interval{Float64}(0.0, 0.0, com) + Interval{Float64}(-1.0, 1.5, com)im ) t³ + 𝒪(t⁶)"
+        " ( Interval{Float64}(1.5, 2.0, com) + im*Interval{Float64}(0.0, 0.0, com) ) +" *
+        " ( Interval{Float64}(-2.0, -1.0, com) + im*Interval{Float64}(-1.0, 1.0, com) ) t" *
+        " + ( Interval{Float64}(-1.0, 1.5, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t²" *
+        " + ( Interval{Float64}(0.0, 0.0, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t³ + 𝒪(t⁶)"
 
 
     # Iss 351 (inspired by a test in ReachabilityAnalysis)
@@ -149,6 +162,9 @@ setdisplay(:full)
     @test_throws DomainError sqrt(ti)
     @test sqrt(interval(0.0, 1.e-15) + ti) == sqrt(interval(-1.e-15, 1.e-15) + ti)
     aa = sqrt(sqrt(interval(0.0, 1.e-15) + ti))
+    @test aa^0 == one(aa)
+    @test aa^1 == aa
+    @test !(aa^1 === aa)
     @test aa == sqrt(sqrt(interval(-1.e-15, 1.e-15) + ti))
     bb = (interval(0.0, 1.e-15) + ti)^(1/4)
     @test bb == (interval(-1.e-15, 1.e-15) + ti)^(1/4)

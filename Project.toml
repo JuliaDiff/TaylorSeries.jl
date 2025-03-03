@@ -1,7 +1,7 @@
 name = "TaylorSeries"
 uuid = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 repo = "https://github.com/JuliaDiff/TaylorSeries.jl.git"
-version = "0.18.0"
+version = "0.18.3"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -24,7 +24,7 @@ TaylorSeriesSAExt = "StaticArrays"
 [compat]
 Aqua = "0.8"
 IntervalArithmetic = "0.22"
-JLD2 = "0.4"
+JLD2 = "0.5"
 LinearAlgebra = "<0.0.1, 1"
 Markdown = "<0.0.1, 1"
 RecursiveArrayTools = "2, 3"
@@ -32,7 +32,7 @@ Requires = "0.5.2, 1"
 SparseArrays = "<0.0.1, 1"
 StaticArrays = "1"
 Test = "<0.0.1, 1"
-julia = "1.9"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
