@@ -20,10 +20,6 @@ module TaylorSeries
 using SparseArrays: SparseMatrixCSC
 using Markdown
 
-if !isdefined(Base, :get_extension)
-    using Requires
-end
-
 using LinearAlgebra: norm, mul!,
     lu, lu!, LinearAlgebra.lutype, LinearAlgebra.copy_oftype,
     LinearAlgebra.issuccess, NoPivot, RowMaximum
@@ -76,19 +72,5 @@ include("calculus.jl")
 include("dictmutfunct.jl")
 include("broadcasting.jl")
 include("printing.jl")
-
-function __init__()
-    @static if !isdefined(Base, :get_extension)
-        @require IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253" begin
-            include("../ext/TaylorSeriesIAExt.jl")
-        end
-        @require StaticArrays = "90137ffa-7385-5640-81b9-e52037218182" begin
-            include("../ext/TaylorSeriesSAExt.jl")
-        end
-        @require JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819" begin
-            include("../ext/TaylorSeriesJLD2Ext.jl")
-        end
-    end
-end
 
 end # module

@@ -6,7 +6,7 @@ import Base: ^, sqrt, log, asin, acos, acosh, atanh, iszero, ==
 
 import TaylorSeries: _pow, pow!, evaluate, _evaluate, normalize_taylor
 
-isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..IntervalArithmetic)
+using IntervalArithmetic
 
 const NumTypes = IntervalArithmetic.NumTypes
 
