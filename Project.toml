@@ -6,7 +6,6 @@ version = "0.18.3"
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
-Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [weakdeps]
@@ -28,7 +27,6 @@ JLD2 = "0.5"
 LinearAlgebra = "<0.0.1, 1"
 Markdown = "<0.0.1, 1"
 RecursiveArrayTools = "2, 3"
-Requires = "0.5.2, 1"
 SparseArrays = "<0.0.1, 1"
 StaticArrays = "1"
 Test = "<0.0.1, 1"
