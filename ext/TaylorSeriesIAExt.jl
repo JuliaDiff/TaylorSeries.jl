@@ -6,7 +6,7 @@ import Base: ^, log, asin, acos, acosh, atanh, power_by_squaring
 
 import TaylorSeries: evaluate, _evaluate, normalize_taylor, aff_normalize, square
 
-isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..IntervalArithmetic)
+using IntervalArithmetic
 
 for T in (:Taylor1, :TaylorN)
     @eval begin
