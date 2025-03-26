@@ -4,7 +4,7 @@ using TaylorSeries
 
 import Base: ^, log, asin, acos, acosh, atanh, power_by_squaring
 
-import TaylorSeries: evaluate, _evaluate, normalize_taylor, square
+import TaylorSeries: evaluate, _evaluate, normalize_taylor, aff_normalize, square
 
 isdefined(Base, :get_extension) ? (using IntervalArithmetic) : (using ..IntervalArithmetic)
 
@@ -188,16 +188,11 @@ function evaluate(a::Taylor1, dx::Interval{S}) where {S<:Real}
     return sum_even + sum_odd*dx
 end
 
-function evaluate(a::TaylorN, dx::IntervalBox{N,T}) where {T<:Real,N}
-    @assert N == get_numvars()
-    a_length = length(a)
-    suma = zero(constant_term(a)) + Interval{T}(0, 0)
-    @inbounds for homPol in reverse(eachindex(a))
-        suma += evaluate(a[homPol], dx)
-    end
+evaluate(a::Taylor1{TaylorN{T}}, dx::IntervalBox{N,S}) where {T<:Real, N, S} =
+    evaluate(a, dx.v)
 
-    return suma
-end
+evaluate(a::TaylorN{T}, dx::IntervalBox{N,S}) where {T<:Real, N, S} =
+    evaluate(a, dx.v)
 
 function evaluate(a::HomogeneousPolynomial, dx::IntervalBox{N,T}) where {T<:Real,N}
     @assert N == get_numvars()
@@ -261,20 +256,19 @@ are mapped by an affine transformation to the intervals `-1..1`
 normalize_taylor(a::TaylorN, I::IntervalBox{N,T}, symI::Bool=true) where {T<:Real,N} =
     _normalize(a, I, Val(symI))
 
+aff_normalize(x, I::Interval, ::Val{true})  = mid(I) + x*radius(I)
+aff_normalize(x, I::Interval, ::Val{false}) = inf(I) + x*diam(I)
+
 #  I -> -1..1
 function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T<:Real}
-    order = get_order(a)
-    t = Taylor1(T, order)
-    tnew = mid(I) + t*radius(I)
-    return a(tnew)
+    t = Taylor1(T, get_order(a))
+    return a(aff_normalize(t, I, Val(true)))
 end
 
 #  I -> 0..1
 function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T<:Real}
-    order = get_order(a)
-    t = Taylor1(T, order)
-    tnew = inf(I) + t*diam(I)
-    return a(tnew)
+    t = Taylor1(T, get_order(a))
+    return a(aff_normalize(t, I, Val(false)))
 end
 
 #  I -> IntervalBox(-1..1, Val(N))
@@ -282,8 +276,8 @@ function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{true}) where {T<:Real
     order = get_order(a)
     x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
-        x[ind] = mid(I[ind]) + TaylorN(ind, order=order)*radius(I[ind])
-    end
+        x[ind] = aff_normalize(TaylorN(ind, order=order), I[ind], Val(true))
+end
     return a(x)
 end
 
@@ -292,7 +286,7 @@ function _normalize(a::TaylorN, I::IntervalBox{N,T}, ::Val{false}) where {T<:Rea
     order = get_order(a)
     x = Vector{typeof(a)}(undef, N)
     for ind in eachindex(x)
-        x[ind] = inf(I[ind]) + TaylorN(ind, order=order)*diam(I[ind])
+        x[ind] = aff_normalize(TaylorN(ind, order=order), I[ind], Val(false))
     end
     return a(x)
 end

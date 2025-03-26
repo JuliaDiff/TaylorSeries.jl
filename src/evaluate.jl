@@ -102,9 +102,16 @@ function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where {T<:NumberNotSer
 end
 
 
-# Evaluate a Taylor1{TaylorN{T}} on Vector{TaylorN} is interpreted
+# Evaluate a Taylor1{TaylorN{T}} on Vector{T} (or Vector{TaylorN{T}}) is interpreted
 # as a substitution on the TaylorN vars
-function evaluate(a::Taylor1{TaylorN{T}}, dx::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
+function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{S}) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    @assert length(dx) == get_numvars()
+    suma = Taylor1( zero(a[0][0][1])*one(dx[1]), a.order)
+    suma.coeffs .= evaluate.(a[:], Ref(dx))
+    return suma
+end
+
+function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{TaylorN{T}}) where {T<:NumberNotSeries}
     @assert length(dx) == get_numvars()
     suma = Taylor1( zero(a[0]), a.order)
     suma.coeffs .= evaluate.(a[:], Ref(dx))
