@@ -4,7 +4,7 @@ using TaylorSeries
 
 import Base: ^, sqrt, log, asin, acos, acosh, atanh, iszero, ==
 
-import TaylorSeries: _pow, pow!, evaluate, _evaluate, normalize_taylor
+import TaylorSeries: _pow, pow!, evaluate, _evaluate, normalize_taylor, aff_normalize
 
 using IntervalArithmetic
 
@@ -815,6 +815,7 @@ end
 evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{Interval{S}}) where
     {T<:Real, S<:NumTypes} = TS._evaluate(a, (vals...,), Val(false))
 
+
 # _evaluate
 function TS._evaluate(a::HomogeneousPolynomial{T},
         dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
@@ -906,37 +907,32 @@ are mapped by an affine transformation to the intervals `-1..1`
 normalize_taylor(a::TaylorN, I::AbstractVector{Interval{T}},
     symI::Bool=true) where {T<:NumTypes} = _normalize(a, I, Val(symI))
 
+aff_normalize(x, I::Interval, ::Val{true})  = interval(mid(I)) + x*interval(radius(I))
+aff_normalize(x, I::Interval, ::Val{false}) = interval(inf(I)) + x*interval(diam(I))
+
 #  I -> -1..1
 function _normalize(a::Taylor1, I::Interval{T}, ::Val{true}) where {T<:NumTypes}
-    order = get_order(a)
-    t = Taylor1(TS.numtype(a), order)
-    tnew = mid(I) + t*radius(I)
-    return a(tnew)
+    t = Taylor1(TS.numtype(a), get_order(a))
+    return a(aff_normalize(t, I, Val(true)))
 end
 
-function _normalize(a::Taylor1{Interval{T}}, I::Interval{T}, ::Val{true}) where
-        {T<:NumTypes}
-    order = get_order(a)
-    t = Taylor1(TS.numtype(a), order)
-    tnew = interval(mid(I)) + t*interval(radius(I))
-    return a(tnew)
-end
+# function _normalize(a::Taylor1{Interval{T}}, I::Interval{T}, ::Val{true}) where
+#         {T<:NumTypes}
+#     t = Taylor1(TS.numtype(a), get_order(a))
+#     return a(aff_normalize(t, I, Val(true)))
+# end
 
 #  I -> 0..1
 function _normalize(a::Taylor1, I::Interval{T}, ::Val{false}) where {T<:NumTypes}
-    order = get_order(a)
-    t = Taylor1(TS.numtype(a), order)
-    tnew = inf(I) + t*diam(I)
-    return a(tnew)
+    t = Taylor1(TS.numtype(a), get_order(a))
+    return a(aff_normalize(t, I, Val(false)))
 end
 
-function _normalize(a::Taylor1{Interval{T}}, I::Interval{T}, ::Val{false}) where
-        {T<:NumTypes}
-    order = get_order(a)
-    t = Taylor1(TS.numtype(a), order)
-    tnew = interval(inf(I)) + t*interval(diam(I))
-    return a(tnew)
-end
+# function _normalize(a::Taylor1{Interval{T}}, I::Interval{T}, ::Val{false}) where
+#         {T<:NumTypes}
+#     t = Taylor1(TS.numtype(a), get_order(a))
+#     return a(aff_normalize(t, I, Val(false)))
+# end
 
 #  I -> IntervalBox(-1..1, Val(N))
 function _normalize(a::TaylorN, I::AbstractVector{Interval{T}},
@@ -944,21 +940,23 @@ function _normalize(a::TaylorN, I::AbstractVector{Interval{T}},
     order = get_order(a)
     x = Vector{typeof(a)}(undef, length(I))
     @inbounds for ind in eachindex(x)
-        x[ind] = mid(I[ind]) + TaylorN(ind, order=order)*radius(I[ind])
+        # x[ind] = mid(I[ind]) + TaylorN(ind, order=order)*radius(I[ind])
+        x[ind] = aff_normalize(TaylorN(ind, order=order), I[ind], Val(true))
     end
     return a(x)
 end
 
-function _normalize(a::TaylorN{Interval{T}}, I::AbstractVector{Interval{T}},
-        ::Val{true}) where {T<:NumTypes}
-    order = get_order(a)
-    x = Vector{typeof(a)}(undef, length(I))
-    @inbounds for ind in eachindex(x)
-        x[ind] = interval(mid(I[ind])) +
-            TaylorN(ind, order=order)*interval(radius(I[ind]))
-    end
-    return a(x)
-end
+# function _normalize(a::TaylorN{Interval{T}}, I::AbstractVector{Interval{T}},
+#         ::Val{true}) where {T<:NumTypes}
+#     order = get_order(a)
+#     x = Vector{typeof(a)}(undef, length(I))
+#     @inbounds for ind in eachindex(x)
+#         # x[ind] = interval(mid(I[ind])) +
+#         #     TaylorN(ind, order=order)*interval(radius(I[ind]))
+#         x[ind] = aff_normalize(TaylorN(ind, order=order), I[ind], Val(true))
+#     end
+#     return a(x)
+# end
 
 #  I -> IntervalBox(0..1, Val(N))
 function _normalize(a::TaylorN, I::AbstractVector{Interval{T}},
@@ -966,21 +964,23 @@ function _normalize(a::TaylorN, I::AbstractVector{Interval{T}},
     order = get_order(a)
     x = Vector{typeof(a)}(undef, length(I))
     @inbounds for ind in eachindex(x)
-        x[ind] = inf(I[ind]) + TaylorN(ind, order=order)*diam(I[ind])
+        # x[ind] = inf(I[ind]) + TaylorN(ind, order=order)*diam(I[ind])
+        x[ind] = aff_normalize(TaylorN(ind, order=order), I[ind], Val(false))
     end
     return a(x)
 end
 
-function _normalize(a::TaylorN{Interval{T}}, I::AbstractVector{Interval{T}},
-        ::Val{false}) where {T<:NumTypes}
-    order = get_order(a)
-    x = Vector{typeof(a)}(undef, length(I))
-    @inbounds for ind in eachindex(x)
-        x[ind] = interval(inf(I[ind])) +
-            TaylorN(ind, order=order)*interval(diam(I[ind]))
-    end
-    return a(x)
-end
+# function _normalize(a::TaylorN{Interval{T}}, I::AbstractVector{Interval{T}},
+#         ::Val{false}) where {T<:NumTypes}
+#     order = get_order(a)
+#     x = Vector{typeof(a)}(undef, length(I))
+#     @inbounds for ind in eachindex(x)
+#         # x[ind] = interval(inf(I[ind])) +
+#         #     TaylorN(ind, order=order)*interval(diam(I[ind]))
+#         x[ind] = aff_normalize(TaylorN(ind, order=order), I[ind], Val(false))
+#     end
+#     return a(x)
+# end
 
 # Printing-related methods numbr2str
 function TS.numbr2str(zz::Interval, ifirst::Bool=false)
