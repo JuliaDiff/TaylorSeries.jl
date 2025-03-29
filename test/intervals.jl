@@ -31,6 +31,7 @@ setdisplay(:full)
     @test normalize_taylor(ti) == ti
     @test normalize_taylor(x) == x
 
+    @test ti == Taylor1(typeof(c), 3)
     @test p3(ti,-a) == (ti-a)^3 == (ti-a)^3.0
     @test p4(ti,-a) == (ti-a)^4 == (ti-a)^4.0
     @test p5(ti,-a) == (ti-a)^5 == (ti-a)^5.0
@@ -39,8 +40,9 @@ setdisplay(:full)
     @test p4(ti,-b) == (ti-b)^4 == (ti-b)^4.0
     @test (ti-b)^5 == (ti-b)^5.0
     @test all(issubset_interval.((p5(ti,-b)).coeffs, ((ti-b)^5).coeffs))
+    @test ti^(4//1) == ti^4
 
-
+    @test x[1] !== y[0]
     @test p3(x,-y) == (x-y)^3 == (x-y)^3.0
     @test p4(x,-y) == (x-y)^4 == (x-y)^4.0
     @test p5(x,-y) == (x-y)^5 == (x-y)^5.0
@@ -60,6 +62,7 @@ setdisplay(:full)
         @test all(isguaranteed.(getfield(r1[ind], :coeffs)))
         @test all(isguaranteed.(getfield(r2[ind], :coeffs)))
     end
+    @test y^(4//1) == y^4
 
 
     # Tests `evaluate`
@@ -160,6 +163,7 @@ setdisplay(:full)
     # Tests related to Iss #311
     # `sqrt` and `pow` defined on Interval(0,Inf)
     @test_throws DomainError sqrt(ti)
+    @test_throws DomainError ti^(1/4)
     @test sqrt(interval(0.0, 1.e-15) + ti) == sqrt(interval(-1.e-15, 1.e-15) + ti)
     aa = sqrt(sqrt(interval(0.0, 1.e-15) + ti))
     @test aa^0 == one(aa)
@@ -169,15 +173,27 @@ setdisplay(:full)
     bb = (interval(0.0, 1.e-15) + ti)^(1/4)
     @test bb == (interval(-1.e-15, 1.e-15) + ti)^(1/4)
     @test all(isinterior.(aa.coeffs[2:end], bb.coeffs[2:end]))
+    @test (one(ti)+ti)^-1 == one(ti) - ti + ti^2 - ti^3 + ti^4 - ti^5
     @test_throws DomainError sqrt(x)
+    @test_throws DomainError x^(1/4)
     @test sqrt(interval(-1,1)+x) == sqrt(interval(0,1)+x)
     @test (interval(-1,1)+x)^(1/4) == (interval(0,1)+x)^(1/4)
+    @test (one(y)+y)^-1 == one(y) - y + y^2 - y^3 + y^4 - y^5 + y^6
+
+    #
+    @test all(issubset_interval.(one(ti)[:], (sin(ti)^2+cos(ti)^2)[:]))
+    @test tan(ti)^2 == sec(ti)^2 - one(ti)
+    for ind in eachindex(one(x))
+        @test all(issubset_interval.((one(x)[ind]).coeffs, (sin(x)^2+cos(x)^2)[ind].coeffs))
+    end
 
     # `log` defined on Interval(0,Inf)
     @test_throws DomainError log(ti)
     @test log(interval(0.0, 1.e-15) + ti) == log(interval(-1.e-15, 1.e-15) + ti)
     @test_throws DomainError log(y)
     @test log(interval(0.0, 1.e-15) + y) == log(interval(-1.e-15, 1.e-15) + y)
+    @test all(in_interval.(log(0.875+Taylor1(5))[:], log1p(-0.125+ti)[:]))
+
     # `asin` and `acos` defined on interval(-1,1)
     @test_throws DomainError asin(interval(1.0, 2.0) + ti)
     @test asin(interval(-2.0, 0.0) + ti) == asin(interval(-1,0) + ti)

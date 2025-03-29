@@ -40,7 +40,7 @@ for I in (:Interval, :ComplexI)
 
         function ==(a::Taylor1{$I{T}}, b::Taylor1{$I{S}}) where {T<:NumTypes, S<:NumTypes}
             if a.order != b.order
-                a, b = fixorder(a, b)
+                a, b = TS.fixorder(a, b)
             end
             return all(isequal_interval.(a.coeffs, b.coeffs))
         end
