@@ -244,6 +244,7 @@ Returns the type of the elements of the coefficients of `a`.
 
 # Dumb methods included to properly export normalize_taylor (if IntervalArithmetic is loaded)
 @inline normalize_taylor(a::AbstractSeries) = a
+@inline aff_normalize(a::AbstractSeries) = a
 
 
 ## _minorder
