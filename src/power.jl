@@ -9,7 +9,7 @@
 
 function ^(a::HomogeneousPolynomial, n::Integer)
     n == 0 && return one(a)
-    n == 1 && return copy(a)
+    n == 1 && return deepcopy(a)
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
     return power_by_squaring(a, n)
@@ -19,7 +19,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function ^(a::$T, n::Integer)
         n == 0 && return one(a)
-        n == 1 && return copy(a)
+        n == 1 && return deepcopy(a)
         n == 2 && return square(a)
         return _pow(a, n)
     end
@@ -148,7 +148,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function power_by_squaring(x::$T, p::Integer)
         @assert p ≥ 0
         (p == 0) && return one(x)
-        (p == 1) && return copy(x)
+        (p == 1) && return deepcopy(x)
         (p == 2) && return square(x)
         (p == 3) && return x*square(x)
         t = trailing_zeros(p) + 1
@@ -175,7 +175,7 @@ for T in (:Taylor1, :TaylorN)
     @eval function power_by_squaring(x::$T{T}, p::Integer) where {T<:NumberNotSeries}
         @assert p ≥ 0
         (p == 0) && return one(x)
-        (p == 1) && return copy(x)
+        (p == 1) && return deepcopy(x)
         (p == 2) && return square(x)
         (p == 3) && return x*square(x)
         y = zero(x)
@@ -186,13 +186,12 @@ for T in (:Taylor1, :TaylorN)
 end
 
 
-
 # Homogeneous coefficients for real power
 @doc doc"""
-    pow!(c, a, r::Real, k::Int)
+    pow!(c, a, aux, r::Real, k::Int)
 
 Update the `k`-th expansion coefficient `c[k]` of `c = a^r`, for
-both `c` and `a` either `Taylor1` or `TaylorN`.
+both `c`, `a` and `aux` either `Taylor1` or `TaylorN`.
 
 The coefficients are given by
 
@@ -315,9 +314,8 @@ end
     # The recursion formula
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
-        aux = r*(kprime-i) - i
-        # res[ordT] += aux*res[i+lnull]*a[l0+kprime-i]
-        @inbounds mul_scalar!(res[ordT], aux, res[i+lnull], a[l0+kprime-i])
+        aaux = r*(kprime-i) - i
+        @inbounds mul_scalar!(res[ordT], aaux, res[i+lnull], a[l0+kprime-i])
     end
     # res[ordT] /= a[l0]*kprime
     @inbounds div_scalar!(res[ordT], 1/kprime, a[l0])
@@ -526,13 +524,13 @@ Returns `c += a*a` with no allocation; all parameters are `HomogeneousPolynomial
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
-        iszero(ca) && continue
+        _isthinzero(ca) && continue
         inda = idxTb[na]
         pos = posTb[2*inda]
         c[pos] += ca^2
         @inbounds for nb = na+1:num_coeffs_a
             cb = a[nb]
-            iszero(cb) && continue
+            _isthinzero(cb) && continue
             indb = idxTb[nb]
             pos = posTb[inda+indb]
             c[pos] += 2 * ca * cb
@@ -571,7 +569,7 @@ end
 
 function sqrt(a::TaylorN)
     @inbounds p0 = sqrt( constant_term(a) )
-    if iszero(p0)
+    if TS._isthinzero(p0)
         throw(DomainError(a,
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `sqrt` around 0."""))

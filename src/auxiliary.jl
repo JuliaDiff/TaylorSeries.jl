@@ -244,6 +244,7 @@ Returns the type of the elements of the coefficients of `a`.
 
 # Dumb methods included to properly export normalize_taylor (if IntervalArithmetic is loaded)
 @inline normalize_taylor(a::AbstractSeries) = a
+@inline aff_normalize(a::AbstractSeries) = a
 
 
 ## _minorder
@@ -290,41 +291,38 @@ for T in (:HomogeneousPolynomial, :TaylorN)
 end
 
 
-# Finds the first non zero entry; extended to Taylor1
-function Base.findfirst(a::Taylor1{T}) where {T<:Number}
-    first = findfirst(x->!iszero(x), a.coeffs)
-    isnothing(first) && return -1
-    return first-1
-end
-# Finds the last non-zero entry; extended to Taylor1
-function Base.findlast(a::Taylor1{T}) where {T<:Number}
-    last = findlast(x->!iszero(x), a.coeffs)
-    isnothing(last) && return -1
-    return last-1
-end
+## _isthinzero
+"""
+    _isthinzero(x)
 
-# Finds the first non zero entry; extended to HomogeneousPolynomial
-function Base.findfirst(a::HomogeneousPolynomial{T}) where {T<:Number}
-    first = findfirst(x->!iszero(x), a.coeffs)
-    isa(first, Nothing) && return -1
-    return first
-end
-function Base.findfirst(a::TaylorN{T}) where {T<:Number}
-    first = findfirst(x->!iszero(x), a.coeffs)
-    isa(first, Nothing) && return -1
-    return first-1
-end
-# Finds the last non-zero entry; extended to HomogeneousPolynomial
-function Base.findlast(a::HomogeneousPolynomial{T}) where {T<:Number}
-    last = findlast(x->!iszero(x), a.coeffs)
-    isa(last, Nothing) && return -1
-    return last
-end
-# Finds the last non-zero entry; extended to TaylorN
-function Base.findlast(a::TaylorN{T}) where {T<:Number}
-    last = findlast(x->!iszero(x), a.coeffs)
-    isa(last, Nothing) && return -1
-    return last-1
+Generic wrapper to function `iszero`, which allows using the correct
+function for `Interval`s
+"""
+_isthinzero(x) = iszero(x)
+
+
+## findfirst, findlast
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+    # Finds the first non zero entry
+    @eval function Base.findfirst(a::$T{T}) where {T<:Number}
+        first = findfirst(x->!_isthinzero(x), a.coeffs)
+        isnothing(first) && return -1
+        if $T == HomogeneousPolynomial
+            return first
+        else
+            return first-1
+        end
+    end
+    # Finds the last non-zero entry
+    @eval function Base.findlast(a::$T{T}) where {T<:Number}
+        last = findlast(x->!_isthinzero(x), a.coeffs)
+        isnothing(last) && return -1
+        if $T == HomogeneousPolynomial
+            return last
+        else
+            return last-1
+        end
+    end
 end
 
 

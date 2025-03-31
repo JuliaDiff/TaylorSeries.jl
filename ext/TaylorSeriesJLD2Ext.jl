@@ -3,11 +3,7 @@ module TaylorSeriesJLD2Ext
 import Base: convert
 using TaylorSeries
 
-if isdefined(Base, :get_extension)
-    import JLD2: writeas
-else
-    import ..JLD2: writeas
-end
+import JLD2: writeas
 
 @doc raw"""
     TaylorNSerialization{T}
