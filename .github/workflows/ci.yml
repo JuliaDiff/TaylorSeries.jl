@@ -6,10 +6,10 @@ on:
       - 'LICENSE.md'
       - 'README.md'
     branches:
-      - master
+      - releases-0.18
   pull_request:
     branches:
-      - master
+      - releases-0.18
     tags: '*'
 
 jobs:

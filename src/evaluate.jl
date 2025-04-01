@@ -320,10 +320,11 @@ _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number} =
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where {N,T<:Number}
     R = promote_type(T, TS.numtype(vals[1]))
     res = TaylorN(zero(R), vals[1].order)
-    valscache = [zero(val) for val in vals]
+    vvals = ntuple(i -> convert(TaylorN{R}, vals[i]), length(vals))
+    valscache = [zero(val) for val in vvals]
     aux = zero(res)
     @inbounds for homPol in eachindex(a)
-        _evaluate!(res, a[homPol], vals, valscache, aux)
+        _evaluate!(res, a[homPol], vvals, valscache, aux)
     end
     return res
 end
