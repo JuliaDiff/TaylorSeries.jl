@@ -546,7 +546,7 @@ Base.iszero(::SymbNumber) = false
     @test string(aa) == " 1.4142135623730951 + 1.0 t + 𝒪(t³)"
     set_taylor1_varname(" x ")
     @test string(aa) == " 1.4142135623730951 + 1.0 x + 𝒪(x³)"
-    set_taylor1_varname("t")
+    set_taylor1_varname(1, " t ")
     displayBigO(false)
     @test string(ta(-3)) == " - 3 + 1 t "
     @test string(ta(0)^3-3) == " - 3 + 1 t³ "

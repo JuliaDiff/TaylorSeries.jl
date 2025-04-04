@@ -529,6 +529,12 @@ using Test
 end
 
 @testset "Tests with nested Taylor1s" begin
+    set_taylor1_varname(2, " t s")
+    @test TS._params_Taylor1_.num_vars == 2
+    @test TS._params_Taylor1_.var_name == ["t", "s"]
+    set_taylor1_varname(2, [" t", "s w"])
+    @test TS._params_Taylor1_.num_vars == 2
+    @test TS._params_Taylor1_.var_name == ["t", "s"]
     ti = Taylor1(3)
     to = Taylor1([zero(ti), one(ti)], 9)
     @test findfirst(to) == 1
@@ -536,10 +542,12 @@ end
     @test normalize_taylor(to) == to
     @test normalize_taylor(Taylor1([zero(to), one(to)], 5)) == Taylor1([zero(to), one(to)], 5)
     @test convert(eltype(to), to) === to
-    @test string(to) == " ( 1.0 + 𝒪(t⁴)) t + 𝒪(t¹⁰)"
-    @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
+    @test string(ti) == " 1.0 t + 𝒪(t⁴)"
+    @test string(to) == " ( 1.0 + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
+    @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) s² + 𝒪(s¹⁰)"
     @test ti + to == Taylor1([ti, one(ti)], 9)
     tito = ti * to
+    @test string(tito) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
     # The next tests are related to iss #326
     # @test ti > ti^2 > to > 0
     # @test to^2 < toti < ti^2
@@ -574,6 +582,14 @@ end
     @test cos(to)(0.0) == cos(to[0])
     @test to(ti) == to[0] + ti
     @test evaluate(to*ti, ti) == to[0]*ti + ti^2
+
+    # Testing automatic setting of TS._params_taylor1_
+    too = Taylor1([zero(to), one(to)], 9)
+    @test string(too) == " (  1.0 + 𝒪(t₁⁴) + 𝒪(t₂¹⁰)) t₃ + 𝒪(t₃¹⁰)"
+    @test TS._params_Taylor1_.var_name == ["t₁", "t₂", "t₃"]
+    @test TS._params_Taylor1_.num_vars == 3
+    set_taylor1_varname(1, "t")
+    @test TS._params_Taylor1_.var_name == ["t"]
 
     @testset "Test setindex! method for nested Taylor1s" begin
         t = Taylor1(2)

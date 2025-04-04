@@ -6,26 +6,54 @@
 """
     ParamsTaylor1
 
-DataType holding the current variable name for `Taylor1`.
-
-**Field:**
-
-- `var_name   :: String`  Names of the variables
-
-These parameters can be changed using [`set_taylor1_varname`](@ref)
+DataType holding the current variable name(s) for `Taylor1`.
+The parameters can be changed using [`set_taylor1_varname`](@ref)
 """
 mutable struct ParamsTaylor1
-    var_name   :: String
+    num_vars :: Int
+    var_name :: Vector{String}
 end
 
-const _params_Taylor1_ = ParamsTaylor1("t")
+const _params_Taylor1_ = ParamsTaylor1(1, ["t"])
 
 """
     set_taylor1_varname(var::String)
+    set_taylor1_varname(numvars::Int, names::String)
+    set_taylor1_varname(numvars::Int, names::Vector{String})
 
-Change the displayed variable for `Taylor1` objects.
+Change the displayed variable(s) for `Taylor1` objects; the names of
+variables cannot include spaces
 """
-set_taylor1_varname(var::String) = _params_Taylor1_.var_name = strip(var)
+function set_taylor1_varname(name::String)
+    _params_Taylor1_.num_vars = 1
+    _params_Taylor1_.var_name = [split(strip(name))[1]]
+    return _params_Taylor1_
+end
+
+function set_taylor1_varname(numvars::Int, name::String)
+    var_names = split(strip(name))
+    @assert (length(var_names) == 1) || (length(var_names) == numvars > 0)
+    numvars == 1 && return set_taylor1_varname(string(var_names[1]))
+    _params_Taylor1_.num_vars = numvars
+    if length(var_names) == 1
+        _params_Taylor1_.var_name = [var_subscr(string(var_names[1]), i) for i in 1:numvars]
+    else
+        _params_Taylor1_.var_name = var_names
+    end
+    return _params_Taylor1_
+end
+
+function set_taylor1_varname(numvars::Int, names::Vector{String})
+    # _clean_spaces!(names)
+    var_names = copy(names)
+    for i in eachindex(names)
+        var_names[i] = split(strip(var_names[i]))[1]
+    end
+    @assert length(names) == numvars
+    _params_Taylor1_.num_vars = numvars
+    _params_Taylor1_.var_name = var_names
+    return _params_Taylor1_
+end
 
 
 

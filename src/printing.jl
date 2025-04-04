@@ -10,29 +10,52 @@ const superscript_digits = [c for c in "⁰¹²³⁴⁵⁶⁷⁸⁹"]
 
 function subscriptify(n::Int)
     dig = reverse(digits(n))
-    join([subscript_digits[i+1] for i in dig])
+    return join([subscript_digits[i+1] for i in dig])
 end
 
 function superscriptify(n::Int)
     dig = reverse(digits(n))
-    join([superscript_digits[i+1] for i in dig])
+    return join([superscript_digits[i+1] for i in dig])
 end
+
+var_subscr(var::S, n::Int) where {S<:AbstractString} = string(var, subscriptify(n))
+var_supscr(var::S, n::Int) where {S<:AbstractString} = string(var, superscriptify(n))
+
+function str_bigO(var::String, i::Int, bb::Bool = true) :: String
+    if bigOnotation[end]
+        str = string("+ 𝒪(", var_supscr(var, i+1), ")")
+    else
+        return string("")
+    end
+    bb && return str
+    return string(" ", str)
+end
+
+function monom_string(i::Int, var::String, bb::Bool = true) :: String
+    if i==0
+        return string("")
+    elseif i==1
+        str = var
+    else
+        str = var_supscr(var, i)
+    end
+    bb && return string(" ", str)
+    return string(str)
+end
+
 
 
 #  Fallback
 function pretty_print(a::Taylor1)
     # z = zero(a[0])
-    var = _params_Taylor1_.var_name
+    var = _params_Taylor1_.var_name[1]
     space = string(" ")
-    bigO = bigOnotation[end] ?
-        string("+ 𝒪(", var, superscriptify(a.order+1), ")") :
-        string("")
-    TS._isthinzero(a) && return string(space, z, space, bigO)
+    bigO = str_bigO(var, a.order)
+    TS._isthinzero(a) && return string(space, 0, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a)
-        monom::String = i==0 ? string("") : i==1 ? string(" ", var) :
-            string(" ", var, superscriptify(i))
+        monom::String = monom_string(i, var)
         @inbounds c = a[i]
         # c == z && continue
         cadena = numbr2str(c, ifirst)
@@ -45,17 +68,14 @@ end
 
 function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
     z = zero(a[0])
-    var = _params_Taylor1_.var_name
+    var = _params_Taylor1_.var_name[1]
     space = string(" ")
-    bigO = bigOnotation[end] ?
-        string("+ 𝒪(", var, superscriptify(a.order+1), ")") :
-        string("")
+    bigO = str_bigO(var, a.order)
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a)
-        monom::String = i==0 ? string("") : i==1 ? string(" ", var) :
-            string(" ", var, superscriptify(i))
+        monom::String = monom_string(i, var)
         @inbounds c = a[i]
         TS._isthinzero(c) && continue
         cadena = numbr2str(c, ifirst)
@@ -63,22 +83,22 @@ function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
         ifirst = false
     end
     strout = strout * bigO
-    strout
+    return strout
 end
 
-function pretty_print(a::Taylor1{T} where {T <: AbstractSeries{S}}) where {S<:Number}
+function pretty_print(a::Taylor1{<:AbstractSeries})
     z = zero(a[0])
-    var = _params_Taylor1_.var_name
+    if get_numvars(a) > length(_params_Taylor1_.var_name)
+        set_taylor1_varname(get_numvars(a), _params_Taylor1_.var_name[1][1:1])
+    end
+    var = _params_Taylor1_.var_name[get_numvars(a)]
     space = string(" ")
-    bigO = bigOnotation[end] ?
-        string("+ 𝒪(", var, superscriptify(a.order+1), ")") :
-        string("")
+    bigO = str_bigO(var, a.order)
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
     for i in eachindex(a)
-        monom::String = i==0 ? string("") : i==1 ? string(" ", var) :
-            string(" ", var, superscriptify(i))
+        monom::String = monom_string(i, var)
         @inbounds c = a[i]
         TS._isthinzero(c) && continue
         cadena = numbr2str(c, ifirst)
@@ -88,7 +108,7 @@ function pretty_print(a::Taylor1{T} where {T <: AbstractSeries{S}}) where {S<:Nu
         ifirst = false
     end
     strout = strout * bigO
-    strout
+    return strout
 end
 
 function pretty_print(a::HomogeneousPolynomial{T}) where {T<:Number}
@@ -102,9 +122,7 @@ end
 function pretty_print(a::TaylorN{T}) where {T<:Number}
     z = zero(a[0])
     space = string("")
-    bigO::String = bigOnotation[end] ?
-        string(" + 𝒪(‖x‖", superscriptify(a.order+1), ")") :
-        string("")
+    bigO :: String = str_bigO("‖x‖", a.order, false)
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -112,8 +130,7 @@ function pretty_print(a::TaylorN{T}) where {T<:Number}
         pol = a[ord]
         TS._isthinzero(pol) && continue
         cadena::String = homogPol2str( pol )
-        strsgn = (ifirst || ord == 0 || cadena[2] == '-') ?
-            string("") : string(" +")
+        strsgn = (ifirst || ord == 0 || cadena[2] == '-') ? string("") : string(" +")
         strout = string( strout, strsgn, cadena)
         ifirst = false
     end
@@ -134,11 +151,7 @@ function homogPol2str(a::HomogeneousPolynomial{T}) where {T<:Number}
         @inbounds iIndices[:] = coeff_table[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]
-            if powivar == 1
-                monom = string(monom, name_taylorNvar(ivar))
-            elseif powivar > 1
-                monom = string(monom, name_taylorNvar(ivar), superscriptify(powivar))
-            end
+            monom = string(monom, monom_string(powivar, name_taylorNvar(ivar), false))
         end
         @inbounds c = a[pos]
         TS._isthinzero(c) && continue
@@ -162,12 +175,7 @@ function homogPol2str(a::HomogeneousPolynomial{Taylor1{T}}) where {T<:Number}
         @inbounds iIndices[:] = coeff_table[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]
-            if powivar == 1
-                monom = string(monom, name_taylorNvar(ivar))
-            elseif powivar > 1
-                monom = string(monom, name_taylorNvar(ivar),
-                    superscriptify(powivar))
-            end
+            monom = string(monom, monom_string(powivar, name_taylorNvar(ivar), false))
         end
         @inbounds c = a[pos]
         TS._isthinzero(c) && continue
