@@ -58,12 +58,34 @@ for T in (:Taylor1, :TaylorN)
             end
         end
         #
-        @inline isless(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number} =
+        @inline isless(a::$T{<:NumberNotSeries}, b::$T{<:NumberNotSeries}) =
             isless(promote(a,b)...)
-        @inline isless(a::$T{T}, b::$T{T}) where {T<:Number} =
+        @inline isless(a::$T{T}, b::$T{T}) where {T<:NumberNotSeries} =
             isless(a - b, zero(constant_term(a)))
     end
 end
+
+
+#=
+# The following works for nested Taylor1s; iss #326.
+ti = Taylor1(9)
+to = Taylor1([zero(ti), one(ti)], 3)
+too = Taylor1([zero(to), one(to)], 2)
+tito = ti * to
+ti > to > 0        # ok
+ti^2 > tito > to^2 # ok
+ti > ti^2 > to     # ok, in the sense that ti is "constant term" of series in to
+=#
+@inline isless(a::Taylor1{T}, b::Taylor1{S}) where {T<:Number, S<:Number} =
+    isless(promote(a, b)...)
+@inline isless(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
+    {T<:Number} = isless(a - b, _zero_abstractfloat(a))
+
+# Helper function to get the correct zero to use in `isless`
+_zero_abstractfloat(a::Taylor1{T}) where {T<:NumberNotSeries} = zero(T)
+_zero_abstractfloat(a::Taylor1{T}) where {T<:Taylor1} =
+    _zero_abstractfloat(constant_term(a))
+
 
 @inline function isless(a::HomogeneousPolynomial{<:Number}, b::Real)
     orda = get_order(a)
@@ -85,7 +107,7 @@ end
         return isless(b, a[nz])
     end
 end
-#
+
 @inline isless(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where
     {T<:Number, S<:Number} = isless(promote(a,b)...)
 @inline function isless(a::HomogeneousPolynomial{T},
@@ -102,8 +124,14 @@ end
 end
 
 # Mixtures
+@inline isless(a::Taylor1{TaylorN{<:NumberNotSeries}},
+    b::Taylor1{TaylorN{<:NumberNotSeries}}) = isless(promote(a, b)...)
 @inline isless(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
     {T<:NumberNotSeries} = isless(a - b, zero(T))
+
+@inline isless(a::HomogeneousPolynomial{Taylor1{<:NumberNotSeries}},
+        b::HomogeneousPolynomial{Taylor1{<:NumberNotSeries}}) =
+    isless(promote(a, b)...)
 @inline function isless(a::HomogeneousPolynomial{Taylor1{T}},
         b::HomogeneousPolynomial{Taylor1{T}}) where {T<:NumberNotSeries}
     orda = get_order(a)
@@ -116,19 +144,12 @@ end
         return isless(-b, zero(T))
     end
 end
+
+@inline isless(a::TaylorN{Taylor1{<:NumberNotSeries}},
+    b::TaylorN{Taylor1{<:NumberNotSeries}}) = isless(promote(a, b)...)
 @inline isless(a::TaylorN{Taylor1{T}}, b::TaylorN{Taylor1{T}}) where
     {T<:NumberNotSeries} = isless(a - b, zero(T))
 
-#= TODO: Nested Taylor1s; needs careful thinking; iss #326. The following works:
-@inline isless(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where {T<:Number} = isless(a - b, zero(T))
-# Is the following correct?
-# ti = Taylor1(3)
-# to = Taylor1([zero(ti), one(ti)], 9)
-# tito = ti * to
-# ti > to > 0 # ok
-# to^2 < toti < ti^2 # ok
-# ti > ti^2 > to # is this ok?
-=#
 
 @doc doc"""
     isless(a::Taylor1{<:Real}, b::Real)
@@ -139,8 +160,11 @@ returns `a[nz] < 0`, with `nz` the first
 non-zero coefficient after the constant term. This defines a total order.
 
 For many variables, the ordering includes a lexicographical convention in order to be
-total. We have opted for the simplest one, where the *larger* variable appears *before*
-when the `TaylorN` variables are defined (e.g., through [`set_variables`](@ref)).
+total. We have opted for the simplest one: the *larger* variable appears *before*
+for the `TaylorN` variables are defined (e.g., through [`set_variables`](@ref)).
+
+For nested `Taylor1`, i.e. `Taylor1{Taylor1{...}}`s, the variables are compared
+wrt to the output of `get_numvars`
 
 Refs:
 - M. Berz, AIP Conference Proceedings 177, 275 (1988); https://doi.org/10.1063/1.37800
@@ -149,10 +173,10 @@ Refs:
 
 ---
 
-    isless(a::Taylor1{<:Real}, b::Taylor1{<:Real})
-    isless(a::TaylorN{<:Real}, b::Taylor1{<:Real})
+    isless(a::Taylor1{T}, b::Taylor1{T})
+    isless(a::TaylorN{T}, b::Taylor1{T})
 
-Returns `isless(a - b, zero(b))`.
+Returns `isless(a - b, zero(T))`.
 """ isless
 
 

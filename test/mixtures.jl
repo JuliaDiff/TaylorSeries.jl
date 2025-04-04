@@ -7,6 +7,7 @@ using Test
 # using LinearAlgebra
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
+    set_taylor1_varname(1, "t")
     @test TS.NumberNotSeries == Union{Real,Complex}
     @test TS.NumberNotSeriesN == Union{Real,Complex,Taylor1}
 
@@ -548,9 +549,6 @@ end
     @test ti + to == Taylor1([ti, one(ti)], 9)
     tito = ti * to
     @test string(tito) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
-    # The next tests are related to iss #326
-    # @test ti > ti^2 > to > 0
-    # @test to^2 < toti < ti^2
     @test tito == Taylor1([zero(ti), ti], 9)
     @test tito / to == ti
     @test get_order(tito/to) == get_order(to)-1
@@ -584,12 +582,14 @@ end
     @test evaluate(to*ti, ti) == to[0]*ti + ti^2
 
     # Testing automatic setting of TS._params_taylor1_
+    to = Taylor1([zero(ti), one(ti)], 9)
     too = Taylor1([zero(to), one(to)], 9)
     @test string(too) == " (  1.0 + 𝒪(t₁⁴) + 𝒪(t₂¹⁰)) t₃ + 𝒪(t₃¹⁰)"
     @test TS._params_Taylor1_.var_name == ["t₁", "t₂", "t₃"]
     @test TS._params_Taylor1_.num_vars == 3
-    set_taylor1_varname(1, "t")
-    @test TS._params_Taylor1_.var_name == ["t"]
+    # The next tests are related to iss #326
+    @test ti > ti^2 > to > 0.0
+    @test too < to^2 < tito < ti^2
 
     @testset "Test setindex! method for nested Taylor1s" begin
         t = Taylor1(2)
@@ -600,4 +600,8 @@ end
         y[2] = -5.0
         @test x[3][2] == 0.0
     end
+
+    # Back to default
+    set_taylor1_varname(1, "t")
+    @test TS._params_Taylor1_.var_name == ["t"]
 end

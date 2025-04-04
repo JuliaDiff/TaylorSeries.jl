@@ -187,20 +187,21 @@ promote_rule(::Type{Taylor1{TaylorN{T}}}, ::Type{TaylorN{Taylor1{S}}}) where
 promote_rule(::Type{TaylorN{Taylor1{T}}}, ::Type{Taylor1{TaylorN{S}}}) where
     {T<:NumberNotSeries, S<:NumberNotSeries} = Taylor1{TaylorN{promote_type(T,S)}}
 
-# Nested Taylor1's
-function promote(a::Taylor1{Taylor1{T}}, b::Taylor1{T}) where {T<:NumberNotSeriesN}
-    order_a = get_order(a)
-    order_b = get_order(b)
-    zb = zero(b)
-    new_bcoeffs = similar(a.coeffs)
-    new_bcoeffs[1] = b
-    @inbounds for ind in 2:order_a+1
-        new_bcoeffs[ind] = zb
+# Nested Taylor1's promotion from a Taylor1{T};
+# only up to four difference levels of nestedness
+let expr_T1 = :(Taylor1{Taylor1{T}}), expr_bnew = :(bnew[0])
+    for nest in 1:4
+        @eval function promote(a::$expr_T1, b::Taylor1{T}) where {T<:NumberNotSeriesN}
+            bnew = zero(a)
+            $(expr_bnew) = copy(b)
+            return a, bnew
+        end
+        @eval promote(b::Taylor1{T}, a::$expr_T1) where {T<:NumberNotSeriesN} =
+            reverse(promote(a, b))
+        expr_T1 = :(Taylor1{$expr_T1})
+        expr_bnew = :(($(expr_bnew))[0])
     end
-    return a, Taylor1(b, order_a)
 end
-promote(b::Taylor1{T}, a::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN} =
-    reverse(promote(a, b))
 
 # float
 float(::Type{Taylor1{T}}) where T<:Number = Taylor1{float(T)}
