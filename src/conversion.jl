@@ -187,21 +187,41 @@ promote_rule(::Type{Taylor1{TaylorN{T}}}, ::Type{TaylorN{Taylor1{S}}}) where
 promote_rule(::Type{TaylorN{Taylor1{T}}}, ::Type{Taylor1{TaylorN{S}}}) where
     {T<:NumberNotSeries, S<:NumberNotSeries} = Taylor1{TaylorN{promote_type(T,S)}}
 
-# Nested Taylor1's promotion from a Taylor1{T};
-# only up to four difference levels of nestedness
-let expr_T1 = :(Taylor1{Taylor1{T}}), expr_bnew = :(bnew[0])
-    for nest in 1:4
-        @eval function promote(a::$expr_T1, b::Taylor1{T}) where {T<:NumberNotSeriesN}
-            bnew = zero(a)
-            $(expr_bnew) = copy(b)
-            return a, bnew
+# Different nested Taylor1's promotion methods; consider to 4 levels of nesting
+let
+    strucTT = :(Taylor1{T})
+    strucTR = :(Taylor1{R})
+    strucT = :(T)
+    strucS = :(S)
+    strucR = :(R)
+    expr_elem = :(bnew[0])
+    for j = 0:5
+        for i = 1+j:6
+            @eval function Base._promote(a::$strucTT, b::$strucS) where {T<:NumberNotSeries,
+                    S<:NumberNotSeries}
+                R = promote_type(T, S)
+                anew = convert($strucTR, a)
+                bnew = zero(anew)
+                $(expr_elem) = convert($strucR, b)
+                return anew, bnew
+            end
+            @eval Base._promote(b::$strucS, a::$strucTT) where {T<:NumberNotSeries,
+                S<:NumberNotSeries} = reverse(Base._promote(a, b))
+            strucTT = :(Taylor1{$strucTT})
+            strucTR = :(Taylor1{$strucTR})
+            expr_elem = :(($(expr_elem))[0])
         end
-        @eval promote(b::Taylor1{T}, a::$expr_T1) where {T<:NumberNotSeriesN} =
-            reverse(promote(a, b))
-        expr_T1 = :(Taylor1{$expr_T1})
-        expr_bnew = :(($(expr_bnew))[0])
+        strucS = :(Taylor1{$strucS})
+        strucR = :(Taylor1{$strucR})
+        strucT = :(Taylor1{$strucT})
+        strucTT = deepcopy(strucT)
+        strucTT = :(Taylor1{$strucT})
+        strucTR = deepcopy(strucR)
+        strucTR = :(Taylor1{$strucTR})
+        expr_elem = :(bnew[0])
     end
 end
+
 
 # float
 float(::Type{Taylor1{T}}) where T<:Number = Taylor1{float(T)}

@@ -537,59 +537,59 @@ end
     @test TS._params_Taylor1_.num_vars == 2
     @test TS._params_Taylor1_.var_name == ["t", "s"]
     ti = Taylor1(3)
-    to = Taylor1([zero(ti), one(ti)], 9)
-    @test findfirst(to) == 1
-    @test TS.numtype(to) == Taylor1{Float64}
-    @test normalize_taylor(to) == to
-    @test normalize_taylor(Taylor1([zero(to), one(to)], 5)) == Taylor1([zero(to), one(to)], 5)
-    @test convert(eltype(to), to) === to
+    tii = Taylor1([zero(ti), one(ti)], 9)
+    @test findfirst(tii) == 1
+    @test TS.numtype(tii) == Taylor1{Float64}
+    @test normalize_taylor(tii) == tii
+    @test normalize_taylor(Taylor1([zero(tii), one(tii)], 5)) == Taylor1([zero(tii), one(tii)], 5)
+    @test convert(eltype(tii), tii) === tii
     @test string(ti) == " 1.0 t + 𝒪(t⁴)"
-    @test string(to) == " ( 1.0 + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
-    @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) s² + 𝒪(s¹⁰)"
-    @test ti + to == Taylor1([ti, one(ti)], 9)
-    tito = ti * to
-    @test string(tito) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
-    @test tito == Taylor1([zero(ti), ti], 9)
-    @test tito / to == ti
-    @test get_order(tito/to) == get_order(to)-1
-    @test tito / ti == to
-    @test get_order(tito/ti) == get_order(to)
-    @test ti^2-to^2 == (ti+to)*(ti-to)
-    @test findfirst(ti^2-to^2) == 0
-    @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
-    @test to(1 + ti) == 1 + ti
-    @test to(1 + ti) isa Taylor1{Float64}
-    @test ti(1 + to) == 1 + to
-    @test constant_term(ti+to) == ti
-    @test linear_polynomial(ti*to) == Taylor1([zero(ti), ti], 9)
-    @test get_order(linear_polynomial(to)) == get_order(to)
-    @test nonlinear_polynomial(to+ti*to^2) == Taylor1([zero(ti), zero(ti), ti], 9)
-    @test ti(1 + to) isa Taylor1{Taylor1{Float64}}
-    @test sqrt(tito^2) == tito
-    @test get_order(sqrt(tito^2)) == get_order(to) >> 1
-    @test (tito^3)^(1/3) == tito
-    @test get_order(sqrt(tito^2)) == get_order(to) >> 1
-    ti2to = ti^2 * to
-    tti = (ti2to/to)/ti
-    @test get_order(tti) == get_order(to)-1
+    @test string(tii) == " ( 1.0 + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
+    @test string(tii^2) == " ( 1.0 + 𝒪(t⁴)) s² + 𝒪(s¹⁰)"
+    @test ti + tii == Taylor1([ti, one(ti)], 9)
+    titii = ti * tii
+    @test string(titii) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
+    @test titii == Taylor1([zero(ti), ti], 9)
+    @test titii / tii == ti
+    @test get_order(titii/tii) == get_order(tii)-1
+    @test titii / ti == tii
+    @test get_order(titii/ti) == get_order(tii)
+    @test ti^2-tii^2 == (ti+tii)*(ti-tii)
+    @test findfirst(ti^2-tii^2) == 0
+    @test sin(tii) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
+    @test tii(1 + ti) == 1 + ti
+    @test tii(1 + ti) isa Taylor1{Float64}
+    @test ti(1 + tii) == 1 + tii
+    @test constant_term(ti+tii) == ti
+    @test linear_polynomial(ti*tii) == Taylor1([zero(ti), ti], 9)
+    @test get_order(linear_polynomial(tii)) == get_order(tii)
+    @test nonlinear_polynomial(tii+ti*tii^2) == Taylor1([zero(ti), zero(ti), ti], 9)
+    @test ti(1 + tii) isa Taylor1{Taylor1{Float64}}
+    @test sqrt(titii^2) == titii
+    @test get_order(sqrt(titii^2)) == get_order(tii) >> 1
+    @test (titii^3)^(1/3) == titii
+    @test get_order(sqrt(titii^2)) == get_order(tii) >> 1
+    ti2tii = ti^2 * tii
+    tti = (ti2tii/tii)/ti
+    @test get_order(tti) == get_order(tii)-1
     @test get_order(tti[0]) == get_order(ti)-1
-    @test isapprox(abs2(exp(im*to)), one(to))
-    @test isapprox(abs(exp(im*to)), one(to))
-    to = Taylor1([1/(1+ti), one(ti)], 9)
-    @test to(1.0) == 1 + 1/(1+ti)
-    @test cos(to)(0.0) == cos(to[0])
-    @test to(ti) == to[0] + ti
-    @test evaluate(to*ti, ti) == to[0]*ti + ti^2
+    @test isapprox(abs2(exp(im*tii)), one(tii))
+    @test isapprox(abs(exp(im*tii)), one(tii))
+    tii = Taylor1([1/(1+ti), one(ti)], 9)
+    @test tii(1.0) == 1 + 1/(1+ti)
+    @test cos(tii)(0.0) == cos(tii[0])
+    @test tii(ti) == tii[0] + ti
+    @test evaluate(tii*ti, ti) == tii[0]*ti + ti^2
 
     # Testing automatic setting of TS._params_taylor1_
-    to = Taylor1([zero(ti), one(ti)], 9)
-    too = Taylor1([zero(to), one(to)], 9)
-    @test string(too) == " (  1.0 + 𝒪(t₁⁴) + 𝒪(t₂¹⁰)) t₃ + 𝒪(t₃¹⁰)"
+    tii = Taylor1([zero(ti), one(ti)], 9)
+    tiii = Taylor1([zero(tii), one(tii)], 9)
+    @test string(tiii) == " (  1.0 + 𝒪(t₁⁴) + 𝒪(t₂¹⁰)) t₃ + 𝒪(t₃¹⁰)"
     @test TS._params_Taylor1_.var_name == ["t₁", "t₂", "t₃"]
     @test TS._params_Taylor1_.num_vars == 3
     # The next tests are related to iss #326
-    @test ti > ti^2 > to > 0.0
-    @test too < to^2 < tito < ti^2
+    @test ti > ti^2 > tii > 0.0
+    @test tiii < tii^2 < titii < ti^2
 
     @testset "Test setindex! method for nested Taylor1s" begin
         t = Taylor1(2)
