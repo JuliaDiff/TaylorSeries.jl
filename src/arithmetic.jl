@@ -651,7 +651,7 @@ muladd!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
 function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
         b::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
     mul!(c, a, b, k)
-    c[k] = scalar * c[k]
+    mul!(c, scalar, c, k)
     return nothing
 end
 

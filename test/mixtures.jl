@@ -602,6 +602,39 @@ end
         @test x[3][2] == 0.0
     end
 
+    @testset "Tests for functions for nested Taylor1s" begin
+        funs = (:exp, :expm1, :log, :log1p, :sin, :cos, :sinpi, :cospi, :tan, :asin, :acos, :atan,
+            :sinh, :cosh, :tanh, :asinh, :atanh)#, :acosh)
+
+        for fn in funs
+            @eval begin
+                c = 0.0
+                ti = Taylor1(9)
+                tii = Taylor1([zero(ti), one(ti)], 9)
+                tiii = Taylor1([zero(tii), one(tii)], 9)
+                t1 = ti + ti^2
+                t2 = tii + tii^2
+                t3 = tiii + tiii^2
+                if $fn == log
+                    c = 1.0
+                elseif $fn == acosh
+                    c = 2.0
+                end
+                for i in eachindex(t1)
+                    ev_t1 = getcoeff($(fn)(c + t1), i)
+                    ev_t2 = evaluate(getcoeff($(fn)(c + t2), i), 1.0)
+                    ev_t3 = evaluate(getcoeff($(fn)(c + t3), i), 1.0)
+                    @test ev_t1 == ev_t2 == ev_t3
+                end
+                if $fn == log || $fn == acosh
+                    c = 0.0
+                end
+            end
+            # println()
+        end
+
+    end
+
     # Back to default
     set_taylor1_varname(1, "t")
     @test TS._params_Taylor1_.var_name == ["t"]
