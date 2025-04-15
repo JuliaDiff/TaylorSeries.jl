@@ -538,6 +538,7 @@ end
     @test TS._params_Taylor1_.var_name == ["t", "s"]
     ti = Taylor1(3)
     tii = Taylor1([zero(ti), one(ti)], 9)
+    @test typeof(promote(ti, tii)[1]) == Taylor1{Taylor1{Float64}}
     @test findfirst(tii) == 1
     @test TS.numtype(tii) == Taylor1{Float64}
     @test normalize_taylor(tii) == tii
