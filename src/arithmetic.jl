@@ -640,13 +640,13 @@ function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
     end
     return nothing
 end
-function muladd!(v::Taylor1{T}, a::Taylor1{T}, b::NumberNotSeries, k::Int) where
-        {T<:NumberNotSeries}
-    @inbounds v[k] += a[k] * b
-    return nothing
-end
-muladd!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
-        {T<:NumberNotSeries} = muladd!(v, b, a, k)
+# function muladd!(v::Taylor1{T}, a::Taylor1{T}, b::NumberNotSeries, k::Int) where
+#         {T<:NumberNotSeries}
+#     @inbounds v[k] += a[k] * b
+#     return nothing
+# end
+# muladd!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
+#         {T<:NumberNotSeries} = muladd!(v, b, a, k)
 # Implements c[k] = scalar \sum_i a[i] b[k-i]
 function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
         b::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
@@ -728,24 +728,24 @@ function muladd!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     end
     return nothing
 end
-muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{T}, b::Taylor1{Taylor1{T}}, k::Int) where
-        {T<:NumberNotSeriesN} = muladd!(v, b, a, k)
-function muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{T}, k::Int) where
-        {T<:NumberNotSeriesN}
-    @inbounds for i in eachindex(v[k])
-        muladd!(v[k], a[k], b, i)
-    end
-    return nothing
-end
-function muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::T, k::Int) where
-        {T<:NumberNotSeriesN}
-    @inbounds for i in eachindex(v[k])
-        muladd!(v[k], a[k], b, i)
-    end
-    return nothing
-end
-muladd!(v::Taylor1{Taylor1{T}}, a::T, b::Taylor1{Taylor1{T}}, k::Int) where
-    {T<:NumberNotSeriesN} = muladd!(v, b, a, k)
+# muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{T}, b::Taylor1{Taylor1{T}}, k::Int) where
+#         {T<:NumberNotSeriesN} = muladd!(v, b, a, k)
+# function muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{T}, k::Int) where
+#         {T<:NumberNotSeriesN}
+#     @inbounds for i in eachindex(v[k])
+#         muladd!(v[k], a[k], b, i)
+#     end
+#     return nothing
+# end
+# function muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::T, k::Int) where
+#         {T<:NumberNotSeriesN}
+#     @inbounds for i in eachindex(v[k])
+#         muladd!(v[k], a[k], b, i)
+#     end
+#     return nothing
+# end
+# muladd!(v::Taylor1{Taylor1{T}}, a::T, b::Taylor1{Taylor1{T}}, k::Int) where
+#     {T<:NumberNotSeriesN} = muladd!(v, b, a, k)
 function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
         a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}, k::Int) where {T<:Number}
     mul!(c, a, b, k)
@@ -757,17 +757,17 @@ function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
 end
 
 
-for T in (:Taylor1, :TaylorN)
-    @eval begin
-        function mul!(v::$T{T}, a::$T{T}, b::NumberNotSeries) where {T<:Number}
-            for k in eachindex(v)
-                mul!(v, a, b, k)
-            end
-            return nothing
-        end
-        mul!(v::$T{T}, a::NumberNotSeries, b::$T{T}) where {T<:Number} = mul!(v, b, a)
-    end
-end
+# for T in (:Taylor1, :TaylorN)
+#     @eval begin
+#         function mul!(v::$T{T}, a::$T{T}, b::NumberNotSeries) where {T<:Number}
+#             for k in eachindex(v)
+#                 mul!(v, a, b, k)
+#             end
+#             return nothing
+#         end
+#         mul!(v::$T{T}, a::NumberNotSeries, b::$T{T}) where {T<:Number} = mul!(v, b, a)
+#     end
+# end
 
 # in-place product: `a` <- `a*b`
 # this method computes the product `a*b` and saves it back into `a`
@@ -859,18 +859,18 @@ function mul!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSe
     end
 end
 
-function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
-    for k in eachindex(c)
-        muladd!(c, a, b, k)
-    end
-end
-
-function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
-        b::Taylor1{T}) where {T<:Number}
-    for k in eachindex(c)
-        mul_scalar!(c, scalar, a, b, k)
-    end
-end
+# function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
+#     for k in eachindex(c)
+#         muladd!(c, a, b, k)
+#     end
+# end
+#
+# function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
+#         b::Taylor1{T}) where {T<:Number}
+#     for k in eachindex(c)
+#         mul_scalar!(c, scalar, a, b, k)
+#     end
+# end
 
 function mul_scalar!(c::TaylorN{T}, scalar::NumberNotSeries, a::TaylorN{T},
         b::TaylorN{T}) where {T<:NumberNotSeriesN}
@@ -991,14 +991,14 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         return $T(v, a.order)
     end
 
-    @eval function /(a::$T{T}, b::T) where {T<:Number}
-        @inbounds aux = a.coeffs[1] / b
-        c = $T( zero(aux), a.order )
-        for ord in eachindex(c)
-            div!(c, a, b, ord) # updates c[ord]
-        end
-        return c
-    end
+    # @eval function /(a::$T{T}, b::T) where {T<:Number}
+    #     @inbounds aux = a.coeffs[1] / b
+    #     c = $T( zero(aux), a.order )
+    #     for ord in eachindex(c)
+    #         div!(c, a, b, ord) # updates c[ord]
+    #     end
+    #     return c
+    # end
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
@@ -1426,13 +1426,13 @@ function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
     return nothing
 end
 
-# c[k] <- a[k]/b, where b is a scalar
-function div!(c::TaylorN, a::TaylorN, b::NumberNotSeries)
-    @inbounds for k in eachindex(c)
-        div!(c[k], a[k], b)
-    end
-    return nothing
-end
+# # c[k] <- a[k]/b, where b is a scalar
+# function div!(c::TaylorN, a::TaylorN, b::NumberNotSeries)
+#     @inbounds for k in eachindex(c)
+#         div!(c[k], a[k], b)
+#     end
+#     return nothing
+# end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
 @inline function div!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
