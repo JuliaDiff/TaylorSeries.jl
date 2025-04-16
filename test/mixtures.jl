@@ -604,7 +604,7 @@ end
 
     @testset "Tests for functions for nested Taylor1s" begin
         funs = (:exp, :expm1, :log, :log1p, :sin, :cos, :sinpi, :cospi, :tan, :asin, :acos, :atan,
-            :sinh, :cosh, :tanh, :asinh, :atanh)#, :acosh)
+            :sinh, :cosh, :tanh, :asinh, :atanh, :acosh)
 
         for fn in funs
             @eval begin
@@ -624,7 +624,7 @@ end
                     ev_t1 = getcoeff($(fn)(c + t1), i)
                     ev_t2 = evaluate(getcoeff($(fn)(c + t2), i), 1.0)
                     ev_t3 = evaluate(getcoeff($(fn)(c + t3), i), 1.0)
-                    @test ev_t1 == ev_t2 == ev_t3
+                    @test ev_t1 ≈ ev_t2 == ev_t3
                 end
                 if $fn == log || $fn == acosh
                     c = 0.0

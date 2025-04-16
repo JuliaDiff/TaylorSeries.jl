@@ -44,6 +44,7 @@ for T in (:Taylor1, :TaylorN)
             end
             return c
         end
+
         function log1p(a::$T)
             # constant_term(a) < -one(constant_term(a)) && throw(DomainError(a,
             #         """The 0-th order coefficient must be larger than -1 in order to expand `log1`."""))
@@ -538,18 +539,17 @@ end
         return nothing
     end
     x = zero(c[k])
-    for j in eachindex(a[k])
-        zero!(s[k], j)
-        zero!(c[k], j)
-        @inbounds for i = 1:k
-            # x = i * a[i]
-            mul!(x, a[i], i, j)
-            # s[k] += x * c[k-i]
-            muladd!(s[k], x, c[k-i], j)
-            subst!(x, x, j)
-            # c[k] -= x * s[k-i]
-            muladd!(c[k], x, s[k-i], j)
-            subst!(x, x, j)
+    zero!(s[k])
+    zero!(c[k])
+    @inbounds for i = 1:k
+        # x = i * a[i]
+        # s[k] += x * c[k-i]
+        # c[k] -= x * s[k-i]
+        for j in eachindex(a[k])
+            mul_scalar!(x,  i, a[i], c[k-i], j)
+            add!(s[k], s[k], x, j)
+            mul_scalar!(x, -i, a[i], s[k-i], j)
+            add!(c[k], c[k], x, j)
         end
     end
     for j in eachindex(a[k])
@@ -566,8 +566,15 @@ end
         @inbounds s[0], c[0] = sincospi( a0 )
         return nothing
     end
-    mul!(a, pi, a, k)
-    sincos!(s, c, a, k)
+    zero!(s, k)
+    zero!(c, k)
+    @inbounds for i = 1:k
+        x = (i * pi) * a[i]
+        s[k] += x * c[k-i]
+        c[k] -= x * s[k-i]
+    end
+    s[k] = s[k] / k
+    c[k] = c[k] / k
     return nothing
 end
 @inline function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -579,9 +586,24 @@ end
         end
         return nothing
     end
-    aux = zero(a)
-    mul!(aux, a, pi)
-    sincos!(s, c, aux, k)
+    x = zero(c[k])
+    zero!(s[k])
+    zero!(c[k])
+    @inbounds for i = 1:k
+        # x = i * pi * a[i]
+        # s[k] += x * c[k-i]
+        # c[k] -= x * s[k-i]
+        for j in eachindex(a[k])
+            mul_scalar!(x,  i*pi, a[i], c[k-i], j)
+            add!(s[k], s[k], x, j)
+            mul_scalar!(x, -i*pi, a[i], s[k-i], j)
+            add!(c[k], c[k], x, j)
+        end
+    end
+    for j in eachindex(a[k])
+        div!(s[k], s[k], k, j)
+        div!(c[k], c[k], k, j)
+    end
     return nothing
 end
 
@@ -821,9 +843,10 @@ end
     x = zero(a[k])
     @inbounds for i = 1:k
         for j in eachindex(a[k])
-            mul!(x, a[i], i, j)
-            muladd!(s[k], x, c[k-i], j)
-            muladd!(c[k], x, s[k-i], j)
+            mul_scalar!(x, i, a[i], c[k-i], j)
+            add!(s[k], s[k], x, j)
+            mul_scalar!(x, i, a[i], s[k-i], j)
+            add!(c[k], c[k], x, j)
         end
     end
     for j in eachindex(a[k])
@@ -1321,9 +1344,9 @@ for T in (:Taylor1, :TaylorN)
 
         @inline function abs!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             z = zero(constant_term(a))
-            if constant_term(constant_term(a)) > constant_term(z)
+            if constant_term(a) > constant_term(z)
                 return add!(c, a, k)
-            elseif constant_term(constant_term(a)) < constant_term(z)
+            elseif constant_term(a) < constant_term(z)
                 return subst!(c, a, k)
             else
                 throw(DomainError(a,
