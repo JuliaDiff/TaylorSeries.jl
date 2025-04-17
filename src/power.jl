@@ -350,13 +350,7 @@ end
         return nothing
     end
     # The recursion formula
-    if l0+kprime ≤ a.order
-        # @inbounds c[k] = r * kprime * c[lnull] * a[l0+kprime]
-        @inbounds for j in eachindex(a[l0])
-            mul_scalar!(c[k], r * kprime, c[lnull], a[l0+kprime], j)
-        end
-    end
-    for i = 1:k-lnull-1
+    for i = 0:k-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         rr = r*(kprime-i) - i
         # @inbounds c[k] += rr * c[i+lnull] * a[l0+kprime-i]
@@ -829,16 +823,7 @@ end
             subst!(c[k], c[k], aux, j)
         end
     end
-    # imin ≤ imax && ( @inbounds c[k] -= 2 * c[imin] * c[k+k0-imin] )
-    if imin ≤ imax
-        # c[k] -= 2 * c[imin] * c[k+k0-imin]
-        @inbounds for j in eachindex(c[k])
-            zero!(aux, j)
-            mul_scalar!(aux, 2, c[imin], c[k+k0-imin], j)
-            subst!(c[k], c[k], aux, j)
-        end
-    end
-    @inbounds for i = imin+1:imax
+    @inbounds for i = imin:imax
         # c[k] -= 2 * c[i] * c[k+k0-i]
         for j in eachindex(c[k])
             zero!(aux, j)
