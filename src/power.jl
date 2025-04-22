@@ -355,17 +355,19 @@ end
         rr = r*(kprime-i) - i
         # @inbounds c[k] += rr * c[i+lnull] * a[l0+kprime-i]
         @inbounds for j in eachindex(a[l0])
-            mul_scalar!(aux[k], r * kprime, c[i+lnull], a[l0+kprime-i], j)
+            mul_scalar!(aux[k], rr, c[i+lnull], a[l0+kprime-i], j)
             add!(c[k], c[k], aux[k], j)
         end
     end
     # @inbounds c[k] = c[k] / (kprime * a[l0])
+    aux2 = zero(c[k])
     for j in eachindex(a[l0])
         zero!(aux[k], j)
         mul!(aux[k], kprime, a[l0], j)
+        identity!(aux2, c[k], j)
     end
     for j in eachindex(a[l0])
-        div!(c[k], c[k], aux[k], j)
+        div!(c[k], aux2, aux[k], j)
     end
     return nothing
 end
@@ -552,7 +554,7 @@ end
 end
 
 @inline function sqr!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where
-        {T<:AbstractSeries}
+        {T<:NumberNotSeriesN}
     if k == 0
         sqr_orderzero!(c, a)
         return nothing
