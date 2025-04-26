@@ -360,14 +360,14 @@ end
         end
     end
     # @inbounds c[k] = c[k] / (kprime * a[l0])
-    aux2 = zero(c[k])
-    for j in eachindex(a[l0])
-        zero!(aux[k], j)
-        mul!(aux[k], kprime, a[l0], j)
-        identity!(aux2, c[k], j)
+    @inbounds for j in eachindex(c[k])
+        identity!(aux[k], c[k], j)
     end
-    for j in eachindex(a[l0])
-        div!(c[k], aux2, aux[k], j)
+    @inbounds for j in eachindex(a[l0])
+        div!(c[k], aux[k], a[l0], j)
+    end
+    @inbounds for j in eachindex(a[l0])
+        div!(c[k], c[k], kprime, j)
     end
     return nothing
 end
@@ -432,8 +432,8 @@ end
     end
     return nothing
 end
-@inline function sqr_orderzero!(c::Taylor1{T}, a::Taylor1{T}) where
-        {T<:AbstractSeries}
+@inline function sqr_orderzero!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}) where
+        {T<:Number}
     @inbounds for ord in eachindex(c[0])
         sqr!(c[0], a[0], ord)
     end
@@ -553,8 +553,8 @@ end
     return nothing
 end
 
-@inline function sqr!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where
-        {T<:NumberNotSeriesN}
+@inline function sqr!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        k::Int) where {T<:NumberNotSeriesN}
     if k == 0
         sqr_orderzero!(c, a)
         return nothing
@@ -702,7 +702,8 @@ coefficient, which must be even.
 
 """ sqrt!
 
-@inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where {T<:Number}
+@inline function sqrt!(c::Taylor1{T}, a::Taylor1{T}, k::Int, k0::Int=0) where
+        {T<:NumberNotSeries}
     k < k0 && return nothing
     if k == k0
         @inbounds c[k] = sqrt(a[2*k0])
@@ -728,7 +729,8 @@ coefficient, which must be even.
     return nothing
 end
 
-@inline function sqrt!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:NumberNotSeriesN}
+@inline function sqrt!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where
+        {T<:NumberNotSeriesN}
 
     if k == 0
         @inbounds c[0][1] = sqrt( constant_term(a) )
@@ -800,7 +802,8 @@ end
     return nothing
 end
 
-@inline function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int, k0::Int=0) where {T<:Number}
+@inline function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int,
+        k0::Int=0) where {T<:Number}
     k < k0 && return nothing
     if k == k0
         @inbounds c[k] = sqrt(a[2*k0])
@@ -834,10 +837,14 @@ end
         end
     end
     # @inbounds c[k] = c[k] / (2*c[k0])
-    @inbounds for j in eachindex(c[k0])
-        zero!(aux, j)
-        mul!(aux, 2, c[k0], j)
+    @inbounds for j in eachindex(c[k])
+        identity!(aux, c[k], j)
     end
-    c[k] = c[k] / aux
+    @inbounds for j in eachindex(c[k0])
+        div!(c[k], aux, c[k0], j)
+    end
+    @inbounds for j in eachindex(c[k0])
+        div!(c[k], c[k], 2, j)
+    end
     return nothing
 end

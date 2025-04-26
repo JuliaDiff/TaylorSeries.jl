@@ -380,7 +380,13 @@ end
             zero!(aux, j)
         end
     end
-    div!(c, c, k, k)
+    # div!(c, c, k, k)
+    for i in eachindex(c[k])
+        identity!(aux, c[k], i)
+    end
+    for i in eachindex(c[k])
+        div!(c[k], aux, k, i)
+    end
     return nothing
 end
 

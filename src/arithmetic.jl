@@ -163,8 +163,8 @@ For many variables, the ordering includes a lexicographical convention in order 
 total. We have opted for the simplest one: the *larger* variable appears *before*
 for the `TaylorN` variables are defined (e.g., through [`set_variables`](@ref)).
 
-For nested `Taylor1`, i.e. `Taylor1{Taylor1{...}}`s, the variables are compared
-wrt to the output of `get_numvars`
+For nested `Taylor1{Taylor1{...}}`s, the ordering is established by which one
+is a `constant_term` of the other.
 
 Refs:
 - M. Berz, AIP Conference Proceedings 177, 275 (1988); https://doi.org/10.1063/1.37800
@@ -749,7 +749,7 @@ end
 function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
         a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}, k::Int) where {T<:Number}
     mul!(c, a, b, k)
-    # c[k] = scalar * c[k]
+    # c[k] <- scalar * c[k]
     for ord in eachindex(c[k])
         mul!(c[k], c[k], scalar, ord)
     end
@@ -781,7 +781,7 @@ function mul!(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
     end
     return nothing
 end
-function mul!(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeriesN}
+function mul!(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
     @inbounds for k in reverse(eachindex(a))
         # a[k] <- a[k]*b[0]
         mul!(a, a, b[0], k)
@@ -1218,9 +1218,9 @@ function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     zero!(c, k)
     iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
-    ordfact, cdivfact = divfactorization(a, b)
+    ordfact, aux = divfactorization(a, b)
     if k == 0
-        identity!(c, cdivfact, k)
+        identity!(c, aux, k)
         return nothing
     end
     imin = max(0, k+ordfact-b.order)
@@ -1232,20 +1232,22 @@ function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
             muladd!(c[k], c[i], b[k+ordfact-i], ord)
         end
     end
-    aux = zero(c[k])
+    zero!(aux)
     if k+ordfact ≤ b.order
-        # @inbounds aux = a[k+ordfact] - c[k]
+        # @inbounds aux <- a[k+ordfact] - c[k]
         for ord in eachindex(minlength(aux, a[k+ordfact]))
             subst!(aux, a[k+ordfact], c[k], ord)
         end
     else
-        # @inbounds aux = - c[k]
+        # @inbounds aux <- - c[k]
         for ord in eachindex(minlength(aux, a[k+ordfact]))
             subst!(aux, c[k], ord)
         end
     end
-    # TODO: optimize next line
-    c[k] = aux / b[ordfact]
+    # c[k] <- aux / b[ordfact]
+    for ord in eachindex(c[k])
+        div!(c[k], aux, b[ordfact], ord)
+    end
     return nothing
 end
 
