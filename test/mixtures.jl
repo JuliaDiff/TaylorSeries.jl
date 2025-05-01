@@ -190,12 +190,13 @@ using Test
         @test x*fn(cc+t1N) == fn(cc+t)*xN1
         @test t*fn(cc+xN1) == fn(cc+x)*t1N
     end
-    ee = Taylor1(t1N[0:5], 6)
+    ee = zero(Taylor1(t1N[0:5], 6))
+    ee_orig = exp(t1N)
     for ord in eachindex(t1N)
-        TS.differentiate!(ee, exp(t1N), ord)
+        TS.differentiate!(ee, ee_orig, ord)
     end
     @test iszero(ee[6])
-    @test getcoeff.(ee, 0:5) == getcoeff.(exp(t1N), 0:5)
+    @test getcoeff.(ee, 0:5) == getcoeff.(ee_orig, 0:5)
     ee = differentiate(t1N, get_order(t1N))
     @test iszero(ee)
     @test iszero(get_order(ee))

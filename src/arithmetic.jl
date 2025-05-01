@@ -664,7 +664,8 @@ function mul!(v::TaylorN, a::TaylorN, b::NumberNotSeries, k::Int)
     end
     return nothing
 end
-mul!(v::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int) = mul!(v, b, a, k)
+mul!(v::TaylorN{T}, a::NumberNotSeries, b::TaylorN{T}, k::Int) where
+    {T<:Number} = mul!(v, b, a, k)
 #
 function muladd!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T},
         k::Int) where {T<:Number}

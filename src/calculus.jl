@@ -57,7 +57,8 @@ p_k = (k+1) a_{k+1}.
 ```
 
 """
-function differentiate!(p::Taylor1, a::Taylor1, k::Int)
+function differentiate!(p::Taylor1{T}, a::Taylor1{T}, k::Int) where
+        {T<:NumberNotSeries}
     k >= a.order && return nothing
     @inbounds p[k] = (k+1)*a[k+1]
     return nothing
@@ -65,7 +66,19 @@ end
 function differentiate!(p::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where
         {T<:NumberNotSeries}
     k >= a.order && return nothing
-    @inbounds p[k] = (k+1)*a[k+1]
+    @inbounds for ord in eachindex(p[k])
+        zero!(p[k], ord)
+        mul!(p[k], a[k+1], k+1, ord)
+    end
+    return nothing
+end
+function differentiate!(p::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where
+        {T<:NumberNotSeriesN}
+    k >= a.order && return nothing
+    # @inbounds p[k] = (k+1)*a[k+1]
+    @inbounds for ord in eachindex(p[k])
+        mul!(p[k], a[k+1], k+1, ord)
+    end
     return nothing
 end
 
