@@ -291,6 +291,17 @@ for T in (:HomogeneousPolynomial, :TaylorN)
 end
 
 
+## minlength
+@inline function minlength(a::Taylor1, b::Taylor1)
+    length(eachindex(a)) < length(eachindex(b)) && return a
+    return b
+end
+@inline function minlength(a::Taylor1, b::Taylor1, c::Taylor1)
+    length(minlength(a, c)) < length(eachindex(b)) && return minlength(a, c)
+    return b
+end
+
+
 ## _isthinzero
 """
     _isthinzero(x)

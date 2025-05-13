@@ -131,19 +131,16 @@ function abs(a::Taylor1{TaylorN{T}}) where {T<:Real}
     end
 end
 
-abs(x::Taylor1{TaylorN{T}}) where {T<:Complex} = sqrt(abs2(x))
-abs(x::TaylorN{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
-abs(x::Taylor1{Taylor1{T}}) where {T<:Complex} = sqrt(abs2(x))
+abs(x::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries} = sqrt(abs2(x))
+abs(x::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries} = sqrt(abs2(x))
+abs(x::Taylor1{Taylor1{T}}) where {T<:Number} = sqrt(abs2(x))
 
 @doc doc"""
-    abs(a)
+    abs(a::Taylor1{T})
+    abs(a::TaylorN{T})
 
-For a `Real` type returns `a` if `constant_term(a) > 0` and `-a` if `constant_term(a) < 0` for
-`a <:Union{Taylor1,TaylorN}`.
-For a `Complex` type, such as `Taylor1{ComplexF64}`, returns `sqrt(real(a)^2 + imag(a)^2)`.
-
-Notice that `typeof(abs(a)) <: AbstractSeries` and
-that for a `Complex` argument a `Real` type is returned (e.g. `typeof(abs(a::Taylor1{ComplexF64})) == Taylor1{Float64}`).
+For `T<:Real` type returns `a` if `constant_term(a) > 0` and `-a` if
+`constant_term(a) < 0`. For other `Number` types, it returns `sqrt(abs2(a))`.
 
 """ abs
 

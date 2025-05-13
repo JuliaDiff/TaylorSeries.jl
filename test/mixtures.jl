@@ -7,6 +7,7 @@ using Test
 # using LinearAlgebra
 
 @testset "Tests with mixtures of Taylor1 and TaylorN" begin
+    set_taylor1_varname(1, "t")
     @test TS.NumberNotSeries == Union{Real,Complex}
     @test TS.NumberNotSeriesN == Union{Real,Complex,Taylor1}
 
@@ -189,12 +190,13 @@ using Test
         @test x*fn(cc+t1N) == fn(cc+t)*xN1
         @test t*fn(cc+xN1) == fn(cc+x)*t1N
     end
-    ee = Taylor1(t1N[0:5], 6)
+    ee = zero(Taylor1(t1N[0:5], 6))
+    ee_orig = exp(t1N)
     for ord in eachindex(t1N)
-        TS.differentiate!(ee, exp(t1N), ord)
+        TS.differentiate!(ee, ee_orig, ord)
     end
     @test iszero(ee[6])
-    @test getcoeff.(ee, 0:5) == getcoeff.(exp(t1N), 0:5)
+    @test getcoeff.(ee, 0:5) == getcoeff.(ee_orig, 0:5)
     ee = differentiate(t1N, get_order(t1N))
     @test iszero(ee)
     @test iszero(get_order(ee))
@@ -529,51 +531,67 @@ using Test
 end
 
 @testset "Tests with nested Taylor1s" begin
+    set_taylor1_varname(2, " t s")
+    @test TS._params_Taylor1_.num_vars == 2
+    @test TS._params_Taylor1_.var_name == ["t", "s"]
+    set_taylor1_varname(2, [" t", "s w"])
+    @test TS._params_Taylor1_.num_vars == 2
+    @test TS._params_Taylor1_.var_name == ["t", "s"]
     ti = Taylor1(3)
-    to = Taylor1([zero(ti), one(ti)], 9)
-    @test findfirst(to) == 1
-    @test TS.numtype(to) == Taylor1{Float64}
-    @test normalize_taylor(to) == to
-    @test normalize_taylor(Taylor1([zero(to), one(to)], 5)) == Taylor1([zero(to), one(to)], 5)
-    @test convert(eltype(to), to) === to
-    @test string(to) == " ( 1.0 + 𝒪(t⁴)) t + 𝒪(t¹⁰)"
-    @test string(to^2) == " ( 1.0 + 𝒪(t⁴)) t² + 𝒪(t¹⁰)"
-    @test ti + to == Taylor1([ti, one(ti)], 9)
-    tito = ti * to
-    # The next tests are related to iss #326
-    # @test ti > ti^2 > to > 0
-    # @test to^2 < toti < ti^2
-    @test tito == Taylor1([zero(ti), ti], 9)
-    @test tito / to == ti
-    @test get_order(tito/to) == get_order(to)-1
-    @test tito / ti == to
-    @test get_order(tito/ti) == get_order(to)
-    @test ti^2-to^2 == (ti+to)*(ti-to)
-    @test findfirst(ti^2-to^2) == 0
-    @test sin(to) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
-    @test to(1 + ti) == 1 + ti
-    @test to(1 + ti) isa Taylor1{Float64}
-    @test ti(1 + to) == 1 + to
-    @test constant_term(ti+to) == ti
-    @test linear_polynomial(ti*to) == Taylor1([zero(ti), ti], 9)
-    @test get_order(linear_polynomial(to)) == get_order(to)
-    @test nonlinear_polynomial(to+ti*to^2) == Taylor1([zero(ti), zero(ti), ti], 9)
-    @test ti(1 + to) isa Taylor1{Taylor1{Float64}}
-    @test sqrt(tito^2) == tito
-    @test get_order(sqrt(tito^2)) == get_order(to) >> 1
-    @test (tito^3)^(1/3) == tito
-    @test get_order(sqrt(tito^2)) == get_order(to) >> 1
-    ti2to = ti^2 * to
-    tti = (ti2to/to)/ti
-    @test get_order(tti) == get_order(to)-1
+    tii = Taylor1([zero(ti), one(ti)], 9)
+    @test typeof(promote(ti, tii)[1]) == Taylor1{Taylor1{Float64}}
+    @test findfirst(tii) == 1
+    @test TS.numtype(tii) == Taylor1{Float64}
+    @test normalize_taylor(tii) == tii
+    @test normalize_taylor(Taylor1([zero(tii), one(tii)], 5)) == Taylor1([zero(tii), one(tii)], 5)
+    @test convert(eltype(tii), tii) === tii
+    @test string(ti) == " 1.0 t + 𝒪(t⁴)"
+    @test string(tii) == " ( 1.0 + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
+    @test string(tii^2) == " ( 1.0 + 𝒪(t⁴)) s² + 𝒪(s¹⁰)"
+    @test ti + tii == Taylor1([ti, one(ti)], 9)
+    titii = ti * tii
+    @test string(titii) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
+    @test titii == Taylor1([zero(ti), ti], 9)
+    @test titii / tii == ti
+    @test get_order(titii/tii) == get_order(tii)-1
+    @test titii / ti == tii
+    @test get_order(titii/ti) == get_order(tii)
+    @test ti^2-tii^2 == (ti+tii)*(ti-tii)
+    @test findfirst(ti^2-tii^2) == 0
+    @test sin(tii) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
+    @test tii(1 + ti) == 1 + ti
+    @test tii(1 + ti) isa Taylor1{Float64}
+    @test ti(1 + tii) == 1 + tii
+    @test constant_term(ti+tii) == ti
+    @test linear_polynomial(ti*tii) == Taylor1([zero(ti), ti], 9)
+    @test get_order(linear_polynomial(tii)) == get_order(tii)
+    @test nonlinear_polynomial(tii+ti*tii^2) == Taylor1([zero(ti), zero(ti), ti], 9)
+    @test ti(1 + tii) isa Taylor1{Taylor1{Float64}}
+    @test sqrt(titii^2) == titii
+    @test get_order(sqrt(titii^2)) == get_order(tii) >> 1
+    @test (titii^3)^(1/3) == titii
+    @test get_order(sqrt(titii^2)) == get_order(tii) >> 1
+    ti2tii = ti^2 * tii
+    tti = (ti2tii/tii)/ti
+    @test get_order(tti) == get_order(tii)-1
     @test get_order(tti[0]) == get_order(ti)-1
-    @test isapprox(abs2(exp(im*to)), one(to))
-    @test isapprox(abs(exp(im*to)), one(to))
-    to = Taylor1([1/(1+ti), one(ti)], 9)
-    @test to(1.0) == 1 + 1/(1+ti)
-    @test cos(to)(0.0) == cos(to[0])
-    @test to(ti) == to[0] + ti
-    @test evaluate(to*ti, ti) == to[0]*ti + ti^2
+    @test isapprox(abs2(exp(im*tii)), one(tii))
+    @test isapprox(abs(exp(im*tii)), one(tii))
+    tii = Taylor1([1/(1+ti), one(ti)], 9)
+    @test tii(1.0) == 1 + 1/(1+ti)
+    @test cos(tii)(0.0) == cos(tii[0])
+    @test tii(ti) == tii[0] + ti
+    @test evaluate(tii*ti, ti) == tii[0]*ti + ti^2
+
+    # Testing automatic setting of TS._params_taylor1_
+    tii = Taylor1([zero(ti), one(ti)], 9)
+    tiii = Taylor1([zero(tii), one(tii)], 9)
+    @test string(tiii) == " (  1.0 + 𝒪(t₁⁴) + 𝒪(t₂¹⁰)) t₃ + 𝒪(t₃¹⁰)"
+    @test TS._params_Taylor1_.var_name == ["t₁", "t₂", "t₃"]
+    @test TS._params_Taylor1_.num_vars == 3
+    # The next tests are related to iss #326
+    @test ti > ti^2 > tii > 0.0
+    @test tiii < tii^2 < titii < ti^2
 
     @testset "Test setindex! method for nested Taylor1s" begin
         t = Taylor1(2)
@@ -584,4 +602,41 @@ end
         y[2] = -5.0
         @test x[3][2] == 0.0
     end
+
+    @testset "Tests for functions for nested Taylor1s" begin
+        funs = (:exp, :expm1, :log, :log1p, :sin, :cos, :sinpi, :cospi, :tan, :asin, :acos, :atan,
+            :sinh, :cosh, :tanh, :asinh, :atanh, :acosh)
+
+        for fn in funs
+            @eval begin
+                c = 0.0
+                ti = Taylor1(9)
+                tii = Taylor1([zero(ti), one(ti)], 9)
+                tiii = Taylor1([zero(tii), one(tii)], 9)
+                t1 = ti + ti^2
+                t2 = tii + tii^2
+                t3 = tiii + tiii^2
+                if $fn == log
+                    c = 1.0
+                elseif $fn == acosh
+                    c = 2.0
+                end
+                for i in eachindex(t1)
+                    ev_t1 = getcoeff($(fn)(c + t1), i)
+                    ev_t2 = evaluate(getcoeff($(fn)(c + t2), i), 1.0)
+                    ev_t3 = evaluate(getcoeff($(fn)(c + t3), i), 1.0)
+                    @test ev_t1 ≈ ev_t2 == ev_t3
+                end
+                if $fn == log || $fn == acosh
+                    c = 0.0
+                end
+            end
+            # println()
+        end
+
+    end
+
+    # Back to default
+    set_taylor1_varname(1, "t")
+    @test TS._params_Taylor1_.var_name == ["t"]
 end

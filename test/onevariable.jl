@@ -265,7 +265,7 @@ Base.iszero(::SymbNumber) = false
     @test log(exp(tsquare)) == tsquare
     @test exp(log(1-tsquare)) == 1-tsquare
     @test constant_term(expm1(1.0e-16+t)) == 1.0e-16
-    @test expm1(1.e-16+t).coeffs[2:end] == (exp(t)-1).coeffs[2:end]
+    @test expm1(1.e-16+t).coeffs[2:end] ≈ expm1(1.e-16).*(exp(t)-1).coeffs[2:end]
     @test log((1-t)^2) == 2*log(1-t)
     @test log1p(0.25 + t) == log(1.25+t)
     @test log1p(-t^2) == log(1-t^2)
@@ -546,7 +546,7 @@ Base.iszero(::SymbNumber) = false
     @test string(aa) == " 1.4142135623730951 + 1.0 t + 𝒪(t³)"
     set_taylor1_varname(" x ")
     @test string(aa) == " 1.4142135623730951 + 1.0 x + 𝒪(x³)"
-    set_taylor1_varname("t")
+    set_taylor1_varname(1, " t ")
     displayBigO(false)
     @test string(ta(-3)) == " - 3 + 1 t "
     @test string(ta(0)^3-3) == " - 3 + 1 t³ "

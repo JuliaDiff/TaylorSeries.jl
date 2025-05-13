@@ -14,8 +14,9 @@ Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
 omitted, its value is considered as zero. Note that the syntax `a(dx)` is
 equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
-function evaluate(a::Taylor1{T}, dx::T) where {T<:Number}
+function evaluate(a::Taylor1{T}, dx::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
     @inbounds suma = zero(a[end])
+    # suma = evalpoly(dx, view(a.coeffs,:) )
     @inbounds for k in reverse(eachindex(a))
         suma = suma * dx + a[k]
     end
@@ -61,22 +62,19 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
         a, x = fixorder(a, x)
     end
     @inbounds suma = a[end]*zero(x)
-    aux = zero(suma)
-    _horner!(suma, a, x, aux)
+    _horner!(suma, a, x, zero(suma))
     return suma
 end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:NumberNotSeriesN}
     @inbounds suma = a[end]*zero(x)
-    aux = zero(suma)
-    _horner!(suma, a, x, aux)
+    _horner!(suma, a, x, zero(suma))
     return suma
 end
 
 function evaluate(a::Taylor1{T}, x::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
     @inbounds suma = a[end]*zero(x)
-    aux = zero(suma)
-    _horner!(suma, a, x, aux)
+    _horner!(suma, a, x, zero(suma))
     return suma
 end
 
@@ -86,39 +84,41 @@ evaluate(p::Taylor1{T}, x::AbstractArray{S}) where {T<:Number, S<:Number} =
 # Substitute a TaylorN into a Taylor1
 function evaluate(a::Taylor1{T}, dx::TaylorN{T}) where {T<:NumberNotSeries}
     suma = TaylorN( zero(T), dx.order)
-    aux = TaylorN( zero(T), dx.order)
-    _horner!(suma, a, dx, aux)
+    _horner!(suma, a, dx, zero(suma))
     return suma
 end
 
-function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where
+        {T<:NumberNotSeries}
     if a.order != dx.order
         a, dx = fixorder(a, dx)
     end
     suma = Taylor1( zero(dx[0]), a.order)
-    aux  = Taylor1( zero(dx[0]), a.order)
+    aux  = zero(suma)
     _horner!(suma, a, dx, aux)
     return suma
 end
 
-
 # Evaluate a Taylor1{TaylorN{T}} on Vector{T} (or Vector{TaylorN{T}}) is interpreted
 # as a substitution on the TaylorN vars
-function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{S}) where {T<:NumberNotSeries, S<:NumberNotSeries}
+function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{S}) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
     @assert length(dx) == get_numvars()
     suma = Taylor1( zero(a[0][0][1])*one(dx[1]), a.order)
     suma.coeffs .= evaluate.(a[:], Ref(dx))
     return suma
 end
 
-function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{TaylorN{T}}) where {T<:NumberNotSeries}
+function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{TaylorN{T}}) where
+        {T<:NumberNotSeries}
     @assert length(dx) == get_numvars()
     suma = Taylor1( zero(a[0]), a.order)
     suma.coeffs .= evaluate.(a[:], Ref(dx))
     return suma
 end
 
-function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::T) where {T<:NumberNotSeries}
+function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::T) where
+        {T<:NumberNotSeries}
     @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     suma = Taylor1( zero(a[0]), a.order)
     for ord in eachindex(suma)
@@ -129,7 +129,8 @@ function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::T) where {T<:NumberNotSe
     return suma
 end
 
-function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::TaylorN{T}) where {T<:NumberNotSeries}
+function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::TaylorN{T}) where
+        {T<:NumberNotSeries}
     @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     suma = Taylor1( zero(a[0]), a.order)
     aux = zero(dx)
@@ -194,8 +195,9 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple) where {T}
     return suma
 end
 
-function _evaluate!(res::TaylorN{T}, a::HomogeneousPolynomial{T}, vals::NTuple{N,<:TaylorN{T}},
-            valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:NumberNotSeries}
+function _evaluate!(res::TaylorN{T}, a::HomogeneousPolynomial{T},
+        vals::NTuple{N,<:TaylorN{T}}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}) where {N,T<:NumberNotSeries}
     ct = coeff_table[a.order+1]
     for el in eachindex(valscache)
         power_by_squaring!(valscache[el], vals[el], aux, ct[1][el])
@@ -222,8 +224,8 @@ function _evaluate!(res::TaylorN{T}, a::HomogeneousPolynomial{T}, vals::NTuple{N
     return nothing
 end
 
-function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,<:TaylorN{T}}) where
-        {N,T<:NumberNotSeries}
+function _evaluate(a::HomogeneousPolynomial{T},
+        vals::NTuple{N,<:TaylorN{T}}) where {N,T<:NumberNotSeries}
     # @assert length(vals) == get_numvars()
     a.order == 0 && return a[1]*one(vals[1])
     suma = TaylorN(zero(T), vals[1].order)
@@ -233,7 +235,8 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple{N,<:TaylorN{T}}) wh
     return suma
 end
 
-function _evaluate(a::HomogeneousPolynomial{T}, ind::Int, val::T) where {T<:NumberNotSeries}
+function _evaluate(a::HomogeneousPolynomial{T}, ind::Int, val::T) where
+        {T<:NumberNotSeries}
     suma = TaylorN(zero(T), get_order())
     _evaluate!(suma, a, ind, val)
     return suma
@@ -261,32 +264,36 @@ Note that the syntax `a(vals)` is equivalent to
 `evaluate(a)`; use a(b::Bool, x) corresponds to
 evaluate(a, x, sorting=b).
 """
-function evaluate(a::TaylorN, vals::NTuple{N,<:Number}; sorting::Bool=true) where {N}
+function evaluate(a::TaylorN, vals::NTuple{N,<:Number};
+        sorting::Bool=true) where {N}
     @assert get_numvars() == N
     return _evaluate(a, vals, Val(sorting))
 end
 
-function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries}; sorting::Bool=false) where {N}
+function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
+        sorting::Bool=false) where {N}
     @assert get_numvars() == N
     return _evaluate(a, vals, Val(sorting))
 end
 
-evaluate(a::TaylorN{T}, vals::AbstractVector{<:Number};
-    sorting::Bool=true) where {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
+evaluate(a::TaylorN{T}, vals::AbstractVector{<:Number}; sorting::Bool=true) where
+    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
 
-evaluate(a::TaylorN{T}, vals::AbstractVector{<:AbstractSeries};
-    sorting::Bool=false) where {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
+evaluate(a::TaylorN{T}, vals::AbstractVector{<:AbstractSeries}; sorting::Bool=false) where
+    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
 
 evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{S};
     sorting::Bool=false) where {T, S} = evaluate(a, (vals...,); sorting=sorting)
 
-function evaluate(a::TaylorN{T}, s::Symbol, val::S) where {T<:Number, S<:NumberNotSeriesN}
+function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
+        {T<:Number, S<:NumberNotSeriesN}
     ind = lookupvar(s)
     @assert (1 ≤ ind ≤ get_numvars()) "Symbol is not a TaylorN variable; see `get_variable_names()`"
     return evaluate(a, ind, val)
 end
 
-function evaluate(a::TaylorN{T}, ind::Int, val::S) where {T<:Number, S<:NumberNotSeriesN}
+function evaluate(a::TaylorN{T}, ind::Int, val::S) where
+        {T<:Number, S<:NumberNotSeriesN}
     @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     R = promote_type(T,S)
     return _evaluate(convert(TaylorN{R}, a), ind, convert(R, val))
@@ -305,19 +312,21 @@ function evaluate(a::TaylorN{T}, ind::Int, val::TaylorN) where {T<:Number}
     return _evaluate(a, ind, val)
 end
 
-evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} = evaluate(a, first(x), last(x))
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} =
+    evaluate(a, first(x), last(x))
 
 evaluate(a::TaylorN{T}) where {T<:Number} = constant_term(a)
 
 
 # _evaluate
-_evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where {T<:NumberNotSeries} =
-    sum( sort!(_evaluate(a, vals), by=abs2) )
+_evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where
+    {T<:NumberNotSeries} = sum( sort!(_evaluate(a, vals), by=abs2) )
 
 _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number} =
     sum( _evaluate(a, vals) )
 
-function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where {N,T<:Number}
+function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN},
+        ::Val{false}) where {N,T<:Number}
     R = promote_type(T, TS.numtype(vals[1]))
     res = TaylorN(zero(R), vals[1].order)
     vvals = ntuple(i -> convert(TaylorN{R}, vals[i]), length(vals))
@@ -358,7 +367,8 @@ function _evaluate(a::TaylorN{T}, ind::Int, val::T) where {T<:NumberNotSeriesN}
     return suma
 end
 
-function _evaluate(a::TaylorN{T}, ind::Int, val::TaylorN{T}) where {T<:NumberNotSeriesN}
+function _evaluate(a::TaylorN{T}, ind::Int, val::TaylorN{T}) where
+        {T<:NumberNotSeriesN}
     suma = TaylorN(zero(a[0]), a.order)
     aux = zero(suma)
     @inbounds for ordQ in eachindex(a)
@@ -367,16 +377,17 @@ function _evaluate(a::TaylorN{T}, ind::Int, val::TaylorN{T}) where {T<:NumberNot
     return suma
 end
 
-function _evaluate!(res::Vector{TaylorN{T}}, a::TaylorN{T}, vals::NTuple{N,<:TaylorN},
-        valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
+function _evaluate!(res::Vector{TaylorN{T}}, a::TaylorN{T},
+        vals::NTuple{N,<:TaylorN}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}) where {N,T<:Number}
     @inbounds for homPol in eachindex(a)
         _evaluate!(res[homPol+1], a[homPol], vals, valscache, aux)
     end
     return nothing
 end
 
-function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int, val::T) where
-        {T<:NumberNotSeriesN}
+function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
+        val::T) where {T<:NumberNotSeriesN}
     order = a.order
     orderTN = get_order()
     if order == 0
@@ -525,13 +536,12 @@ end
 function _horner!(suma::Taylor1{T}, a::Taylor1{T}, x::Taylor1{T},
         aux::Taylor1{T}) where {T<:Number}
     @inbounds for k in reverse(eachindex(a))
-        for ord in eachindex(aux)
+        for ord in eachindex(suma)
             mul!(aux, suma, x, ord)
         end
-        for ord in eachindex(aux)
-            identity!(suma, aux, ord)
+        for ord in eachindex(suma)
+            add!(suma, aux, a[k], ord)
         end
-        add!(suma, suma, a[k], 0)
     end
     return nothing
 end
@@ -539,12 +549,11 @@ end
 function _horner!(suma::Taylor1{T}, a::Taylor1{Taylor1{T}}, x::Taylor1{T},
         aux::Taylor1{T}) where {T<:Number}
     @inbounds for k in reverse(eachindex(a))
-        for ord in eachindex(aux)
+        for ord in eachindex(suma)
             mul!(aux, suma, x, ord)
         end
-        for ord in eachindex(aux)
-            identity!(suma, aux, ord)
-            add!(suma, suma, a[k], ord)
+        for ord in eachindex(suma)
+            add!(suma, aux, a[k], ord)
         end
     end
     return nothing
@@ -553,10 +562,10 @@ end
 function _horner!(suma::Taylor1{Taylor1{T}}, a::Taylor1{T}, x::Taylor1{Taylor1{T}},
         aux::Taylor1{Taylor1{T}}) where {T<:Number}
     @inbounds for k in reverse(eachindex(a))
-        for ord in eachindex(aux)
+        for ord in eachindex(suma)
             mul!(aux, suma, x, ord)
         end
-        for ord in eachindex(aux)
+        for ord in eachindex(suma)
             identity!(suma, aux, ord)
             add!(suma, suma, a[k], ord)
         end
@@ -582,15 +591,13 @@ end
 function _horner!(suma::Taylor1{TaylorN{T}}, a::Taylor1{T}, dx::Taylor1{TaylorN{T}},
         aux::Taylor1{TaylorN{T}})  where {T<:NumberNotSeries}
     @inbounds for k in reverse(eachindex(a))
-        # aux = suma * dx
-        for ord in eachindex(aux)
+        for ord in eachindex(suma)
             zero!(aux, ord)
             mul!(aux, suma, dx, ord)
         end
         for ord in eachindex(aux)
-            identity!(suma, aux, ord)
+            add!(suma, aux, a[k], ord)
         end
-        add!(suma, suma, a[k], 0)
     end
     return suma
 end

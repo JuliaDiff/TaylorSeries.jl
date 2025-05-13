@@ -214,3 +214,15 @@ const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 ## Additional Taylor1 and TaylorN outer constructor ##
 Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
 TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), TaylorSeries.get_order())
+
+
+# """
+#     get_numvars
+#
+# Return the number of variables of a `Taylor1`, `HomogeneousPolynomial`
+# or `TaylorN` object.
+# """
+get_numvars(t::Number) = 0
+get_numvars(t::Taylor1) = 1
+get_numvars(t::Taylor1{Taylor1{T}}) where {T<:Number} = get_numvars(t[0])+1
+get_numvars(::T) where {T<:Union{HomogeneousPolynomial, TaylorN}} = _params_TaylorN_.num_vars
