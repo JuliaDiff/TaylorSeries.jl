@@ -21,3 +21,6 @@ testfiles = (
 for file in testfiles
     include(file)
 end
+
+# Back to TaylorN default parameters
+set_variables("x", order=6, numvars=2);

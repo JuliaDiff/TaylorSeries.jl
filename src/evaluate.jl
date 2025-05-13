@@ -277,13 +277,13 @@ function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
 end
 
 evaluate(a::TaylorN{T}, vals::AbstractVector{<:Number}; sorting::Bool=true) where
-    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
+    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting)
 
 evaluate(a::TaylorN{T}, vals::AbstractVector{<:AbstractSeries}; sorting::Bool=false) where
-    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting=sorting)
+    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting)
 
 evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{S};
-    sorting::Bool=false) where {T, S} = evaluate(a, (vals...,); sorting=sorting)
+    sorting::Bool=false) where {T, S} = evaluate(a, (vals...,); sorting)
 
 function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
         {T<:Number, S<:NumberNotSeriesN}
@@ -292,8 +292,8 @@ function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
     return evaluate(a, ind, val)
 end
 
-function evaluate(a::TaylorN{T}, ind::Int, val::S) where
-        {T<:Number, S<:NumberNotSeriesN}
+function evaluate(a::TaylorN{T}, ind::Int, val::S) where {T<:Number,
+        S<:NumberNotSeriesN}
     @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     R = promote_type(T,S)
     return _evaluate(convert(TaylorN{R}, a), ind, convert(R, val))
@@ -325,8 +325,8 @@ _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where
 _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number} =
     sum( _evaluate(a, vals) )
 
-function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN},
-        ::Val{false}) where {N,T<:Number}
+function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where
+        {N,T<:Number}
     R = promote_type(T, TS.numtype(vals[1]))
     res = TaylorN(zero(R), vals[1].order)
     vvals = ntuple(i -> convert(TaylorN{R}, vals[i]), length(vals))
