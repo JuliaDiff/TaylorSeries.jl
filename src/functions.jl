@@ -329,8 +329,11 @@ end
     return nothing
 end
 @inline function one!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:Number}
-    for i in eachindex(a[k])
-        one!(c[k], a[k], i)
+    zero!(c, k)
+    if k == 0
+        for i in eachindex(a[0])
+            one!(c[0], a[0], i)
+        end
     end
     return nothing
 end
