@@ -158,7 +158,7 @@ using Test
     @test string(evaluate(t1N, 0.0)) == " 1.0 x₁ + 𝒪(‖x‖³)"
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     @test string((t1N^(2//1))(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
-    v = zeros(TaylorN{Float64},2)
+    v = TaylorN.(zeros(Float64, 2), 2)
     @test isnothing(evaluate!([t1N, t1N^2], 0.0, v))
     @test v == [TaylorN(1), TaylorN(1)^2]
     @test tN1() == t

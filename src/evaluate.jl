@@ -492,8 +492,17 @@ of an ODE at *time* `δt`. It updates the vector `dest` with the
 computed values.
 """
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
-        dest::AbstractArray{T}) where {T<:Number, S<:Number}
+        dest::AbstractArray{T}) where {T<:NumberNotSeriesN, S<:Number}
     dest .= evaluate.( x, δt )
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{TaylorN{T}}}, δt::S,
+        dest::AbstractArray{TaylorN{T}}) where {T<:Number, S<:Number}
+    @inbounds for i in eachindex(x)
+        aux = zero(dest[i])
+        _horner!(dest[i], x[i], δt, aux)
+    end
     return nothing
 end
 
@@ -600,4 +609,18 @@ function _horner!(suma::Taylor1{TaylorN{T}}, a::Taylor1{T}, dx::Taylor1{TaylorN{
         end
     end
     return suma
+end
+
+function _horner!(suma::TaylorN{T}, a::Taylor1{TaylorN{T}}, dx::S,
+        aux::TaylorN{T}) where {T<:Number, S<:Number}
+    @inbounds for k in reverse(eachindex(a))
+        for ord in eachindex(suma)
+            zero!(aux, ord)
+            mul!(aux, suma, dx, ord)
+        end
+        for ord in eachindex(aux)
+            add!(suma, aux, a[k], ord)
+        end
+    end
+    return nothing
 end
