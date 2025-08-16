@@ -500,6 +500,7 @@ end
 function evaluate!(x::AbstractArray{Taylor1{TaylorN{T}}}, δt::S,
         dest::AbstractArray{TaylorN{T}}) where {T<:Number, S<:Number}
     @inbounds for i in eachindex(x)
+        zero!(dest[i])
         aux = zero(dest[i])
         _horner!(dest[i], x[i], δt, aux)
     end
