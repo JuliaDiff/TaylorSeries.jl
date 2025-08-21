@@ -142,16 +142,16 @@ setdisplay(:full)
         complex(interval(0, 0), interval(-1, 1.5))]
     displayBigO(false)
     @test string(Taylor1(vc, 5)) ==
-        " ( Interval{Float64}(1.5, 2.0, com) + im*Interval{Float64}(0.0, 0.0, com) ) +" *
-        " ( Interval{Float64}(-2.0, -1.0, com) + im*Interval{Float64}(-1.0, 1.0, com) ) t" *
-        " + ( Interval{Float64}(-1.0, 1.5, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t²" *
-        " + ( Interval{Float64}(0.0, 0.0, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t³ "
+        " ( Interval{Float64}(1.5, 2.0, com, true) + im*Interval{Float64}(0.0, 0.0, com, true) ) +" *
+        " ( Interval{Float64}(-2.0, -1.0, com, true) + im*Interval{Float64}(-1.0, 1.0, com, true) ) t" *
+        " + ( Interval{Float64}(-1.0, 1.5, com, true) + im*Interval{Float64}(-1.0, 1.5, com, true) ) t²" *
+        " + ( Interval{Float64}(0.0, 0.0, com, true) + im*Interval{Float64}(-1.0, 1.5, com, true) ) t³ "
     displayBigO(true)
     @test string(Taylor1(vc, 5)) ==
-        " ( Interval{Float64}(1.5, 2.0, com) + im*Interval{Float64}(0.0, 0.0, com) ) +" *
-        " ( Interval{Float64}(-2.0, -1.0, com) + im*Interval{Float64}(-1.0, 1.0, com) ) t" *
-        " + ( Interval{Float64}(-1.0, 1.5, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t²" *
-        " + ( Interval{Float64}(0.0, 0.0, com) + im*Interval{Float64}(-1.0, 1.5, com) ) t³ + 𝒪(t⁶)"
+        " ( Interval{Float64}(1.5, 2.0, com, true) + im*Interval{Float64}(0.0, 0.0, com, true) ) +" *
+        " ( Interval{Float64}(-2.0, -1.0, com, true) + im*Interval{Float64}(-1.0, 1.0, com, true) ) t" *
+        " + ( Interval{Float64}(-1.0, 1.5, com, true) + im*Interval{Float64}(-1.0, 1.5, com, true) ) t²" *
+        " + ( Interval{Float64}(0.0, 0.0, com, true) + im*Interval{Float64}(-1.0, 1.5, com, true) ) t³ + 𝒪(t⁶)"
 
 
     # Iss 351 (inspired by a test in ReachabilityAnalysis)
