@@ -80,7 +80,7 @@ for T in (:Taylor1, :TaylorN)
             aa = one(aux) * a
             r == 0.5 && return sqrt(aa)
             if $T == TaylorN
-                if iszero(a0)
+                if TS._isthinzero(a0)
                     throw(DomainError(aa,
                     """The 0-th order TaylorN coefficient must be non-zero
                     in order to expand `^` around 0."""))
@@ -112,7 +112,7 @@ for T in (:Taylor1, :TaylorN)
                 (lnull > a.order) && return $T( zero(aux), a.order)
                 c_order = l0 == 0 ? a.order : min(a.order, trunc(Int, r*a.order))
             else
-                if iszero(a0)
+                if TS._isthinzero(a0)
                     throw(DomainError(a,
                     """The 0-th order TaylorN coefficient must be non-zero
                     in order to expand `^` around 0."""))
@@ -259,7 +259,7 @@ function sqrt(a::TaylorN{Interval{T}}) where {T<:NumTypes}
     aa[0] = one(aux)*a0
     order = a.order
     c = TaylorN( zero(aux), order)
-    for k in 1:order
+    for k in eachindex(aa)
         TS.sqrt!(c, aa, k)
     end
     return c
@@ -290,7 +290,33 @@ end
     @inbounds c[k] = aux / (interval(2) * c[k0])
     return nothing
 end
-# Faltan métodos de sqrt! para TaylorN y Taylor1{TaylorN}
+
+@inline function TS.sqrt!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
+        k::Int) where {T<:NumTypes}
+    if k == 0
+        @inbounds c[0][1] = sqrt( constant_term(a) )
+        return nothing
+    end
+    # Recursion formula
+    kodd = k%2
+    kend = (k - 2 + kodd) >> 1
+    # c[k] <- a[k]
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = a[k][i]
+    end
+    if kodd == 0
+        # @inbounds c[k] <- c[k] - (c[kend+1])^2
+        @inbounds TS.mul_scalar!(c[k], -interval(1), c[kend+1], c[kend+1])
+    end
+    @inbounds for i = 1:kend
+        # c[k] <- c[k] - 2*c[i]*c[k-i]
+        TS.mul_scalar!(c[k], -interval(2), c[i], c[k-i])
+    end
+    # @inbounds c[k] <- c[k] / (2*c[0])
+    TS.div!(c[k], c[k], interval(2)*constant_term(c))
+
+    return nothing
+end
 
 # several math functions
 for T in (:Taylor1, :TaylorN)
