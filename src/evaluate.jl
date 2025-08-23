@@ -187,7 +187,7 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple) where {T}
     suma = zero(a[1])*vals[1]
     vv = vals .^ ct[1]
     for (i, a_coeff) in enumerate(a.coeffs)
-        iszero(a_coeff) && continue
+        TS._isthinzero(a_coeff) && continue
         @inbounds vv .= vals .^ ct[i]
         tmp = prod( vv )
         suma += a_coeff * tmp
@@ -203,7 +203,7 @@ function _evaluate!(res::TaylorN{T}, a::HomogeneousPolynomial{T},
         power_by_squaring!(valscache[el], vals[el], aux, ct[1][el])
     end
     for (i, a_coeff) in enumerate(a.coeffs)
-        iszero(a_coeff) && continue
+        TS._isthinzero(a_coeff) && continue
         # valscache .= vals .^ ct[i]
         @inbounds for el in eachindex(valscache)
             power_by_squaring!(valscache[el], vals[el], aux, ct[i][el])
