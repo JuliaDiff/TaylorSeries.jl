@@ -1132,7 +1132,7 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
     cdivfact = a1[ordfact] / b1[ordfact]
 
     # Is the polynomial factorizable?
-    iszero(b1[ordfact]) && throw( ArgumentError(
+    TS._isthinzero(b1[ordfact]) && throw( ArgumentError(
         """Division does not define a Taylor1 polynomial;
         order k=$(ordfact) => coeff[$(ordfact)]=$(cdivfact).""") )
 

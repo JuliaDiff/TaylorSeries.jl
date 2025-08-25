@@ -579,7 +579,7 @@ end
         sqr!(aux, a[k >> 1], j)
         add!(c[k], c[k], aux, j)
     end
-return nothing
+    return nothing
 end
 
 
