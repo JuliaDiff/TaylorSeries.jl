@@ -59,9 +59,6 @@ for I in (:Interval, :ComplexI)
     end
 end
 
-# Methods related to div
-
-
 # Methods related to power, sqr, sqrt, ...
 for T in (:Taylor1, :TaylorN)
     @eval begin
