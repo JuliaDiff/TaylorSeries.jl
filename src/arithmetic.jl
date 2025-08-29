@@ -473,6 +473,13 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     end
 end
 
+function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where {T <: TS.NumberNotSeries}
+    @inbounds for i in eachindex(v[k])
+        v[k][i] = -a[k][i]
+    end
+    return nothing
+end
+
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function sum!(v::$T{S}, a::AbstractArray{$T{S}}) where {S <: Number}
