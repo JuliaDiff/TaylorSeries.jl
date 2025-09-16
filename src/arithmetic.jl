@@ -1412,10 +1412,12 @@ end
         return nothing
     end
 
-    @inbounds c[k] = scalar * c[k]
+    aux = c[k] = scalar * c[k]
+    @inbounds zero!(c, k)
     @inbounds for i = 0:k-1
         c[k] -= c[i] * a[k-i]
     end
+    c[k] += aux
     @inbounds c[k] = c[k] / constant_term(a)
     return nothing
 end
