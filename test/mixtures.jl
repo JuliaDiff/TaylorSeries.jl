@@ -636,6 +636,41 @@ end
 
     end
 
+    @testset "Tests for mutating functions of nested Taylor1s" begin
+        import Random
+        Random.seed!(1234)
+
+        local inorder = 6
+        local outorder = 25
+
+        c = rand()
+        x = Taylor1([Taylor1(rand(inorder+1), inorder) for _ in 1:outorder+1], outorder)
+        y = Taylor1([Taylor1(rand(inorder+1), inorder) for _ in 1:outorder+1], outorder)
+        z, w = zero(x), zero(x)
+
+        for (f, fc) in ((:+, :(add!)), (:-, :(subst!)), (:*, :(mul!)), (:/, :(div!)))
+            @eval begin
+                w = $f(x, y)
+                for k in eachindex(z)
+                    TS.$fc(z, x, y, k)
+                end
+                @test norm(z - w, Inf) == 0.0
+
+                w = $f(c, y)
+                for k in eachindex(z)
+                    TS.$fc(z, c, y, k)
+                end
+                @test norm(z - w, Inf) == 0.0
+
+                w = $f(y, c)
+                for k in eachindex(z)
+                    TS.$fc(z, y, c, k)
+                end
+                @test norm(z - w, Inf) == 0.0
+            end
+        end
+    end
+
     # Back to default
     set_taylor1_varname(1, "t")
     @test TS._params_Taylor1_.var_name == ["t"]
