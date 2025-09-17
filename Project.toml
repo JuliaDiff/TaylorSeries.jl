@@ -26,6 +26,7 @@ IntervalArithmetic = "0.23"
 JLD2 = "0.5"
 LinearAlgebra = "<0.0.1, 1"
 Markdown = "<0.0.1, 1"
+Random = "1"
 RecursiveArrayTools = "2, 3"
 SparseArrays = "<0.0.1, 1"
 StaticArrays = "1"
@@ -37,10 +38,11 @@ Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 IntervalArithmetic = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["IntervalArithmetic", "JLD2", "LinearAlgebra", "RecursiveArrayTools", "SparseArrays", "StaticArrays", "Test", "Aqua"]
+test = ["IntervalArithmetic", "JLD2", "LinearAlgebra", "RecursiveArrayTools", "SparseArrays", "StaticArrays", "Test", "Aqua", "Random"]
