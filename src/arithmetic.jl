@@ -473,6 +473,13 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     end
 end
 
+function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where {T <: TS.NumberNotSeries}
+    @inbounds for i in eachindex(v[k])
+        v[k][i] = -a[k][i]
+    end
+    return nothing
+end
+
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function sum!(v::$T{S}, a::AbstractArray{$T{S}}) where {S <: Number}
@@ -640,6 +647,15 @@ function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
     end
     return nothing
 end
+
+function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
+        {T<:NumberNotSeries}
+    for k in eachindex(c)
+        muladd!(c, a, b, k)
+    end
+    return nothing
+end
+
 # function muladd!(v::Taylor1{T}, a::Taylor1{T}, b::NumberNotSeries, k::Int) where
 #         {T<:NumberNotSeries}
 #     @inbounds v[k] += a[k] * b
@@ -1194,7 +1210,7 @@ end
 
 # @inline
 function div!(c::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
-        {T<:Number}
+        {T<:NumberNotSeries}
     zero!(c, k)
     iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
@@ -1209,6 +1225,34 @@ function div!(c::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
         c[k] += c[i] * b[k-i]
     end
     @inbounds c[k] = -c[k] / b[0]
+    return nothing
+end
+
+function div!(c::Taylor1, a::NumberNotSeries, b::Taylor1)
+    @inbounds for k in eachindex(c)
+        div!(c, a, b, k)
+    end
+    return nothing
+end
+
+@inline function div!(c::Taylor1{Taylor1{T}}, a::NumberNotSeries,
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    zero!(c, k)
+    iszero(a) && !iszero(b) && return nothing
+    # order and coefficient of first factorized term
+    # In this case, since a[k]=0 for k>0, we can simplify to:
+    # ordfact, cdivfact = 0, a/b[0]
+    if k == 0
+        @inbounds div!(c[0], a, b[0])
+        return nothing
+    end
+    @inbounds mul!(c[k], c[0], b[k])
+    @inbounds for i = 1:k-1
+        # c[k] += c[i] * b[k-i]
+        muladd!(c[k], c[i], b[k-i])
+    end
+    # @inbounds c[k] = -c[k]/b[0]
+    @inbounds div_scalar!(c[k], -1, b[0])
     return nothing
 end
 
@@ -1258,26 +1302,6 @@ end
 #     for ord in eachindex(v)
 #         div!(v, a, b, ord)
 #     end
-#     return nothing
-# end
-
-# @inline function div!(c::Taylor1{Taylor1{T}}, a::NumberNotSeries,
-#         b::Taylor1{Taylor1{T}}, k::Int) where {T<:Number}
-#     zero!(c, k)
-#     iszero(a) && !iszero(b) && return nothing
-#     # order and coefficient of first factorized term
-#     # In this case, since a[k]=0 for k>0, we can simplify to:
-#     # ordfact, cdivfact = 0, a/b[0]
-#     if k == 0
-#         @inbounds c[0] = a/b[0]
-#         return nothing
-#     end
-
-#     @inbounds c[k] = c[0] * b[k]
-#     @inbounds for i = 1:k-1
-#         c[k] += c[i] * b[k-i]
-#     end
-#     @inbounds c[k] = -c[k]/b[0]
 #     return nothing
 # end
 
@@ -1381,6 +1405,23 @@ end
     return nothing
 end
 
+@inline function div_scalar!(c::Taylor1{T}, scalar::NumberNotSeries,
+        a::Taylor1{T}, k::Int) where {T <: NumberNotSeries}
+    if k==0
+        @inbounds c[0] = scalar*constant_term(c) / constant_term(a)
+        return nothing
+    end
+
+    aux = c[k] = scalar * c[k]
+    @inbounds zero!(c, k)
+    @inbounds for i = 0:k-1
+        c[k] -= c[i] * a[k-i]
+    end
+    c[k] += aux
+    @inbounds c[k] = c[k] / constant_term(a)
+    return nothing
+end
+
 # NOTE: Here `div!` *accumulates* the result of a[k] / b[k] in c[k] (k > 0)
 @inline function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int)
     if k==0
@@ -1407,6 +1448,14 @@ end
 
 # in-place division c <- scalar*c/a (assumes equal order among TaylorNs)
 function div_scalar!(c::TaylorN, scalar::NumberNotSeries, a::TaylorN)
+    @inbounds for k in eachindex(c)
+        div_scalar!(c, scalar, a, k)
+    end
+    return nothing
+end
+
+# in-place division c <- scalar*c/a (assumes equal order among TaylorNs)
+function div_scalar!(c::Taylor1, scalar::NumberNotSeries, a::Taylor1)
     @inbounds for k in eachindex(c)
         div_scalar!(c, scalar, a, k)
     end
