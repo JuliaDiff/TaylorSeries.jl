@@ -322,7 +322,7 @@ end
 end
 
 @inline function pow!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Taylor1{T}},
-        r::S, k::Int) where {T<:NumberNotSeries, S<:Real}
+        r::S, k::Int) where {T<:NumberNotSeriesN, S<:Real}
     (r == 0) && return one!(c, a, k)
     (r == 1) && return identity!(c, a, k)
     (r == 2) && return sqr!(c, a, aux[k], k)
