@@ -473,7 +473,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     end
 end
 
-function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where {T <: TS.NumberNotSeries}
+function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where {T <: NumberNotSeriesN}
     @inbounds for i in eachindex(v[k])
         v[k][i] = -a[k][i]
     end
@@ -1236,7 +1236,7 @@ function div!(c::Taylor1, a::NumberNotSeries, b::Taylor1)
 end
 
 @inline function div!(c::Taylor1{Taylor1{T}}, a::NumberNotSeries,
-        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
     zero!(c, k)
     iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term

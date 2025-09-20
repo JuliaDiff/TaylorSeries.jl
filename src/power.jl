@@ -321,11 +321,11 @@ end
     return nothing
 end
 
-@inline function pow!(c::Taylor1{T}, a::Taylor1{T}, aux::Taylor1{T},
+@inline function pow!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Taylor1{T}},
         r::S, k::Int) where {T<:NumberNotSeriesN, S<:Real}
     (r == 0) && return one!(c, a, k)
     (r == 1) && return identity!(c, a, k)
-    (r == 2) && return sqr!(c, a, k)
+    (r == 2) && return sqr!(c, a, aux[k], k)
     (r == 0.5) && return sqrt!(c, a, k)
     # Sanity
     zero!(c, k)
@@ -553,7 +553,7 @@ end
     return nothing
 end
 
-@inline function sqr!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+@inline function sqr!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{T},
         k::Int) where {T<:NumberNotSeriesN}
     if k == 0
         sqr_orderzero!(c, a)
@@ -564,7 +564,7 @@ end
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
-    aux = zero(c[k])
+    # aux = zero(c[k])
     @inbounds for i = 0:kend
         for j in eachindex(a[k])
             # c[k] += 2 * a[i] * a[k-i]

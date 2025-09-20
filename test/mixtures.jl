@@ -671,6 +671,21 @@ end
 
             end
         end
+
+        for r in (0, 1, 2, 0.5)
+            local inorder = 6
+            local outorder = 25
+
+            x = Taylor1([Taylor1(rand(inorder+1), inorder) for _ in 1:outorder+1], outorder)
+            y = zero(x)
+            z = zero(x)
+
+            w = x^r
+            for k in eachindex(z)
+                TS.pow!(z, x, y, r, k)
+            end
+            @test norm(z - w, Inf) == 0.0
+        end
     end
 
     # Back to default
