@@ -22,7 +22,7 @@ TaylorSeriesSAExt = "StaticArrays"
 
 [compat]
 Aqua = "0.8"
-IntervalArithmetic = "1"
+IntervalArithmetic = "0.23, 1"
 JLD2 = "0.5"
 LinearAlgebra = "<0.0.1, 1"
 Markdown = "<0.0.1, 1"
