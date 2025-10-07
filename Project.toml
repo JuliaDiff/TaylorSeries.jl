@@ -1,7 +1,7 @@
 name = "TaylorSeries"
 uuid = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
 repo = "https://github.com/JuliaDiff/TaylorSeries.jl.git"
-version = "0.20.7"
+version = "0.20.8"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
