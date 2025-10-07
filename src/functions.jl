@@ -399,7 +399,10 @@ end
         @inbounds c[0] = expm1(constant_term(a))
         return nothing
     end
+    cc = c[0]
+    c[0] += one(c[0])
     exp!(c, a, k)
+    c[0] = cc
     return nothing
 end
 @inline function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -410,7 +413,10 @@ end
         end
         return nothing
     end
+    cc = c[0]
+    c[0] += one(c[0])
     exp!(c, a, k)
+    c[0] = cc
     return nothing
 end
 
