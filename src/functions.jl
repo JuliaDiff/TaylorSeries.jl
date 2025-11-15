@@ -374,21 +374,23 @@ end
         return nothing
     end
     zero!(c[k])
+    tmp = zero(c[k])
     aux = zero(c[k])
     @inbounds for i = 0:k-1
         # c[k] += (k-i) * a[k-i] * c[i]
         for j in eachindex(c[k])
             mul_scalar!(aux, k-i, a[k-i], c[i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
             zero!(aux, j)
         end
     end
     # div!(c, c, k, k)
     for i in eachindex(c[k])
-        identity!(aux, c[k], i)
+        identity!(aux, tmp, i)
     end
     for i in eachindex(c[k])
-        div!(c[k], aux, k, i)
+        div!(tmp, aux, k, i)
+        identity!(c[k], tmp, i)
     end
     return nothing
 end
@@ -453,22 +455,24 @@ end
         return nothing
     end
     zero!(c[k])
+    tmp = zero(c[k])
     aux = zero(c[k])
     @inbounds for i = 1:k-1
         # c[k] += (k-i) * a[i] * c[k-i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, a[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
     for j in eachindex(a[k])
         zero!(aux, j)
-        div!(aux, c[k], k, j)
+        div!(aux, tmp, k, j)
         subst!(aux, a[k], aux, j)
     end
     for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(a), j)
+        div!(tmp, aux, constant_term(a), j)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -509,21 +513,23 @@ end
     end
     zero!(c[k])
     a0 = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i = 1:k-1
         # c[k] += (k-i) * a[i] * c[k-i]
         for j in eachindex(a[k])
             mul_scalar!(a0, k-i, a[i], c[k-i], j)
-            add!(c[k], c[k], a0, j)
+            add!(tmp, tmp, a0, j)
         end
     end
     # @inbounds c[k] = (a[k] - c[k]/k) / a0p1
     for j in eachindex(a[k])
         zero!(a0, j)
-        div!(a0, c[k], k, j)
+        div!(a0, tmp, k, j)
         subst!(a0, a[k], a0, j)
     end
     for j in eachindex(c[k])
-        div!(c[k], a0, a0p1, j)
+        div!(tmp, a0, a0p1, j)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -556,20 +562,24 @@ end
     x = zero(c[k])
     zero!(s[k])
     zero!(c[k])
+    tmps = zero(s[k])
+    tmpc = zero(c[k])
     @inbounds for i = 1:k
         # x = i * a[i]
         # s[k] += x * c[k-i]
         # c[k] -= x * s[k-i]
         for j in eachindex(a[k])
             mul_scalar!(x,  i, a[i], c[k-i], j)
-            add!(s[k], s[k], x, j)
+            add!(tmps, tmps, x, j)
             mul_scalar!(x, -i, a[i], s[k-i], j)
-            add!(c[k], c[k], x, j)
+            add!(tmpc, tmpc, x, j)
         end
     end
     for j in eachindex(a[k])
-        div!(s[k], s[k], k, j)
-        div!(c[k], c[k], k, j)
+        div!(tmps, tmps, k, j)
+        div!(tmpc, tmpc, k, j)
+        identity!(s[k], tmps, j)
+        identity!(c[k], tmpc, j)
     end
     return nothing
 end
@@ -604,20 +614,24 @@ end
     x = zero(c[k])
     zero!(s[k])
     zero!(c[k])
+    tmps = zero(s[k])
+    tmpc = zero(c[k])
     @inbounds for i = 1:k
         # x = i * pi * a[i]
         # s[k] += x * c[k-i]
         # c[k] -= x * s[k-i]
         for j in eachindex(a[k])
             mul_scalar!(x,  i*pi, a[i], c[k-i], j)
-            add!(s[k], s[k], x, j)
+            add!(tmps, tmps, x, j)
             mul_scalar!(x, -i*pi, a[i], s[k-i], j)
-            add!(c[k], c[k], x, j)
+            add!(tmpc, tmpc, x, j)
         end
     end
     for j in eachindex(a[k])
-        div!(s[k], s[k], k, j)
-        div!(c[k], c[k], k, j)
+        div!(tmps, tmps, k, j)
+        div!(tmpc, tmpc, k, j)
+        identity!(s[k], tmps, j)
+        identity!(c[k], tmpc, j)
     end
     return nothing
 end
@@ -652,16 +666,18 @@ end
     end
     zero!(c[k])
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i = 0:k-1
         # c[k] += (k-i) * a[k-i] * c2[i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, a[k-i], c2[i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     for j in eachindex(a[k])
-        div!(c[k], c[k], k, j) # c[k] <- c[k]/k
-        add!(c[k], c[k], a[k], j) # c[k] <- c[k] + a[k]
+        div!(tmp, tmp, k, j) # c[k] <- c[k]/k
+        add!(tmp, tmp, a[k], j) # c[k] <- c[k] + a[k]
+        identity!(c[k], tmp, j)
     end
     sqr!(c2, c, k)
     return nothing
@@ -698,11 +714,12 @@ end
     end
     zero!(c[k])
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
@@ -713,11 +730,12 @@ end
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux, j)
-        div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
+        div!(tmp, tmp, k, j)     # c[k] <- c[k]/k
+        subst!(aux, a[k], tmp, j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(tmp, aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -754,11 +772,12 @@ end
     end
     zero!(c[k])
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
@@ -769,12 +788,13 @@ end
     # @inbounds c[k] = - (a[k] + c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux, j)
-        div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        add!(aux, a[k], c[k], j) # aux <- a[k] + c[k]
+        div!(tmp, tmp, k, j)     # c[k] <- c[k]/k
+        add!(aux, a[k], tmp, j) # aux <- a[k] + c[k]
         subst!(aux, aux, j)
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(tmp, aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -806,22 +826,24 @@ end
     end
     zero!(c[k])
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     @inbounds sqr!(r, a, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     for j in eachindex(a[k])
         zero!(aux, j)
-        div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
+        div!(tmp, tmp, k, j)     # c[k] <- c[k]/k
+        subst!(aux, a[k], tmp, j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(tmp, aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -856,17 +878,21 @@ end
     zero!(s[k])
     zero!(c[k])
     x = zero(a[k])
+    tmps = zero(s[k])
+    tmpc = zero(c[k])
     @inbounds for i = 1:k
         for j in eachindex(a[k])
             mul_scalar!(x, i, a[i], c[k-i], j)
-            add!(s[k], s[k], x, j)
+            add!(tmps, tmps, x, j)
             mul_scalar!(x, i, a[i], s[k-i], j)
-            add!(c[k], c[k], x, j)
+            add!(tmpc, tmpc, x, j)
         end
     end
     for j in eachindex(a[k])
-        div!(s[k], s[k], k, j)
-        div!(c[k], c[k], k, j)
+        div!(tmps, tmps, k, j)
+        div!(tmpc, tmpc, k, j)
+        identity!(s[k], tmps, j)
+        identity!(c[k], tmpc, j)
     end
     return nothing
 end
@@ -897,17 +923,19 @@ end
     end
     zero!(c, k)
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i = 0:k-1
         # c[k] += (k-i) * a[k-i] * c2[i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, a[k-i], c2[i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     # @inbounds c[k] = a[k] - c[k]/k
     for j in eachindex(a[k])
-        div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(c[k], a[k], c[k], j) # c[k] <- a[k] - c[k]
+        div!(tmp, tmp, k, j)     # c[k] <- c[k]/k
+        subst!(tmp, a[k], tmp, j) # c[k] <- a[k] - c[k]
+        identity!(c[k], tmp, j)
     end
     sqr!(c2, c, k)
     return nothing
@@ -940,23 +968,25 @@ end
     end
     zero!(c[k])
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         # mul_scalar!(c[k], k-i, r[i], c[k-i])
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     sqrt!(r, a^2+1, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux, j)
-        div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
+        div!(tmp, tmp, k, j)     # c[k] <- c[k]/k
+        subst!(aux, a[k], tmp, j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(tmp, aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -988,22 +1018,24 @@ end
     end
     zero!(c[k])
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     sqrt!(r, a^2-1, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux, j)
-        div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
+        div!(tmp, tmp, k, j)     # c[k] <- c[k]/k
+        subst!(aux, a[k], tmp, j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(tmp, aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -1035,22 +1067,24 @@ end
     end
     zero!(c, k)
     aux = zero(c[k])
+    tmp = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
             mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            add!(tmp, tmp, aux, j)
         end
     end
     @inbounds sqr!(r, a, k)
     # @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux, j)
-        div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        add!(aux, a[k], c[k], j) # aux <- a[k] + c[k]
+        div!(tmp, tmp, k, j)     # c[k] <- c[k]/k
+        add!(aux, a[k], tmp, j) # aux <- a[k] + c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(tmp, aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -1078,10 +1112,11 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = zero(c[k])
     @inbounds for i = 0:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c[i])
+        mul_scalar!(tmp, k-i, a[k-i], c[i])
     end
-    @inbounds div!(c[k], c[k], k)
+    div!(c[k], tmp, k)
     return nothing
 end
 
@@ -1091,12 +1126,13 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = zero(c[k])
     c0 = c[0]+one(c[0])
-    @inbounds mul_scalar!(c[k], k, a[k], c0)
+    @inbounds mul_scalar!(tmp, k, a[k], c0)
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c[i])
+        mul_scalar!(tmp, k-i, a[k-i], c[i])
     end
-    @inbounds div!(c[k], c[k], k)
+    @inbounds div!(c[k], tmp, k)
     return nothing
 end
 
@@ -1109,10 +1145,11 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[i], c[k-i])
+        mul_scalar!(tmp, k-i, a[i], c[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
+    @inbounds c[k] = (a[k] - tmp/k) / constant_term(a)
     return nothing
 end
 
@@ -1130,10 +1167,14 @@ end
     a0 = constant_term(a)
     a0p1 = a0+one(a0)
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[i], c[k-i])
+        mul_scalar!(tmp, k-i, a[i], c[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / a0p1
+    # @inbounds c[k] = (a[k] - tmp/k) / a0p1
+    for l in eachindex(c[k])
+        @inbounds c[k][l] = (a[k][l] - tmp[l]/k) / a0p1
+    end
     return nothing
 end
 
@@ -1146,12 +1187,16 @@ end
     end
     zero!(s, k)
     zero!(c, k)
+    tmps = s[k]
+    tmpc = c[k]
     @inbounds for i = 1:k
-        mul_scalar!(s[k],  i, a[i], c[k-i])
-        mul_scalar!(c[k], -i, a[i], s[k-i])
+        mul_scalar!(tmps,  i, a[i], c[k-i])
+        mul_scalar!(tmpc, -i, a[i], s[k-i])
     end
-    @inbounds div!(s[k], s[k], k)
-    @inbounds div!(c[k], c[k], k)
+    div!(tmps, tmps, k)
+    div!(tmpc, tmpc, k)
+    s[k] = tmps
+    c[k] = tmpc
     return nothing
 end
 
@@ -1176,11 +1221,13 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = zero(c[k])
     @inbounds for i = 0:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c2[i])
+        mul_scalar!(tmp, k-i, a[k-i], c2[i])
     end
     # c[k] <- c[k]/k
-    div!(c[k], c[k], k)
+    div!(tmp, tmp, k)
+    c[k] = tmp
     # c[k] <- c[k] + a[k]
     add!(c, a, c, k)
     sqr!(c2, c, k)
@@ -1196,8 +1243,9 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        mul_scalar!(tmp, k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
@@ -1205,7 +1253,7 @@ end
     subst!(r, r, k) # r[k] <- -r[k]
     sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
     for l in eachindex(c[k])
-        @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
+        @inbounds c[k][l] = (a[k][l] - tmp[l]/k) / constant_term(r)
     end
     return nothing
 end
@@ -1219,8 +1267,9 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        mul_scalar!(tmp, k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
@@ -1228,7 +1277,7 @@ end
     subst!(r, r, k) # r[k] <- -r[k]
     sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
     for l in eachindex(c[k])
-        @inbounds c[k][l] = -(a[k][l] + c[k][l]/k) / constant_term(r)
+        @inbounds c[k][l] = -(a[k][l] + tmp[l]/k) / constant_term(r)
     end
     return nothing
 end
@@ -1242,12 +1291,13 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        mul_scalar!(tmp, k-i, r[i], c[k-i])
     end
     @inbounds sqr!(r, a, k)
     for l in eachindex(c[k])
-        @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
+        @inbounds c[k][l] = (a[k][l] - tmp[l]/k) / constant_term(r)
     end
     return nothing
 end
@@ -1262,12 +1312,16 @@ end
     x = a[1]
     zero!(s, k)
     zero!(c, k)
+    tmps = s[k]
+    tmpc = c[k]
     @inbounds for i = 1:k
-        mul_scalar!(s[k], i, a[i], c[k-i])
-        mul_scalar!(c[k], i, a[i], s[k-i])
+        mul_scalar!(tmps, i, a[i], c[k-i])
+        mul_scalar!(tmpc, i, a[i], s[k-i])
     end
-    @inbounds div!(s[k], s[k], k)
-    @inbounds div!(c[k], c[k], k)
+    div!(tmps, tmps, k)
+    div!(tmpc, tmpc, k)
+    s[k] = tmps
+    c[k] = tmpc
     return nothing
 end
 
@@ -1280,11 +1334,12 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i = 0:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c2[i])
+        mul_scalar!(tmp, k-i, a[k-i], c2[i])
     end
     @inbounds for l in eachindex(c[k])
-        c[k][l] = a[k][l] - c[k][l]/k
+        c[k][l] = a[k][l] - tmp[l]/k
     end
     sqr!(c2, c, k)
     return nothing
@@ -1299,11 +1354,12 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        mul_scalar!(tmp, k-i, r[i], c[k-i])
     end
     sqrt!(r, a^2+1, k)
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+    @inbounds c[k] = (a[k] - tmp/k) / constant_term(r)
     return nothing
 end
 
@@ -1316,11 +1372,12 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        mul_scalar!(tmp, k-i, r[i], c[k-i])
     end
     sqrt!(r, a^2-1, k)
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+    @inbounds c[k] = (a[k] - tmp/k) / constant_term(r)
     return nothing
 end
 
@@ -1333,11 +1390,12 @@ end
         return nothing
     end
     zero!(c, k)
+    tmp = c[k]
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        mul_scalar!(tmp, k-i, r[i], c[k-i])
     end
     @inbounds sqr!(r, a, k)
-    @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
+    @inbounds c[k] = (a[k] + tmp/k) / constant_term(r)
     return nothing
 end
 
@@ -1389,11 +1447,13 @@ end
     end
     # The recursion formula
     zero!(res[k])
+    tmp = res[k]
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[i], a[k-i], ordQ)
+            mul_scalar!(tmp, k-i, res[i], a[k-i], ordQ)
         end
     end
+    res[k] = tmp
     div!(res, res, k, k)
     return nothing
 end
@@ -1410,20 +1470,22 @@ end
     # The recursion formula
     tmp = TaylorN( zero(a[k][0][1]), a[0].order)
     zero!(res[k])
+    tmp1 = res[k]
     # i=0 term of sum
     @inbounds for ordQ in eachindex(a[0])
         one!(tmp, a[0], ordQ)
         add!(tmp, res[0], tmp, ordQ)
         tmp[ordQ] = k * tmp[ordQ]
         # zero!(res[k], a[0], ordQ)
-        mul!(res[k], a[k], tmp, ordQ)
+        mul!(tmp1, a[k], tmp, ordQ)
     end
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[i][ordQ]
-            mul!(res[k], tmp, a[k-i], ordQ)
+            mul!(tmp1, tmp, a[k-i], ordQ)
         end
     end
+    res[k] = tmp1
     div!(res, res, k, k)
     return nothing
 end
@@ -1446,17 +1508,21 @@ end
     # The recursion formula
     tmp = TaylorN( zero(a[k][0][1]), a[0].order)
     zero!(res[k])
+    tmp1 = res[k]
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, a[i], ordQ)
+            mul!(tmp1, tmp, a[i], ordQ)
         end
     end
+    res[k] = tmp1
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, a[0], ordQ)
+        identity!(tmp1, res[k], ordQ)
+        subst!(tmp, a[k], tmp1, ordQ)
+        zero!(tmp1[ordQ])
+        div!(tmp1, tmp, a[0], ordQ)
+        identity!(res[k], tmp1, ordQ)
     end
     return nothing
 end
@@ -1485,17 +1551,21 @@ end
     end
     # The recursion formula
     tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    tmp2 = res[k]
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, a[i], ordQ)
+            mul!(tmp2, tmp, a[i], ordQ)
         end
     end
+    res[k] = tmp2
     div!(res, res, k, k)
     @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, tmp1, ordQ)
+        identity!(tmp2, res[k], ordQ)
+        subst!(tmp, a[k], tmp2, ordQ)
+        zero!(tmp2[ordQ])
+        div!(tmp2, tmp, tmp1, ordQ)
+        identity!(res[k], tmp2, ordQ)
     end
     return nothing
 end
@@ -1512,11 +1582,15 @@ end
     # x = TaylorN( a[1][0][1], a[0].order )
     zero!(s[k])
     zero!(c[k])
+    tmps = s[k]
+    tmpc = c[k]
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
             # x[ordQ].coeffs .= i .* a[i][ordQ].coeffs
-            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
-            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
+            mul_scalar!(tmps, i, a[i], c[k-i], ordQ)
+            mul_scalar!(tmpc, i, a[i], s[k-i], ordQ)
+            identity!(s[k], tmps, ordQ)
+            identity!(c[k], tmpc, ordQ)
         end
     end
     div!(s, s, k, k)
@@ -1552,14 +1626,16 @@ end
     end
     # The recursion formula
     zero!(res[k])
+    tmp = res[k]
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
+            mul_scalar!(tmp, k-i, res2[i], a[k-i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[0])
-        div!(res[k][ordQ], res[k][ordQ], k)
-        add!(res[k], a[k], res[k], ordQ)
+        div!(tmp[ordQ], tmp[ordQ], k)
+        add!(tmp, a[k], tmp, ordQ)
+        identity!(res[k], tmp, ordQ)
     end
     sqr!(res2, res, k)
     return nothing
@@ -1581,9 +1657,11 @@ end
         end
     end
     @inbounds div!(res, res, k, k)
+    tmp = res[k]
     @inbounds for ordQ in eachindex(a[0])
-        subst!(res[k], a[k], res[k], ordQ)
-        div!(res[k], r[0], ordQ)
+        subst!(tmp, a[k], tmp, ordQ)
+        div!(tmp, r[0], ordQ)
+        identity!(res[k], tmp, ordQ)
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     @inbounds zero!(r, k) # r[k] <- 0
@@ -1609,10 +1687,12 @@ end
         end
     end
     div!(res, res, k, k)
+    tmp = res[k]
     @inbounds for ordQ in eachindex(a[0])
-        add!(res[k], a[k], res[k], ordQ)
-        subst!(res[k], res[k], ordQ)
-        div!(res[k], r[0], ordQ)
+        add!(tmp, a[k], tmp, ordQ)
+        subst!(tmp, tmp, ordQ)
+        div!(tmp, r[0], ordQ)
+        identity!(res[k], tmp, ordQ)
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     @inbounds zero!(r, k) # r[k] <- 0
@@ -1633,18 +1713,20 @@ end
     end
     # The recursion formula
     zero!(res[k])
+    tmp1 = res[k]
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            mul_scalar!(tmp1, k-i, res[k-i], r[i], ordQ)
         end
     end
     tmp = TaylorN( zero(a[0][0][1]), a[0].order )
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = - res[k][ordQ] / k
+        tmp[ordQ] = - tmp1[ordQ] / k
         add!(tmp, a[k], tmp, ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        zero!(tmp1[ordQ])
+        div!(tmp1, tmp, r[0], ordQ)
+        identity!(res[k], tmp1, ordQ)
     end
     zero!(r[k])
     sqr!(r, a, k)
@@ -1662,10 +1744,14 @@ end
     # The recursion formula
     zero!(s[k])
     zero!(c[k])
+    tmps = s[k]
+    tmpc = c[k]
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
-            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
+            mul_scalar!(tmps, i, a[i], c[k-i], ordQ)
+            mul_scalar!(tmpc, i, a[i], s[k-i], ordQ)
+            identity!(s[k], tmps, ordQ)
+            identity!(c[k], tmpc, ordQ)
         end
     end
     div!(s, s, k, k)
@@ -1683,16 +1769,18 @@ end
     end
     # The recursion formula
     zero!(res[k])
+    tmp1 = res[k]
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
+            mul_scalar!(tmp1, k-i, res2[i], a[k-i], ordQ)
         end
     end
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = res[k][ordQ] / k
-        subst!(res[k], a[k], tmp, ordQ)
+        tmp[ordQ] = tmp1[ordQ] / k
+        subst!(tmp1, a[k], tmp, ordQ)
+        identity!(res[k], tmp1, ordQ)
     end
     zero!(res2[k])
     sqr!(res2, res, k)
@@ -1723,10 +1811,12 @@ end
     end
     div!(res, res, k, k)
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    tmp1 = res[k]
     @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        subst!(tmp, a[k], tmp1, ordQ)
+        zero!(tmp1[ordQ])
+        div!(tmp1, tmp, r[0], ordQ)
+        identity!(res[k], tmp1, ordQ)
     end
     # Compute auxiliary term s=1+a^2
     s = Taylor1(zero(a[0]), a.order)
@@ -1766,10 +1856,12 @@ end
     end
     div!(res, res, k, k)
     tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    tmp1 = res[k]
     @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        subst!(tmp, a[k], tmp1, ordQ)
+        zero!(tmp1[ordQ])
+        div!(tmp1, tmp, r[0], ordQ)
+        identity!(res[k], tmp1, ordQ)
     end
     # Compute auxiliary term s=a^2-1
     s = Taylor1(zero(a[0]), a.order)
@@ -1797,17 +1889,19 @@ end
     # The recursion formula
     tmp = TaylorN( zero(a[0][0][1]), a[0].order )
     zero!(res[k])
+    tmp1 = res[k]
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            mul_scalar!(tmp1, k-i, res[k-i], r[i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = res[k][ordQ] / k
+        tmp[ordQ] = tmp1[ordQ] / k
         add!(tmp, a[k], tmp, ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        zero!(tmp1[ordQ])
+        div!(tmp1, tmp, r[0], ordQ)
+        identity!(res[k], tmp1, ordQ)
     end
     zero!(r[k])
     sqr!(r, a, k)
