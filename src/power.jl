@@ -294,11 +294,14 @@ end
     (kprime < 0 || lnull > a.order) && return nothing
     # Relevant for positive integer r, to avoid round-off errors
     isinteger(r) && r > 0 && (ordT > r*findlast(a)) && return nothing
+    tmp = zero(res[ordT])
     if ordT == lnull
         a0 = constant_term(a[l0])
         if isinteger(r) && r > 0
             # pow!(res[ordT], a[l0], aux[0], round(Integer, r), 1)
-            power_by_squaring!(res[ordT], a[l0], aux[0], round(Integer, r))
+            # power_by_squaring!(res[ordT], a[l0], aux[0], round(Integer, r))
+            power_by_squaring!(tmp, a[l0], aux[0], round(Integer, r))
+            res[ordT] = tmp
             return nothing
         end
         iszero(a0) && throw(DomainError(a[l0],
@@ -306,18 +309,22 @@ end
             in order to expand `^` around 0."""))
         # Recursion formula
         for ordQ in eachindex(a[l0])
-            pow!(res[ordT], a[l0], aux[0], r, ordQ)
+            pow!(tmp, a[l0], aux[0], r, ordQ)
+            # pow!(res[ordT], a[l0], aux[0], r, ordQ)
         end
+        res[ordT] = tmp
         return nothing
     end
     # The recursion formula
     for i = 0:ordT-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         aaux = r*(kprime-i) - i
-        @inbounds mul_scalar!(res[ordT], aaux, res[i+lnull], a[l0+kprime-i])
+        # @inbounds mul_scalar!(res[ordT], aaux, res[i+lnull], a[l0+kprime-i])
+        @inbounds mul_scalar!(tmp, aaux, res[i+lnull], a[l0+kprime-i])
     end
     # res[ordT] /= a[l0]*kprime
-    @inbounds div_scalar!(res[ordT], 1/kprime, a[l0])
+    @inbounds div_scalar!(tmp, 1/kprime, a[l0])
+    res[ordT] = tmp
     return nothing
 end
 
@@ -343,31 +350,39 @@ end
     isinteger(r) && r > 0 && (k > r*findlast(a)) && return nothing
     # First non-zero coeff
     if k == lnull
+        tmp = zero(c[k])
         # @inbounds c[k] = (a[l0])^float(r)
         for j in eachindex(a[l0])
-            pow!(c[k], a[l0], aux[0], float(r), j)
+            pow!(tmp, a[l0], aux[0], float(r), j)
+            identity!(c[k], tmp, j)
         end
         return nothing
     end
     # The recursion formula
+    tmp = zero(c[k])
     for i = 0:k-lnull-1
         ((i+lnull) > a.order || (l0+kprime-i > a.order)) && continue
         rr = r*(kprime-i) - i
         # @inbounds c[k] += rr * c[i+lnull] * a[l0+kprime-i]
         @inbounds for j in eachindex(a[l0])
             mul_scalar!(aux[k], rr, c[i+lnull], a[l0+kprime-i], j)
-            add!(c[k], c[k], aux[k], j)
+            # add!(c[k], c[k], aux[k], j)
+            add!(tmp, tmp, aux[k], j)
         end
     end
     # @inbounds c[k] = c[k] / (kprime * a[l0])
     @inbounds for j in eachindex(c[k])
-        identity!(aux[k], c[k], j)
+        # identity!(aux[k], c[k], j)
+        identity!(aux[k], tmp, j)
     end
     @inbounds for j in eachindex(a[l0])
-        div!(c[k], aux[k], a[l0], j)
+        # div!(c[k], aux[k], a[l0], j)
+        div!(tmp, aux[k], a[l0], j)
     end
     @inbounds for j in eachindex(a[l0])
-        div!(c[k], c[k], kprime, j)
+        # div!(c[k], c[k], kprime, j)
+        div!(tmp, tmp, kprime, j)
+        identity!(c[k], tmp, j)
     end
     return nothing
 end
@@ -473,10 +488,14 @@ for T = (:Taylor1, :TaylorN)
             kodd = k%2
             kend = (k - 2 + kodd) >> 1
             if $T == Taylor1
+                tmp = zero(c[k])
                 @inbounds for i = 0:kend
-                    c[k] += a[i] * a[k-i]
+                    # c[k] += a[i] * a[k-i]
+                    tmp += a[i] * a[k-i]
                 end
-                @inbounds c[k] = 2 * c[k]
+                # @inbounds c[k] = 2 * c[k]
+                tmp = 2 * tmp
+                c[k] = tmp
             else
                 @inbounds for i = 0:kend
                     mul!(c[k], a[i], a[k-i])
@@ -485,7 +504,8 @@ for T = (:Taylor1, :TaylorN)
             end
             kodd == 1 && return nothing
             if $T == Taylor1
-                @inbounds c[k] += a[k >> 1]^2
+                @inbounds tmp += a[k >> 1]^2
+                c[k] = tmp
             else
                 accsqr!(c[k], a[k >> 1])
             end
