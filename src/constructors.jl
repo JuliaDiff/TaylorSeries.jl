@@ -108,7 +108,7 @@ HomogeneousPolynomial(coeffs::Array{T,1}, order::Int) where {T<:Number} =
 HomogeneousPolynomial(coeffs::Array{T,1}) where {T<:Number} =
     HomogeneousPolynomial(coeffs, orderH(coeffs))
 HomogeneousPolynomial(x::T, order::Int) where {T<:Number} =
-    HomogeneousPolynomial([x], order)
+    HomogeneousPolynomial(T[x], order)
 
 # Shortcut to define HomogeneousPolynomial independent variable
 """
