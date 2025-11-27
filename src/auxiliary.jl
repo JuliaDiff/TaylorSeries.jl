@@ -18,10 +18,9 @@ function resize_coeffs1!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     lencoef = length(coeffs)
     resize!(coeffs, order+1)
     c1 = coeffs[1]
-    if order > lencoef-1
-        @simd for ord in lencoef+1:order+1
-            @inbounds coeffs[ord] = zero(c1)
-        end
+    order ≤ lencoef-1 && return nothing
+    for ord in lencoef+1:order+1
+        coeffs[ord] = zero(c1)
     end
     return nothing
 end
@@ -83,8 +82,24 @@ getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
     view(a.coeffs, u[:] .+ 1)
 
-setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:Number} = a.coeffs[n+1] = x
-setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} = setindex!(a.coeffs, deepcopy(x), n+1)
+setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
+    a.coeffs[n+1] = x
+# setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} =
+#     setindex!(a.coeffs, deepcopy(x), n+1)
+setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where {T<:NumberNotSeries} =
+    a.coeffs[n+1] = TaylorN(x.coeffs, x.order)
+setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where {T<:NumberNotSeries} =
+    a.coeffs[n+1] = Taylor1(x.coeffs, x.order)
+function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
+        {T<:Taylor1{<:Number}}
+    a.coeffs[n+1] = zero(x)
+    for i in eachindex(x)
+        a.coeffs[n+1].coeffs[i+1] = x.coeffs[i+1]
+    end
+    return a.coeffs[n+1]
+end
+setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where {T<:NumberNotSeries} =
+    a.coeffs[n+1] = Taylor1(x.coeffs[:], x.order)
 setindex!(a::Taylor1{T}, x::T, u::UnitRange{Int}) where {T<:Number} =
     a.coeffs[u .+ 1] .= x
 function setindex!(a::Taylor1{T}, x::Array{T,1}, u::UnitRange{Int}) where {T<:Number}
@@ -283,8 +298,8 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         for ind in eachindex(aa)
             aa[ind].order == bb[ind].order && continue
             minordQ = _minorder(aa[ind], bb[ind])
-            aa[ind] = TaylorN(aa[ind].coeffs, minordQ)
-            bb[ind] = TaylorN(bb[ind].coeffs, minordQ)
+            aa[ind] = $T(aa[ind].coeffs, minordQ)
+            bb[ind] = $T(bb[ind].coeffs, minordQ)
         end
         return aa, bb
     end
