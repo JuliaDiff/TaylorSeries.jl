@@ -192,18 +192,18 @@ end
 
 for T in (:Taylor1, :TaylorN)
     @eval zero(a::$T) = $T(zero(a.coeffs), a.order)
-    @eval function zero(v::Vector{$T{T}}) where {T<:Number}
-        w = similar(v)
-        for i in eachindex(v)
-            w[i] = zero(v[i])
-        end
-        return w
-    end
     @eval function one(a::$T)
         b = zero(a)
         b[0] = one(b[0])
         return b
     end
+end
+function zero(v::Vector{T}) where {T<:AbstractSeries}
+    w = similar(v)
+    for i in eachindex(v)
+        w[i] = zero(v[i])
+    end
+    return w
 end
 
 zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
