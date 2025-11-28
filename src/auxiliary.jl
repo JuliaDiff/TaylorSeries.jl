@@ -84,8 +84,8 @@ getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
 
 setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
     a.coeffs[n+1] = x
-# setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} =
-#     setindex!(a.coeffs, deepcopy(x), n+1)
+setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} =
+    setindex!(a.coeffs, deepcopy(x), n+1)
 setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where {T<:NumberNotSeries} =
     a.coeffs[n+1] = TaylorN(x.coeffs, x.order)
 setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where {T<:NumberNotSeries} =
