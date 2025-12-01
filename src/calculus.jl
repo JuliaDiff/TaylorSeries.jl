@@ -154,10 +154,13 @@ function differentiate(a::HomogeneousPolynomial, r::Int)
     coeffs = zeros(T, num_coeffs)
     @inbounds posTb = pos_table[a.order]
     @inbounds num_coeffs = size_table[a.order+1]
-    ct = deepcopy(coeff_table[a.order+1])
+    ct = zeros(Int, get_numvars(), num_coeffs)
+    for i = 1:num_coeffs
+        ct[:, i] .= coeff_table[a.order+1][i][:]
+    end
     @inbounds for i = 1:num_coeffs
         # iind = @isonethread coeff_table[a.order+1][i]
-        iind = ct[i]
+        iind = view(ct, :, i)
         n = iind[r]
         n == 0 && continue
         iind[r] -= 1
@@ -372,20 +375,20 @@ integration. If the order of a corresponds to `get_order()`, a zero
 """
 function integrate(a::HomogeneousPolynomial, r::Int)
     @assert 1 ≤ r ≤ get_numvars()
-
     order_max = get_order()
     # NOTE: the following returns order 0, but could be get_order(), or get_order(a)
     a.order == order_max && return HomogeneousPolynomial(zero(a[1]/1), 0)
-
     @inbounds posTb = pos_table[a.order+2]
     @inbounds num_coeffs = size_table[a.order+1]
-
     T = promote_type(TS.numtype(a), TS.numtype(a[1]/1))
     coeffs = zeros(T, size_table[a.order+2])
-    ct = deepcopy(coeff_table[a.order+1])
+    ct = zeros(Int, get_numvars(), num_coeffs)
+    for i = 1:num_coeffs
+        ct[:, i] .= coeff_table[a.order+1][i][:]
+    end
     @inbounds for i = 1:num_coeffs
         # iind = @isonethread coeff_table[a.order+1][i]
-        iind = ct[i]
+        iind = view(ct, :, i)
         n = iind[r]
         n == order_max && continue
         iind[r] += 1
@@ -394,7 +397,6 @@ function integrate(a::HomogeneousPolynomial, r::Int)
         coeffs[pos] = a[i] / (n+1)
         iind[r] -= 1
     end
-
     return HomogeneousPolynomial(coeffs, a.order+1)
 end
 integrate(a::HomogeneousPolynomial, s::Symbol) = integrate(a, lookupvar(s))
