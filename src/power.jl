@@ -9,7 +9,7 @@
 
 function ^(a::HomogeneousPolynomial, n::Integer)
     n == 0 && return one(a)
-    n == 1 && return deepcopy(a)
+    n == 1 && return HomogeneousPolynomial(a.coeffs[:], a.order)
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
     return power_by_squaring(a, n)
@@ -19,7 +19,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function ^(a::$T, n::Integer)
         n == 0 && return one(a)
-        n == 1 && return deepcopy(a)
+        n == 1 && return $T(a.coeffs[:], a.order)
         n == 2 && return square(a)
         return _pow(a, n)
     end
@@ -42,7 +42,7 @@ for T in (:Taylor1, :TaylorN)
         r == 1 && return aa
         r == 2 && return square(aa)
         if $T == TaylorN
-            isinteger(r) && r ≥ 0 && return TS.power_by_squaring(a, Integer(r))
+            isinteger(r) && r ≥ 0 && return power_by_squaring(a, Integer(r))
         end
         r == 0.5 && return sqrt(aa)
         if $T == TaylorN
@@ -145,10 +145,10 @@ end
 # power_by_squaring; slightly modified from base/intfuncs.jl
 # Licensed under MIT "Expat"
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    @eval function power_by_squaring(x::$T, p::Integer)
+    @eval function Base.power_by_squaring(x::$T, p::Integer)
         @assert p ≥ 0
         (p == 0) && return one(x)
-        (p == 1) && return deepcopy(x)
+        (p == 1) && return $T(x.coeffs[:], x.order)
         (p == 2) && return square(x)
         (p == 3) && return x*square(x)
         t = trailing_zeros(p) + 1
@@ -172,10 +172,10 @@ end
 # power_by_squaring specializations for non-mixtures of Taylor1 and TaylorN;
 # uses internally mutating method `power_by_squaring!`
 for T in (:Taylor1, :TaylorN)
-    @eval function power_by_squaring(x::$T{T}, p::Integer) where {T<:NumberNotSeries}
+    @eval function Base.power_by_squaring(x::$T{T}, p::Integer) where {T<:NumberNotSeries}
         @assert p ≥ 0
         (p == 0) && return one(x)
-        (p == 1) && return deepcopy(x)
+        (p == 1) && return $T(x.coeffs[:], x.order)
         (p == 2) && return square(x)
         (p == 3) && return x*square(x)
         y = zero(x)

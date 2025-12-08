@@ -2,7 +2,8 @@ module TaylorSeriesIAExt
 
 using TaylorSeries
 
-import Base: ^, sqrt, log, asin, acos, acosh, atanh, iszero, ==
+import Base: ^, sqrt, log, asin, acos, acosh, atanh, iszero, ==,
+        power_by_squaring
 
 import TaylorSeries: _pow, pow!, evaluate, _evaluate, _evaluate!,
         normalize_taylor, aff_normalize
@@ -64,16 +65,16 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         function ^(a::$T{Interval{T}}, n::S) where {T<:NumTypes, S<:Integer}
             n == 0 && return one(a)
-            n == 1 && return deepcopy(a)
+            n == 1 && return $T(a.coeffs[:], a.order)
             n == 2 && return TS.square(a)
             n < 0 && return a^float(n)
-            return Base.power_by_squaring(a, n)
+            return power_by_squaring(a, n)
         end
 
         ^(a::$T{Interval{T}}, r::Rational) where {T<:NumTypes} = a^float(r)
 
         function ^(a::$T{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
-            isinteger(r) && r ≥ 0 && return TS.power_by_squaring(a, Integer(r))
+            isinteger(r) && r ≥ 0 && return power_by_squaring(a, Integer(r))
             a0 = _intersect_domain_nonstd(constant_term(a), interval(zero(T), T(Inf)))
             @assert !isempty_interval(a0)
             aux = one(a0^r)
@@ -92,11 +93,11 @@ for T in (:Taylor1, :TaylorN)
         # _pow
         function _pow(a::$T{Interval{S}}, n::Integer) where {S<:NumTypes}
             n < 0 && return _pow(a, float(n))
-            return TS.power_by_squaring(a, n)
+            return power_by_squaring(a, n)
         end
 
         function _pow(a::$T{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
-            isinteger(r) && r ≥ 0 && return TS.power_by_squaring(a, Integer(r))
+            isinteger(r) && r ≥ 0 && return power_by_squaring(a, Integer(r))
             a0 = _intersect_domain_nonstd(constant_term(a), interval(zero(T), T(Inf)))
             @assert !isempty_interval(a0)
             aux = one(a0^r)
