@@ -72,7 +72,8 @@ end
 """
     getcoeff(a, n)
 
-Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial.
+Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial; the constant
+term corresponds to n=0.
 """
 getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ a.order; return a[n])
 
@@ -80,7 +81,7 @@ getindex(a::Taylor1, n::Int) = a.coeffs[n+1]
 getindex(a::Taylor1, u::UnitRange{Int}) = view(a.coeffs, u .+ 1 )
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
-    view(a.coeffs, u[:] .+ 1)
+    view(a.coeffs, u .+ 1)
 
 setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
     a.coeffs[n+1] = x
@@ -245,7 +246,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @inline eachindex(a::$T) = firstindex(a):lastindex(a)
         @inline numtype(::$T{S}) where {S<:Number} = S
         @inline size(a::$T) = size(a.coeffs)
-        @inline get_order(a::$T) = a.order
+        @inline get_order(a::$T) = size(a.coeffs, 1)-1
         @inline axes(a::$T) = ()
     end
 end
@@ -276,25 +277,25 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         @inline function fixorder(a::$T, b::$T)
-            a.order == b.order && return a, b
+            get_order(a) == get_order(b) && return a, b
             minorder = _minorder(a, b)
-            return $T(copy(a.coeffs), minorder), $T(copy(b.coeffs), minorder)
+            return $T(a.coeffs, minorder), $T(b.coeffs, minorder)
         end
     end
 end
 
 function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-    @assert a.order == b.order
+    @assert get_order(a) == get_order(b)
     return a, b
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function fixorder(a::Taylor1{$T{T}}, b::Taylor1{$T{S}}) where
             {T<:NumberNotSeries, S<:NumberNotSeries}
-        (a.order == b.order) && (all(get_order.(a.coeffs) .== get_order.(b.coeffs))) && return a, b
+        (get_order(a) == get_order(b)) && (all(get_order.(a.coeffs) .== get_order.(b.coeffs))) && return a, b
         minordT = _minorder(a, b)
-        aa = Taylor1(copy(a.coeffs), minordT)
-        bb = Taylor1(copy(b.coeffs), minordT)
+        aa = Taylor1(a.coeffs, minordT)
+        bb = Taylor1(b.coeffs, minordT)
         for ind in eachindex(aa)
             aa[ind].order == bb[ind].order && continue
             minordQ = _minorder(aa[ind], bb[ind])

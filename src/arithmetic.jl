@@ -192,7 +192,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 for T in (:Taylor1, :TaylorN)
-    @eval zero(a::$T) = $T(zero(a[0]), a.order)
+    @eval zero(a::$T) = $T(zero.(a.coeffs))
     @eval function one(a::$T)
         b = zero(a)
         b[0] = one(b[0])

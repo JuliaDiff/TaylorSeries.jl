@@ -16,6 +16,8 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
+using Reexport
+@reexport using FixedSizeArrays
 
 using SparseArrays: SparseMatrixCSC
 using Markdown

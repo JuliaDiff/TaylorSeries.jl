@@ -25,7 +25,7 @@ DataType for polynomial expansions in one independent variable.
 
 **Fields:**
 
-- `coeffs :: Array{T,1}` Expansion coefficients; the ``i``-th
+- `coeffs :: FixedSizeVectorDefault{T}` Expansion coefficients; the ``i``-th
     component is the coefficient of degree ``i-1`` of the expansion.
 - `order  :: Int` Maximum order (degree) of the polynomial.
 
@@ -33,24 +33,40 @@ Note that `Taylor1` variables are callable. For more information, see
 [`evaluate`](@ref).
 """
 struct Taylor1{T<:Number} <: AbstractSeries{T}
-    coeffs :: Array{T,1}
+    coeffs :: FixedSizeVectorDefault{T}
     order :: Int
 
     ## Inner constructor ##
-    function Taylor1{T}(coeffs::Array{T,1}, order::Int) where T<:Number
-        resize_coeffs1!(coeffs, order)
-        return new{T}(coeffs, order)
+    function Taylor1{T}(coeffs::FixedSizeVectorDefault{T}) where {T<:Number}
+        return new{T}(coeffs, size(coeffs,1)-1)
+    end
+    function Taylor1{T}(coeffs::AbstractVector{T}, order::Int) where {T<:Number}
+        v = FixedSizeVectorDefault{T}(undef, order+1)
+        minrange = min(eachindex(v), eachindex(coeffs))
+        for ord in minrange
+            v[ord] = coeffs[ord]
+        end
+        ll = last(minrange)
+        a = rand(eachindex(coeffs), length(ll+1:order+1))
+        for ord in eachindex(a)
+            v[ord+ll] = zero(coeffs[a[ord]])
+        end
+        return new{T}(v, order)
     end
 end
 
 ## Outer constructors ##
 Taylor1(x::Taylor1{T}) where {T<:Number} = x
 Taylor1(coeffs::Array{T,1}, order::Int) where {T<:Number} = Taylor1{T}(coeffs, order)
-Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1(coeffs, length(coeffs)-1)
+Taylor1(coeffs::Array{T,1}) where {T<:Number} = Taylor1{T}(FixedSizeVectorDefault(coeffs))
+Taylor1(coeffs::FixedSizeVectorDefault{T}) where {T<:Number} = Taylor1{T}(coeffs)
+Taylor1(coeffs::FixedSizeVectorDefault{T}, order::Int) where {T<:Number} =
+    Taylor1{T}(coeffs, order)
 function Taylor1(x::T, order::Int) where {T<:Number}
-    v = [zero(x) for _ in 1:order+1]
+    v = FixedSizeVectorDefault{T}(undef, order+1)
+    v .= zero(x)
     v[1] = deepcopy(x)
-    return Taylor1(v, order)
+    return Taylor1(v)
 end
 
 # Methods using 1-d views to create Taylor1's
@@ -73,8 +89,9 @@ julia> Taylor1(Rational{Int}, 4)
  1//1 t + 𝒪(t⁵)
 ```
 """
-Taylor1(::Type{T}, order::Int) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
-Taylor1(order::Int) = Taylor1(Float64, order)
+Taylor1(::Type{T}, order::Int) where {T<:Number} =
+    Taylor1( [zero(T), one(T)], order)
+Taylor1(order::Int) = Taylor1([0.0, 1.0], order)
 
 ######################### HomogeneousPolynomial
 """
