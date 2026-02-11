@@ -95,23 +95,23 @@ end
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test typeof(TS.resize_coeffsHP!(v,2)) == Nothing
+    @test isnothing(TS.resize_coeffsHP!(v,2))
     @test v == [1,2,0]
     @test_throws AssertionError TS.resize_coeffsHP!(v,1)
     hpol_v = HomogeneousPolynomial(v)
     @test findfirst(hpol_v) == 1
     @test findlast(hpol_v) == 2
     hpol_v[3] = 3
-    @test v == [1,2,3]
+    @test hpol_v.coeffs == [1,2,3]
     hpol_v[1:3] = 3
-    @test v == [3,3,3]
+    @test hpol_v.coeffs == [3,3,3]
     hpol_v[1:2:2] = 0
-    @test v == [0,3,3]
+    @test hpol_v.coeffs == [0,3,3]
     @test findfirst(hpol_v) == 2
     @test findlast(hpol_v) == 3
     hpol_v[1:1:2] = [1,2]
     @test all(hpol_v[1:1:2] .== [1,2])
-    @test v == [1,2,3]
+    @test hpol_v.coeffs == [1,2,3]
     hpol_v[:] = zeros(Int, 3)
     @test hpol_v == 0
     @test findfirst(hpol_v) == -1
@@ -717,7 +717,7 @@ end
     @test_throws DomainError log(x)
     @test_throws DomainError log1p(-2+x)
     @test_throws AssertionError cos(x)/sin(y)
-    @test_throws BoundsError xH[20]
+    @test_throws BoundsErrorLight xH[20]
     @test_throws BoundsError xT[20]
 
     a = 3x + 4y +6x^2 + 8x*y

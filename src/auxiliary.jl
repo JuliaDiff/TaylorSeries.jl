@@ -44,9 +44,26 @@ function resize_coeffsHP!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     end
     return nothing
 end
+#
+function resize_coeffsHP(coeffs::FixedSizeVectorDefault{T},
+        order::Int) where {T<:Number}
+    lencoef = length( coeffs )
+    @inbounds num_coeffs = size_table[order+1]
+    @assert order ≤ get_order() && lencoef ≤ num_coeffs
+    num_coeffs == lencoef && return coeffs
+    v = FixedSizeVectorDefault{T}(undef, num_coeffs)
+    for ord in eachindex(coeffs)
+        v[ord] = coeffs[ord]
+    end
+    zc1 = zero(coeffs[1])
+    @simd for ord in lencoef+1:num_coeffs
+        @inbounds coeffs[ord] = zc1
+    end
+    return v
+end
 
 ## Minimum order of an HomogeneousPolynomial compatible with the vector's length
-function orderH(coeffs::Array{T,1}) where {T<:Number}
+function orderH(coeffs::AbstractArray{T,1}) where {T<:Number}
     ord = 0
     ll = length(coeffs)
     for i = 1:get_order()+1

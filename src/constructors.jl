@@ -108,19 +108,25 @@ Note that `HomogeneousPolynomial` variables are callable. For more information,
 see [`evaluate`](@ref).
 """
 struct HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
-    coeffs  :: Array{T,1}
-    order   :: Int
-
-    function HomogeneousPolynomial{T}(coeffs::Array{T,1}, order::Int) where T<:Number
+        coeffs  :: FixedSizeVectorDefault{T}
+        order   :: Int
+    ## Inner constructor ##
+    function HomogeneousPolynomial{T}(coeffs::Array{T,1}, order::Int) where {T<:Number}
         resize_coeffsHP!(coeffs, order)
-        return new{T}(coeffs, order)
+        return new{T}(FixedSizeVectorDefault(coeffs), order)
+    end
+    function HomogeneousPolynomial{T}(coeffs::FixedSizeVectorDefault{T},
+            order::Int) where {T<:Number}
+        length(coeffs) == size_table[order+1] && return new{T}(coeffs, order)
+        v = resize_coeffsHP(coeffs, order)
+        return new{T}(v, order)
     end
 end
 
 HomogeneousPolynomial(x::HomogeneousPolynomial{T}) where {T<:Number} = x
-HomogeneousPolynomial(coeffs::Array{T,1}, order::Int) where {T<:Number} =
+HomogeneousPolynomial(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number} =
     HomogeneousPolynomial{T}(coeffs, order)
-HomogeneousPolynomial(coeffs::Array{T,1}) where {T<:Number} =
+HomogeneousPolynomial(coeffs::AbstractArray{T,1}) where {T<:Number} =
     HomogeneousPolynomial(coeffs, orderH(coeffs))
 HomogeneousPolynomial(x::T, order::Int) where {T<:Number} =
     HomogeneousPolynomial([x], order)
@@ -142,8 +148,11 @@ julia> HomogeneousPolynomial(Rational{Int}, 2)
 """
 function HomogeneousPolynomial(::Type{T}, nv::Int) where {T<:Number}
     @assert 0 < nv ≤ get_numvars()
-    v = zeros(T, get_numvars())
-    @inbounds v[nv] = one(T)
+    v = FixedSizeVectorDefault{T}(undef, get_numvars())
+    for ind in eachindex(v)
+        v[ind] = zero(T)
+    end
+    v[nv] = one(T)
     return HomogeneousPolynomial(v, 1)
 end
 HomogeneousPolynomial(nv::Int) = HomogeneousPolynomial(Float64, nv)
