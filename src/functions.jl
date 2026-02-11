@@ -11,7 +11,7 @@
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function exp(a::$T)
-            order = a.order
+            order = get_order(a)
             aux = exp(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
             c = $T( aux, order )
@@ -22,7 +22,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function expm1(a::$T)
-            order = a.order
+            order = get_order(a)
             aux = expm1(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
             c = $T( aux, order )
@@ -35,7 +35,7 @@ for T in (:Taylor1, :TaylorN)
         function log(a::$T)
             iszero(constant_term(a)) && throw(DomainError(a,
                 """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
-            order = a.order
+            order = get_order(a)
             aux = log(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
             c = $T( aux, order )
@@ -48,7 +48,7 @@ for T in (:Taylor1, :TaylorN)
         function log1p(a::$T)
             # constant_term(a) < -one(constant_term(a)) && throw(DomainError(a,
             #         """The 0-th order coefficient must be larger than -1 in order to expand `log1`."""))
-            order = a.order
+            order = get_order(a)
             aux = log1p(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -62,7 +62,7 @@ for T in (:Taylor1, :TaylorN)
         sin(a::$T) = sincos(a)[1]
         cos(a::$T) = sincos(a)[2]
         function sincos(a::$T)
-            order = a.order
+            order = get_order(a)
             aux, auxc = sincos(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -77,7 +77,7 @@ for T in (:Taylor1, :TaylorN)
         sinpi(a::$T) = sincospi(a)[1]
         cospi(a::$T) = sincospi(a)[2]
         function sincospi(a::$T)
-            order = a.order
+            order = get_order(a)
             aux, auxc = sincospi(constant_term(a))
             aa = one(aux) * a
             # aa = convert($T{typeof(aux)}, a)
@@ -90,7 +90,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function tan(a::$T)
-            order = a.order
+            order = get_order(a)
             aux = tan(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -106,7 +106,7 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(DomainError(a,
                 """Series expansion of asin(x) diverges at x = ±1."""))
-            order = a.order
+            order = get_order(a)
             aux = asin(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -122,7 +122,7 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(DomainError(a,
                 """Series expansion of asin(x) diverges at x = ±1."""))
-            order = a.order
+            order = get_order(a)
             aux = acos(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -135,7 +135,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function atan(a::$T)
-            order = a.order
+            order = get_order(a)
             a0 = constant_term(a)
             aux = atan(a0)
             # aa = one(aux) * a
@@ -159,7 +159,7 @@ for T in (:Taylor1, :TaylorN)
         sinh(a::$T) = sinhcosh(a)[1]
         cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)
-            order = a.order
+            order = get_order(a)
             aux = sinh(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -172,7 +172,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function tanh(a::$T)
-            order = a.order
+            order = get_order(a)
             aux = tanh( constant_term(a) )
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -186,7 +186,7 @@ for T in (:Taylor1, :TaylorN)
 
 
         function asinh(a::$T)
-            order = a.order
+            order = get_order(a)
             a0 = constant_term(a)
             aux = asinh(a0)
             # aa = one(aux) * a
@@ -205,7 +205,7 @@ for T in (:Taylor1, :TaylorN)
             a0 = constant_term(a)
             a0^2 == one(a0) && throw(DomainError(a,
                 """Series expansion of acosh(x) diverges at x = ±1."""))
-            order = a.order
+            order = get_order(a)
             aux = acosh(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
@@ -218,7 +218,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function atanh(a::$T)
-            order = a.order
+            order = get_order(a)
             a0 = constant_term(a)
             aux = atanh(a0)
             # aa = one(aux) * a
@@ -1408,7 +1408,7 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    tmp = TaylorN( zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     # i=0 term of sum
     @inbounds for ordQ in eachindex(a[0])
@@ -1444,7 +1444,7 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    tmp = TaylorN( zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
@@ -1470,7 +1470,7 @@ end
         end
         return nothing
     end
-    tmp1 = TaylorN( zero(a[k][0][1]), a[0].order)
+    tmp1 = TaylorN( zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     @inbounds for ordQ in eachindex(a[0])
         # zero!(res[k], a[0], ordQ)
@@ -1484,7 +1484,7 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[k][0][1]), a[0].order)
+    tmp = TaylorN( zero(a[k][0][1]), get_order(a[0]))
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -1509,7 +1509,7 @@ end
         return nothing
     end
     # The recursion formula
-    # x = TaylorN( a[1][0][1], a[0].order )
+    # x = TaylorN( a[1][0][1], get_order(a[0]) )
     zero!(s[k])
     zero!(c[k])
     @inbounds for i = 1:k
@@ -1534,7 +1534,7 @@ end
         return nothing
     end
     # aa = pi * a
-    aa = Taylor1(zero(a[0]), a.order)
+    aa = Taylor1(zero(a[0]), get_order(a))
     @inbounds for ordT in eachindex(a)
         mul!(aa, pi, a, ordT)
     end
@@ -1638,7 +1638,7 @@ end
             mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order )
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
         tmp[ordQ] = - res[k][ordQ] / k
@@ -1688,7 +1688,7 @@ end
             mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
         tmp[ordQ] = res[k][ordQ] / k
@@ -1704,7 +1704,7 @@ end
     if k == 0
         @inbounds res[0] = asinh( a[0] )
         # r[0] = sqrt(1+a[0]^2)
-        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+        tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
         r[0] = square(a[0])
         for ordQ in eachindex(a[0])
             one!(tmp, a[0], ordQ)
@@ -1722,14 +1722,14 @@ end
         end
     end
     div!(res, res, k, k)
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Compute auxiliary term s=1+a^2
-    s = Taylor1(zero(a[0]), a.order)
+    s = Taylor1(zero(a[0]), get_order(a))
     for i = 0:k
         sqr!(s, a, i)
         if i == 0
@@ -1747,7 +1747,7 @@ end
     if k == 0
         @inbounds res[0] = acosh( a[0] )
         # r[0] = sqrt(a[0]^2-1)
-        tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+        tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
         r[0] = square(a[0])
         for ordQ in eachindex(a[0])
             one!(tmp, a[0], ordQ)
@@ -1765,14 +1765,14 @@ end
         end
     end
     div!(res, res, k, k)
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order)
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Compute auxiliary term s=a^2-1
-    s = Taylor1(zero(a[0]), a.order)
+    s = Taylor1(zero(a[0]), get_order(a))
     for i = 0:k
         sqr!(s, a, i)
         if i == 0
@@ -1795,7 +1795,7 @@ end
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), a[0].order )
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
@@ -1820,7 +1820,7 @@ end
 @doc doc"""
     inverse(f)
 
-Return the Taylor expansion of ``f^{-1}(t)``, of order `N = f.order`,
+Return the Taylor expansion of ``f^{-1}(t)``, of order `N = get_order(f)`,
 for `f::Taylor1` polynomial, assuming the first coefficient of `f` is zero.
 Otherwise, a `DomainError` is thrown.
 
@@ -1843,12 +1843,12 @@ function inverse(f::Taylor1{T}) where {T<:Number}
         a Taylor1 series with constant coefficient 0 and re-expand about f(0).
         """))
     end
-    z = Taylor1(T, f.order)
+    z = Taylor1(T, get_order(f))
     zdivf = z/f
     zdivfpown = zdivf
-    res = Taylor1(zero(TS.numtype(zdivf)), f.order)
+    res = Taylor1(zero(TS.numtype(zdivf)), get_order(f))
 
-    @inbounds for ord in 1:f.order
+    @inbounds for ord in 1:get_order(f)
         res[ord] = zdivfpown[ord-1]/ord
         zdivfpown *= zdivf
     end
@@ -1859,7 +1859,7 @@ end
 @doc doc"""
     inverse_map(f)
 
-Return the Taylor expansion of ``f^{-1}(t)``, of order `N = f.order`,
+Return the Taylor expansion of ``f^{-1}(t)``, of order `N = get_order(f)`,
 for `Taylor1` or `TaylorN` polynomials, assuming the first coefficient of `f` is zero.
 Otherwise, a `DomainError` is thrown.
 
@@ -1878,11 +1878,11 @@ function inverse_map(p::Taylor1)
     end
     inv_m_pol = inv(linear_polynomial(p)[1])
     n_pol = inv_m_pol * nonlinear_polynomial(p)
-    scaled_ident = inv_m_pol * Taylor1(p.order)
+    scaled_ident = inv_m_pol * Taylor1(get_order(p))
     res = scaled_ident
     aux1 = zero(res)
     aux2 = zero(res)
-    for ord in 1:p.order
+    for ord in 1:get_order(p)
         _horner!(aux2, n_pol, res, aux1)
         subst!(res, scaled_ident, aux2, ord)
     end

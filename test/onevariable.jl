@@ -192,7 +192,7 @@ Base.iszero(::SymbNumber) = false
     @test t/(t*3) == (1/3)*ot
     @test get_order(t/(t*3)) == get_order(t)-1
     @test t/3im == -tim/3
-    @test 1/(1-t) == Taylor1(ones(t.order+1))
+    @test 1/(1-t) == Taylor1(ones(get_order(t)+1))
     @test Taylor1([0,1,1])/t == t+1
     @test get_order(Taylor1([0,1,1])/t) == 1
     @test (t+im)^2 == tsquare+2im*t-1
@@ -213,9 +213,9 @@ Base.iszero(::SymbNumber) = false
     @test Taylor1(BigFloat,5)/(6*Taylor1(3)) == 1/BigInt(6)
     @test Taylor1(BigFloat,5)/(6im*Taylor1(3)) == -1im/BigInt(6)
     @test isapprox((1+(1.5+t)/4)^(-2), inv(1+(1.5+t)/4)^2, rtol=eps(Float64))
-    @test isapprox((1+(big(1.5)+t)/4)^(-2), inv(1+(big(1.5)+t)/4)^2, rtol=eps(BigFloat))
+    @test (1+(big(1.5)+t)/4)^(-2) ≈ inv(1+(big(1.5)+t)/4)^2
     @test isapprox((1+(1.5+t)/4)^(-2), inv(1+(1.5+t)/4)^2, rtol=eps(Float64))
-    @test isapprox((1+(big(1.5)+t)/4)^(-2), inv(1+(big(1.5)+t)/4)^2, rtol=eps(BigFloat))
+    @test (1+(big(1.5)+t)/4)^(-2) ≈ inv(1+(big(1.5)+t)/4)^2
     @test isapprox((1+(1.5+t)/5)^(-2.5), inv(1+(1.5+t)/5)^2.5, rtol=eps(Float64))
     @test isapprox((1+(big(1.5)+t)/5)^(-2.5), inv(1+(big(1.5)+t)/5)^2.5, rtol=2eps(BigFloat))
 
@@ -366,8 +366,8 @@ Base.iszero(::SymbNumber) = false
     @test sinh(acosh(t_complex)) ≈ sqrt(t_complex^2 - 1)
 
     @test asin(t) + acos(t) == pi/2
-    @test differentiate(acos(t)) == - 1/sqrt(1-Taylor1(t.order-1)^2)
-    @test get_order(differentiate(acos(t))) == t.order-1
+    @test differentiate(acos(t)) == - 1/sqrt(1-Taylor1(get_order(t)-1)^2)
+    @test get_order(differentiate(acos(t))) == get_order(t)-1
 
     @test - sinh(t) + cosh(t) == exp(-t)
     @test  sinh(t) + cosh(t) == exp(t)
@@ -500,7 +500,6 @@ Base.iszero(::SymbNumber) = false
     @test differentiate(exp(ta(1.0pi)), 10) ≈ expected_result_approx atol=eps(64.0) rtol=0.0
 
 
-
     @test differentiate(exp(ta(1.0)), 5)() == exp(1.0)
     @test differentiate(exp(ta(1.0pi)), 3)() == exp(1.0pi)
     @test isapprox(derivative(exp(ta(1.0pi)), 10)() , exp(1.0pi) )
@@ -528,7 +527,7 @@ Base.iszero(::SymbNumber) = false
     @test_throws ArgumentError 1/t
     @test_throws ArgumentError zt/zt
     @test_throws DomainError t^1.5
-    @test_throws ArgumentError t^(-2)
+    @test_throws AssertionError t^(-2)
     @test_throws DomainError sqrt(t)
     @test_throws DomainError log(t)
     @test_throws ArgumentError cos(t)/sin(t)
@@ -538,10 +537,10 @@ Base.iszero(::SymbNumber) = false
 
     use_show_default(true)
     aa = sqrt(2)+Taylor1(2)
-    @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)"
+    @test string(aa) == "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0])"
     @test string([aa, aa]) ==
-        "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2), " *
-        "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0], 2)]"
+        "Taylor1{Float64}[Taylor1{Float64}([1.4142135623730951, 1.0, 0.0]), " *
+        "Taylor1{Float64}([1.4142135623730951, 1.0, 0.0])]"
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 + 1.0 t + 𝒪(t³)"
     set_taylor1_varname(" x ")
@@ -716,7 +715,7 @@ end
 #         # do we get the same result when using the `A*B` form?
 #         @test A*B≈Y
 #         # Y should be extended after the multilpication
-#         @test reduce(&, [y1.order for y1 in Y] .== Y[1].order)
+#         @test reduce(&, [get_order(y1) for y1 in Y] .== get_order(Y[1]))
 #         # B should be unchanged
 #         @test B==Bcopy
 

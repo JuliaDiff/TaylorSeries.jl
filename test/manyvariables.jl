@@ -59,8 +59,8 @@ end
     @test get_order() == 6
     @test get_numvars() == 2
 
-    @test get_variables()[1].order == get_order()
-    @test get_variables(2)[1].order == 2
+    @test get_order(get_variables()[1]) == get_order()
+    @test get_order(get_variables(2)[1]) == 2
     @test get_variables(3)[1] == TaylorN(1, order=3)
     @test get_variables(Int, 3)[1] == TaylorN(Int, 1, order=3)
     @test length(get_variables()) == get_numvars()
@@ -79,7 +79,7 @@ end
     @test iterate(y, 1) == (HomogeneousPolynomial([0.0, 1.0], 1), 2)
     @test isnothing(iterate(x, 7))
 
-    @test x.order == 6
+    @test get_order(x) == 6
     @test TS.name_taylorNvar(1) == " x"
     @test TS._params_TaylorN_.variable_names == ["x","y"]
     @test TS._params_TaylorN_.variable_symbols == [:x, :y]
@@ -397,7 +397,7 @@ end
     pol = sin(xT+yT*xT)+yT^2-(1-xT)^3
     q = deepcopy(pol)
     q[:] = 0.0
-    @test get_order.(q[:]) == collect(0:q.order)
+    @test get_order.(q[:]) == collect(0:get_order(q))
     @test q[:] == zero(q[:])
     q[:] .= pol.coeffs
     @test q == pol
@@ -418,21 +418,21 @@ end
     @test q[1] == pol[1]
     @test q[end] == pol[end]
     q[:] .= pol.coeffs
-    zHall = zeros(HomogeneousPolynomial{Float64}, q.order)
+    zHall = zeros(HomogeneousPolynomial{Float64}, get_order(q))
     q[:] .= zHall
     @test q[:] == zHall
     q[:] .= pol.coeffs
     q[1:end-1] .= zHall[2:end-1]
     @test q[1:end-1] == zHall[2:end-1]
     q[:] .= pol.coeffs
-    @test q[:] != zeros(q.order+1)
-    q[:] .= zeros(q.order+1)
-    @test q[:] == zeros(q.order+1)
+    @test q[:] != zeros(get_order(q)+1)
+    q[:] .= zeros(get_order(q)+1)
+    @test q[:] == zeros(get_order(q)+1)
     q[:] .= pol.coeffs
-    q[1:end-1] .= zeros(q.order+1)[2:end-1]
+    q[1:end-1] .= zeros(get_order(q)+1)[2:end-1]
     @test q != pol
     @test all(q[1:1:end-1] .== 0.0)
-    @test q[1:end-1] == zeros(q.order+1)[2:end-1]
+    @test q[1:end-1] == zeros(get_order(q)+1)[2:end-1]
     @test q[0] == pol[0]
     @test q[end] == pol[end]
     q[:] .= pol.coeffs
