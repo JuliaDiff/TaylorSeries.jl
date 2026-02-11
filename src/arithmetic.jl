@@ -211,8 +211,9 @@ zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(zero(a.coeffs), get_order(a))
 
 function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 && return [HomogeneousPolynomial([zero(a[1])], 0)]
-    v = Vector{HomogeneousPolynomial{T}}(undef, order+1)
+    order == 0 &&
+        return FixedSizeVectorDefault([HomogeneousPolynomial([zero(a[1])], 0)])
+    v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
     z = zero(a[1])
     @simd for ord in eachindex(v)
         @inbounds v[ord] = HomogeneousPolynomial(z, ord-1)

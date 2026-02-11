@@ -23,7 +23,6 @@ setdisplay(:full)
 
     ti = Taylor1(Interval{Float64}, 10)
     x, y = set_variables(Interval{Float64}, "x y", order=6)
-    @show(get_order(y))
 
     @test eltype(ti) == Taylor1{Interval{Float64}}
     @test eltype(x) == TaylorN{Interval{Float64}}

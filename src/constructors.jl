@@ -176,33 +176,36 @@ Note that `TaylorN` variables are callable. For more information, see
 [`evaluate`](@ref).
 """
 struct TaylorN{T<:Number} <: AbstractSeries{T}
-    coeffs  :: Array{HomogeneousPolynomial{T},1}
-    order   :: Int
-
-    function TaylorN{T}(v::Array{HomogeneousPolynomial{T},1}, order::Int) where T<:Number
-        coeffs = isempty(v) ? zeros(HomogeneousPolynomial{T}, order) : zeros(v[1], order)
+        coeffs  :: FixedSizeVectorDefault{HomogeneousPolynomial{T}}
+        order   :: Int
+    ## Inner constructor ##
+    function TaylorN{T}(
+            v::AbstractArray{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number}
+        coeffs = isempty(v) ? zeros(HomogeneousPolynomial{T}, order) :
+            zeros(v[1], order)
         @inbounds for i in eachindex(v)
             ord = get_order(v[i])
-            if ord ≤ order
-                coeffs[ord+1] += v[i]
-            end
+            ord > order && continue
+            coeffs[ord+1] += v[i]
         end
-        new{T}(coeffs, order)
+        return new{T}(coeffs, order)
     end
 end
 
 TaylorN(x::TaylorN{T}) where {T<:Number} = x
-function TaylorN(x::Array{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number}
+function TaylorN(x::AbstractArray{HomogeneousPolynomial{T},1},
+        order::Int) where {T<:Number}
     if order == 0
         order = maxorderH(x)
     end
     return TaylorN{T}(x, order)
 end
-TaylorN(x::Array{HomogeneousPolynomial{T},1}) where {T<:Number} =
+TaylorN(x::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
     TaylorN(x, maxorderH(x))
 TaylorN(x::HomogeneousPolynomial{T}, order::Int) where {T<:Number} =
     TaylorN( [x], order )
-TaylorN(x::HomogeneousPolynomial{T}) where {T<:Number} = TaylorN(x, get_order(x))
+TaylorN(x::HomogeneousPolynomial{T}) where {T<:Number} =
+    TaylorN(x, get_order(x))
 TaylorN(x::T, order::Int) where {T<:Number} =
     TaylorN(HomogeneousPolynomial([x], 0), order)
 

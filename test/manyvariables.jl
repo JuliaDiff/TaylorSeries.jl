@@ -718,7 +718,7 @@ end
     @test_throws DomainError log1p(-2+x)
     @test_throws AssertionError cos(x)/sin(y)
     @test_throws BoundsErrorLight xH[20]
-    @test_throws BoundsError xT[20]
+    @test_throws BoundsErrorLight xT[20]
 
     a = 3x + 4y +6x^2 + 8x*y
     @test typeof( norm(x) ) == Float64
