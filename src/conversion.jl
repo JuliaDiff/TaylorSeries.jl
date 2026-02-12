@@ -70,7 +70,7 @@ convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) where {T<:Numb
     TaylorN( convert(Array{HomogeneousPolynomial{T},1}, b), maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::S)  where {T<:Number,S<:Number} =
-    TaylorN( [HomogeneousPolynomial([convert(T, b)], 0)], get_order())
+     TaylorN( [HomogeneousPolynomial([convert(T, b)], 0)], 0) # get_order()
 
 convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) where {T<:Number} =
     TaylorN( [b], get_order(b))
@@ -79,9 +79,9 @@ convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) where {T<:Numb
     TaylorN( b, maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::T) where {T<:Number} =
-    TaylorN( [HomogeneousPolynomial([b], 0)], get_order())
+    TaylorN( [HomogeneousPolynomial([b], 0)], 0) # get_order()
 
-convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], get_order())
+convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 0) # get_order()
 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}

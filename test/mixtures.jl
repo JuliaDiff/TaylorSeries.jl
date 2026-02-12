@@ -16,6 +16,7 @@ using Test
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
     @test findfirst(tN) == 1
+    @test findfirst(zero(tN)) == -1
 
     @test convert(eltype(tN), tN) == tN
     @test eltype(xH) == HomogeneousPolynomial{Int}

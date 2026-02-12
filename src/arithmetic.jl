@@ -42,7 +42,7 @@ for T in (:Taylor1, :TaylorN)
             a0 != b && return isless(a0, b)
             nz = findfirst(a-b)
             if nz == -1
-                return isless(zero(a0), zero(b))
+                return isless(a0, b)
             else
                 return isless(a[nz], zero(b))
             end
@@ -52,7 +52,7 @@ for T in (:Taylor1, :TaylorN)
             a0 != b && return isless(b, a0)
             nz = findfirst(b-a)
             if nz == -1
-                return isless(zero(b), zero(a0))
+                return isless(b, a0)
             else
                 return isless(zero(b), a[nz])
             end
@@ -88,24 +88,16 @@ _zero_abstractfloat(a::Taylor1{T}) where {T<:Taylor1} =
 
 
 @inline function isless(a::HomogeneousPolynomial{<:Number}, b::Real)
-    orda = get_order(a)
-    if orda == 0
-        return isless(a[1], b)
-    else
-        !iszero(b) && return isless(zero(a[1]), b)
-        nz = max(findfirst(a), 1)
-        return isless(a[nz], b)
-    end
+    get_order(a) == 0 && return isless(a[1], b)
+    !iszero(b) && return isless(zero(a[1]), b)
+    nz = max(findfirst(a), 1)
+    return isless(a[nz], b)
 end
 @inline function isless(b::Real, a::HomogeneousPolynomial{<:Number})
-    orda = get_order(a)
-    if orda == 0
-        return isless(b, a[1])
-    else
-        !iszero(b) && return isless(b, zero(a[1]))
-        nz = max(findfirst(a),1)
-        return isless(b, a[nz])
-    end
+    get_order(a) == 0 && return isless(b, a[1])
+    !iszero(b) && return isless(b, zero(a[1]))
+    nz = max(findfirst(a),1)
+    return isless(b, a[nz])
 end
 
 @inline isless(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where
@@ -199,16 +191,10 @@ for T in (:Taylor1, :TaylorN)
         return b
     end
 end
-function zero(v::Vector{T}) where {T<:AbstractSeries}
-    w = Vector{T}(undef, length(v))
-    for i in eachindex(v)
-        w[i] = zero(v[i])
-    end
-    return w
-end
+zero(v::Vector{T}) where {T<:AbstractSeries} = zero.(v)
 
 zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
-    HomogeneousPolynomial(zero(a.coeffs), get_order(a))
+    HomogeneousPolynomial(zero.(a.coeffs), get_order(a))
 
 function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     order == 0 &&
@@ -545,7 +531,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($fc)(v::Taylor1{TaylorN{T}}, a::NumberNotSeries,
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
             @inbounds for i in eachindex(v[k])
-                aaa = (k == 0 && i == 0) ? a : zero(a)
+                aaa = ifelse(k == 0 && i == 0, a, zero(a))
                 for j in eachindex(v[k][i])
                     v[k][i][j] = ($f)(aaa, b[k][i][j])
                 end
@@ -555,7 +541,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($fc)(v::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
                 a::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
             @inbounds for i in eachindex(v[k])
-                aaa = (k == 0 && i == 0) ? a : zero(a)
+                aaa = ifelse(k == 0 && i == 0, a, zero(a))
                 for j in eachindex(v[k][i])
                     v[k][i][j] = ($f)(b[k][i][j], aaa)
                 end

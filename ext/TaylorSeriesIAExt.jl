@@ -66,7 +66,7 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         function ^(a::$T{Interval{T}}, n::S) where {T<:NumTypes, S<:Integer}
             n == 0 && return one(a)
-            n == 1 && return a #$T(a.coeffs)
+            n == 1 && return $T(a.coeffs[:])
             n == 2 && return TS.square(a)
             n < 0 && return a^float(n)
             return power_by_squaring(a, n)

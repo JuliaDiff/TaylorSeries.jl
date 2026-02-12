@@ -168,7 +168,7 @@ setdisplay(:full)
     aa = sqrt(sqrt(interval(0.0, 1.e-15) + ti))
     @test aa^0 == one(aa)
     @test aa^1 == aa
-    @test_broken !(aa^1 === aa)
+    @test !(aa^1 === aa)
     @test aa == sqrt(sqrt(interval(-1.e-15, 1.e-15) + ti))
     bb = (interval(0.0, 1.e-15) + ti)^(1/4)
     @test bb == (interval(-1.e-15, 1.e-15) + ti)^(1/4)
@@ -178,7 +178,6 @@ setdisplay(:full)
     @test_throws DomainError x^(1/4)
     @test sqrt(interval(-1,1)+x) == sqrt(interval(0,1)+x)
     @test (interval(-1,1)+x)^(1/4) == (interval(0,1)+x)^(1/4)
-    @show(y)
     @test (one(y)+y)^-1 == one(y) - y + y^2 - y^3 + y^4 - y^5 + y^6
 
     #
