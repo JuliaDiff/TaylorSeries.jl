@@ -171,7 +171,7 @@ function set_variables(::Type{R}, names::Vector{T}; order=get_order()) where
     end
 
     # return a list of the new variables
-    TaylorN{R}[TaylorN(R,i) for i in 1:get_numvars()]
+    return TaylorN.(R, 1:get_numvars())
 end
 set_variables(::Type{R}, symbs::Vector{T}; order=get_order()) where
     {R,T<:Symbol} = set_variables(R, string.(symbs), order=order)
@@ -188,10 +188,10 @@ function set_variables(::Type{R}, names::T; order=get_order(), numvars=-1) where
 
     if length(variable_names) == 1 && numvars ≥ 1
         name = variable_names[1]
-        variable_names = [string(name, subscriptify(i)) for i in 1:numvars]
+        variable_names = string.("x", TS.subscriptify.(1:numvars))
     end
 
-    set_variables(R, variable_names, order=order)
+    return set_variables(R, variable_names, order=order)
 end
 set_variables(::Type{R}, symbs::Symbol; order=get_order(), numvars=-1) where {R} =
     set_variables(R, string(symbs), order=order, numvars=numvars)
@@ -207,16 +207,13 @@ set_variables(symbs::Symbol; order=get_order(), numvars=-1) =
 
 Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
 """
-function show_params_TaylorN()
-    @info( """
+show_params_TaylorN() = @info( """
     Parameters for `TaylorN` and `HomogeneousPolynomial`:
     Maximum order       = $(get_order())
     Number of variables = $(get_numvars())
     Variable names      = $(get_variable_names())
     Variable symbols    = $(Symbol.(get_variable_names()))
     """)
-    nothing
-end
 
 
 # Control the display of the big 𝒪 notation

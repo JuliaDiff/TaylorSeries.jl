@@ -35,8 +35,8 @@ correspondinf to `order` (given by `size_table[order+1]`), it resizes
 function resize_coeffsHP!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     lencoef = length( coeffs )
     @inbounds num_coeffs = size_table[order+1]
-    @assert order ≤ get_order() && lencoef ≤ num_coeffs
     num_coeffs == lencoef && return nothing
+    @assert order ≤ get_order() && lencoef ≤ num_coeffs
     resize!(coeffs, num_coeffs)
     zc1 = zero(coeffs[1])
     @simd for ord in lencoef+1:num_coeffs
@@ -45,19 +45,18 @@ function resize_coeffsHP!(coeffs::Array{T,1}, order::Int) where {T<:Number}
     return nothing
 end
 #
-function resize_coeffsHP(coeffs::FixedSizeVectorDefault{T},
-        order::Int) where {T<:Number}
-    lencoef = length( coeffs )
-    @inbounds num_coeffs = size_table[order+1]
-    @assert order ≤ get_order() && lencoef ≤ num_coeffs
-    num_coeffs == lencoef && return coeffs
+function resize_coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+    @assert order ≤ get_order()
+    ll = length( coeffs )
+    num_coeffs = size_table[order+1]
+    num_coeffs == ll && return FixedSizeVectorDefault(coeffs)
+    # @assert ll ≤ num_coeffs
     v = FixedSizeVectorDefault{T}(undef, num_coeffs)
     for ord in eachindex(coeffs)
         v[ord] = coeffs[ord]
     end
-    zc1 = zero(coeffs[1])
-    @simd for ord in lencoef+1:num_coeffs
-        @inbounds coeffs[ord] = zc1
+    for ord in ll+1:num_coeffs
+        v[ord] = zero(coeffs[rand(eachindex(coeffs))])
     end
     return v
 end

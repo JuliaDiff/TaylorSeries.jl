@@ -174,13 +174,13 @@ Returns `isless(a - b, zero(T))`.
 
 ## zero and one ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    # @eval iszero(a::$T) = iszero(a.coeffs)
-    @eval function iszero(a::$T)
-        for i in eachindex(a)
-            iszero(a[i]) || return false
-        end
-        return true
-    end
+    @eval iszero(a::$T) = iszero(a.coeffs)
+    # @eval function iszero(a::$T)
+    #     for i in eachindex(a)
+    #         iszero(a[i]) || return false
+    #     end
+    #     return true
+    # end
 end
 
 for T in (:Taylor1, :TaylorN)
@@ -197,12 +197,10 @@ zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(zero.(a.coeffs), get_order(a))
 
 function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 &&
-        return FixedSizeVectorDefault([HomogeneousPolynomial([zero(a[1])], 0)])
     v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
-    z = zero(a[1])
-    @simd for ord in eachindex(v)
-        @inbounds v[ord] = HomogeneousPolynomial(z, ord-1)
+    z = [zero(a[1])]
+    for ord in eachindex(v)
+        v[ord] = HomogeneousPolynomial(z, ord-1)
     end
     return v
 end
@@ -996,7 +994,7 @@ c, a and b are `HomogeneousPolynomial`.
 """
 @inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
-    # (iszero(b) || iszero(a)) && return nothing
+    (_isthinzero(b) || _isthinzero(a)) && return nothing
     @inbounds num_coeffs_a = size_table[get_order(a)+1]
     @inbounds num_coeffs_b = size_table[get_order(b)+1]
     @inbounds posTb = pos_table[get_order(c)+1]
@@ -1004,11 +1002,11 @@ c, a and b are `HomogeneousPolynomial`.
     @inbounds indTb = index_table[get_order(b)+1]
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
-        # iszero(ca) && continue
+        _isthinzero(ca) && continue
         inda = indTa[na]
         @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
-            # iszero(cb) && continue
+            _isthinzero(cb) && continue
             indb = indTb[nb]
             pos = posTb[inda + indb]
             c[pos] += ca * cb
@@ -1027,7 +1025,7 @@ c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
 """
 @inline function mul_scalar!(c::HomogeneousPolynomial, scalar::NumberNotSeries, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
-    # (iszero(b) || iszero(a)) && return nothing
+    (_isthinzero(b) || _isthinzero(a)) && return nothing
     @inbounds num_coeffs_a = size_table[get_order(a)+1]
     @inbounds num_coeffs_b = size_table[get_order(b)+1]
     @inbounds posTb = pos_table[get_order(c)+1]
@@ -1035,11 +1033,11 @@ c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
     @inbounds indTb = index_table[get_order(b)+1]
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
-        # iszero(ca) && continue
+        _isthinzero(ca) && continue
         inda = indTa[na]
         @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
-            # iszero(cb) && continue
+            _isthinzero(cb) && continue
             indb = indTb[nb]
             pos = posTb[inda + indb]
             c[pos] += scalar * ca * cb

@@ -683,16 +683,16 @@ end
     @test string(ab) ==
         "TaylorN{Float64}(HomogeneousPolynomial{Float64}" *
         "[HomogeneousPolynomial{Float64}([0.0], 0), " *
-        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
+        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)])"
     @test string([aa, aa]) ==
         "HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
         "([1.4142135623730951, 0.0], 1), HomogeneousPolynomial{Float64}" *
         "([1.4142135623730951, 0.0], 1)]"
     @test string([ab, ab]) == "TaylorN{Float64}[TaylorN{Float64}" *
         "(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}([0.0], 0), " *
-        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1), " *
+        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)]), " *
         "TaylorN{Float64}(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
-        "([0.0], 0), HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)]"
+        "([0.0], 0), HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)])]"
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 x₁"
     @test string(ab) == " 1.4142135623730951 x₂ + 𝒪(‖x‖²)"

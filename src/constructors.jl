@@ -39,14 +39,14 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
     end
     function Taylor1{T}(coeffs::AbstractVector{T}, order::Int) where {T<:Number}
         v = FixedSizeVectorDefault{T}(undef, order+1)
-        minrange = min(eachindex(v), eachindex(coeffs))
+        rngc = eachindex(coeffs)
+        minrange = min(eachindex(v), rngc)
         for ord in minrange
             v[ord] = coeffs[ord]
         end
         ll = last(minrange)
-        a = rand(eachindex(coeffs), length(ll+1:order+1))
-        for ord in eachindex(a)
-            v[ord+ll] = zero(coeffs[a[ord]])
+        for ord in ll+1:order+1
+            v[ord] = zero(coeffs[rand(rngc)])
         end
         return new{T}(v)
     end
@@ -111,25 +111,27 @@ struct HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
         coeffs  :: FixedSizeVectorDefault{T}
         order   :: Int
     ## Inner constructor ##
-    function HomogeneousPolynomial{T}(coeffs::Array{T,1}, order::Int) where {T<:Number}
-        resize_coeffsHP!(coeffs, order)
-        return new{T}(FixedSizeVectorDefault(coeffs), order)
+    function HomogeneousPolynomial{T}(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+        # resize_coeffsHP!(coeffs, order)
+        # return new{T}(FixedSizeVectorDefault(coeffs), order)
+        return new{T}(resize_coeffsHP(coeffs, order), order)
     end
-    function HomogeneousPolynomial{T}(coeffs::FixedSizeVectorDefault{T},
-            order::Int) where {T<:Number}
-        length(coeffs) == size_table[order+1] && return new{T}(coeffs, order)
-        v = resize_coeffsHP(coeffs, order)
-        return new{T}(v, order)
-    end
+    # function HomogeneousPolynomial{T}(coeffs::FixedSizeVectorDefault{T},
+    #         order::Int) where {T<:Number}
+    #     v = resize_coeffsHP(coeffs, order)
+    #     return new{T}(v, order)
+    # end
 end
 
 HomogeneousPolynomial(x::HomogeneousPolynomial{T}) where {T<:Number} = x
 HomogeneousPolynomial(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number} =
     HomogeneousPolynomial{T}(coeffs, order)
 HomogeneousPolynomial(coeffs::AbstractArray{T,1}) where {T<:Number} =
-    HomogeneousPolynomial(coeffs, orderH(coeffs))
+    HomogeneousPolynomial{T}(FixedSizeVectorDefault(coeffs), orderH(coeffs))
+# HomogeneousPolynomial(x::T, order::Int) where {T<:Number} =
+#     HomogeneousPolynomial{T}(FixedSizeVectorDefault([x]), order)
 HomogeneousPolynomial(x::T, order::Int) where {T<:Number} =
-    HomogeneousPolynomial([x], order)
+    HomogeneousPolynomial{T}([x], order)
 
 # Shortcut to define HomogeneousPolynomial independent variable
 """
@@ -177,19 +179,32 @@ Note that `TaylorN` variables are callable. For more information, see
 """
 struct TaylorN{T<:Number} <: AbstractSeries{T}
         coeffs  :: FixedSizeVectorDefault{HomogeneousPolynomial{T}}
-        order   :: Int
     ## Inner constructor ##
     function TaylorN{T}(
             v::AbstractArray{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number}
-        coeffs = isempty(v) ? zeros(HomogeneousPolynomial{T}, order) :
-            zeros(v[1], order)
+        if isempty(v)
+            coeffs = zeros(HomogeneousPolynomial{T}, order)
+        else
+            coeffs = zeros(v[1], order)
+        end
         @inbounds for i in eachindex(v)
             ord = get_order(v[i])
             ord > order && continue
             coeffs[ord+1] += v[i]
         end
-        return new{T}(coeffs, order)
+        return new{T}(coeffs)
     end
+    # function TaylorN{T}(
+    #         v::AbstractArray{HomogeneousPolynomial{T},1}, order::Int) where {T<:Number}
+    #     coeffs = isempty(v) ? zeros(HomogeneousPolynomial{T}, order) :
+    #         zeros(v[1], order)
+    #     @inbounds for i in eachindex(v)
+    #         ord = get_order(v[i])
+    #         ord > order && continue
+    #         coeffs[ord+1] += v[i]
+    #     end
+    #     return new{T}(coeffs)
+    # end
 end
 
 TaylorN(x::TaylorN{T}) where {T<:Number} = x
