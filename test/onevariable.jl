@@ -50,14 +50,9 @@ Base.iszero(::SymbNumber) = false
         @test -1.0 < -1/1000 - t  < -t < -t^2 ≤ 0
     end
 
-    v = [1,2]
-    @test typeof(TS.resize_coeffs1!(v,3)) == Nothing
-    @test v == [1,2,0,0]
-    TS.resize_coeffs1!(v,0)
-    @test v == [1]
-    TS.resize_coeffs1!(v,3)
+    v = [1, 0, 0, 0]
     pol_int = Taylor1(v)
-    setindex!(pol_int,3,2)
+    setindex!(pol_int, 3, 2)
     @test pol_int.coeffs == [1,0,3,0]
     @test pol_int[:] == [1,0,3,0]
     @test pol_int[:] == pol_int.coeffs[:]

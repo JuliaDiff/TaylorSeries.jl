@@ -9,43 +9,30 @@
 ## Auxiliary function ##
 
 """
-    resize_coeffs1!{T<Number}(coeffs::Array{T,1}, order::Int)
+    _coeffsHP(x::T, order::Int) where {T<:Number}
+    _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
 
-If the length of `coeffs` is smaller than `order+1`, it resizes
-`coeffs` appropriately filling it with zeros.
+Returns a `FixedSizeVectorDefault` of size `size_table[order+1]`
+to be used in the construction of an HomogeneousPolynomial of order
+`order`. The returned vector has the first entries of `coeffs`,
+and then it's filled with zeros.
 """
-function resize_coeffs1!(coeffs::Array{T,1}, order::Int) where {T<:Number}
-    lencoef = length(coeffs)
-    resize!(coeffs, order+1)
-    c1 = coeffs[1]
-    order ≤ lencoef-1 && return nothing
-    for ord in lencoef+1:order+1
-        coeffs[ord] = zero(c1)
-    end
-    return nothing
+function _coeffsHP(x::T, order::Int) where {T<:NumberNotSeries}
+    @assert order ≤ get_order()
+    num_coeffs = size_table[order+1]
+    v = FixedSizeVectorDefault{T}(undef, num_coeffs)
+    v .= zero.(x)
+    v[1] = x
+    return v
 end
-
-"""
-    resize_coeffsHP!{T<Number}(coeffs::Array{T,1}, order::Int)
-
-If the length of `coeffs` is smaller than the number of coefficients
-correspondinf to `order` (given by `size_table[order+1]`), it resizes
-`coeffs` appropriately filling it with zeros.
-"""
-function resize_coeffsHP!(coeffs::Array{T,1}, order::Int) where {T<:Number}
-    lencoef = length( coeffs )
-    @inbounds num_coeffs = size_table[order+1]
-    num_coeffs == lencoef && return nothing
-    @assert order ≤ get_order() && lencoef ≤ num_coeffs
-    resize!(coeffs, num_coeffs)
-    zc1 = zero(coeffs[1])
-    @simd for ord in lencoef+1:num_coeffs
-        @inbounds coeffs[ord] = zc1
-    end
-    return nothing
+function _coeffsHP(x::Taylor1{T}, order::Int) where {T<:NumberNotSeries}
+    @assert order ≤ get_order()
+    v = FixedSizeVectorDefault{Taylor1{T}}(undef, size_table[order+1])
+    v .= zero.(x)
+    v[1].coeffs .= x.coeffs
+    return v
 end
-#
-function resize_coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+function _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
     @assert order ≤ get_order()
     ll = length( coeffs )
     num_coeffs = size_table[order+1]
@@ -55,33 +42,57 @@ function resize_coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Numbe
     for ord in eachindex(coeffs)
         v[ord] = coeffs[ord]
     end
-    for ord in ll+1:num_coeffs
-        v[ord] = zero(coeffs[rand(eachindex(coeffs))])
-    end
+    v[ll+1:num_coeffs] .= zero.(v[1])
     return v
 end
+
+"""
+    _coeffsTN(v::AbstractArray{T,1}, order::Int) where {T<:Number}
+
+Returns a `FixedSizeVectorDefault{HomogeneousPolynomial{T}}` of
+size `order+1`, to be used in the construction of a TaylorN{T} of order
+`order`. The returned vector has the entries of `v` at the proper
+location according to their `order`, and otherwise it is filled with
+the corresponding zeros.
+"""
+function _coeffsTN(v::AbstractVector{HomogeneousPolynomial{T}},
+        order::Int) where {T}
+    coeffs = zeros(v[1], order)
+    vord = get_order.(v)
+    max_order = maximum(vord)
+    if allunique(vord) && (max_order ≤ order)
+        for i in eachindex(v)
+            coeffs[get_order(v[i])+1].coeffs .= v[i].coeffs
+        end
+    elseif max_order ≤ order
+        for i in eachindex(v)
+            coeffs[get_order(v[i])+1].coeffs .+= v[i].coeffs
+        end
+    else
+        for i in eachindex(v)
+            ord = get_order(v[i])
+            ord > order && continue
+            coeffs[ord+1].coeffs .+= v[i].coeffs
+        end
+    end
+    return coeffs
+end
+
 
 ## Minimum order of an HomogeneousPolynomial compatible with the vector's length
 function orderH(coeffs::AbstractArray{T,1}) where {T<:Number}
     ord = 0
     ll = length(coeffs)
     for i = 1:get_order()+1
-        @inbounds num_coeffs = size_table[i]
-        ll ≤ num_coeffs && break
+        ll ≤ size_table[i] && return ord
         ord += 1
     end
     return ord
 end
 
 ## Maximum order of a HomogeneousPolynomial vector; used by TaylorN constructor
-function maxorderH(v::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number}
-    m = 0
-    @inbounds for i in eachindex(v)
-        m = max(m, get_order(v[i]))
-    end
-    return m
-end
-
+maxorderH(v::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
+    isempty(v) ? 0 : maximum(get_order.(v))
 
 
 ## getcoeff ##
@@ -106,7 +117,7 @@ setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
 setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
     {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(x.coeffs, get_order(x))
 setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1(x.coeffs, get_order(x))
+    {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1{T}(x.coeffs[:])
 function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
         {T<:Taylor1{<:Number}}
     a.coeffs[n+1] = zero(x)
@@ -169,7 +180,7 @@ setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
 setindex!(a::HomogeneousPolynomial{T}, x::T, c::Colon) where {T<:Number} =
     a.coeffs[c] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
-    c::Colon) where {T<:Number} = a.coeffs[c] = x
+    c::Colon) where {T<:Number} = a.coeffs[c] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::T,
     u::StepRange{Int,Int}) where {T<:Number} = a.coeffs[u[:]] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
@@ -195,9 +206,10 @@ getindex(a::TaylorN, u::UnitRange{Int}) = view(a.coeffs, u .+ 1)
 getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
 getindex(a::TaylorN, u::StepRange{Int,Int}) = view(a.coeffs, u[:] .+ 1)
 
-function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where {T<:Number}
+function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
+        {T<:Number}
     @assert get_order(x) == n
-    a.coeffs[n+1] = x
+    return a.coeffs[n+1] = x
 end
 setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n+1] = HomogeneousPolynomial(x, n)
@@ -205,7 +217,7 @@ function setindex!(a::TaylorN{T}, x::T, u::UnitRange{Int}) where {T<:Number}
     for ind in u
         a[ind] = x
     end
-    a[u]
+    return a[u]
 end
 function setindex!(a::TaylorN{T},
         x::AbstractArray{HomogeneousPolynomial{T},1},
@@ -214,6 +226,7 @@ function setindex!(a::TaylorN{T},
     for ind in eachindex(x)
         a[u[ind]] = x[ind]
     end
+    return a[u]
 end
 function setindex!(a::TaylorN{T}, x::AbstractArray{T,1},
         u::UnitRange{Int}) where {T<:Number}
@@ -221,6 +234,7 @@ function setindex!(a::TaylorN{T}, x::AbstractArray{T,1},
     for ind in eachindex(x)
         a[u[ind]] = x[ind]
     end
+    return a[u]
 end
 setindex!(a::TaylorN{T}, x::T, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
@@ -232,7 +246,7 @@ function setindex!(a::TaylorN{T}, x::T, u::StepRange{Int,Int}) where {T<:Number}
     for ind in u
         a[ind] = x
     end
-    a[u]
+    return a[u]
 end
 function setindex!(a::TaylorN{T}, x::AbstractArray{HomogeneousPolynomial{T},1},
         u::StepRange{Int,Int}) where {T<:Number}
@@ -241,6 +255,7 @@ function setindex!(a::TaylorN{T}, x::AbstractArray{HomogeneousPolynomial{T},1},
     for ind in eachindex(x)
         a[u[ind]] = x[ind]
     end
+    return a[u]
 end
 function setindex!(a::TaylorN{T}, x::Array{T,1},
         u::StepRange{Int,Int}) where {T<:Number}
@@ -248,6 +263,7 @@ function setindex!(a::TaylorN{T}, x::Array{T,1},
     for ind in eachindex(x)
         a[u[ind]] = x[ind]
     end
+    return a[u]
 end
 
 

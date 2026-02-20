@@ -95,10 +95,11 @@ end
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test isnothing(TS.resize_coeffsHP!(v,2))
-    @test v == [1,2,0]
-    @test_throws AssertionError TS.resize_coeffsHP!(v,1)
-    hpol_v = HomogeneousPolynomial(v)
+    vv = TS._coeffsHP(v, 2)
+    @test vv isa FixedSizeVectorDefault{Int}
+    @test vv == [1,2,0]
+    @test_throws BoundsErrorLight TS._coeffsHP(vv,1)
+    hpol_v = HomogeneousPolynomial(vv)
     @test findfirst(hpol_v) == 1
     @test findlast(hpol_v) == 2
     hpol_v[3] = 3
