@@ -237,77 +237,6 @@ for T in (:Taylor1, :TaylorN)
 end
 
 
-# Recursive functions (homogeneous coefficients)
-@inline function zero!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    a[k] = zero(a[k])
-    return nothing
-end
-
-@inline function zero!(a::Taylor1{T}, k::Int) where {T<:Number}
-    for l in eachindex(a[k])
-        zero!(a[k], l)
-    end
-    return nothing
-end
-
-@inline function zero!(a::Taylor1{T}) where {T<:Number}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function zero!(a::HomogeneousPolynomial{T}, k::Int) where {T<:Number}
-    a[k] = zero(a[k])
-    return nothing
-end
-
-@inline function zero!(a::HomogeneousPolynomial{T}) where {T<:Number}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function zero!(a::TaylorN{T}, k::Int) where {T<:Number}
-    zero!(a[k])
-    return nothing
-end
-
-@inline function zero!(a::TaylorN{T}) where {T<:Number}
-    for k in eachindex(a)
-        zero!(a, k)
-    end
-    return nothing
-end
-
-@inline function one!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    k == 0 ? a[k] = one(a[k]) : a[k] = zero(a[k])
-    return nothing
-end
-
-@inline function one!(a::Taylor1{T}, k::Int) where {T<:Number}
-    for j in eachindex(a[k])
-        one!(a[k], j)
-    end
-    return nothing
-end
-
-@inline function one!(a::Taylor1{T}) where {T<:Number}
-    for k in eachindex(a)
-        one!(a, k)
-    end
-    return nothing
-end
-
-@inline function one!(c::TaylorN{T}, k::Int) where {T<:Number}
-    zero!(c, k)
-    if k == 0
-        @inbounds c[0][1] = one(constant_term(c[0][1]))
-    end
-    return nothing
-end
-
 @inline function identity!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T},
         k::Int) where {T<:Number}
     @inbounds c[k] = identity(a[k])
@@ -318,22 +247,6 @@ end
         a::HomogeneousPolynomial{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
     @inbounds for l in eachindex(c[k])
         identity!(c[k], a[k], l)
-    end
-    return nothing
-end
-
-# Taylor1 (including nested Taylor1s)
-@inline function one!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    zero!(c, k)
-    (k == 0) && (@inbounds c[0] = one(constant_term(a)))
-    return nothing
-end
-@inline function one!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:Number}
-    zero!(c, k)
-    if k == 0
-        for i in eachindex(a[0])
-            one!(c[0], a[0], i)
-        end
     end
     return nothing
 end
@@ -1056,19 +969,12 @@ end
 end
 
 
-
 #---
 @inline function identity!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where
         {T<:NumberNotSeries}
     @inbounds for l in eachindex(c[k])
         identity!(c[k], a[k], l)
     end
-    return nothing
-end
-
-@inline function one!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
-    zero!(c, k)
-    (k == 0) && (@inbounds c[0][1] = one(constant_term(a)))
     return nothing
 end
 
@@ -1349,11 +1255,6 @@ for T in (:Taylor1, :TaylorN)
             @inbounds for l in eachindex(c[k])
                 identity!(c[k], a[k], l)
             end
-            return nothing
-        end
-
-        @inline function zero!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            zero!(c, k)
             return nothing
         end
 

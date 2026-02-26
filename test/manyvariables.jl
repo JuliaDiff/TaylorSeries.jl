@@ -184,7 +184,13 @@ end
     @test zeroT[0] == HomogeneousPolynomial(0, 0)
     @test uT[0] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
-    @test typeof(ones(xH,2)) == Array{HomogeneousPolynomial{Int},1}
+    if VERSION < v"1.11"
+        @test typeof(ones(xH,2)) ==
+            FixedSizeArray{HomogeneousPolynomial{Int},1,Vector{HomogeneousPolynomial{Int}}}
+    else
+        @test typeof(ones(xH,2)) ==
+            FixedSizeArray{HomogeneousPolynomial{Int},1,Memory{HomogeneousPolynomial{Int64}}}
+    end
     @test length(ones(xH,2)) == 3
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
