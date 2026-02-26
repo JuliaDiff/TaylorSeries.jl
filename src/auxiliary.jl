@@ -62,15 +62,15 @@ function _coeffsTN(v::AbstractVector{HomogeneousPolynomial{T}},
     max_order = maximum(vord)
     if allunique(vord) && (max_order ≤ order)
         for i in eachindex(v)
-            coeffs[get_order(v[i])+1].coeffs .= v[i].coeffs
+            coeffs[vord[i]+1].coeffs .= v[i].coeffs
         end
     elseif max_order ≤ order
         for i in eachindex(v)
-            coeffs[get_order(v[i])+1].coeffs .+= v[i].coeffs
+            coeffs[vord[i]+1].coeffs .+= v[i].coeffs
         end
     else
         for i in eachindex(v)
-            ord = get_order(v[i])
+            ord = vord[i]
             ord > order && continue
             coeffs[ord+1].coeffs .+= v[i].coeffs
         end
