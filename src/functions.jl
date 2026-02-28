@@ -11,10 +11,9 @@
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function exp(a::$T)
-            order = get_order(a)
             aux = exp(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
+            c = $T(aux, get_order(a))
             for k in eachindex(a)
                 exp!(c, aa, k)
             end
@@ -22,10 +21,9 @@ for T in (:Taylor1, :TaylorN)
         end
 
         function expm1(a::$T)
-            order = get_order(a)
             aux = expm1(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
+            c = $T(aux, get_order(a))
             for k in eachindex(a)
                 expm1!(c, aa, k)
             end
@@ -35,10 +33,9 @@ for T in (:Taylor1, :TaylorN)
         function log(a::$T)
             iszero(constant_term(a)) && throw(DomainError(a,
                 """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
-            order = get_order(a)
             aux = log(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
+            c = $T(aux, get_order(a))
             for k in eachindex(a)
                 log!(c, aa, k)
             end
@@ -48,11 +45,10 @@ for T in (:Taylor1, :TaylorN)
         function log1p(a::$T)
             # constant_term(a) < -one(constant_term(a)) && throw(DomainError(a,
             #         """The 0-th order coefficient must be larger than -1 in order to expand `log1`."""))
-            order = get_order(a)
             aux = log1p(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
+            c = $T(aux, get_order(a))
             for k in eachindex(a)
                 log1p!(c, aa, k)
             end
@@ -66,8 +62,8 @@ for T in (:Taylor1, :TaylorN)
             aux, auxc = sincos(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            s = $T( aux, order )
-            c = $T( auxc, order )
+            s = $T(aux, order)
+            c = $T(auxc, order)
             for k in eachindex(a)
                 sincos!(s, c, aa, k)
             end
@@ -81,8 +77,8 @@ for T in (:Taylor1, :TaylorN)
             aux, auxc = sincospi(constant_term(a))
             aa = one(aux) * a
             # aa = convert($T{typeof(aux)}, a)
-            s = $T( aux, order )
-            c = $T( auxc, order )
+            s = $T(aux, order)
+            c = $T(auxc, order)
             for k in eachindex(a)
                 sincospi!(s, c, aa, k)
             end
@@ -110,8 +106,8 @@ for T in (:Taylor1, :TaylorN)
             aux = asin(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
-            r = $T( sqrt(1 - a0^2), order )
+            c = $T(aux, order)
+            r = $T(sqrt(1 - a0^2), order)
             for k in eachindex(a)
                 asin!(c, aa, r, k)
             end
@@ -126,8 +122,8 @@ for T in (:Taylor1, :TaylorN)
             aux = acos(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
-            r = $T( sqrt(1 - a0^2), order )
+            c = $T(aux, order)
+            r = $T(sqrt(1 - a0^2), order)
             for k in eachindex(a)
                 acos!(c, aa, r, k)
             end
@@ -140,7 +136,7 @@ for T in (:Taylor1, :TaylorN)
             aux = atan(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order)
+            c = $T(aux, order)
             r = $T(one(aux) + a0^2, order)
             iszero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of atan(x) diverges at x = ±im."""))
@@ -163,8 +159,8 @@ for T in (:Taylor1, :TaylorN)
             aux = sinh(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            s = $T( aux, order)
-            c = $T( cosh(constant_term(a)), order)
+            s = $T(aux, order)
+            c = $T(cosh(constant_term(a)), order)
             for k in eachindex(a)
                 sinhcosh!(s, c, aa, k)
             end
@@ -176,8 +172,8 @@ for T in (:Taylor1, :TaylorN)
             aux = tanh( constant_term(a) )
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order)
-            c2 = $T( aux^2, order)
+            c = $T(aux, order)
+            c2 = $T(aux^2, order)
             for k in eachindex(a)
                 tanh!(c, aa, c2, k)
             end
@@ -191,8 +187,8 @@ for T in (:Taylor1, :TaylorN)
             aux = asinh(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
-            r = $T( sqrt(a0^2 + 1), order )
+            c = $T(aux, order)
+            r = $T(sqrt(a0^2 + 1), order)
             iszero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of asinh(x) diverges at x = ±im."""))
             for k in eachindex(a)
@@ -209,8 +205,8 @@ for T in (:Taylor1, :TaylorN)
             aux = acosh(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order )
-            r = $T( sqrt(a0^2 - 1), order )
+            c = $T(aux, order)
+            r = $T(sqrt(a0^2 - 1), order)
             for k in eachindex(a)
                 acosh!(c, aa, r, k)
             end
@@ -223,7 +219,7 @@ for T in (:Taylor1, :TaylorN)
             aux = atanh(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T( aux, order)
+            c = $T(aux, order)
             r = $T(one(aux) - a0^2, order)
             iszero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of atanh(x) diverges at x = ±1."""))
@@ -236,35 +232,8 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-
-@inline function identity!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T},
-        k::Int) where {T<:Number}
-    @inbounds c[k] = identity(a[k])
-    return nothing
-end
-
-@inline function identity!(c::HomogeneousPolynomial{Taylor1{T}},
-        a::HomogeneousPolynomial{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
-    @inbounds for l in eachindex(c[k])
-        identity!(c[k], a[k], l)
-    end
-    return nothing
-end
-
-@inline function identity!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
-        {T<:NumberNotSeries}
-    @inbounds c[k] = identity(a[k])
-    return nothing
-end
-@inline function identity!(c::Taylor1{T}, a::T, k::Int) where {T<:Number}
-    zero!(c[k])
-    if k == 0
-        @inbounds c[k] = copy(a)
-    end
-    return nothing
-end
-
-@inline function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+# Taylor1 mutating functions
+function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         @inbounds c[0] = exp(constant_term(a))
@@ -277,12 +246,12 @@ end
     div!(c, c, k, k)
     return nothing
 end
-@inline function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
-    aux = constant_term(a)
     if k == 0
+        a0 = constant_term(a)
         for j in eachindex(a[k])
-            exp!(c[k], aux, j)
+            exp!(c[k], a0, j)
         end
         return nothing
     end
@@ -305,8 +274,38 @@ end
     end
     return nothing
 end
+#
+# function exp!(c::Taylor1{T}, a::Taylor1{T}, aaux::T, k::Int) where
+#         {T<:Number}
+#     aaux = constant_term(a)
+#     if k == 0
+#         for j in eachindex(a[k])
+#             exp!(c[k], aaux, j)
+#         end
+#         return nothing
+#     end
+#     zero!(c[k])
+#     # aux = zero(c[k])
+#     zero!(aaux, k)
+#     @inbounds for i = 0:k-1
+#         # c[k] += (k-i) * a[k-i] * c[i]
+#         for j in eachindex(c[k])
+#             mul_scalar!(aaux, k-i, a[k-i], c[i], j)
+#             add!(c[k], c[k], aaux, j)
+#             zero!(aaux, j)
+#         end
+#     end
+#     # div!(c, c, k, k)
+#     for i in eachindex(c[k])
+#         identity!(aaux, c[k], i)
+#     end
+#     for i in eachindex(c[k])
+#         div!(c[k], aaux, k, i)
+#     end
+#     return nothing
+# end
 
-@inline function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         @inbounds c[0] = expm1(constant_term(a))
@@ -318,7 +317,7 @@ end
     c[0] = cc
     return nothing
 end
-@inline function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         for j in eachindex(a[k])
@@ -333,7 +332,7 @@ end
     return nothing
 end
 
-@inline function log!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function log!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         @inbounds c[0] = log(constant_term(a))
@@ -349,16 +348,17 @@ end
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
     return nothing
 end
-@inline function log!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function log!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
-    aux = constant_term(a)
     if k == 0
+        aux = constant_term(a)
         # @inbounds c[0] = log(constant_term(a))
         for j in eachindex(a[k])
             log!(c[0], aux, j)
         end
         return nothing
     elseif k == 1
+        aux = constant_term(a)
         # @inbounds c[1] = a[1] / constant_term(a)
         for j in eachindex(a[1])
             div!(c[1], a[1], aux, j)
@@ -386,7 +386,7 @@ end
     return nothing
 end
 
-@inline function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     a0 = constant_term(a)
     a0p1 = a0+one(a0)
@@ -404,7 +404,7 @@ end
     @inbounds c[k] = (a[k] - c[k]/k) / a0p1
     return nothing
 end
-@inline function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
     a0 = constant_term(a)
     a0p1 = a0+one(a0)
@@ -441,7 +441,7 @@ end
     return nothing
 end
 
-@inline function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         @inbounds s[0], c[0] = sincos( constant_term(a) )
@@ -458,7 +458,7 @@ end
     c[k] = c[k] / k
     return nothing
 end
-@inline function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         for j in eachindex(a[k])
@@ -487,7 +487,7 @@ end
     return nothing
 end
 
-@inline function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         a0 = constant_term(a)
@@ -505,7 +505,7 @@ end
     c[k] = c[k] / k
     return nothing
 end
-@inline function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         a0 = constant_term(a)
@@ -535,7 +535,7 @@ end
     return nothing
 end
 
-@inline function tan!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
+function tan!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         @inbounds aux = tan( constant_term(a) )
@@ -551,10 +551,10 @@ end
     div!(c, c, k, k)
     # c[k] <- c[k] + a[k]
     add!(c, a, c, k)
-    sqr!(c2, c, k)
+    sqr!(c2, c, zero(c[0]), k)
     return nothing
 end
-@inline function tan!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
+function tan!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         aux = constant_term(a)
@@ -575,17 +575,17 @@ end
     for j in eachindex(a[k])
         div!(c[k], c[k], k, j) # c[k] <- c[k]/k
         add!(c[k], c[k], a[k], j) # c[k] <- c[k] + a[k]
+        zero!(aux, j)
     end
-    sqr!(c2, c, k)
+    sqr!(c2, c, aux, k)
     return nothing
 end
 
-@inline function asin!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function asin!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = asin( a0 )
-        @inbounds r[0] = sqrt( 1 - a0^2 )
+        @inbounds c[0] = asin( a[0] )
+        @inbounds r[0] = sqrt( 1 - a[0]^2 )
         return nothing
     end
     zero!(c, k)
@@ -593,14 +593,16 @@ end
         c[k] += (k-i) * r[i] * c[k-i]
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
+    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, k) # r[k] <- (a^2)[k]
+    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    zero!(aux, 0)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
-@inline function asin!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function asin!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         aux = constant_term(a)
@@ -610,37 +612,38 @@ end
         return nothing
     end
     zero!(c[k])
-    aux = zero(c[k])
+    aux = zero(c)
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
-            mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux[k], j)
         end
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, k) # r[k] <- (a^2)[k]
+    zero!(aux)
+    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    zero!(aux, 0)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux, j)
+        zero!(aux[k], j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
+        subst!(aux[k], a[k], c[k], j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
 
-@inline function acos!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function acos!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = acos( a0 )
-        @inbounds r[0] = sqrt( 1 - a0^2 )
+        @inbounds c[0] = acos( a[0] )
+        @inbounds r[0] = sqrt( 1 - a[0]^2 )
         return nothing
     end
     zero!(c, k)
@@ -648,15 +651,16 @@ end
         c[k] += (k-i) * r[i] * c[k-i]
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
+    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, k) # r[k] <- (a^2)[k]
+    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    zero!(aux)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     @inbounds c[k] = -(a[k] + c[k]/k) / constant_term(r)
-    # end
     return nothing
 end
-@inline function acos!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function acos!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         aux = constant_term(a)
@@ -666,33 +670,35 @@ end
         return nothing
     end
     zero!(c[k])
-    aux = zero(c[k])
+    aux = zero(c)
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
-            mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux[k], j)
         end
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, k) # r[k] <- (a^2)[k]
+    zero!(aux)
+    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    zero!(aux, 0)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     # @inbounds c[k] = - (a[k] + c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux, j)
+        zero!(aux[k], j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        add!(aux, a[k], c[k], j) # aux <- a[k] + c[k]
-        subst!(aux, aux, j)
+        add!(aux[k], a[k], c[k], j) # aux <- a[k] + c[k]
+        subst!(aux[k], aux[k], j)
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
 
-@inline function atan!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function atan!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         a0 = constant_term(a)
@@ -704,11 +710,11 @@ end
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    @inbounds sqr!(r, a, k)
+    sqr!(r, a, zero(a[0]), k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
-@inline function atan!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function atan!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         aux = constant_term(a)
@@ -726,7 +732,8 @@ end
             add!(c[k], c[k], aux, j)
         end
     end
-    @inbounds sqr!(r, a, k)
+    zero!(aux)
+    @inbounds sqr!(r, a, aux, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     for j in eachindex(a[k])
         zero!(aux, j)
@@ -739,7 +746,7 @@ end
     return nothing
 end
 
-@inline function sinhcosh!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function sinhcosh!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         @inbounds s[0] = sinh( constant_term(a) )
@@ -758,7 +765,7 @@ end
     @inbounds div!(c, c, k, k)
     return nothing
 end
-@inline function sinhcosh!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+function sinhcosh!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         for j in eachindex(a[k])
@@ -784,7 +791,7 @@ end
     return nothing
 end
 
-@inline function tanh!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
+function tanh!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
         @inbounds aux = tanh( constant_term(a) )
@@ -797,10 +804,10 @@ end
         c[k] += (k-i) * a[k-i] * c2[i]
     end
     @inbounds c[k] = a[k] - c[k]/k
-    sqr!(c2, c, k)
+    sqr!(c2, c, zero(c[0]), k)
     return nothing
 end
-@inline function tanh!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
+function tanh!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         for j in eachindex(a[k])
@@ -822,27 +829,28 @@ end
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
         subst!(c[k], a[k], c[k], j) # c[k] <- a[k] - c[k]
     end
-    sqr!(c2, c, k)
+    zero!(aux)
+    sqr!(c2, c, aux, k)
     return nothing
 end
 
-@inline function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = asinh( a0 )
-        @inbounds r[0] = sqrt( a0^2 + 1 )
+        @inbounds c[0] = asinh( a[0] )
+        @inbounds r[0] = sqrt( a[0]^2 + 1 )
         return nothing
     end
+    aux = zero(a)
     zero!(c, k)
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    sqrt!(r, a^2+1, k)
+    sqrt!(r, a^2+1, aux, k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
-@inline function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         a0 = constant_term(a)
@@ -852,45 +860,46 @@ end
         return nothing
     end
     zero!(c[k])
-    aux = zero(c[k])
+    aux = zero(c)
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         # mul_scalar!(c[k], k-i, r[i], c[k-i])
         for j in eachindex(a[k])
-            mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux[k], j)
         end
     end
-    sqrt!(r, a^2+1, k)
+    zero!(aux, k)
+    sqrt!(r, a^2+1, aux, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux, j)
+        zero!(aux[k], j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
+        subst!(aux[k], a[k], c[k], j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
 
-@inline function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = acosh( a0 )
-        @inbounds r[0] = sqrt( a0^2 - 1 )
+        @inbounds c[0] = acosh( a[0] )
+        @inbounds r[0] = sqrt( a[0]^2 - 1 )
         return nothing
     end
     zero!(c, k)
+    aux = zero(a)
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    sqrt!(r, a^2-1, k)
+    sqrt!(r, a^2-1, aux, k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
-@inline function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         a0 = constant_term(a)
@@ -900,31 +909,32 @@ end
         return nothing
     end
     zero!(c[k])
-    aux = zero(c[k])
+    aux = zero(c)
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
-            mul_scalar!(aux, k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux, j)
+            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux[k], j)
         end
     end
-    sqrt!(r, a^2-1, k)
+    zero!(aux, k)
+    sqrt!(r, a^2-1, aux, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux, j)
+        zero!(aux[k], j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
+        subst!(aux[k], a[k], c[k], j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
 
-@inline function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    a0 = constant_term(a)
     if k == 0
-        a0 = constant_term(a)
         @inbounds c[0] = atanh( a0 )
         @inbounds r[0] = 1 - a0^2
         return nothing
@@ -933,11 +943,11 @@ end
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    @inbounds sqr!(r, a, k)
+    sqr!(r, a, zero(a0), k)
     @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
     return nothing
 end
-@inline function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
+function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:Number}
     if k == 0
         a0 = constant_term(a)
@@ -955,7 +965,8 @@ end
             add!(c[k], c[k], aux, j)
         end
     end
-    @inbounds sqr!(r, a, k)
+    zero!(aux)
+    @inbounds sqr!(r, a, aux, k)
     # @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux, j)
@@ -970,15 +981,7 @@ end
 
 
 #---
-@inline function identity!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where
-        {T<:NumberNotSeries}
-    @inbounds for l in eachindex(c[k])
-        identity!(c[k], a[k], l)
-    end
-    return nothing
-end
-
-@inline function exp!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
+function exp!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
     if k == 0
         @inbounds c[0] = exp(constant_term(a))
         return nothing
@@ -991,7 +994,7 @@ end
     return nothing
 end
 
-@inline function expm1!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
+function expm1!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
     if k == 0
         @inbounds c[0] = expm1(constant_term(a))
         return nothing
@@ -1006,7 +1009,7 @@ end
     return nothing
 end
 
-@inline function log!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
+function log!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
     if k == 0
         @inbounds c[0] = log(constant_term(a))
         return nothing
@@ -1022,7 +1025,7 @@ end
     return nothing
 end
 
-@inline function log1p!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
+function log1p!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
     if k == 0
         a0 = constant_term(a)
         @inbounds c[0] = log1p(a0)
@@ -1043,7 +1046,7 @@ end
     return nothing
 end
 
-@inline function sincos!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
+function sincos!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
         a0 = constant_term(a)
@@ -1061,7 +1064,7 @@ end
     return nothing
 end
 
-@inline function sincospi!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
+function sincospi!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
         a0 = constant_term(a)
@@ -1073,10 +1076,11 @@ end
     return nothing
 end
 
-@inline function tan!(c::TaylorN{T}, a::TaylorN{T}, c2::TaylorN{T}, k::Int) where
+function tan!(c::TaylorN{T}, a::TaylorN{T}, c2::TaylorN{T}, k::Int) where
         {T<:Number}
+    a0 = constant_term(a)
     if k == 0
-        @inbounds aux = tan( constant_term(a) )
+        @inbounds aux = tan(a0)
         @inbounds c[0][1] = aux
         @inbounds c2[0][1] = aux^2
         return nothing
@@ -1089,16 +1093,15 @@ end
     div!(c[k], c[k], k)
     # c[k] <- c[k] + a[k]
     add!(c, a, c, k)
-    sqr!(c2, c, k)
+    sqr!(c2, c, zero(a0), k)
     return nothing
 end
 
-@inline function asin!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
+function asin!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0][1] = asin( a0 )
-        @inbounds r[0][1] = sqrt( 1 - a0^2 )
+        @inbounds c[0][1] = asin( a[0][1] )
+        @inbounds r[0][1] = sqrt( 1 - a[0][1]^2 )
         return nothing
     end
     zero!(c, k)
@@ -1106,22 +1109,23 @@ end
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
+    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, k) # r[k] <- (a^2)[k]
+    sqr!(r, a, aux[0][1], k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    zero!(aux, 0)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     for l in eachindex(c[k])
         @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
     end
     return nothing
 end
 
-@inline function acos!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
+function acos!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0][1] = acos( a0 )
-        @inbounds r[0][1] = sqrt( 1 - a0^2 )
+        @inbounds c[0][1] = acos( a[0][1] )
+        @inbounds r[0][1] = sqrt( 1 - a[0][1]^2 )
         return nothing
     end
     zero!(c, k)
@@ -1129,20 +1133,22 @@ end
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
+    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, k) # r[k] <- (a^2)[k]
+    sqr!(r, a, aux[0][1], k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    zero!(aux, 0)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     for l in eachindex(c[k])
         @inbounds c[k][l] = -(a[k][l] + c[k][l]/k) / constant_term(r)
     end
     return nothing
 end
 
-@inline function atan!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
+function atan!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         {T<:Number}
+    a0 = constant_term(a)
     if k == 0
-        a0 = constant_term(a)
         @inbounds c[0] = atan( a0 )
         @inbounds r[0] = 1 + a0^2
         return nothing
@@ -1151,14 +1157,14 @@ end
     @inbounds for i in 1:k-1
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
-    @inbounds sqr!(r, a, k)
+    @inbounds sqr!(r, a, zero(a0), k)
     for l in eachindex(c[k])
         @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
     end
     return nothing
 end
 
-@inline function sinhcosh!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
+function sinhcosh!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
         @inbounds s[0] = sinh( constant_term(a) )
@@ -1177,7 +1183,7 @@ end
     return nothing
 end
 
-@inline function tanh!(c::TaylorN{T}, a::TaylorN{T}, c2::TaylorN{T}, k::Int) where
+function tanh!(c::TaylorN{T}, a::TaylorN{T}, c2::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
         @inbounds aux = tanh( constant_term(a) )
@@ -1192,57 +1198,54 @@ end
     @inbounds for l in eachindex(c[k])
         c[k][l] = a[k][l] - c[k][l]/k
     end
-    sqr!(c2, c, k)
+    sqr!(c2, c, zero(c[0][1]), k)
     return nothing
 end
 
-@inline function asinh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
+function asinh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = asinh( a0 )
-        @inbounds r[0] = sqrt( a0^2 + 1 )
+        @inbounds c[0] = asinh( a[0][1] )
+        @inbounds r[0] = sqrt( a[0][1]^2 + 1 )
         return nothing
     end
     zero!(c, k)
     @inbounds for i in 1:k-1
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
-    sqrt!(r, a^2+1, k)
+    sqrt!(r, a^2+1, zero(a), k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
 
-@inline function acosh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
+function acosh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = acosh( a0 )
-        @inbounds r[0] = sqrt( a0^2 - 1 )
+        @inbounds c[0] = acosh( a[0][1] )
+        @inbounds r[0] = sqrt( a[0][1]^2 - 1 )
         return nothing
     end
     zero!(c, k)
     @inbounds for i in 1:k-1
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
-    sqrt!(r, a^2-1, k)
+    sqrt!(r, a^2-1, zero(a), k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
 
-@inline function atanh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
+function atanh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         {T<:Number}
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = atanh( a0 )
-        @inbounds r[0] = 1 - a0^2
+        @inbounds c[0] = atanh( a[0][1] )
+        @inbounds r[0] = 1 - a[0][1]^2
         return nothing
     end
     zero!(c, k)
     @inbounds for i in 1:k-1
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
-    @inbounds sqr!(r, a, k)
+    sqr!(r, a, zero(a[0][1]), k)
     @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
     return nothing
 end
@@ -1251,17 +1254,11 @@ end
 
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        @inline function identity!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-            @inbounds for l in eachindex(c[k])
-                identity!(c[k], a[k], l)
-            end
-            return nothing
-        end
-
-        @inline function abs!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+        function abs!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number}
             z = zero(constant_term(a))
             if constant_term(a) > constant_term(z)
-                return add!(c, a, k)
+                # return add!(c, a, k)
+                return identity!(c, a, k)
             elseif constant_term(a) < constant_term(z)
                 return subst!(c, a, k)
             else
@@ -1272,14 +1269,17 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline abs2!(c::$T{T}, a::$T{T}, k::Int) where {T<:Number} = sqr!(c, a, k)
-
     end
 end
 
+abs2!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:Number} =
+    sqr!(c, a, zero(a[0]), k)
+abs2!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number} =
+    sqr!(c, a, zero(a[0][1]), k)
+
 
 # Mutating functions for Taylor1{TaylorN{T}}
-@inline function exp!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function exp!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(a[0])
@@ -1299,7 +1299,7 @@ end
     return nothing
 end
 
-@inline function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(a[0])
@@ -1329,7 +1329,7 @@ end
     return nothing
 end
 
-@inline function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(a[0])
@@ -1362,7 +1362,7 @@ end
     return nothing
 end
 
-@inline function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(a[0])
@@ -1401,7 +1401,7 @@ end
     return nothing
 end
 
-@inline function sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
+function sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(a[0])
@@ -1426,7 +1426,7 @@ end
     return nothing
 end
 
-@inline function sincospi!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
+function sincospi!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(a[0])
@@ -1443,12 +1443,13 @@ end
     return nothing
 end
 
-@inline function tan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function tan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    aux = zero(a[0])
     if k == 0
         @inbounds res[0] = tan( a[0] )
         # zero!(res2, res, 0)
-        sqr!(res2, res, 0)
+        sqr!(res2, res, aux, 0)
         return nothing
     end
     # The recursion formula
@@ -1462,11 +1463,11 @@ end
         div!(res[k][ordQ], res[k][ordQ], k)
         add!(res[k], a[k], res[k], ordQ)
     end
-    sqr!(res2, res, k)
+    sqr!(res2, res, aux, k)
     return nothing
 end
 
-@inline function asin!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function asin!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(res[0])
@@ -1487,14 +1488,16 @@ end
         div!(res[k], r[0], ordQ)
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
-    @inbounds zero!(r, k) # r[k] <- 0
-    @inbounds sqr!(r, a, k) # r[k] <- (a^2)[k]
-    @inbounds subst!(r, r, k) # r[k] <- -r[k]
-    @inbounds sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    aux = zero(a)
+    zero!(r, k) # r[k] <- 0
+    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    subst!(r, r, k) # r[k] <- -r[k]
+    zero!(aux, 0)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     return nothing
 end
 
-@inline function acos!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function acos!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(res[0])
@@ -1516,19 +1519,22 @@ end
         div!(res[k], r[0], ordQ)
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
-    @inbounds zero!(r, k) # r[k] <- 0
-    @inbounds sqr!(r, a, k) # r[k] <- (a^2)[k]
-    @inbounds subst!(r, r, k) # r[k] <- -r[k]
-    @inbounds sqrt!(r, r, k) # r[k] <- (sqrt(r))[k]
+    aux = zero(a)
+    zero!(r, k) # r[k] <- 0
+    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    subst!(r, r, k) # r[k] <- -r[k]
+    zero!(aux, 0)
+    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     return nothing
 end
 
-@inline function atan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function atan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    aux = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
     if k == 0
         res[0] = atan( a[0] )
         # zero!(r, a, 0)
-        sqr!(r, a, 0)
+        sqr!(r, a, aux, 0)
         add!(r, r, one(a[0][0][1]), 0)
         return nothing
     end
@@ -1539,20 +1545,20 @@ end
             mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
     @inbounds for ordQ in eachindex(a[0])
-        # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = - res[k][ordQ] / k
-        add!(tmp, a[k], tmp, ordQ)
+        # zero!(aux, res[k], ordQ)
+        aux[ordQ] = - res[k][ordQ] / k
+        add!(aux, a[k], aux, ordQ)
         zero!(res[k][ordQ])
-        div!(res[k], tmp, r[0], ordQ)
+        div!(res[k], aux, r[0], ordQ)
     end
+    zero!(aux)
     zero!(r[k])
-    sqr!(r, a, k)
+    sqr!(r, a, aux, k)
     return nothing
 end
 
-@inline function sinhcosh!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
+function sinhcosh!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         a::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     if k == 0
         @inbounds for ordQ in eachindex(a[0])
@@ -1574,12 +1580,13 @@ end
     return nothing
 end
 
-@inline function tanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function tanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    aux = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         @inbounds res[0] = tanh( a[0] )
         # zero!(res2, res, 0)
-        sqr!(res2, res, 0)
+        sqr!(res2, res, aux, 0)
         return nothing
     end
     # The recursion formula
@@ -1589,29 +1596,33 @@ end
             mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = res[k][ordQ] / k
-        subst!(res[k], a[k], tmp, ordQ)
+        aux[ordQ] = res[k][ordQ] / k
+        subst!(res[k], a[k], aux, ordQ)
     end
+    zero!(aux)
     zero!(res2[k])
-    sqr!(res2, res, k)
+    sqr!(res2, res, aux, k)
     return nothing
 end
 
-@inline function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     if k == 0
+        tmp0 = zero(tmp)
         @inbounds res[0] = asinh( a[0] )
         # r[0] = sqrt(1+a[0]^2)
-        tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
-        r[0] = square(a[0])
+        for ord in eachindex(a[0])
+            sqr!(r[0], a[0], tmp0[0][1], ord)
+        end
+        zero!(tmp0, 0)
         for ordQ in eachindex(a[0])
             one!(tmp, a[0], ordQ)
             add!(tmp, tmp, r[0], ordQ)
             # zero!(r[0], tmp, ordQ)
-            sqrt!(r[0], tmp, ordQ)
+            sqrt!(r[0], tmp, tmp0, ordQ)
         end
         return nothing
     end
@@ -1623,38 +1634,43 @@ end
         end
     end
     div!(res, res, k, k)
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
+        zero!(tmp, ordQ)
     end
     # Compute auxiliary term s=1+a^2
-    s = Taylor1(zero(a[0]), get_order(a))
+    s = zero(a)#Taylor1(zero(a[0]), get_order(a))
     for i = 0:k
-        sqr!(s, a, i)
+        sqr!(s, a, tmp, i)
         if i == 0
             s[0] = one(s[0]) + s[0]
             add!(s, one(s), s, 0)
         end
     end
     # Update aux term r = sqrt(s) = sqrt(1+a^2)
-    sqrt!(r, s, k)
+    sqrt!(r, s, zero(a), k)
     return nothing
 end
 
-@inline function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     if k == 0
+        tmp0 = zero(tmp)
         @inbounds res[0] = acosh( a[0] )
         # r[0] = sqrt(a[0]^2-1)
-        tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
-        r[0] = square(a[0])
+        # r[0] = square(a[0])
+        for ord in eachindex(a[0])
+            sqr!(r[0], a[0], tmp0[0][1], ord)
+        end
+        zero!(tmp0, 0)
         for ordQ in eachindex(a[0])
             one!(tmp, a[0], ordQ)
             subst!(tmp, r[0], tmp, ordQ)
             # zero!(r[0], tmp, ordQ)
-            sqrt!(r[0], tmp, ordQ)
+            sqrt!(r[0], tmp, tmp0, ordQ)
         end
         return nothing
     end
@@ -1666,37 +1682,37 @@ end
         end
     end
     div!(res, res, k, k)
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Compute auxiliary term s=a^2-1
-    s = Taylor1(zero(a[0]), get_order(a))
+    s = zero(a)#Taylor1(zero(a[0]), get_order(a))
+    zero!(tmp)
     for i = 0:k
-        sqr!(s, a, i)
+        sqr!(s, a, tmp, i)
         if i == 0
             s[0] = one(s[0]) + s[0]
             subst!(s, s, one(s), 0)
         end
     end
     # Update aux term r = sqrt(s) = sqrt(a^2-1)
-    sqrt!(r, s, k)
+    sqrt!(r, s, zero(a), k)
     return nothing
 end
 
-@inline function atanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function atanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
     if k == 0
         res[0] = atanh( a[0] )
         # zero!(r, a, 0)
-        sqr!(r, a, 0)
+        sqr!(r, a, tmp, 0)
         subst!(r, one(a[0][0][1]), r, 0)
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
@@ -1710,8 +1726,9 @@ end
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
+    zero!(tmp)
     zero!(r[k])
-    sqr!(r, a, k)
+    sqr!(r, a, tmp, k)
     return nothing
 end
 

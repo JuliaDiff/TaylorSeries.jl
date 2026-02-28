@@ -425,9 +425,9 @@ Base.iszero(::SymbNumber) = false
     @test tt[1] == 2.0
     TS.pow!(tt, 1.0+t, aux, 2, 2)
     @test tt[2] == 1.0
-    TS.sqrt!(tt, 1.0+t, 0, 0)
+    TS.sqrt!(tt, 1.0+t, zero(tt), 0, 0)
     @test tt[0] == 1.0
-    TS.sqrt!(tt, 1.0+t, 0)
+    TS.sqrt!(tt, 1.0+t, zero(tt), 0)
     @test tt[0] == 1.0
     TS.exp!(tt, 1.0*t, 0)
     @test tt[0] == exp(t[0])

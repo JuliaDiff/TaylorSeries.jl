@@ -566,8 +566,8 @@ end
     TS.pow!(xx, 1.0+xT, xx, 2, 1)
     @test xx[1] == HomogeneousPolynomial([2.0,0.0])
     xx = 1.0*zeroT
-    TS.sqrt!(xx, 1.0+xT, 0)
-    TS.sqrt!(xx, 1.0+xT, 1)
+    TS.sqrt!(xx, 1.0+xT, zero(xx), 0)
+    TS.sqrt!(xx, 1.0+xT, zero(xx), 1)
     @test xx[0] == 1.0
     @test xx[1] == HomogeneousPolynomial([0.5,0.0])
     xx = 1.0*zeroT
