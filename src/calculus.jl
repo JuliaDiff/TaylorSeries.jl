@@ -127,7 +127,7 @@ function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
     order = get_order(a)
     aa = a[0]/1 + zero(x)
     R = typeof(aa)
-    coeffs = Array{typeof(aa)}(undef, order+1)
+    coeffs = Memory{typeof(aa)}(undef, order+1)
     # fill!(coeffs, zero(aa))
     @inbounds for i = 1:order
         coeffs[i+1] = a[i-1] / i
@@ -183,7 +183,7 @@ specified through its symbol.
 """
 function differentiate(a::TaylorN, r=1::Int)
     T = TS.numtype(a)
-    coeffs = Array{HomogeneousPolynomial{T}}(undef, get_order(a))
+    coeffs = Memory{HomogeneousPolynomial{T}}(undef, get_order(a))
 
     @inbounds for ord = 1:get_order(a)
         coeffs[ord] = differentiate( a[ord], r)
@@ -266,7 +266,7 @@ const ∇ = TS.gradient
 Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials,
 evaluated at the vector `vals`. If `vals` is omitted, it is evaluated at zero.
 """
-function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
+function jacobian(vf::DenseVector{TaylorN{T}}) where {T<:Number}
     numVars = get_numvars()
     jac = Array{T}(undef, numVars, length(vf))
 
@@ -276,7 +276,8 @@ function jacobian(vf::Array{TaylorN{T},1}) where {T<:Number}
 
     return transpose(jac)
 end
-function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where {T<:Number,S<:Number}
+function jacobian(vf::DenseVector{TaylorN{T}}, vals::DenseVector{S}) where
+        {T<:Number,S<:Number}
     R = promote_type(T,S)
     numVars = get_numvars()
     @assert numVars == length(vals)
@@ -292,8 +293,8 @@ function jacobian(vf::Array{TaylorN{T},1}, vals::Array{S,1}) where {T<:Number,S<
     return transpose(jac)
 end
 
-function jacobian(vf::Array{Taylor1{TaylorN{T}},1}) where {T<:Number}
-    vv = convert(Array{TaylorN{Taylor1{T}},1}, vf)
+function jacobian(vf::Vector{Taylor1{TaylorN{T}}}) where {T<:Number}
+    vv = convert(Vector{TaylorN{Taylor1{T}}}, vf)
     jacobian(vv)
 end
 
@@ -307,7 +308,8 @@ Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials
 evaluated at the vector `vals`, and write results to `jac`. If `vals` is omitted,
 it is evaluated at zero.
 """
-function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
+function jacobian!(jac::DenseArray{T,2}, vf::DenseArray{TaylorN{T},1}) where
+        {T<:Number}
     numVars = get_numvars()
     @assert (length(vf), numVars) == size(jac)
     for comp2 = 1:numVars
@@ -317,8 +319,8 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1}) where {T<:Number}
     end
     nothing
 end
-function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1},
-        vals::Array{T,1}) where {T<:Number}
+function jacobian!(jac::DenseArray{T,2}, vf::DenseArray{TaylorN{T},1},
+        vals::DenseArray{T,1}) where {T<:Number}
     numVars = get_numvars()
     @assert numVars == length(vals)
     @assert (length(vf), numVars) == size(jac)
@@ -341,10 +343,10 @@ Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
 evaluated at the vector `vals`. If `vals` is omitted, it is evaluated at
 zero.
 """
-hessian(f::TaylorN{T}, vals::Array{S,1}) where {T<:Number,S<:Number} =
-    (R = promote_type(T,S); jacobian( gradient(f), vals::Array{R,1}) )
+hessian(f::TaylorN{T}, vals::Vector{S}) where {T<:Number, S<:Number} =
+    jacobian( gradient(f), vals::Vector{promote_type(T,S)})
 
-hessian(f::TaylorN{T}) where {T<:Number} = hessian( f, zeros(T, get_numvars()) )
+hessian(f::TaylorN{T}) where {T<:Number} = hessian(f, zeros(T, get_numvars()))
 
 """
 ```
@@ -356,10 +358,10 @@ Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`,
 evaluated at the vector `vals`, and write results to `hes`. If `vals` is
 omitted, it is evaluated at zero.
 """
-hessian!(hes::Array{T,2}, f::TaylorN{T}, vals::Array{T,1}) where {T<:Number} =
-    jacobian!(hes, gradient(f), vals)
+hessian!(hes::DenseArray{T,2}, f::TaylorN{T}, vals::DenseArray{T,1}) where
+    {T<:Number} = jacobian!(hes, gradient(f), vals)
 
-hessian!(hes::Array{T,2}, f::TaylorN{T}) where {T<:Number} =
+hessian!(hes::DenseArray{T,2}, f::TaylorN{T}) where {T<:Number} =
     jacobian!(hes, gradient(f))
 
 

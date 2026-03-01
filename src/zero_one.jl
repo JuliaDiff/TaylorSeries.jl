@@ -6,27 +6,37 @@
 # MIT Expat license
 #
 
+
 ## zero and one ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval iszero(a::$T) = iszero(a.coeffs)
 end
 
+function zero(a::Taylor1{T}) where {T<:Number}
+    v = Memory{T}(undef, get_order(a)+1)
+    v .= zero.(a.coeffs)
+    return Taylor1(v)
+end
+function zero(a::TaylorN{T}) where {T<:NumberNotSeriesN}
+    v = Memory{HomogeneousPolynomial{T}}(undef, get_order(a)+1)
+    v .= zero.(a.coeffs)
+    return TaylorN(v)
+end
 
 for T in (:Taylor1, :TaylorN)
-    @eval zero(a::$T) = $T(zero.(a.coeffs))
     @eval function one(a::$T)
         b = zero(a)
         b[0] = one(b[0])
         return b
     end
 end
-zero(v::Vector{T}) where {T<:AbstractSeries} = zero.(v)
+zero(v::DenseVector{T}) where {T<:AbstractSeries} = zero.(v)
 
 zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(zero(a.coeffs[1]), get_order(a))
 
 function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
+    v = Memory{HomogeneousPolynomial{T}}(undef, order+1)
     z = zero(a[1])
     v .= HomogeneousPolynomial.(z, 0:order)
     return v
@@ -40,8 +50,7 @@ one(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(one.(a.coeffs), get_order(a))
 
 function ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 && return [HomogeneousPolynomial([one(a[1])], 0)]
-    v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
+    v = Memory{HomogeneousPolynomial{T}}(undef, order+1)
     for ord in eachindex(v)
         v[ord] = HomogeneousPolynomial(ones(T, size_table[ord]), ord-1)
     end

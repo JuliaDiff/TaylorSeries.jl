@@ -203,7 +203,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(a[0][1], b)
             R = TS.numtype(aux)
-            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
+            coeffs = Memory{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, get_order(a)+1)
             coeffs .= a.coeffs
             @inbounds coeffs[1] = aux
@@ -214,7 +214,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(b, a[0][1])
             R = TS.numtype(aux)
-            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
+            coeffs = Memory{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, get_order(a)+1)
             coeffs .= $f.(a.coeffs)
             @inbounds coeffs[1] = aux
@@ -225,7 +225,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(a[0][1], b)
             R = TS.numtype(aux)
-            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, get_order(a)+1)
+            coeffs = Memory{HomogeneousPolynomial{Taylor1{R}}}(undef, get_order(a)+1)
             coeffs .= a.coeffs
             @inbounds coeffs[1] = aux
             return TaylorN(coeffs, get_order(a))
@@ -235,7 +235,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(b, a[0][1])
             R = TS.numtype(aux)
-            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, get_order(a)+1)
+            coeffs = Memory{HomogeneousPolynomial{Taylor1{R}}}(undef, get_order(a)+1)
             coeffs .= $f.(a.coeffs)
             @inbounds coeffs[1] = aux
             return TaylorN(coeffs, get_order(a))
@@ -342,7 +342,7 @@ end
 
 for T in (:Taylor1, :TaylorN)
     @eval begin
-        function sum!(v::$T{S}, a::AbstractArray{$T{S}}) where {S <: Number}
+        function sum!(v::$T{S}, a::DenseArray{$T{S}}) where {S <: Number}
             for i in eachindex(a)
                 for k in eachindex(v)
                     add!(v, v, a[i], k)
@@ -353,7 +353,7 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
-function sum!(v::TaylorN{S}, a::AbstractArray{HomogeneousPolynomial{S}}) where {S <: Number}
+function sum!(v::TaylorN{S}, a::DenseArray{HomogeneousPolynomial{S}}) where {S <: Number}
     for i in eachindex(a)
         for k in eachindex(v)
             add!(v, v, a[i], k)
@@ -838,7 +838,7 @@ end
 ## Division ##
 function /(a::Taylor1{Rational{T}}, b::S) where {T<:Integer, S<:NumberNotSeries}
     R = typeof( a[0] // b)
-    v = FixedSizeVectorDefault{R}(undef, get_order(a)+1)
+    v = Memory{R}(undef, get_order(a)+1)
     v .= a.coeffs .// b
     return Taylor1(v, get_order(a))
 end
@@ -846,7 +846,7 @@ end
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function /(a::$T{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = a.coeffs[1] / b
-        v = FixedSizeVectorDefault{typeof(aux)}(undef, length(a.coeffs))
+        v = Memory{typeof(aux)}(undef, length(a.coeffs))
         v .= a.coeffs ./ b
         return $T(v, get_order(a))
     end
@@ -866,7 +866,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
             {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = b.coeffs[1] / a
         R = typeof(aux)
-        coeffs = FixedSizeVectorDefault{R}(undef, length(b.coeffs))
+        coeffs = Memory{R}(undef, length(b.coeffs))
         coeffs .= b.coeffs ./ a
         return $T(coeffs, get_order(b))
     end
@@ -874,7 +874,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function /(b::$T{Taylor1{T}}, a::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = b.coeffs[1] / a
         R = typeof(aux)
-        coeffs = FixedSizeVectorDefault{R}(undef, length(b.coeffs))
+        coeffs = Memory{R}(undef, length(b.coeffs))
         coeffs .= b.coeffs ./ a
         return $T(coeffs, get_order(b))
     end
@@ -1429,7 +1429,7 @@ end
 # function Base.inv(A::StridedMatrix{Taylor1{T}}) where T
 #     checksquare(A)
 #     S = Taylor1{typeof((one(T)*zero(T) + one(T)*zero(T))/one(T))}
-#     AA = convert(AbstractArray{S}, A)
+#     AA = convert(DenseArray{S}, A)
 #     if istriu(AA)
 #         Ai = triu!(parent(inv(UpperTriangular(AA))))
 #     elseif istril(AA)
@@ -1452,7 +1452,7 @@ const LU_NoPivot = NoPivot()
 # Specialize a method of `lu` for Matrix{Taylor1{T}}, which avoids pivoting,
 # since the polynomial field is not an ordered one.
 # We can't assume an ordered field so we first try without pivoting
-function lu(A::AbstractMatrix{Taylor1{T}}; check::Bool = true) where {T<:Number}
+function lu(A::DenseMatrix{Taylor1{T}}; check::Bool = true) where {T<:Number}
     S = Taylor1{lutype(T)}
     F = lu!(copy_oftype(A, S), LU_NoPivot; check = false)
     if issuccess(F)

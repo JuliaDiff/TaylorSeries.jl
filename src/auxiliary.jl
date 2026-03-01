@@ -10,9 +10,9 @@
 
 """
     _coeffsHP(x::T, order::Int) where {T<:Number}
-    _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+    _coeffsHP(coeffs::DenseVector{T}, order::Int) where {T<:Number}
 
-Returns a `FixedSizeVectorDefault` of size `size_table[order+1]`
+Returns a `Memory{T}` of size `size_table[order+1]`
 to be used in the construction of an HomogeneousPolynomial of order
 `order`. The returned vector has the first entries of `coeffs`,
 and then it's filled with zeros.
@@ -20,42 +20,43 @@ and then it's filled with zeros.
 function _coeffsHP(x::T, order::Int) where {T<:NumberNotSeries}
     @assert order ≤ get_order()
     num_coeffs = size_table[order+1]
-    v = FixedSizeVectorDefault{T}(undef, num_coeffs)
+    v = Memory{T}(undef, num_coeffs)
     v .= zero.(x)
     v[1] = x
     return v
 end
 function _coeffsHP(x::Taylor1{T}, order::Int) where {T<:NumberNotSeries}
     @assert order ≤ get_order()
-    v = FixedSizeVectorDefault{Taylor1{T}}(undef, size_table[order+1])
+    v = Memory{Taylor1{T}}(undef, size_table[order+1])
     v .= zero.(x)
     v[1].coeffs .= x.coeffs
     return v
 end
-function _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+function _coeffsHP(coeffs::DenseVector{T}, order::Int) where {T<:Number}
     @assert order ≤ get_order()
     ll = length( coeffs )
     num_coeffs = size_table[order+1]
-    num_coeffs == ll && return FixedSizeVectorDefault(coeffs)
     # @assert ll ≤ num_coeffs
-    v = FixedSizeVectorDefault{T}(undef, num_coeffs)
+    v = Memory{T}(undef, num_coeffs)
     for ord in eachindex(coeffs)
         v[ord] = coeffs[ord]
     end
-    v[ll+1:num_coeffs] .= zero.(v[1])
+    for ord in ll+1:num_coeffs
+        v[ord] = zero(v[1])
+    end
     return v
 end
 
 """
-    _coeffsTN(v::AbstractArray{T,1}, order::Int) where {T<:Number}
+    _coeffsTN(v::DenseVector{T}, order::Int) where {T<:Number}
 
-Returns a `FixedSizeVectorDefault{HomogeneousPolynomial{T}}` of
+Returns a `Memory{HomogeneousPolynomial{T}}` of
 size `order+1`, to be used in the construction of a TaylorN{T} of order
 `order`. The returned vector has the entries of `v` at the proper
 location according to their `order`, and otherwise it is filled with
 the corresponding zeros.
 """
-function _coeffsTN(v::AbstractVector{HomogeneousPolynomial{T}},
+function _coeffsTN(v::DenseVector{HomogeneousPolynomial{T}},
         order::Int) where {T}
     coeffs = zeros(v[1], order)
     vord = get_order.(v)
@@ -80,7 +81,7 @@ end
 
 
 ## Minimum order of an HomogeneousPolynomial compatible with the vector's length
-function orderH(coeffs::AbstractArray{T,1}) where {T<:Number}
+function orderH(coeffs::DenseVector{T}) where {T<:Number}
     ord = 0
     ll = length(coeffs)
     for i = 1:get_order()+1
@@ -91,7 +92,7 @@ function orderH(coeffs::AbstractArray{T,1}) where {T<:Number}
 end
 
 ## Maximum order of a HomogeneousPolynomial vector; used by TaylorN constructor
-maxorderH(v::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
+maxorderH(v::DenseVector{HomogeneousPolynomial{T}}) where {T<:Number} =
     isempty(v) ? 0 : maximum(get_order.(v))
 
 
@@ -130,7 +131,7 @@ setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1(x.coeffs[:], get_order(x))
 setindex!(a::Taylor1{T}, x::T, u::UnitRange{Int}) where {T<:Number} =
     a.coeffs[u .+ 1] .= x
-function setindex!(a::Taylor1{T}, x::AbstractArray{T,1},
+function setindex!(a::Taylor1{T}, x::DenseVector{T},
         u::UnitRange{Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
@@ -138,11 +139,12 @@ function setindex!(a::Taylor1{T}, x::AbstractArray{T,1},
     end
 end
 setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] .= x
-setindex!(a::Taylor1{T}, x::AbstractArray{T,1}, c::Colon) where {T<:Number} =
+setindex!(a::Taylor1{T}, x::DenseVector{T}, c::Colon) where {T<:Number} =
     a.coeffs[c] .= x
 setindex!(a::Taylor1{T}, x::T, u::StepRange{Int,Int}) where {T<:Number} =
     a.coeffs[u[:] .+ 1] .= x
-function setindex!(a::Taylor1{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T<:Number}
+function setindex!(a::Taylor1{T}, x::Vector{T}, u::StepRange{Int,Int}) where
+        {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
         a.coeffs[u[ind]+1] = x[ind]
@@ -163,7 +165,7 @@ function getcoeff(a::HomogeneousPolynomial, v::NTuple{N,Int}) where {N}
     @inbounds n = pos_table[get_order(a)+1][kdic]
     a[n]
 end
-getcoeff(a::HomogeneousPolynomial, v::AbstractArray{Int,1}) =
+getcoeff(a::HomogeneousPolynomial, v::DenseVector{Int}) =
     getcoeff(a, (v...,))
 
 getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
@@ -175,15 +177,15 @@ setindex!(a::HomogeneousPolynomial{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n] = x
 setindex!(a::HomogeneousPolynomial{T}, x::T, n::UnitRange{Int}) where
     {T<:Number} = a.coeffs[n] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
+setindex!(a::HomogeneousPolynomial{T}, x::DenseVector{T},
     n::UnitRange{Int}) where {T<:Number} = a.coeffs[n] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::T, c::Colon) where {T<:Number} =
     a.coeffs[c] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
+setindex!(a::HomogeneousPolynomial{T}, x::DenseVector{T},
     c::Colon) where {T<:Number} = a.coeffs[c] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::T,
     u::StepRange{Int,Int}) where {T<:Number} = a.coeffs[u[:]] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
+setindex!(a::HomogeneousPolynomial{T}, x::DenseVector{T},
     u::StepRange{Int,Int}) where {T<:Number} = a.coeffs[u[:]] .= x[:]
 
 
@@ -199,7 +201,7 @@ function getcoeff(a::TaylorN, v::NTuple{N,Int}) where {N}
     @assert order ≤ get_order(a)
     getcoeff(a[order], v)
 end
-getcoeff(a::TaylorN, v::AbstractArray{Int,1}) = getcoeff(a, (v...,))
+getcoeff(a::TaylorN, v::DenseVector{Int}) = getcoeff(a, (v...,))
 
 getindex(a::TaylorN, n::Int) = a.coeffs[n+1]
 getindex(a::TaylorN, u::UnitRange{Int}) = view(a.coeffs, u .+ 1)
@@ -220,7 +222,7 @@ function setindex!(a::TaylorN{T}, x::T, u::UnitRange{Int}) where {T<:Number}
     return a[u]
 end
 function setindex!(a::TaylorN{T},
-        x::AbstractArray{HomogeneousPolynomial{T},1},
+        x::DenseVector{HomogeneousPolynomial{T}},
         u::UnitRange{Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
@@ -228,7 +230,7 @@ function setindex!(a::TaylorN{T},
     end
     return a[u]
 end
-function setindex!(a::TaylorN{T}, x::AbstractArray{T,1},
+function setindex!(a::TaylorN{T}, x::DenseVector{T},
         u::UnitRange{Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
@@ -238,9 +240,9 @@ function setindex!(a::TaylorN{T}, x::AbstractArray{T,1},
 end
 setindex!(a::TaylorN{T}, x::T, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
-setindex!(a::TaylorN{T}, x::AbstractArray{HomogeneousPolynomial{T},1},
+setindex!(a::TaylorN{T}, x::DenseVector{HomogeneousPolynomial{T}},
     ::Colon) where {T<:Number} = (a[0:end] = x; a[:])
-setindex!(a::TaylorN{T}, x::AbstractArray{T,1}, ::Colon) where {T<:Number} =
+setindex!(a::TaylorN{T}, x::DenseVector{T}, ::Colon) where {T<:Number} =
     (a[0:end] = x; a[:])
 function setindex!(a::TaylorN{T}, x::T, u::StepRange{Int,Int}) where {T<:Number}
     for ind in u
@@ -248,7 +250,7 @@ function setindex!(a::TaylorN{T}, x::T, u::StepRange{Int,Int}) where {T<:Number}
     end
     return a[u]
 end
-function setindex!(a::TaylorN{T}, x::AbstractArray{HomogeneousPolynomial{T},1},
+function setindex!(a::TaylorN{T}, x::DenseVector{HomogeneousPolynomial{T}},
         u::StepRange{Int,Int}) where {T<:Number}
     # a[u[:]] .= x[:]
     @assert length(u) == length(x)
@@ -257,7 +259,7 @@ function setindex!(a::TaylorN{T}, x::AbstractArray{HomogeneousPolynomial{T},1},
     end
     return a[u]
 end
-function setindex!(a::TaylorN{T}, x::Array{T,1},
+function setindex!(a::TaylorN{T}, x::Vector{T},
         u::StepRange{Int,Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
@@ -301,7 +303,8 @@ numtype(a) = eltype(a)
 Returns the type of the elements of the coefficients of `a`.
 """ numtype
 
-# Dumb methods included to properly export normalize_taylor (if IntervalArithmetic is loaded)
+# Dumb methods included to properly export normalize_taylor
+# (if IntervalArithmetic is loaded)
 @inline normalize_taylor(a::AbstractSeries) = a
 @inline aff_normalize(a::AbstractSeries) = a
 
@@ -335,7 +338,8 @@ end
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function fixorder(a::Taylor1{$T{T}}, b::Taylor1{$T{S}}) where
             {T<:NumberNotSeries, S<:NumberNotSeries}
-        (get_order(a) == get_order(b)) && (all(get_order.(a.coeffs) .== get_order.(b.coeffs))) && return a, b
+        (get_order(a) == get_order(b)) && (all(get_order.(a.coeffs) .==
+            get_order.(b.coeffs))) && return a, b
         minordT = _minorder(a, b)
         aa = Taylor1(a.coeffs, minordT)
         bb = Taylor1(b.coeffs, minordT)
@@ -400,7 +404,9 @@ end
 # Inspired from base/abstractarray.jl, line 665
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function copyto!(dst::$T{T}, src::$T{T}) where {T<:Number}
-        length(dst) < length(src) && throw(ArgumentError(string("Destination has fewer elements than required; no copy performed")))
+        length(dst) < length(src) && throw(
+            ArgumentError(string(
+                "Destination has fewer elements than required; no copy performed")))
         destiter = eachindex(dst)
         y = iterate(destiter)
         for x in src
@@ -423,7 +429,7 @@ constant_term(a::Taylor1) = a[0]
 
 constant_term(a::TaylorN) = a[0][1]
 
-constant_term(a::Vector{T}) where {T<:Number} = constant_term.(a)
+constant_term(a::DenseVector{T}) where {T<:Number} = constant_term.(a)
 
 constant_term(a::Number) = a
 
@@ -435,11 +441,12 @@ Returns the linear part of `a` as a polynomial (`Taylor1` or `TaylorN`),
 """
 linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]], get_order(a))
 
-linear_polynomial(a::HomogeneousPolynomial) = HomogeneousPolynomial(a[1], get_order(a))
+linear_polynomial(a::HomogeneousPolynomial) = HomogeneousPolynomial(a[1],
+    get_order(a))
 
 linear_polynomial(a::TaylorN) = TaylorN(a[1], get_order(a))
 
-linear_polynomial(a::Vector{T}) where {T<:Number} = linear_polynomial.(a)
+linear_polynomial(a::DenseVector{T}) where {T<:Number} = linear_polynomial.(a)
 
 linear_polynomial(a::Number) = a
 
@@ -450,7 +457,7 @@ Returns the nonlinear part of `a`. The fallback behavior is to return `zero(a)`.
 """
 nonlinear_polynomial(a::AbstractSeries) = a - constant_term(a) - linear_polynomial(a)
 
-nonlinear_polynomial(a::Vector{T}) where {T<:Number} = nonlinear_polynomial.(a)
+nonlinear_polynomial(a::DenseVector{T}) where {T<:Number} = nonlinear_polynomial.(a)
 
 nonlinear_polynomial(a::Number) = zero(a)
 
@@ -462,7 +469,8 @@ Internal macro used to check the number of threads in use, to prevent a data rac
 that modifies `coeff_table` when using `differentiate` or `integrate`; see
 https://github.com/JuliaDiff/TaylorSeries.jl/issues/318.
 
-This macro is inspired by the macro `@threaded`; see https://github.com/trixi-framework/Trixi.jl/blob/main/src/auxiliary/auxiliary.jl;
+This macro is inspired by the macro `@threaded`; see
+https://github.com/trixi-framework/Trixi.jl/blob/main/src/auxiliary/auxiliary.jl;
 and https://github.com/trixi-framework/Trixi.jl/pull/426/files.
 """
 macro isonethread(expr)

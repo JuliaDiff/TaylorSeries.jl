@@ -96,9 +96,9 @@ end
     set_variables("x", numvars=2, order=17)
     v = [1,2]
     vv = TS._coeffsHP(v, 2)
-    @test vv isa FixedSizeVectorDefault{Int}
+    @test vv isa Memory{Int}
     @test vv == [1,2,0]
-    @test_throws BoundsErrorLight TS._coeffsHP(vv,1)
+    @test_throws BoundsError TS._coeffsHP(vv,1)
     hpol_v = HomogeneousPolynomial(vv)
     @test findfirst(hpol_v) == 1
     @test findlast(hpol_v) == 2
@@ -186,10 +186,10 @@ end
     @test ones(xH,1) == [1, xH+yH]
     if VERSION < v"1.11"
         @test typeof(ones(xH,2)) ==
-            FixedSizeArray{HomogeneousPolynomial{Int},1,Vector{HomogeneousPolynomial{Int}}}
+            Memory{HomogeneousPolynomial{Int}}
     else
         @test typeof(ones(xH,2)) ==
-            FixedSizeArray{HomogeneousPolynomial{Int},1,Memory{HomogeneousPolynomial{Int64}}}
+            Memory{HomogeneousPolynomial{Int64}}
     end
     @test length(ones(xH,2)) == 3
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
@@ -724,8 +724,8 @@ end
     @test_throws DomainError log(x)
     @test_throws DomainError log1p(-2+x)
     @test_throws AssertionError cos(x)/sin(y)
-    @test_throws BoundsErrorLight xH[20]
-    @test_throws BoundsErrorLight xT[20]
+    @test_throws BoundsError xH[20]
+    @test_throws BoundsError xT[20]
 
     a = 3x + 4y +6x^2 + 8x*y
     @test typeof( norm(x) ) == Float64
