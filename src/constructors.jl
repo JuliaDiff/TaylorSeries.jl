@@ -82,14 +82,12 @@ julia> Taylor1(Rational{Int}, 4)
  1//1 t + 𝒪(t⁵)
 ```
 """
-# Taylor1(::Type{T}, order::Int) where {T<:Number} = Taylor1( [zero(T), one(T)], order)
 function Taylor1(::Type{T}, order::Int) where {T<:Number}
     coeffs = FixedSizeVectorDefault{T}(undef, order+1)
     coeffs .= zero(T)
     coeffs[2] = one(T)
     return Taylor1{T}(coeffs)
 end
-# Taylor1(order::Int) = Taylor1([0.0, 1.0], order)
 function Taylor1(order::Int)
     coeffs = FixedSizeVectorDefault{Float64}(undef, order+1)
     coeffs .= 0.0
