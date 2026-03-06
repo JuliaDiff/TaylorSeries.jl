@@ -7,242 +7,6 @@
 #
 
 # Arithmetic operations: +, -, *, /
-
-## Equality ##
-for T in (:Taylor1, :TaylorN)
-    @eval begin
-        ==(a::$T{T}, b::$T{S}) where {T<:Number,S<:Number} = ==(promote(a,b)...)
-
-        function ==(a::$T{T}, b::$T{T}) where {T<:Number}
-            if a.order != b.order
-                a, b = fixorder(a, b)
-            end
-            return a.coeffs == b.coeffs
-        end
-    end
-end
-
-function ==(a::Taylor1{TaylorN{T}}, b::TaylorN{Taylor1{S}}) where {T, S}
-    R = promote_type(T, S)
-    return a == convert(Taylor1{TaylorN{R}}, b)
-end
-==(b::TaylorN{Taylor1{S}}, a::Taylor1{TaylorN{T}}) where {T, S} = a == b
-
-function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-    a.order == b.order && return a.coeffs == b.coeffs
-    return iszero(a.coeffs) && iszero(b.coeffs)
-end
-
-
-## Total ordering ##
-for T in (:Taylor1, :TaylorN)
-    @eval begin
-        @inline function isless(a::$T{<:Number}, b::Real)
-            a0 = constant_term(a)
-            a0 != b && return isless(a0, b)
-            nz = findfirst(a-b)
-            if nz == -1
-                return isless(zero(a0), zero(b))
-            else
-                return isless(a[nz], zero(b))
-            end
-        end
-        @inline function isless(b::Real, a::$T{<:Number})
-            a0 = constant_term(a)
-            a0 != b && return isless(b, a0)
-            nz = findfirst(b-a)
-            if nz == -1
-                return isless(zero(b), zero(a0))
-            else
-                return isless(zero(b), a[nz])
-            end
-        end
-        #
-        @inline isless(a::$T{<:NumberNotSeries}, b::$T{<:NumberNotSeries}) =
-            isless(promote(a,b)...)
-        @inline isless(a::$T{T}, b::$T{T}) where {T<:NumberNotSeries} =
-            isless(a - b, zero(constant_term(a)))
-    end
-end
-
-
-#=
-# The following works for nested Taylor1s; iss #326.
-ti = Taylor1(9)
-to = Taylor1([zero(ti), one(ti)], 3)
-too = Taylor1([zero(to), one(to)], 2)
-tito = ti * to
-ti > to > 0        # ok
-ti^2 > tito > to^2 # ok
-ti > ti^2 > to     # ok, in the sense that ti is "constant term" of series in to
-=#
-@inline isless(a::Taylor1{T}, b::Taylor1{S}) where {T<:Number, S<:Number} =
-    isless(promote(a, b)...)
-@inline isless(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
-    {T<:Number} = isless(a - b, _zero_abstractfloat(a))
-
-# Helper function to get the correct zero to use in `isless`
-_zero_abstractfloat(a::Taylor1{T}) where {T<:NumberNotSeries} = zero(T)
-_zero_abstractfloat(a::Taylor1{T}) where {T<:Taylor1} =
-    _zero_abstractfloat(constant_term(a))
-
-
-@inline function isless(a::HomogeneousPolynomial{<:Number}, b::Real)
-    orda = get_order(a)
-    if orda == 0
-        return isless(a[1], b)
-    else
-        !iszero(b) && return isless(zero(a[1]), b)
-        nz = max(findfirst(a), 1)
-        return isless(a[nz], b)
-    end
-end
-@inline function isless(b::Real, a::HomogeneousPolynomial{<:Number})
-    orda = get_order(a)
-    if orda == 0
-        return isless(b, a[1])
-    else
-        !iszero(b) && return isless(b, zero(a[1]))
-        nz = max(findfirst(a),1)
-        return isless(b, a[nz])
-    end
-end
-
-@inline isless(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where
-    {T<:Number, S<:Number} = isless(promote(a,b)...)
-@inline function isless(a::HomogeneousPolynomial{T},
-        b::HomogeneousPolynomial{T}) where {T<:Number}
-    orda = get_order(a)
-    ordb = get_order(b)
-    if orda == ordb
-        return isless(a-b, zero(a[1]))
-    elseif orda < ordb
-        return isless(a, zero(a[1]))
-    else
-        return isless(-b, zero(a[1]))
-    end
-end
-
-# Mixtures
-@inline isless(a::Taylor1{TaylorN{<:NumberNotSeries}},
-    b::Taylor1{TaylorN{<:NumberNotSeries}}) = isless(promote(a, b)...)
-@inline isless(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
-    {T<:NumberNotSeries} = isless(a - b, zero(T))
-
-@inline isless(a::HomogeneousPolynomial{Taylor1{<:NumberNotSeries}},
-        b::HomogeneousPolynomial{Taylor1{<:NumberNotSeries}}) =
-    isless(promote(a, b)...)
-@inline function isless(a::HomogeneousPolynomial{Taylor1{T}},
-        b::HomogeneousPolynomial{Taylor1{T}}) where {T<:NumberNotSeries}
-    orda = get_order(a)
-    ordb = get_order(b)
-    if orda == ordb
-        return isless(a-b, zero(T))
-    elseif orda < ordb
-        return isless(a, zero(T))
-    else
-        return isless(-b, zero(T))
-    end
-end
-
-@inline isless(a::TaylorN{Taylor1{<:NumberNotSeries}},
-    b::TaylorN{Taylor1{<:NumberNotSeries}}) = isless(promote(a, b)...)
-@inline isless(a::TaylorN{Taylor1{T}}, b::TaylorN{Taylor1{T}}) where
-    {T<:NumberNotSeries} = isless(a - b, zero(T))
-
-
-@doc doc"""
-    isless(a::Taylor1{<:Real}, b::Real)
-    isless(a::TaylorN{<:Real}, b::Real)
-
-Compute `isless` by comparing the `constant_term(a)` and `b`. If they are equal,
-returns `a[nz] < 0`, with `nz` the first
-non-zero coefficient after the constant term. This defines a total order.
-
-For many variables, the ordering includes a lexicographical convention in order to be
-total. We have opted for the simplest one: the *larger* variable appears *before*
-for the `TaylorN` variables are defined (e.g., through [`set_variables`](@ref)).
-
-For nested `Taylor1{Taylor1{...}}`s, the ordering is established by which one
-is a `constant_term` of the other.
-
-Refs:
-- M. Berz, AIP Conference Proceedings 177, 275 (1988); https://doi.org/10.1063/1.37800
-- M. Berz, "Automatic Differentiation as Nonarchimedean Analysis", Computer Arithmetic and
-    Enclosure Methods, (1992), Elsevier, 439-450.
-
----
-
-    isless(a::Taylor1{T}, b::Taylor1{T})
-    isless(a::TaylorN{T}, b::Taylor1{T})
-
-Returns `isless(a - b, zero(T))`.
-""" isless
-
-
-## zero and one ##
-for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-    # @eval iszero(a::$T) = iszero(a.coeffs)
-    @eval function iszero(a::$T)
-        for i in eachindex(a)
-            iszero(a[i]) || return false
-        end
-        return true
-    end
-end
-
-for T in (:Taylor1, :TaylorN)
-    @eval zero(a::$T) = $T(zero(a[0]), a.order)
-    @eval function one(a::$T)
-        b = zero(a)
-        b[0] = one(b[0])
-        return b
-    end
-end
-function zero(v::Vector{T}) where {T<:AbstractSeries}
-    w = Vector{T}(undef, length(v))
-    for i in eachindex(v)
-        w[i] = zero(v[i])
-    end
-    return w
-end
-
-zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
-    HomogeneousPolynomial(zero(a.coeffs), a.order)
-
-function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 && return [HomogeneousPolynomial([zero(a[1])], 0)]
-    v = Vector{HomogeneousPolynomial{T}}(undef, order+1)
-    z = zero(a[1])
-    @simd for ord in eachindex(v)
-        @inbounds v[ord] = HomogeneousPolynomial(z, ord-1)
-    end
-    return v
-end
-
-zeros(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
-    zeros( HomogeneousPolynomial([zero(T)], 0), order)
-
-function one(a::HomogeneousPolynomial{T}) where {T<:Number}
-    v = one.(a.coeffs)
-    return HomogeneousPolynomial(v, a.order)
-end
-
-function ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 && return [HomogeneousPolynomial([one(a[1])], 0)]
-    v = Vector{HomogeneousPolynomial{T}}(undef, order+1)
-    @simd for ord in eachindex(v)
-        @inbounds num_coeffs = size_table[ord]
-        @inbounds v[ord] = HomogeneousPolynomial(ones(T, num_coeffs), ord-1)
-    end
-    return v
-end
-
-ones(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
-    ones( HomogeneousPolynomial([one(T)], 0), order)
-
-
-
 ## Addition and subtraction ##
 for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
@@ -252,7 +16,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 ($f)(promote(a, b)...)
 
             function ($f)(a::$T{T}, b::$T{T}) where {T<:Number}
-                if a.order != b.order
+                if get_order(a) != get_order(b)
                     a, b = fixorder(a, b)
                 end
                 c = zero(a)
@@ -273,18 +37,17 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             ($f)(a::$T{T}, b::S) where {T<:Number, S<:NumberNotSeries} = ($f)(promote(a, b)...)
 
             function ($f)(a::$T{T}, b::T) where {T<:Number}
-                coeffs = copy(a.coeffs)
-                @inbounds coeffs[1] = $f(a[0], b)
-                return $T(coeffs, a.order)
+                c = $T(a.coeffs[:])
+                c[0] = $f(a[0], b)
+                return c
             end
 
             ($f)(b::S, a::$T{T}) where {T<:Number, S<:NumberNotSeries} = ($f)(promote(b, a)...)
 
             function ($f)(b::T, a::$T{T}) where {T<:Number}
-                coeffs = similar(a.coeffs)
-                @__dot__ coeffs = ($f)(a.coeffs)
-                @inbounds coeffs[1] = $f(b, a[0])
-                return $T(coeffs, a.order)
+                c = $T($f(a.coeffs[:]))
+                c[0] = b + a[0]
+                return c
             end
 
             ## add! and subst! ##
@@ -415,16 +178,16 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     @eval begin
         function ($f)(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where
                 {T<:NumberNotSeriesN, S<:NumberNotSeriesN}
-            @assert a.order == b.order
+            @assert get_order(a) == get_order(b)
             v = ($f)(a.coeffs, b.coeffs)
-            return HomogeneousPolynomial(v, a.order)
+            return HomogeneousPolynomial(v, get_order(a))
         end
 
         function ($f)(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where
                 {T<:NumberNotSeriesN}
-            @assert a.order == b.order
+            @assert get_order(a) == get_order(b)
             v = ($f)(a.coeffs, b.coeffs)
-            return HomogeneousPolynomial(v, a.order)
+            return HomogeneousPolynomial(v, get_order(a))
         end
 
         # NOTE add! and subst! for HomogeneousPolynomial's act as += or -=
@@ -434,56 +197,54 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             return nothing
         end
 
-        function ($f)(a::HomogeneousPolynomial)
-            v = similar(a.coeffs)
-            @__dot__ v = ($f)(a.coeffs)
-            return HomogeneousPolynomial(v, a.order)
-        end
+        ($f)(a::HomogeneousPolynomial) = HomogeneousPolynomial(($f)(a.coeffs), get_order(a))
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::S) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(a[0][1], b)
             R = TS.numtype(aux)
-            coeffs = Vector{HomogeneousPolynomial{Taylor1{R}}}(undef, a.order+1)
-            @__dot__ coeffs = a.coeffs
+            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
+                    undef, get_order(a)+1)
+            coeffs .= a.coeffs
             @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, a.order)
+            return TaylorN(coeffs, get_order(a))
         end
 
         function ($f)(b::S, a::TaylorN{Taylor1{T}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(b, a[0][1])
             R = TS.numtype(aux)
-            coeffs = Vector{HomogeneousPolynomial{Taylor1{R}}}(undef, a.order+1)
-            @__dot__ coeffs = $f(a.coeffs)
+            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
+                    undef, get_order(a)+1)
+            coeffs .= $f.(a.coeffs)
             @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, a.order)
+            return TaylorN(coeffs, get_order(a))
         end
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::Taylor1{S}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(a[0][1], b)
             R = TS.numtype(aux)
-            coeffs = Vector{HomogeneousPolynomial{Taylor1{R}}}(undef, a.order+1)
+            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, get_order(a)+1)
             coeffs .= a.coeffs
             @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, a.order)
+            return TaylorN(coeffs, get_order(a))
         end
 
         function ($f)(b::Taylor1{S}, a::TaylorN{Taylor1{T}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(b, a[0][1])
             R = TS.numtype(aux)
-            coeffs = Vector{HomogeneousPolynomial{Taylor1{R}}}(undef, a.order+1)
-            @__dot__ coeffs = $f(a.coeffs)
+            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, get_order(a)+1)
+            coeffs .= $f.(a.coeffs)
             @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, a.order)
+            return TaylorN(coeffs, get_order(a))
         end
 
         function ($f)(a::Taylor1{TaylorN{T}}, b::S) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = ($f)(a[0][0][1], b)
-            c = Taylor1( TaylorN( zero(aux), a[0].order), a.order)
+            c = Taylor1( TaylorN( zero(aux), get_order(a[0])), get_order(a))
             for k in eachindex(a)
                 ($fc)(c, a, b, k)
             end
@@ -493,7 +254,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($f)(b::S, a::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = ($f)(b, a[0][0][1])
-            c = Taylor1( TaylorN( zero(aux), a[0].order), a.order)
+            c = Taylor1( TaylorN( zero(aux), get_order(a[0])), get_order(a))
             for k in eachindex(a)
                 ($fc)(c, b, a, k)
             end
@@ -503,7 +264,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($f)(a::Taylor1{TaylorN{T}}, b::TaylorN{S}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = $f(a[0], b)
-            c = Taylor1( zero(aux), a.order)
+            c = Taylor1( zero(aux), get_order(a))
             for k in eachindex(a)
                 ($fc)(c, a, b, k)
             end
@@ -513,7 +274,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($f)(b::TaylorN{S}, a::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries,S<:NumberNotSeries}
             @inbounds aux = $f(b, a[0])
-            c = Taylor1( zero(aux), a.order)
+            c = Taylor1( zero(aux), get_order(a))
             for k in eachindex(a)
                 ($fc)(c, a, b, k)
             end
@@ -527,7 +288,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     @eval begin
         function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries}
-            if a.order != b.order || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
+            if get_order(a) != get_order(b) ||
+                    any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
                 a, b = fixorder(a, b)
             end
             c = zero(a)
@@ -548,7 +310,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($fc)(v::Taylor1{TaylorN{T}}, a::NumberNotSeries,
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
             @inbounds for i in eachindex(v[k])
-                aaa = (k == 0 && i == 0) ? a : zero(a)
+                aaa = ifelse(k == 0 && i == 0, a, zero(a))
                 for j in eachindex(v[k][i])
                     v[k][i][j] = ($f)(aaa, b[k][i][j])
                 end
@@ -558,7 +320,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($fc)(v::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
                 a::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
             @inbounds for i in eachindex(v[k])
-                aaa = (k == 0 && i == 0) ? a : zero(a)
+                aaa = ifelse(k == 0 && i == 0, a, zero(a))
                 for j in eachindex(v[k][i])
                     v[k][i][j] = ($f)(b[k][i][j], aaa)
                 end
@@ -606,7 +368,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function *(a::T, b::$T{S}) where {T<:NumberNotSeries, S<:NumberNotSeries}
-            v = $T( a * b[0], b.order)
+            v = $T( a * b[0], get_order(b))
             @inbounds for k in eachindex(v)
                 mul!(v, b, a, k)
             end
@@ -614,7 +376,7 @@ for T in (:Taylor1, :TaylorN)
         end
         *(b::$T{S}, a::T) where {T<:NumberNotSeries, S<:NumberNotSeries} = a * b
         function *(a::T, b::$T{T}) where {T<:NumberNotSeries}
-            v = $T( a * b[0], b.order)
+            v = $T( a * b[0], get_order(b))
             @inbounds for k in eachindex(v)
                 mul!(v, b, a, k)
             end
@@ -625,29 +387,29 @@ for T in (:Taylor1, :TaylorN)
 end
 
 *(a::T, b::HomogeneousPolynomial{S}) where {T<:NumberNotSeries,
-    S<:NumberNotSeries} = HomogeneousPolynomial(a * b.coeffs, b.order)
+    S<:NumberNotSeries} = HomogeneousPolynomial(a * b.coeffs, get_order(b))
 *(b::HomogeneousPolynomial{S}, a::T) where {T<:NumberNotSeries,
     S<:NumberNotSeries} = a * b
 *(a::T, b::HomogeneousPolynomial{T}) where {T<:NumberNotSeries} =
-    HomogeneousPolynomial(a * b.coeffs, b.order)
+    HomogeneousPolynomial(a * b.coeffs, get_order(b))
 *(b::HomogeneousPolynomial{T}, a::T) where {T<:NumberNotSeries} = a * b
 
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval begin
         *(a::T, b::$T{Taylor1{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = $T( a .* b.coeffs, b.order)
+            S<:NumberNotSeries} = $T( a .* b.coeffs, get_order(b))
         *(b::$T{Taylor1{S}}, a::T) where {T<:NumberNotSeries,
             S<:NumberNotSeries} = a * b
         *(a::T, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = Taylor1(a .* b.coeffs[:], b.order)
+            S<:NumberNotSeries} = Taylor1(a .* b.coeffs)
         *(b::Taylor1{$T{S}}, a::T) where
             {T<:NumberNotSeries, S<:NumberNotSeries} = a * b
         *(a::Taylor1{T}, b::$T{Taylor1{S}}) where
-            {T<:NumberNotSeries, S<:NumberNotSeries} = $T(a .* b.coeffs, b.order)
+            {T<:NumberNotSeries, S<:NumberNotSeries} = $T(a .* b.coeffs, get_order(b))
         *(b::$T{Taylor1{R}}, a::Taylor1{T}) where
             {T<:NumberNotSeries, R<:NumberNotSeries} = a * b
         *(a::$T{T}, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = Taylor1(a .* b.coeffs, b.order)
+            S<:NumberNotSeries} = Taylor1(a .* b.coeffs)
         *(b::Taylor1{$T{S}}, a::$T{T}) where {T<:NumberNotSeries,
             S<:NumberNotSeries} = a * b
     end
@@ -655,7 +417,7 @@ end
 
 for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
     @eval function *(a::$T{T}, b::$T{T}) where {T<:$W}
-        if a.order != b.order
+        if get_order(a) != get_order(b)
             a, b = fixorder(a, b)
         end
         c = zero(a)
@@ -667,7 +429,7 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
 end
 
 function *(a::T, b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
-    v = Taylor1( a * b[0], b.order)
+    v = Taylor1( a * b[0], get_order(b))
     @inbounds for k in eachindex(v)
         mul!(v, b, a, k)
     end
@@ -676,7 +438,7 @@ end
 *(b::Taylor1{Taylor1{T}}, a::T) where {T<:NumberNotSeriesN} = a * b
 
 function *(a::Taylor1{T}, b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
-    v = Taylor1( a * b[0], b.order)
+    v = Taylor1( a * b[0], get_order(b))
     @inbounds for k in eachindex(v)
         mul!(v, b, a, k)
     end
@@ -690,7 +452,7 @@ end
 
 function *(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where
         {T<:NumberNotSeriesN}
-    order = a.order + b.order
+    order = get_order(a) + get_order(b)
     # NOTE: the following returns order 0, but could be get_order(), or get_order(a)
     order > get_order() && return HomogeneousPolynomial(zero(a[1]), get_order(a))
     res = HomogeneousPolynomial(zero(a[1]), order)
@@ -705,7 +467,7 @@ function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{S}}) where
 end
 
 function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    if (a.order != b.order) || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
+    if (get_order(a) != get_order(b)) || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
         a, b = fixorder(a, b)
     end
     res = zero(a)
@@ -1013,19 +775,22 @@ c, a and b are `HomogeneousPolynomial`.
 """
 @inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
-    # (iszero(b) || iszero(a)) && return nothing
-    @inbounds num_coeffs_a = size_table[a.order+1]
-    @inbounds num_coeffs_b = size_table[b.order+1]
-    @inbounds posTb = pos_table[c.order+1]
-    @inbounds indTa = index_table[a.order+1]
-    @inbounds indTb = index_table[b.order+1]
+    (_isthinzero(b) || _isthinzero(a)) && return nothing
+    order_a = get_order(a)+1
+    order_b = get_order(b)+1
+    order_c = get_order(c)+1
+    @inbounds num_coeffs_a = size_table[order_a]
+    @inbounds num_coeffs_b = size_table[order_b]
+    @inbounds posTb = pos_table[order_c]
+    @inbounds indTa = index_table[order_a]
+    @inbounds indTb = index_table[order_b]
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
-        # iszero(ca) && continue
+        _isthinzero(ca) && continue
         inda = indTa[na]
         @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
-            # iszero(cb) && continue
+            _isthinzero(cb) && continue
             indb = indTb[nb]
             pos = posTb[inda + indb]
             c[pos] += ca * cb
@@ -1044,19 +809,22 @@ c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
 """
 @inline function mul_scalar!(c::HomogeneousPolynomial, scalar::NumberNotSeries, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
-    # (iszero(b) || iszero(a)) && return nothing
-    @inbounds num_coeffs_a = size_table[a.order+1]
-    @inbounds num_coeffs_b = size_table[b.order+1]
-    @inbounds posTb = pos_table[c.order+1]
-    @inbounds indTa = index_table[a.order+1]
-    @inbounds indTb = index_table[b.order+1]
+    (_isthinzero(b) || _isthinzero(a)) && return nothing
+    order_a = get_order(a)+1
+    order_b = get_order(b)+1
+    order_c = get_order(c)+1
+    @inbounds num_coeffs_a = size_table[order_a]
+    @inbounds num_coeffs_b = size_table[order_b]
+    @inbounds posTb = pos_table[order_c]
+    @inbounds indTa = index_table[order_a]
+    @inbounds indTb = index_table[order_b]
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
-        # iszero(ca) && continue
+        _isthinzero(ca) && continue
         inda = indTa[na]
         @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
-            # iszero(cb) && continue
+            _isthinzero(cb) && continue
             indb = indTb[nb]
             pos = posTb[inda + indb]
             c[pos] += scalar * ca * cb
@@ -1070,22 +838,22 @@ end
 ## Division ##
 function /(a::Taylor1{Rational{T}}, b::S) where {T<:Integer, S<:NumberNotSeries}
     R = typeof( a[0] // b)
-    v = Vector{R}(undef, a.order+1)
-    @__dot__ v = a.coeffs // b
-    return Taylor1(v, a.order)
+    v = FixedSizeVectorDefault{R}(undef, get_order(a)+1)
+    v .= a.coeffs .// b
+    return Taylor1(v, get_order(a))
 end
 
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function /(a::$T{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = a.coeffs[1] / b
-        v = Vector{typeof(aux)}(undef, length(a.coeffs))
-        @__dot__ v = a.coeffs / b
-        return $T(v, a.order)
+        v = FixedSizeVectorDefault{typeof(aux)}(undef, length(a.coeffs))
+        v .= a.coeffs ./ b
+        return $T(v, get_order(a))
     end
 
     # @eval function /(a::$T{T}, b::T) where {T<:Number}
     #     @inbounds aux = a.coeffs[1] / b
-    #     c = $T( zero(aux), a.order )
+    #     c = $T( zero(aux), get_order(a) )
     #     for ord in eachindex(c)
     #         div!(c, a, b, ord) # updates c[ord]
     #     end
@@ -1098,23 +866,23 @@ for T in (:HomogeneousPolynomial, :TaylorN)
             {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = b.coeffs[1] / a
         R = typeof(aux)
-        coeffs = Vector{R}(undef, length(b.coeffs))
-        @__dot__ coeffs = b.coeffs / a
-        return $T(coeffs, b.order)
+        coeffs = FixedSizeVectorDefault{R}(undef, length(b.coeffs))
+        coeffs .= b.coeffs ./ a
+        return $T(coeffs, get_order(b))
     end
 
     @eval function /(b::$T{Taylor1{T}}, a::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = b.coeffs[1] / a
         R = typeof(aux)
-        coeffs = Vector{R}(undef, length(b.coeffs))
-        @__dot__ coeffs = b.coeffs / a
-        return $T(coeffs, b.order)
+        coeffs = FixedSizeVectorDefault{R}(undef, length(b.coeffs))
+        coeffs .= b.coeffs ./ a
+        return $T(coeffs, get_order(b))
     end
 
     @eval function /(b::Taylor1{$T{S}}, a::$T{T}) where
             {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = b[0] / a
-        v = Taylor1(zero(aux), b.order)
+        v = Taylor1(zero(aux), get_order(b))
         @inbounds for k in eachindex(b)
             v[k] = b[k] / a
         end
@@ -1126,7 +894,7 @@ end
 
 function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     iszero(a) && !iszero(b) && return zero(a)
-    if a.order != b.order
+    if get_order(a) != get_order(b)
         a, b = fixorder(a, b)
     end
 
@@ -1140,7 +908,7 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
         aa = convert(Taylor1{R}, a)
         bb = convert(Taylor1{R}, b)
     end
-    c = Taylor1(cdivfact, a.order-ordfact)
+    c = Taylor1(cdivfact, get_order(a)-ordfact)
     for ord in eachindex(c)
         div!(c, aa, bb, ord) # updates c[ord]
     end
@@ -1154,13 +922,13 @@ end
 function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
     @assert !iszero(constant_term(b))
 
-    if a.order != b.order
+    if get_order(a) != get_order(b)
         a, b = fixorder(a, b)
     end
 
     # first coefficient
     @inbounds cdivfact = a[0] / constant_term(b)
-    c = TaylorN(cdivfact, a.order)
+    c = TaylorN(cdivfact, get_order(a))
     for ord in eachindex(c)
         div!(c, a, b, ord) # updates c[ord]
     end
@@ -1170,7 +938,7 @@ end
 
 function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     iszero(a) && !iszero(b) && return zero(a)
-    if (a.order != b.order) || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
+    if (get_order(a) != get_order(b)) || any(get_order.(a.coeffs) .!= get_order.(b.coeffs))
         a, b = fixorder(a, b)
     end
     # order and coefficient of first factorized term
@@ -1183,7 +951,7 @@ function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSe
         aa = convert(Taylor1{TaylorN{R}}, a)
         bb = convert(Taylor1{TaylorN{R}}, b)
     end
-    res = Taylor1(cdivfact, a.order-ordfact)
+    res = Taylor1(cdivfact, get_order(a)-ordfact)
     for ordT in eachindex(res)
         div!(res, aa, bb, ordT)
     end
@@ -1205,7 +973,7 @@ function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     res = zero(b)
     iszero(a) && !iszero(b) && return res
 
-    aa = Taylor1(a, b.order)
+    aa = Taylor1(a, get_order(b))
     for ordT in eachindex(res)
         div!(res, aa, b, ordT)
     end
@@ -1217,8 +985,8 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
     # order of first factorized term; a1 and b1 assumed to be of the same order
     a1nz = findfirst(a1)
     b1nz = findfirst(b1)
-    a1nz = a1nz ≥ 0 ? a1nz : a1.order
-    b1nz = b1nz ≥ 0 ? b1nz : a1.order
+    a1nz = a1nz ≥ 0 ? a1nz : get_order(a1)
+    b1nz = b1nz ≥ 0 ? b1nz : get_order(a1)
     ordfact = min(a1nz, b1nz)
     cdivfact = a1[ordfact] / b1[ordfact]
 
@@ -1262,12 +1030,13 @@ function div!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         @inbounds c[0] = cdivfact
         return nothing
     end
-    imin = max(0, k+ordfact-b.order)
+    b_order = get_order(b)
+    imin = max(0, k+ordfact-b_order)
     @inbounds c[k] = c[imin] * b[k+ordfact-imin]
     @inbounds for i = imin+1:k-1
         c[k] += c[i] * b[k+ordfact-i]
     end
-    if k+ordfact ≤ b.order
+    if k+ordfact ≤ b_order
         @inbounds c[k] = a[k+ordfact] - c[k]
     else
         @inbounds c[k] = - c[k]
@@ -1343,7 +1112,8 @@ function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         identity!(c, aux, k)
         return nothing
     end
-    imin = max(0, k+ordfact-b.order)
+    b_order = get_order(b)
+    imin = max(0, k+ordfact-b_order)
     # c[k] = c[imin] * b[k+ordfact-imin]
     mul!(c[k], c[imin], b[k+ordfact-imin])
     for i = imin+1:k-1
@@ -1353,7 +1123,7 @@ function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         end
     end
     zero!(aux)
-    if k+ordfact ≤ b.order
+    if k+ordfact ≤ b_order
         # @inbounds aux <- a[k+ordfact] - c[k]
         for ord in eachindex(minlength(aux, a[k+ordfact]))
             subst!(aux, a[k+ordfact], c[k], ord)
@@ -1569,8 +1339,8 @@ end
     # ordfact, cdivfact = divfactorization(a, b)
     anz = findfirst(a)
     bnz = findfirst(b)
-    anz = anz ≥ 0 ? anz : a.order
-    bnz = bnz ≥ 0 ? bnz : a.order
+    anz = anz ≥ 0 ? anz : get_order(a)
+    bnz = bnz ≥ 0 ? bnz : get_order(a)
     ordfact = min(anz, bnz)
 
     # Is the polynomial factorizable?
@@ -1585,13 +1355,13 @@ end
         @inbounds div!(c[0], a[ordfact], b[ordfact])
         return nothing
     end
-
-    imin = max(0, k+ordfact-b.order)
+    b_order = get_order(b)
+    imin = max(0, k+ordfact-b_order)
     @inbounds mul!(c[k], c[imin], b[k+ordfact-imin])
     @inbounds for i = imin+1:k-1
         mul!(c[k], c[i], b[k+ordfact-i])
     end
-        if k+ordfact ≤ b.order
+        if k+ordfact ≤ b_order
         # @inbounds c[k] = (a[k+ordfact]-c[k]) / b[ordfact]
         @inbounds for l in eachindex(c[k])
             subst!(c[k], a[k+ordfact], c[k], l)
@@ -1629,7 +1399,6 @@ function mul!(y::Vector{Taylor1{T}},
     @assert (length(y)== n && length(b)== k)
 
     # determine the maximal order of b
-    # order = maximum([b1.order for b1 in b])
     order = maximum(get_order.(b))
 
     # Use matrices of coefficients (of proper size) and mul!
@@ -1637,7 +1406,7 @@ function mul!(y::Vector{Taylor1{T}},
     B = Array{T}(undef, k, order+1)
     B = zero.(B)
     for i = 1:k
-        @inbounds ord = b[i].order
+        @inbounds ord = get_order(b[i])
         @inbounds for j = 1:ord+1
             B[i,j] = b[i][j-1]
         end

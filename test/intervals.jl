@@ -22,7 +22,7 @@ setdisplay(:full)
     p5(x, a) = x^5 + ifive*a*x^4 + iten*a^2*x^3 + iten*a^3*x^2 + ifive*a^4*x + a^5
 
     ti = Taylor1(Interval{Float64}, 10)
-    x, y = set_variables(Interval{Float64}, "x y")
+    x, y = set_variables(Interval{Float64}, "x y", order=6)
 
     @test eltype(ti) == Taylor1{Interval{Float64}}
     @test eltype(x) == TaylorN{Interval{Float64}}

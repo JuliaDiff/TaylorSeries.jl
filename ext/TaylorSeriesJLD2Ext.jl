@@ -31,7 +31,7 @@ function convert(::Type{TaylorNSerialization{T}}, eph::TaylorN{T}) where {T}
     # Number of variables
     n = length(vars)
     # TaylorN order
-    varorder = eph.order
+    varorder = get_order(eph)
     # Number of coefficients in each TaylorN
     L = varorder + 1
     # Number of coefficients in each HomogeneousPolynomial

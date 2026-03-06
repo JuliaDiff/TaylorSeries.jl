@@ -59,8 +59,8 @@ end
     @test get_order() == 6
     @test get_numvars() == 2
 
-    @test get_variables()[1].order == get_order()
-    @test get_variables(2)[1].order == 2
+    @test get_order(get_variables()[1]) == get_order()
+    @test get_order(get_variables(2)[1]) == 2
     @test get_variables(3)[1] == TaylorN(1, order=3)
     @test get_variables(Int, 3)[1] == TaylorN(Int, 1, order=3)
     @test length(get_variables()) == get_numvars()
@@ -79,7 +79,7 @@ end
     @test iterate(y, 1) == (HomogeneousPolynomial([0.0, 1.0], 1), 2)
     @test isnothing(iterate(x, 7))
 
-    @test x.order == 6
+    @test get_order(x) == 6
     @test TS.name_taylorNvar(1) == " x"
     @test TS._params_TaylorN_.variable_names == ["x","y"]
     @test TS._params_TaylorN_.variable_symbols == [:x, :y]
@@ -95,23 +95,24 @@ end
 
     set_variables("x", numvars=2, order=17)
     v = [1,2]
-    @test typeof(TS.resize_coeffsHP!(v,2)) == Nothing
-    @test v == [1,2,0]
-    @test_throws AssertionError TS.resize_coeffsHP!(v,1)
-    hpol_v = HomogeneousPolynomial(v)
+    vv = TS._coeffsHP(v, 2)
+    @test vv isa FixedSizeVectorDefault{Int}
+    @test vv == [1,2,0]
+    @test_throws BoundsErrorLight TS._coeffsHP(vv,1)
+    hpol_v = HomogeneousPolynomial(vv)
     @test findfirst(hpol_v) == 1
     @test findlast(hpol_v) == 2
     hpol_v[3] = 3
-    @test v == [1,2,3]
+    @test hpol_v.coeffs == [1,2,3]
     hpol_v[1:3] = 3
-    @test v == [3,3,3]
+    @test hpol_v.coeffs == [3,3,3]
     hpol_v[1:2:2] = 0
-    @test v == [0,3,3]
+    @test hpol_v.coeffs == [0,3,3]
     @test findfirst(hpol_v) == 2
     @test findlast(hpol_v) == 3
     hpol_v[1:1:2] = [1,2]
     @test all(hpol_v[1:1:2] .== [1,2])
-    @test v == [1,2,3]
+    @test hpol_v.coeffs == [1,2,3]
     hpol_v[:] = zeros(Int, 3)
     @test hpol_v == 0
     @test findfirst(hpol_v) == -1
@@ -183,7 +184,13 @@ end
     @test zeroT[0] == HomogeneousPolynomial(0, 0)
     @test uT[0] == HomogeneousPolynomial(1, 0)
     @test ones(xH,1) == [1, xH+yH]
-    @test typeof(ones(xH,2)) == Array{HomogeneousPolynomial{Int},1}
+    if VERSION < v"1.11"
+        @test typeof(ones(xH,2)) ==
+            FixedSizeArray{HomogeneousPolynomial{Int},1,Vector{HomogeneousPolynomial{Int}}}
+    else
+        @test typeof(ones(xH,2)) ==
+            FixedSizeArray{HomogeneousPolynomial{Int},1,Memory{HomogeneousPolynomial{Int64}}}
+    end
     @test length(ones(xH,2)) == 3
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
         [HomogeneousPolynomial([complex(1,0)], 0)]
@@ -397,7 +404,7 @@ end
     pol = sin(xT+yT*xT)+yT^2-(1-xT)^3
     q = deepcopy(pol)
     q[:] = 0.0
-    @test get_order.(q[:]) == collect(0:q.order)
+    @test get_order.(q[:]) == collect(0:get_order(q))
     @test q[:] == zero(q[:])
     q[:] .= pol.coeffs
     @test q == pol
@@ -418,21 +425,21 @@ end
     @test q[1] == pol[1]
     @test q[end] == pol[end]
     q[:] .= pol.coeffs
-    zHall = zeros(HomogeneousPolynomial{Float64}, q.order)
+    zHall = zeros(HomogeneousPolynomial{Float64}, get_order(q))
     q[:] .= zHall
     @test q[:] == zHall
     q[:] .= pol.coeffs
     q[1:end-1] .= zHall[2:end-1]
     @test q[1:end-1] == zHall[2:end-1]
     q[:] .= pol.coeffs
-    @test q[:] != zeros(q.order+1)
-    q[:] .= zeros(q.order+1)
-    @test q[:] == zeros(q.order+1)
+    @test q[:] != zeros(get_order(q)+1)
+    q[:] .= zeros(get_order(q)+1)
+    @test q[:] == zeros(get_order(q)+1)
     q[:] .= pol.coeffs
-    q[1:end-1] .= zeros(q.order+1)[2:end-1]
+    q[1:end-1] .= zeros(get_order(q)+1)[2:end-1]
     @test q != pol
     @test all(q[1:1:end-1] .== 0.0)
-    @test q[1:end-1] == zeros(q.order+1)[2:end-1]
+    @test q[1:end-1] == zeros(get_order(q)+1)[2:end-1]
     @test q[0] == pol[0]
     @test q[end] == pol[end]
     q[:] .= pol.coeffs
@@ -559,8 +566,8 @@ end
     TS.pow!(xx, 1.0+xT, xx, 2, 1)
     @test xx[1] == HomogeneousPolynomial([2.0,0.0])
     xx = 1.0*zeroT
-    TS.sqrt!(xx, 1.0+xT, 0)
-    TS.sqrt!(xx, 1.0+xT, 1)
+    TS.sqrt!(xx, 1.0+xT, zero(xx), 0)
+    TS.sqrt!(xx, 1.0+xT, zero(xx), 1)
     @test xx[0] == 1.0
     @test xx[1] == HomogeneousPolynomial([0.5,0.0])
     xx = 1.0*zeroT
@@ -683,16 +690,16 @@ end
     @test string(ab) ==
         "TaylorN{Float64}(HomogeneousPolynomial{Float64}" *
         "[HomogeneousPolynomial{Float64}([0.0], 0), " *
-        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)"
+        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)])"
     @test string([aa, aa]) ==
         "HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
         "([1.4142135623730951, 0.0], 1), HomogeneousPolynomial{Float64}" *
         "([1.4142135623730951, 0.0], 1)]"
     @test string([ab, ab]) == "TaylorN{Float64}[TaylorN{Float64}" *
         "(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}([0.0], 0), " *
-        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1), " *
+        "HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)]), " *
         "TaylorN{Float64}(HomogeneousPolynomial{Float64}[HomogeneousPolynomial{Float64}" *
-        "([0.0], 0), HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)], 1)]"
+        "([0.0], 0), HomogeneousPolynomial{Float64}([0.0, 1.4142135623730951], 1)])]"
     use_show_default(false)
     @test string(aa) == " 1.4142135623730951 x₁"
     @test string(ab) == " 1.4142135623730951 x₂ + 𝒪(‖x‖²)"
@@ -717,8 +724,8 @@ end
     @test_throws DomainError log(x)
     @test_throws DomainError log1p(-2+x)
     @test_throws AssertionError cos(x)/sin(y)
-    @test_throws BoundsError xH[20]
-    @test_throws BoundsError xT[20]
+    @test_throws BoundsErrorLight xH[20]
+    @test_throws BoundsErrorLight xT[20]
 
     a = 3x + 4y +6x^2 + 8x*y
     @test typeof( norm(x) ) == Float64

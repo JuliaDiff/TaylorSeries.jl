@@ -41,7 +41,7 @@ for I in (:Interval, :ComplexI)
         TS._isthinzero(x::$I{T}) where {T<:Real} = isthinzero(x)
 
         function ==(a::Taylor1{$I{T}}, b::Taylor1{$I{S}}) where {T<:NumTypes, S<:NumTypes}
-            if a.order != b.order
+            if get_order(a) != get_order(b)
                 a, b = TS.fixorder(a, b)
             end
             return all(isequal_interval.(a.coeffs, b.coeffs))
@@ -49,7 +49,8 @@ for I in (:Interval, :ComplexI)
 
         function ==(a::HomogeneousPolynomial{$I{T}},
                 b::HomogeneousPolynomial{$I{S}}) where {T<:NumTypes, S<:NumTypes}
-            a.order == b.order && return all(isequal_interval.(a.coeffs, b.coeffs))
+            get_order(a) == get_order(b) &&
+                return all(isequal_interval.(a.coeffs, b.coeffs))
             return all(TS._isthinzero.(a.coeffs)) && all(TS._isthinzero.(b.coeffs))
         end
 
@@ -65,7 +66,7 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         function ^(a::$T{Interval{T}}, n::S) where {T<:NumTypes, S<:Integer}
             n == 0 && return one(a)
-            n == 1 && return $T(a.coeffs[:], a.order)
+            n == 1 && return $T(a.coeffs[:])
             n == 2 && return TS.square(a)
             n < 0 && return a^float(n)
             return power_by_squaring(a, n)
@@ -103,6 +104,7 @@ for T in (:Taylor1, :TaylorN)
             aux = one(a0^r)
             a[0] = aux * a0
             r == 0.5 && return sqrt(a)
+            a_order = get_order(a)
             if $T == Taylor1
                 l0 = findfirst(a)
                 # Index of first non-zero coefficient of the result; must be integer
@@ -110,15 +112,15 @@ for T in (:Taylor1, :TaylorN)
                     """The 0-th order Taylor1 coefficient must be non-zero
                     to raise the Taylor1 polynomial to a non-integer exponent."""))
                 lnull = trunc(Int, r*l0 )
-                (lnull > a.order) && return $T( zero(aux), a.order)
-                c_order = l0 == 0 ? a.order : min(a.order, trunc(Int, r*a.order))
+                (lnull > a_order) && return $T( zero(aux), a_order)
+                c_order = l0 == 0 ? a_order : min(a_order, trunc(Int, r*a_order))
             else
                 if TS._isthinzero(a0)
                     throw(DomainError(a,
-                    """The 0-th order TaylorN coefficient must be non-zero
-                    in order to expand `^` around 0."""))
+                        """The 0-th order TaylorN coefficient must be non-zero
+                        in order to expand `^` around 0."""))
                 end
-                c_order = a.order
+                c_order = a_order
             end
             #
             c = $T(zero(aux), c_order)
@@ -134,8 +136,8 @@ end
 # sqr!
 for T = (:Taylor1, :TaylorN)
     @eval begin
-        @inline function TS.sqr!(c::$T{Interval{T}}, a::$T{Interval{T}},
-                k::Int) where {T<:NumTypes}
+        function TS.sqr!(c::$T{Interval{T}}, a::$T{Interval{T}},
+                ::Interval{T}, k::Int) where {T<:NumTypes}
             if k == 0
                 TS.sqr_orderzero!(c, a)
                 return nothing
@@ -164,7 +166,7 @@ for T = (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.sqr!(c::$T{Interval{T}}, k::Int) where {T<:NumTypes}
+        function TS.sqr!(c::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             if k == 0
                 TS.sqr_orderzero!(c, c)
                 return nothing
@@ -194,12 +196,12 @@ for T = (:Taylor1, :TaylorN)
         end
     end
 end
-@inline function TS.accsqr!(c::HomogeneousPolynomial{Interval{T}},
+function TS.accsqr!(c::HomogeneousPolynomial{Interval{T}},
         a::HomogeneousPolynomial{Interval{T}}) where {T<:NumTypes}
     iszero(a) && return nothing
-    @inbounds num_coeffs_a = TS.size_table[a.order+1]
-    @inbounds posTb = TS.pos_table[c.order+1]
-    @inbounds idxTb = TS.index_table[a.order+1]
+    @inbounds num_coeffs_a = TS.size_table[get_order(a)+1]
+    @inbounds posTb = TS.pos_table[get_order(c)+1]
+    @inbounds idxTb = TS.index_table[get_order(a)+1]
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
         TS._isthinzero(ca) && continue
@@ -229,7 +231,7 @@ function sqrt(a::Taylor1{Interval{T}}) where {T<:NumTypes}
     aa = convert(Taylor1{typeof(aux)}, a)
     aa[0] = one(aux)*a0
     l0nz = findfirst(aa)
-    order = a.order
+    order = get_order(a)
     if l0nz < 0
         return Taylor1(zero(aux), order)
     elseif l0nz%2 == 1 # l0nz must be pair
@@ -243,7 +245,7 @@ function sqrt(a::Taylor1{Interval{T}}) where {T<:NumTypes}
     c = Taylor1( zero(aux), c_order )
     @inbounds c[lnull] = aux
     for k = lnull+1:c_order
-        TS.sqrt!(c, aa, k, lnull)
+        TS.sqrt!(c, aa, zero(a0), k, lnull)
     end
     return c
 end
@@ -258,29 +260,30 @@ function sqrt(a::TaylorN{Interval{T}}) where {T<:NumTypes}
     # First non-zero coefficient
     aa = convert(TaylorN{typeof(aux)}, a)
     aa[0] = one(aux)*a0
-    order = a.order
+    order = get_order(a)
     c = TaylorN( zero(aux), order)
     for k in eachindex(aa)
-        TS.sqrt!(c, aa, k)
+        TS.sqrt!(c, aa, zero(a0), k)
     end
     return c
 end
 
-@inline function TS.sqrt!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
-        k::Int, k0::Int=0) where {T<:NumTypes}
+function TS.sqrt!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
+        ::Interval{T}, k::Int, k0::Int=0) where {T<:NumTypes}
     if k == k0
         @inbounds c[k] = sqrt(a[2*k0])
         return nothing
     end
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
-    imax = min(k0+kend, a.order)
-    imin = max(k0+1, k+k0-a.order)
+    a_order = get_order(a)
+    imax = min(k0+kend, a_order)
+    imin = max(k0+1, k+k0-a_order)
     imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
     @inbounds for i = imin+1:imax
         c[k] += c[i] * c[k+k0-i]
     end
-    if k+k0 ≤ a.order
+    if k+k0 ≤ a_order
         @inbounds aux = a[k+k0] - interval(2) * c[k]
     else
         @inbounds aux = - interval(2) * c[k]
@@ -292,8 +295,8 @@ end
     return nothing
 end
 
-@inline function TS.sqrt!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
-        k::Int) where {T<:NumTypes}
+function TS.sqrt!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
+        ::Interval{T}, k::Int) where {T<:NumTypes}
     if k == 0
         @inbounds c[0][1] = sqrt( constant_term(a) )
         return nothing
@@ -331,7 +334,7 @@ for T in (:Taylor1, :TaylorN)
             aa = convert($T{typeof(aux)}, a)
             # aa = one(aux) * a
             aa[0] = one(aux) * a0
-            order = a.order
+            order = get_order(a)
             c = $T( aux, order )
             for k in eachindex(a)
                 TS.log!(c, aa, k)
@@ -349,7 +352,7 @@ for T in (:Taylor1, :TaylorN)
             uno = one(aux)
             isequal_interval(a0sqr, uno) && throw(DomainError(a,
                     """Series expansion of asin(x) diverges at x = ±1."""))
-            order = a.order
+            order = get_order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
             c = $T( aux, order )
@@ -370,7 +373,7 @@ for T in (:Taylor1, :TaylorN)
             uno = one(a0)
             isequal_interval(a0sqr, uno) && throw(DomainError(a,
                     """Series expansion of acos(x) diverges at x = ±1."""))
-            order = a.order
+            order = get_order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
             c = $T( aux, order )
@@ -391,7 +394,7 @@ for T in (:Taylor1, :TaylorN)
             uno = one(a0)
             isequal_interval(a0sqr, uno) && throw(DomainError(a,
                 """Series expansion of acosh(x) diverges at x = ±1."""))
-            order = a.order
+            order = get_order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
             c = $T( aux, order )
@@ -408,7 +411,7 @@ for T in (:Taylor1, :TaylorN)
             aux = atanh(a0)
             isempty_interval(aux) && throw(DomainError(a,
                 """The 0-th order coefficient must have a non-empty intersection with $domain."""))
-            order = a.order
+            order = get_order(a)
             uno = one(a0)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
@@ -423,7 +426,7 @@ for T in (:Taylor1, :TaylorN)
         end
 
         # Some internal functions
-        @inline function TS.exp!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
+        function TS.exp!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds c[0] = exp(constant_term(a))
                 return nothing
@@ -444,7 +447,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.expm1!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
+        function TS.expm1!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds c[0] = expm1(constant_term(a))
                 return nothing
@@ -466,7 +469,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.log!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
+        function TS.log!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds c[0] = log(constant_term(a))
                 return nothing
@@ -490,7 +493,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.log1p!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
+        function TS.log1p!(c::$T{Interval{T}}, a::$T{Interval{T}}, k::Int) where {T<:NumTypes}
             a0 = constant_term(a)
             a0p1 = a0+one(a0)
             if k == 0
@@ -516,7 +519,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.sincos!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
+        function TS.sincos!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
@@ -546,7 +549,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.tan!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
+        function TS.tan!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds aux = tan( constant_term(a) )
@@ -567,14 +570,18 @@ for T in (:Taylor1, :TaylorN)
                 end
             end
             @inbounds c[k] = a[k] + c[k]/interval(k)
-            TS.sqr!(c2, c, k)
+            if $T == Taylor1
+                TS.sqr!(c2, c, zero(c[0]), k)
+            else
+                TS.sqr!(c2, c, zero(c[0][1]), k)
+            end
             return nothing
         end
 
-        @inline function TS.asin!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+        function TS.asin!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
+            a0 = constant_term(a)
             if k == 0
-                a0 = constant_term(a)
                 @inbounds c[0] = asin( a0 )
                 @inbounds r[0] = sqrt( one(a0) - a0^2 )
                 return nothing
@@ -591,15 +598,15 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
                 end
             end
-            TS.sqrt!(r, one(a[0])-a^2, k)
+            TS.sqrt!(r, one(a[0])-a^2, zero(a0), k)
             @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
             return nothing
         end
 
-        @inline function TS.acos!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+        function TS.acos!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
+            a0 = constant_term(a)
             if k == 0
-                a0 = constant_term(a)
                 @inbounds c[0] = acos( a0 )
                 @inbounds r[0] = sqrt( one(a0) - a0^2 )
                 return nothing
@@ -616,12 +623,12 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
                 end
             end
-            TS.sqrt!(r, one(a[0])-a^2, k)
+            TS.sqrt!(r, one(a[0])-a^2, zero(a0), k)
             @inbounds c[k] = -(a[k] + c[k]/interval(k)) / constant_term(r)
             return nothing
         end
 
-        @inline function TS.atan!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+        function TS.atan!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
             if k == 0
                 a0 = constant_term(a)
@@ -641,12 +648,16 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
                 end
             end
-            @inbounds TS.sqr!(r, a, k)
+            if $T == Taylor1
+                TS.sqr!(r, a, zero(a[0]), k)
+            else
+                TS.sqr!(r, a, zero(a[0][1]), k)
+            end
             @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
             return nothing
         end
 
-        @inline function TS.sinhcosh!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
+        function TS.sinhcosh!(s::$T{Interval{T}}, c::$T{Interval{T}}, a::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds s[0] = sinh( constant_term(a) )
@@ -676,7 +687,7 @@ for T in (:Taylor1, :TaylorN)
             return nothing
         end
 
-        @inline function TS.tanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
+        function TS.tanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, c2::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
             if k == 0
                 @inbounds aux = tanh( constant_term(a) )
@@ -697,14 +708,18 @@ for T in (:Taylor1, :TaylorN)
                 end
             end
             @inbounds c[k] = a[k] - c[k]/k
-            TS.sqr!(c2, c, k)
+            if $T == Taylor1
+                TS.sqr!(c2, c, zero(c[0]), k)
+            else
+                TS.sqr!(c2, c, zero(c[0][1]), k)
+            end
             return nothing
         end
 
-        @inline function TS.asinh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+        function TS.asinh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
+            a0 = constant_term(a)
             if k == 0
-                a0 = constant_term(a)
                 @inbounds c[0] = asinh( a0 )
                 @inbounds r[0] = sqrt( a0^2 + one(a0) )
                 return nothing
@@ -721,15 +736,15 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
                 end
             end
-            TS.sqrt!(r, a^2+one(a[0]), k)
+            TS.sqrt!(r, a^2+one(a[0]), zero(a0), k)
             @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
             return nothing
         end
 
-        @inline function TS.acosh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+        function TS.acosh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
+            a0 = constant_term(a)
             if k == 0
-                a0 = constant_term(a)
                 @inbounds c[0] = acosh( a0 )
                 @inbounds r[0] = sqrt( a0^2 - one(a0) )
                 return nothing
@@ -746,15 +761,15 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
                 end
             end
-            TS.sqrt!(r, a^2-one(a[0]), k)
+            TS.sqrt!(r, a^2-one(a[0]), zero(a0), k)
             @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
             return nothing
         end
 
-        @inline function TS.atanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
+        function TS.atanh!(c::$T{Interval{T}}, a::$T{Interval{T}}, r::$T{Interval{T}},
                 k::Int) where {T<:NumTypes}
+            a0 = constant_term(a)
             if k == 0
-                a0 = constant_term(a)
                 @inbounds c[0] = atanh( a0 )
                 @inbounds r[0] = one(a0) - a0^2
                 return nothing
@@ -771,7 +786,11 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
                 end
             end
-            @inbounds TS.sqr!(r, a, k)
+            if $T == Taylor1
+                TS.sqr!(r, a, zero(a0), k)
+            else
+                TS.sqr!(r, a, zero(a0), k)
+            end
             @inbounds c[k] = (a[k] + c[k]/interval(k)) / constant_term(r)
             return nothing
         end
@@ -785,7 +804,7 @@ function evaluate(a::Taylor1{Interval{T}}, dx::S) where {T<:NumTypes, S<:NumType
 end
 
 function evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
-    order = a.order
+    order = get_order(a)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -805,7 +824,7 @@ function evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
 end
 
 function evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumTypes}
-    order = a.order
+    order = get_order(a)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -843,7 +862,7 @@ evaluate(a::TaylorN{T}, vals::AbstractVector{TaylorN{Interval{T}}}) where
         {T<:NumTypes} = evaluate(a, (vals...,); sorting=false)
 
 function evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Real}
-    order = a.order
+    order = get_order(a)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -880,8 +899,8 @@ evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{Interval{S}}) where
 # _evaluate
 function TS._evaluate(a::HomogeneousPolynomial{T},
         dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
-    a.order == 0 && return a[1] + interval(zero(T))
-    ct = TS.coeff_table[a.order+1]
+    get_order(a) == 0 && return a[1] + interval(zero(T))
+    ct = TS.coeff_table[get_order(a)+1]
     @inbounds suma = a[1]*interval(zero(T))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
@@ -893,8 +912,8 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}},
         ::Val{true} ) where {T<:Real, S<:NumTypes}
-    a.order == 0 && return a[1] + interval(zero(T))
-    ct = TS.coeff_table[a.order+1]
+    get_order(a) == 0 && return a[1] + interval(zero(T))
+    ct = TS.coeff_table[get_order(a)+1]
     @inbounds suma = a[1]*interval(zero(T))
     Ieven = interval(zero(T), one(T))
     for (i, a_coeff) in enumerate(a.coeffs)
@@ -915,7 +934,7 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}},
         ::Val{false} ) where {T<:Real, S<:NumTypes}
-    a.order == 0 && return a[1] + interval(zero(T))
+    get_order(a) == 0 && return a[1] + interval(zero(T))
     @inbounds suma = zero(a[1])*dx[1]
     @inbounds for homPol in a.coeffs
         suma += homPol*dx[1]
@@ -948,7 +967,7 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T},
         vals::NTuple{N,TaylorN{Interval{S}}}) where {N, T<:Real, S<:NumTypes}
-    ct = TS.coeff_table[a.order+1]
+    ct = TS.coeff_table[get_order(a)+1]
     suma = zero(a[1])*vals[1]
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue

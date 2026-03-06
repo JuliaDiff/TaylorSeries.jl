@@ -68,8 +68,8 @@ generate_tables
 generate_index_vectors
 in_base
 make_inverse_dict
-resize_coeffs1!
-resize_coeffsHP!
+_coeffsHP
+_coeffsTN
 numtype
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)

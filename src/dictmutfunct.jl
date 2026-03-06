@@ -60,7 +60,8 @@ const _dict_binary_ops = Dict(
     :- => (:subst!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 - _arg2)),
     :* => (:mul!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 * _arg2)),
     :/ => (:div!, (:_res, :_arg1, :_arg2, :_k), :(_res = _arg1 / _arg2)),
-    :^ => (:pow!, (:_res, :_arg1, :_aux, :_arg2, :_k), :(_res = _arg1 ^ float(_arg2)), :(_aux = zero(_arg1))),
+    :^ => (:pow!, (:_res, :_arg1, :_aux, :_arg2, :_k),
+        :(_res = _arg1 ^ float(_arg2)), :(_aux = zero(_arg1))),
 );
 
 """
@@ -85,8 +86,10 @@ added as the last entry of the vector.
 const _dict_unary_ops = Dict(
     :+ => (:add!,   (:_res, :_arg1, :_k), :(_res = + _arg1)),
     :- => (:subst!, (:_res, :_arg1, :_k), :(_res = - _arg1)),
-    :sqr =>  (:sqr!, (:_res, :_arg1, :_k), :(_res = sqr(_arg1))),
-    :sqrt => (:sqrt!, (:_res, :_arg1, :_k), :(_res = sqrt(_arg1))),
+    :sqr =>  (:sqr!, (:_res, :_arg1, :_aux, :_k), :(_res = TS.square(_arg1)),
+        :(_aux = zero(constant_term(_arg1)))),
+    :sqrt => (:sqrt!, (:_res, :_arg1, :_aux, :_k), :(_res = sqrt(_arg1)),
+        :(_aux = zero(_arg1))),
     :exp =>  (:exp!, (:_res, :_arg1, :_k), :(_res = exp(_arg1))),
     :expm1 =>  (:expm1!, (:_res, :_arg1, :_k), :(_res = expm1(_arg1))),
     :log =>  (:log!, (:_res, :_arg1, :_k), :(_res = log(_arg1))),
@@ -143,7 +146,8 @@ and [`_dict_binary_calls`](@ref).
 The call contains the prefix `TaylorSeries.`.
 """
 _internalmutfunc_call( fn :: _InternalMutFuncs ) = (
-    Expr( :call, Meta.parse("TaylorSeries.$(fn.namef)"), fn.argsf... ), fn.defexpr, fn.auxexpr )
+    Expr( :call, Meta.parse("TaylorSeries.$(fn.namef)"), fn.argsf... ),
+        fn.defexpr, fn.auxexpr )
 
 
 """

@@ -105,7 +105,7 @@ end
     @test typeof(1.0 .* x .* y) == TaylorN{Float64}
 end
 
-@testset "Broadcasting with mixtures Taylor1{TalorN{T}}" begin
+@testset "Broadcasting with mixtures Taylor1{TaylorN{T}}" begin
     x, y = set_variables("x", numvars=2, order=6)
     tN = Taylor1(TaylorN{Float64}, 3)
 
@@ -132,7 +132,7 @@ end
     @test tNs == y * tN^2 - 1
 end
 
-@testset "Broadcasting with mixtures TaylorN{Talor1{T}}" begin
+@testset "Broadcasting with mixtures TaylorN{Taylor1{T}}" begin
     set_variables("x", numvars=2, order=6)
     t = Taylor1(3)
     xHt = HomogeneousPolynomial([one(t), zero(t)])

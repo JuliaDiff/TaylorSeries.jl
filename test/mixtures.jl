@@ -16,6 +16,7 @@ using Test
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
     @test findfirst(tN) == 1
+    @test findfirst(zero(tN)) == -1
 
     @test convert(eltype(tN), tN) == tN
     @test eltype(xH) == HomogeneousPolynomial{Int}
@@ -23,7 +24,7 @@ using Test
     @test eltype(tN) == Taylor1{TaylorN{Float64}}
     @test TS.numtype(tN) == TaylorN{Float64}
     @test normalize_taylor(tN) == tN
-    @test tN.order == 3
+    @test get_order(tN) == 3
 
     @testset "Lexicographic order: Taylor1{HomogeneousPolynomial{T}} and Taylor1{TaylorN{T}}" begin
         @test HomogeneousPolynomial([1]) > xH > yH > 0.0
@@ -111,7 +112,7 @@ using Test
     @test oneN1[0] == one(tN1[0])
     @test oneN1[1:end] == zero.(tN1[1:end])
     for i in eachindex(tN1.coeffs)
-        @test tN1.coeffs[i].order == zeroN1.coeffs[i].order == oneN1.coeffs[i].order
+        @test get_order(tN1.coeffs[i]) == get_order(zeroN1.coeffs[i]) == get_order(oneN1.coeffs[i])
     end
     @test string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + ( 2.0 x₂² + 𝒪(‖x‖³)) t³ + 𝒪(t⁴)"
@@ -166,9 +167,9 @@ using Test
     @test evaluate(tN1, 1, 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
     @test evaluate(t, t1N) == t1N
     @test evaluate(t1N, 0.5) == t1N[0] + t1N[1]/2 + t1N[2]/4
-    @test evaluate(t1N, [t1N[0], zero(t1N[0])]) == Taylor1([t1N[0], t1N[1]], t.order)
-    @test evaluate(t1N, 2, 0.0) == Taylor1([t1N[0], t1N[1]], t.order)
-    @test evaluate(t1N, 1, 0.0) == Taylor1([zero(t1N[0]), t1N[1], t1N[2]], t.order)
+    @test evaluate(t1N, [t1N[0], zero(t1N[0])]) == Taylor1([t1N[0], t1N[1]], get_order(t))
+    @test evaluate(t1N, 2, 0.0) == Taylor1([t1N[0], t1N[1]], get_order(t))
+    @test evaluate(t1N, 1, 0.0) == Taylor1([zero(t1N[0]), t1N[1], t1N[2]], get_order(t))
 
     # Tests for functions of mixtures
     t1N = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 6)
@@ -233,7 +234,7 @@ using Test
     δx, δy = set_variables("δx δy")
     xx = 1+Taylor1(δx, 5)
     yy = 1+Taylor1(δy, 5)
-    tt = Taylor1([zero(δx), one(δx)], xx.order)
+    tt = Taylor1([zero(δx), one(δx)], get_order(xx))
     @test all((xx, yy) .== (TS.fixorder(xx, yy)))
     @test typeof(xx) == Taylor1{TaylorN{Float64}}
     @test eltype(xx) == Taylor1{TaylorN{Float64}}
@@ -261,7 +262,7 @@ using Test
     res = 1/(1+δx)^2
     @test (xx^2 + yy^2)/(xx*yy) == xx/yy + yy/xx
     @test ((xx+yy)*tt)^2/((xx+yy)*tt) == (xx+yy)*tt
-    @test sqrt(xx) == Taylor1(sqrt(xx[0]), xx.order)
+    @test sqrt(xx) == Taylor1(sqrt(xx[0]), get_order(xx))
     @test xx^0.25 == sqrt(sqrt(xx))
     @test (xx*yy*tt^2)^0.5 == sqrt(xx*yy)*tt
     FF(x,y,t) = (1 + x + y + t)^4

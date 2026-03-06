@@ -16,6 +16,8 @@ see also [`HomogeneousPolynomial`](@ref).
 """
 module TaylorSeries
 
+using Reexport
+@reexport using FixedSizeArrays
 
 using SparseArrays: SparseMatrixCSC
 using Markdown
@@ -63,8 +65,11 @@ include("hash_tables.jl")
 include("constructors.jl")
 include("conversion.jl")
 include("auxiliary.jl")
+include("zero_one.jl")
+include("total_order.jl")
 include("arithmetic.jl")
 include("power.jl")
+include("identity.jl")
 include("functions.jl")
 include("other_functions.jl")
 include("evaluate.jl")

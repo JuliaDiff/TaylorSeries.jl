@@ -65,7 +65,7 @@ Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
 #     # Scan the inputs for the Taylor1:
 #     A = find_taylor(bc)
 #     # Create the output
-#     return Taylor1(similar(A.coeffs, R), A.order)
+#     return Taylor1(similar(A.coeffs, R), get_order(A))
 # end
 #
 # function similar(bc::Broadcasted{HomogeneousPolynomialStyle{S}}, ::Type{T}) where {S, T}
@@ -75,7 +75,7 @@ Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
 #     # Scan the inputs for the HomogeneousPolynomial:
 #     A = find_taylor(bc)
 #     # Create the output
-#     return HomogeneousPolynomial(similar(A.coeffs, R), A.order)
+#     return HomogeneousPolynomial(similar(A.coeffs, R), get_order(A))
 # end
 #
 # function similar(bc::Broadcasted{TaylorNStyle{S}}, ::Type{T}) where {S, T}
@@ -84,7 +84,7 @@ Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
 #     # Scan the inputs for the TaylorN:
 #     A = find_taylor(bc)
 #     # Create the output
-#     return TaylorN(similar(A.coeffs, R), A.order)
+#     return TaylorN(similar(A.coeffs, R), get_order(A))
 # end
 
 
@@ -109,10 +109,10 @@ end
 
 
 # Broadcasted extensions
-@inline broadcasted(::Taylor1Style{T}, ::Type{Float32}, a::Taylor1{T}) where {T<:Number} =
-    Taylor1(Float32.(a.coeffs), a.order)
-@inline broadcasted(::TaylorNStyle{T}, ::Type{Float32}, a::TaylorN{T}) where {T<:Number} =
-    convert(TaylorN{Float32}, a)
+@inline broadcasted(::Taylor1Style{T}, ::Type{Float32}, a::Taylor1{T}) where
+    {T<:Number} = Taylor1(Float32.(a.coeffs))
+@inline broadcasted(::TaylorNStyle{T}, ::Type{Float32}, a::TaylorN{T}) where
+    {T<:Number} = convert(TaylorN{Float32}, a)
 
 # # This prevents broadcasting being applied to the Taylor1/TaylorN params
 # # for the mutating functions, and to act only in `k`
