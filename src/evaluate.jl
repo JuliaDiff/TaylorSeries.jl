@@ -147,11 +147,9 @@ end
 (p::Taylor1)(x) = evaluate(p, x)
 (p::Taylor1)()  = evaluate(p)
 
-#function-like behavior for Vector{Taylor1} (asumes Julia version >= 1.6)
-(p::Array{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
-(p::SubArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
-(p::Array{Taylor1{T}})() where {T<:Number} = evaluate.(p)
-(p::SubArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
+#function-like behavior for AbstractArray{Taylor1{T}} (asumes Julia version >= 1.6)
+(p::AbstractArray{Taylor1{T}})(x) where {T<:Number} = evaluate.(p, x)
+(p::AbstractArray{Taylor1{T}})() where {T<:Number} = evaluate.(p)
 
 
 """
@@ -477,10 +475,8 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 (p::TaylorN)(b::Bool, x, v::Vararg{T}) where {T} = evaluate(p, (x, v...,), sorting=b)
 
 #function-like behavior for AbstractArray{TaylorN{T}}
-(p::Array{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
-(p::SubArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
-(p::Array{TaylorN{T}})() where {T<:Number} = evaluate(p)
-(p::SubArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
+(p::AbstractArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
+(p::AbstractArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
 
 
 """
