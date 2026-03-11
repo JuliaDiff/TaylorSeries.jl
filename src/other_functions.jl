@@ -10,7 +10,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 
     ## real, imag, conj and ctranspose ##
     for f in (:real, :imag, :conj)
-        @eval ($f)(a::$T) = $T($f(a.coeffs))
+        @eval ($f)(a::$T) = $T($f(a.coeffs), get_order(a))
     end
 
     @eval adjoint(a::$T) = conj(a)
@@ -29,7 +29,7 @@ for op in (:mod, :rem)
             function ($op)(a::$T{T}, x::T) where {T<:Real}
                 coeffs = copy(a.coeffs)
                 @inbounds coeffs[1] = ($op)(constant_term(a), x)
-                return $T(coeffs)
+                return $T(coeffs, get_order(a))
             end
 
             function ($op)(a::$T{T}, x::S) where {T<:Real,S<:Real}
@@ -74,7 +74,7 @@ for T in (:Taylor1, :TaylorN)
         function mod2pi(a::$T{T}) where {T<:Real}
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = mod2pi( constant_term(a) )
-            return $T(coeffs)
+            return $T(coeffs, get_order(a))
         end
 
         function abs(a::$T{T}) where {T<:Real}
