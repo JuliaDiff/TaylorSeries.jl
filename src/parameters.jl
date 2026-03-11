@@ -188,7 +188,7 @@ function set_variables(::Type{R}, names::T; order=get_order(), numvars=-1) where
 
     if length(variable_names) == 1 && numvars ≥ 1
         name = variable_names[1]
-        variable_names = string.("x", TS.subscriptify.(1:numvars))
+        variable_names = string.(name, TS.subscriptify.(1:numvars))
     end
 
     return set_variables(R, variable_names, order=order)

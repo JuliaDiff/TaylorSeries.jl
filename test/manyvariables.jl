@@ -31,6 +31,9 @@ using Test
     @test TS.index_table[2][1] == 3^65
     @test TS.pos_table[2][3^64] == 2
 
+    @test eltype(set_variables("a", order=1, numvars=2))  == TaylorN{Float64}
+    @test TS._params_TaylorN_.variable_names[1] == "a₁"
+    @test TS._params_TaylorN_.variable_symbols[2] == :a₂
     @test eltype(set_variables(Int, "x", numvars=2, order=6)) == TaylorN{Int}
     @test eltype(set_variables("x", numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(set_variables(BigInt, "x y", order=6)) == TaylorN{BigInt}
