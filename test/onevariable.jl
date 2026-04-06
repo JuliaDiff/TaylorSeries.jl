@@ -696,7 +696,7 @@ end
         A = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
         B = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
         C = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
-        TS.matmultay!(C, A, B)
+        TS.matmul!(C, A, B)
         D = A * B # usual matrix product
         @test norm(D - C, Inf) < 1.0e-14
     end

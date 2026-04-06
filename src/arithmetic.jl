@@ -1465,8 +1465,8 @@ end
 
 # Fast allocation-free matrix multiplication
 for T in (:Taylor1, :TaylorN)
-    @eval function matmultay!(C::Matrix{$T{T}},
-                              A::Matrix{$T{T}}, B::Matrix{$T{T}}) where {T}
+    @eval function matmul!(C::Matrix{$T{T}},
+                           A::Matrix{$T{T}}, B::Matrix{$T{T}}) where {T}
         mc, nc = size(C)
         ma, na = size(A)
         mb, nb = size(B)
