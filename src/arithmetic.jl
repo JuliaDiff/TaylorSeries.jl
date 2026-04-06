@@ -1461,3 +1461,24 @@ function lu(A::AbstractMatrix{Taylor1{T}}; check::Bool = true) where {T<:Number}
         return lu!(copy_oftype(A, S), LU_RowMaximum; check = check)
     end
 end
+
+
+# Fast allocation-free matrix multiplication
+for T in (:Taylor1, :TaylorN)
+    @eval function matmultay!(C::Matrix{$T{T}},
+                              A::Matrix{$T{T}}, B::Matrix{$T{T}}) where {T}
+        mc, nc = size(C)
+        ma, na = size(A)
+        mb, nb = size(B)
+        @assert (na == mb && mc == ma && nc == nb)
+        for j in axes(C,2)
+            for i in axes(C,1)
+                TS.zero!(C[i,j])
+                for k in 1:na
+                    TS.muladd!(C[i,j], A[i,k], B[k,j])
+                end
+            end
+        end
+        return nothing
+    end
+end
