@@ -692,13 +692,17 @@ end
 end
 
 @testset "Matrix multiplication with Taylor1" begin
+    A = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
+    B = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
+    C = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
+    D = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
     for _ = 1:4
-        A = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
-        B = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
-        C = [Taylor1.(randn.(16)) for i=1:3, j=1:3]
+        A .= [Taylor1.(randn.(16)) for i=1:3, j=1:3]
+        B .= [Taylor1.(randn.(16)) for i=1:3, j=1:3]
         TS.matmul!(C, A, B)
-        D = A * B # usual matrix product
-        @test norm(D - C, Inf) < 1.0e-14
+        mul!(D, A, B) # usual matrix product
+        @test all(D .≈ C)
+        @test norm(D - C, Inf) < 1.0e-13
     end
 end
 
