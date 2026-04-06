@@ -105,6 +105,8 @@ Base.iszero(::SymbNumber) = false
     @test y.coeffs[1:2:9] == rv[1:5]
     @test_throws AssertionError y[0:2:3] = rv
 
+    @test Taylor1(0) == Taylor1(0.0, 0)
+    @test Taylor1(Rational{Int}, 0) == Taylor1(0//1, 0)
     @test Taylor1([0,1,0,0]) == Taylor1(3)
     @test getcoeff(Taylor1(Complex{Float64},3),1) == complex(1.0,0.0)
     @test Taylor1(Complex{Float64},3)[1] == complex(1.0,0.0)

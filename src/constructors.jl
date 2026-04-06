@@ -83,12 +83,14 @@ julia> Taylor1(Rational{Int}, 4)
 ```
 """
 function Taylor1(::Type{T}, order::Int) where {T<:Number}
+    order == 0 && return Taylor1{T}(FixedSizeVectorDefault{T}([zero(T)]))
     coeffs = FixedSizeVectorDefault{T}(undef, order+1)
     coeffs .= zero(T)
     coeffs[2] = one(T)
     return Taylor1{T}(coeffs)
 end
 function Taylor1(order::Int)
+    order == 0 && return Taylor1{Float64}(FixedSizeVectorDefault{Float64}([0.0]))
     coeffs = FixedSizeVectorDefault{Float64}(undef, order+1)
     coeffs .= 0.0
     coeffs[2] = 1.0
