@@ -213,4 +213,22 @@ setdisplay(:full)
     @test atanh(interval(-2.0, 0.0) + ti) == atanh(interval(-1.0, 0.0) + ti)
     @test_logs (:warn, "ill-formed bare interval [a, b] with a = Inf, b = Inf. Empty interval is returned") @test_throws DomainError atanh(interval(1.0, 1.0) + y)
     @test atanh(interval(-2.0, 0.0) + y) == atanh(interval(-1.0, 0.0) + y)
+
+    # Iss 405 (TM iss 158)
+    for TT in (:Float32, :Float64, :BigFloat)
+        @eval begin
+            x₁, x₂, x₃ = set_variables($TT, ["x₁", "x₂", "x₃"]; order=5)
+            Dx₁ = interval(($TT)(1.0), ($TT)(3.0))
+            Dx₂ = interval(($TT)(-1.0), ($TT)(1.0))
+            Dx₃ = interval(($TT)(-1.0), ($TT)(0.0))
+            D = [Dx₁, Dx₂, Dx₃] # original domain
+            Dₙ = [Dx₂, Dx₂, Dx₂] # normalized domain
+            p₁ = 1 + x₁ - x₂
+            pₙ = normalize_taylor(p₁, D, true)
+            res = interval(($TT)(3)) + interval(($TT)(1))*x₁ - interval(($TT)(1))*x₂
+            @test pₙ == res
+            @test isequal_interval(evaluate(p₁, D), evaluate(pₙ, Dₙ))
+        end
+    end
+
 end
