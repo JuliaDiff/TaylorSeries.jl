@@ -5,7 +5,7 @@ using TaylorSeries
 import Base: ^, sqrt, log, asin, acos, acosh, atanh, iszero, ==,
         power_by_squaring
 
-import TaylorSeries: _pow, pow!, evaluate, _evaluate, _evaluate!,
+import TaylorSeries: _pow, evaluate, #_evaluate, #_evaluate!,
         normalize_taylor, aff_normalize
 
 using IntervalArithmetic
@@ -156,7 +156,7 @@ for T = (:Taylor1, :TaylorN)
                     TS.mul!(c[k], a[i], a[k-i])
                 end
             end
-            @inbounds TS.mul!(c, interval(2), c, k)
+            @inbounds TS.mul!(c, interval(T(2)), c, k)
             kodd == 1 && return nothing
             if $T == Taylor1
                 @inbounds c[k] += a[k >> 1]^2
@@ -179,14 +179,14 @@ for T = (:Taylor1, :TaylorN)
                 @inbounds for i = 1:kend
                     c[k] += c[i] * c[k-i]
                 end
-                @inbounds c[k] = interval(2) * c[k]
+                @inbounds c[k] = interval(T(2)) * c[k]
                 (kodd == 0) && ( @inbounds c[k] += c[k >> 1]^2 )
             else
                 (kend ≥ 0) && ( @inbounds TS.mul!(c, c[0][1], c, k) )
                 @inbounds for i = 1:kend
                     TS.mul!(c[k], c[i], c[k-i])
                 end
-                @inbounds TS.mul!(c, interval(2), c, k)
+                @inbounds TS.mul!(c, interval(T(2)), c, k)
                 if (kodd == 0)
                     TS.accsqr!(c[k], c[k >> 1])
                 end
@@ -213,7 +213,7 @@ function TS.accsqr!(c::HomogeneousPolynomial{Interval{T}},
             TS._isthinzero(cb) && continue
             indb = idxTb[nb]
             pos = posTb[inda+indb]
-            c[pos] += interval(2) * ca * cb
+            c[pos] += interval(T(2)) * ca * cb
         end
     end
     return nothing
@@ -284,14 +284,14 @@ function TS.sqrt!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
         c[k] += c[i] * c[k+k0-i]
     end
     if k+k0 ≤ a_order
-        @inbounds aux = a[k+k0] - interval(2) * c[k]
+        @inbounds aux = a[k+k0] - interval(T(2)) * c[k]
     else
-        @inbounds aux = - interval(2) * c[k]
+        @inbounds aux = - interval(T(2)) * c[k]
     end
     if kodd == 0
         @inbounds aux = aux - c[kend+k0+1]^2
     end
-    @inbounds c[k] = aux / (interval(2) * c[k0])
+    @inbounds c[k] = aux / (interval(T(2)) * c[k0])
     return nothing
 end
 
@@ -310,14 +310,14 @@ function TS.sqrt!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
     end
     if kodd == 0
         # @inbounds c[k] <- c[k] - (c[kend+1])^2
-        @inbounds TS.mul_scalar!(c[k], -interval(1), c[kend+1], c[kend+1])
+        @inbounds TS.mul_scalar!(c[k], -interval(T(1)), c[kend+1], c[kend+1])
     end
     @inbounds for i = 1:kend
         # c[k] <- c[k] - 2*c[i]*c[k-i]
-        TS.mul_scalar!(c[k], -interval(2), c[i], c[k-i])
+        TS.mul_scalar!(c[k], -interval(T(2)), c[i], c[k-i])
     end
     # @inbounds c[k] <- c[k] / (2*c[0])
-    TS.div!(c[k], c[k], interval(2)*constant_term(c))
+    TS.div!(c[k], c[k], interval(T(2))*constant_term(c))
 
     return nothing
 end
@@ -432,18 +432,18 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k) * a[k] * c[0]
+                @inbounds c[k] = interval(T(k)) * a[k] * c[0]
             else
-                @inbounds TS.mul!(c[k], interval(k) * a[k], c[0])
+                @inbounds TS.mul!(c[k], interval(T(k)) * a[k], c[0])
             end
             @inbounds for i = 1:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * a[k-i] * c[i]
+                    c[k] += interval(T(k-i)) * a[k-i] * c[i]
                 else
-                    TS.mul!(c[k], interval(k-i) * a[k-i], c[i])
+                    TS.mul!(c[k], interval(T(k-i)) * a[k-i], c[i])
                 end
             end
-            @inbounds c[k] = c[k] / interval(k)
+            @inbounds c[k] = c[k] / interval(T(k))
             return nothing
         end
 
@@ -454,18 +454,18 @@ for T in (:Taylor1, :TaylorN)
             end
             c0 = c[0]+one(c[0])
             if $T == Taylor1
-                @inbounds c[k] = interval(k) * a[k] * c0
+                @inbounds c[k] = interval(T(k)) * a[k] * c0
             else
-                @inbounds TS.mul!(c[k], interval(k) * a[k], c0)
+                @inbounds TS.mul!(c[k], interval(T(k)) * a[k], c0)
             end
             @inbounds for i = 1:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * a[k-i] * c[i]
+                    c[k] += interval(T(k-i)) * a[k-i] * c[i]
                 else
-                    TS.mul!(c[k], interval(k-i) * a[k-i], c[i])
+                    TS.mul!(c[k], interval(T(k-i)) * a[k-i], c[i])
                 end
             end
-            @inbounds c[k] = c[k] / interval(k)
+            @inbounds c[k] = c[k] / interval(T(k))
             return nothing
         end
 
@@ -478,18 +478,18 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * a[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * a[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1)*a[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1))*a[1], c[k-1])
             end
             @inbounds for i = 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * a[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * a[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i)*a[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i))*a[i], c[k-i])
                 end
             end
-            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(a)
+            @inbounds c[k] = (a[k] - c[k]/interval(T(k))) / constant_term(a)
             return nothing
         end
 
@@ -504,18 +504,18 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * a[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * a[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1)*a[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1))*a[1], c[k-1])
             end
             @inbounds for i = 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * a[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * a[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i)*a[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i))*a[i], c[k-i])
                 end
             end
-            @inbounds c[k] = (a[k] - c[k]/interval(k)) / a0p1
+            @inbounds c[k] = (a[k] - c[k]/interval(T(k))) / a0p1
             return nothing
         end
 
@@ -535,7 +535,7 @@ for T in (:Taylor1, :TaylorN)
                 TS.mul!(c[k], -x, s[k-1])
             end
             @inbounds for i = 2:k
-                x = interval(i) * a[i]
+                x = interval(T(i)) * a[i]
                 if $T == Taylor1
                     s[k] += x * c[k-i]
                     c[k] -= x * s[k-i]
@@ -544,8 +544,8 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], -x, s[k-i])
                 end
             end
-            @inbounds s[k] = s[k] / interval(k)
-            @inbounds c[k] = c[k] / interval(k)
+            @inbounds s[k] = s[k] / interval(T(k))
+            @inbounds c[k] = c[k] / interval(T(k))
             return nothing
         end
 
@@ -558,18 +558,18 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k) * a[k] * c2[0]
+                @inbounds c[k] = interval(T(k)) * a[k] * c2[0]
             else
-                @inbounds TS.mul!(c[k], interval(k) * a[k], c2[0])
+                @inbounds TS.mul!(c[k], interval(T(k)) * a[k], c2[0])
             end
             @inbounds for i = 1:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * a[k-i] * c2[i]
+                    c[k] += interval(T(k-i)) * a[k-i] * c2[i]
                 else
-                    TS.mul!(c[k], interval(k-i) * a[k-i], c2[i])
+                    TS.mul!(c[k], interval(T(k-i)) * a[k-i], c2[i])
                 end
             end
-            @inbounds c[k] = a[k] + c[k]/interval(k)
+            @inbounds c[k] = a[k] + c[k]/interval(T(k))
             if $T == Taylor1
                 TS.sqr!(c2, c, zero(c[0]), k)
             else
@@ -587,19 +587,19 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * r[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1) * r[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
             end
             @inbounds for i in 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * r[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * r[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
                 end
             end
             TS.sqrt!(r, one(a[0])-a^2, zero(a0), k)
-            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            @inbounds c[k] = (a[k] - c[k]/interval(T(k))) / constant_term(r)
             return nothing
         end
 
@@ -612,19 +612,19 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * r[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1) * r[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
             end
             @inbounds for i in 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * r[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * r[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
                 end
             end
             TS.sqrt!(r, one(a[0])-a^2, zero(a0), k)
-            @inbounds c[k] = -(a[k] + c[k]/interval(k)) / constant_term(r)
+            @inbounds c[k] = -(a[k] + c[k]/interval(T(k))) / constant_term(r)
             return nothing
         end
 
@@ -637,15 +637,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * r[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1) * r[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
             end
             @inbounds for i in 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * r[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * r[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
                 end
             end
             if $T == Taylor1
@@ -653,7 +653,7 @@ for T in (:Taylor1, :TaylorN)
             else
                 TS.sqr!(r, a, zero(a[0][1]), k)
             end
-            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            @inbounds c[k] = (a[k] - c[k]/interval(T(k))) / constant_term(r)
             return nothing
         end
 
@@ -673,7 +673,7 @@ for T in (:Taylor1, :TaylorN)
                 @inbounds TS.mul!(c[k], x, s[k-1])
             end
             @inbounds for i = 2:k
-                x = interval(i) * a[i]
+                x = interval(T(i)) * a[i]
                 if $T == Taylor1
                     s[k] += x * c[k-i]
                     c[k] += x * s[k-i]
@@ -682,8 +682,8 @@ for T in (:Taylor1, :TaylorN)
                     TS.mul!(c[k], x, s[k-i])
                 end
             end
-            s[k] = s[k] / interval(k)
-            c[k] = c[k] / interval(k)
+            s[k] = s[k] / interval(T(k))
+            c[k] = c[k] / interval(T(k))
             return nothing
         end
 
@@ -725,19 +725,19 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * r[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1) * r[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
             end
             @inbounds for i in 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * r[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * r[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
                 end
             end
             TS.sqrt!(r, a^2+one(a[0]), zero(a0), k)
-            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            @inbounds c[k] = (a[k] - c[k]/interval(T(k))) / constant_term(r)
             return nothing
         end
 
@@ -750,19 +750,19 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * r[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1) * r[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
             end
             @inbounds for i in 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * r[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * r[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
                 end
             end
             TS.sqrt!(r, a^2-one(a[0]), zero(a0), k)
-            @inbounds c[k] = (a[k] - c[k]/interval(k)) / constant_term(r)
+            @inbounds c[k] = (a[k] - c[k]/interval(T(k))) / constant_term(r)
             return nothing
         end
 
@@ -775,15 +775,15 @@ for T in (:Taylor1, :TaylorN)
                 return nothing
             end
             if $T == Taylor1
-                @inbounds c[k] = interval(k-1) * r[1] * c[k-1]
+                @inbounds c[k] = interval(T(k-1)) * r[1] * c[k-1]
             else
-                @inbounds TS.mul!(c[k], interval(k-1) * r[1], c[k-1])
+                @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
             end
             @inbounds for i in 2:k-1
                 if $T == Taylor1
-                    c[k] += interval(k-i) * r[i] * c[k-i]
+                    c[k] += interval(T(k-i)) * r[i] * c[k-i]
                 else
-                    TS.mul!(c[k], interval(k-i) * r[i], c[k-i])
+                    TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
                 end
             end
             if $T == Taylor1
@@ -791,19 +791,19 @@ for T in (:Taylor1, :TaylorN)
             else
                 TS.sqr!(r, a, zero(a0), k)
             end
-            @inbounds c[k] = (a[k] + c[k]/interval(k)) / constant_term(r)
+            @inbounds c[k] = (a[k] + c[k]/interval(T(k))) / constant_term(r)
             return nothing
         end
     end
 end
 
 
-function evaluate(a::Taylor1{Interval{T}}, dx::S) where {T<:NumTypes, S<:NumTypes}
+function TS.evaluate(a::Taylor1{Interval{T}}, dx::S) where {T<:NumTypes, S<:NumTypes}
     dxI, _ = promote(dx, constant_term(a))
     return evaluate(a, dxI)
 end
 
-function evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
+function TS.evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
     order = get_order(a)
     uno = one(dx)
     dx2 = dx^2
@@ -823,7 +823,7 @@ function evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
     return sum_even + sum_odd*dx
 end
 
-function evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumTypes}
+function TS.evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumTypes}
     order = get_order(a)
     uno = one(dx)
     dx2 = dx^2
@@ -843,25 +843,25 @@ function evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumTypes}
     return sum_even + sum_odd*dx
 end
 
-function evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{S}) where {T<:NumTypes, S<:NumTypes}
+function TS.evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{S}) where {T<:NumTypes, S<:NumTypes}
     @assert length(dx) == get_numvars()
     return evaluate(a, (dx...,); sorting=false)
 end
 
-function evaluate(a::TaylorN{T}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
+function TS.evaluate(a::TaylorN{T}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
     @assert length(dx) == get_numvars()
     return evaluate(a, (dx...,); sorting=false)
 end
 
-function evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
+function TS.evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
     @assert length(dx) == get_numvars()
     return evaluate(a, (dx...,); sorting=false)
 end
 
-evaluate(a::TaylorN{T}, vals::AbstractVector{TaylorN{Interval{T}}}) where
+TS.evaluate(a::TaylorN{T}, vals::AbstractVector{TaylorN{Interval{T}}}) where
         {T<:NumTypes} = evaluate(a, (vals...,); sorting=false)
 
-function evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Real}
+function TS.evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Real}
     order = get_order(a)
     uno = one(dx)
     dx2 = dx^2
@@ -882,7 +882,7 @@ function evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Re
 end
 
 
-function evaluate(a::HomogeneousPolynomial{T},
+function TS.evaluate(a::HomogeneousPolynomial{T},
         dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
     @assert length(dx) == get_numvars()
     all(isequal_interval.(dx, interval(-one(T), one(T)))) &&
@@ -892,7 +892,7 @@ function evaluate(a::HomogeneousPolynomial{T},
     return TS._evaluate(a, dx)
 end
 
-evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{Interval{S}}) where
+TS.evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{Interval{S}}) where
     {T<:Real, S<:NumTypes} = TS._evaluate(a, (vals...,), Val(false))
 
 
