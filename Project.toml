@@ -1,6 +1,6 @@
 name = "TaylorSeries"
 uuid = "6aa5eb33-94cf-58f4-a9d0-e4b2c4fc25ea"
-version = "0.21.5"
+version = "0.21.6"
 repo = "https://github.com/JuliaDiff/TaylorSeries.jl.git"
 
 [deps]
@@ -30,7 +30,7 @@ JLD2 = "0.5, 0.6"
 LinearAlgebra = "<0.0.1, 1"
 Markdown = "<0.0.1, 1"
 Random = "1"
-RecursiveArrayTools = "4"
+RecursiveArrayTools = "2, 3, 4"
 Reexport = "1.2.2"
 SparseArrays = "<0.0.1, 1"
 StaticArrays = "1"
