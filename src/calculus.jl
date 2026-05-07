@@ -125,17 +125,24 @@ Note that the order of the result is `get_order(a)+1`.
 """
 function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
     order = get_order(a)
-    aa = a[0]/1 + zero(x)
-    R = typeof(aa)
-    coeffs = Array{typeof(aa)}(undef, order+1)
-    # fill!(coeffs, zero(aa))
-    @inbounds for i = 1:order
-        coeffs[i+1] = a[i-1] / i
-    end
-    @inbounds coeffs[1] = convert(R, x)
-    return Taylor1(coeffs)
+    aa = zero(a[0])/1 + zero(x)
+    res = Taylor1(aa, order)
+    integrate!(res, a, convert(typeof(aa), x))
+    return res
 end
 integrate(a::Taylor1{T}) where {T<:Number} = integrate(a, zero(a[0]))
+
+# In-place method
+function integrate!(res::Taylor1{T}, a::Taylor1{T}, x::T) where {T<:Number}
+    order = get_order(a)
+    @inbounds for i = 1:order
+        res.coeffs[i+1] = a[i-1] / i
+    end
+    @inbounds res.coeffs[1] = x
+    return nothing
+end
+integrate!(res::Taylor1{T}, a::Taylor1{T}) where {T<:Number} =
+    integrate!(res, a, zero(a[0]))
 
 
 
