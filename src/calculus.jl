@@ -369,6 +369,27 @@ hessian!(hes::Array{T,2}, f::TaylorN{T}, vals::Array{T,1}) where {T<:Number} =
 hessian!(hes::Array{T,2}, f::TaylorN{T}) where {T<:Number} =
     jacobian!(hes, gradient(f))
 
+"""
+```
+    hessianmatrix(f)
+```
+
+Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`.
+"""
+function hessianmatrix(f::TaylorN{T}) where {T <: Number}
+    numVars = get_numvars()
+    hess = Matrix{TaylorN{T}}(undef, numVars, numVars)
+    ntup = zeros(Int, numVars)
+    for j in axes(hess, 2)
+        for i in axes(hess, 1)
+            ntup .= 0
+            ntup[i] += 1
+            ntup[j] += 1
+            hess[i, j] = differentiate(f, tuple(ntup...))
+        end
+    end
+    return hess
+end
 
 ##Integration
 """
