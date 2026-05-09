@@ -43,6 +43,7 @@ jacobian
 jacobian!
 hessian
 hessian!
+hessianmatrix
 constant_term
 linear_polynomial
 nonlinear_polynomial
