@@ -41,6 +41,7 @@ integrate
 gradient
 jacobian
 jacobian!
+jacobianmatrix
 hessian
 hessian!
 hessianmatrix

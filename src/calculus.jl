@@ -337,6 +337,26 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1},
     nothing
 end
 
+"""
+```
+    jacobianmatrix(vf)
+```
+
+Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials.
+"""
+function jacobianmatrix(vf::Array{TaylorN{T},1}) where {T <: Number}
+    numVars = get_numvars()
+    jac = Matrix{TaylorN{T}}(undef, numVars, length(vf))
+    ntup = zeros(Int, numVars)
+    for j in axes(jac, 2)
+        for i in axes(jac, 1)
+            ntup .= 0
+            ntup[i] += 1
+            jac[i, j] = differentiate(vf[j], tuple(ntup...))
+        end
+    end
+    return transpose(jac)
+end
 
 """
 ```

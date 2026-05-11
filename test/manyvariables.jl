@@ -662,6 +662,8 @@ end
     @test jac == TS.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     TS.jacobian!(jac, [f1,f2], [2,1])
     @test jac == TS.jacobian([f1,f2], [2,1])
+    @test evaluate.(TS.jacobianmatrix([f1,f2]), Ref([xT+2, yT+1])) ==
+        TS.jacobianmatrix( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     @test TS.hessian( f1*f2 ) ==
         [differentiate((2,0), f1*f2) differentiate((1,1), (f1*f2));
          differentiate((1,1), f1*f2) differentiate((0,2), (f1*f2))] == [4 -7; -7 0]
