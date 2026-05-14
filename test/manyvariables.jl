@@ -662,6 +662,8 @@ end
     @test jac == TS.jacobian( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     TS.jacobian!(jac, [f1,f2], [2,1])
     @test jac == TS.jacobian([f1,f2], [2,1])
+    @test evaluate.(TS.jacobianmatrix([f1,f2]), Ref([xT+2, yT+1])) ==
+        TS.jacobianmatrix( [g1(xT+2,yT+1), g2(xT+2,yT+1)] )
     @test TS.hessian( f1*f2 ) ==
         [differentiate((2,0), f1*f2) differentiate((1,1), (f1*f2));
          differentiate((1,1), f1*f2) differentiate((0,2), (f1*f2))] == [4 -7; -7 0]
@@ -684,6 +686,13 @@ end
     TS.hessian!(hes1, f1-f2,[1,-1])
     TS.hessian!(hes, g1(xT+1,yT-1)-g2(xT+1,yT-1))
     @test hes1 == hes
+    @test TS.hessianmatrix( f1*f2 )() == TS.hessian( f1*f2 )
+    @test TS.hessianmatrix( f1*f2 ) == TS.hessian( f1*f2, [xT, yT] )
+    @test ([xT yT]*TS.hessianmatrix(f1*f2)*[xT, yT])[1][2] == 2*TaylorN((f1*f2)[2])
+    @test constant_term.(TS.hessianmatrix(f1^2)/2) == TS.hessian(f1^2)/2
+    @test TS.hessianmatrix(f1-f2-2*f1*f2) == (TS.hessianmatrix(f1-f2-2*f1*f2))'
+    @test evaluate.(TS.hessianmatrix(f1-f2), Ref([xT+1,yT-1])) ==
+          TS.hessianmatrix(g1(xT+1,yT-1)-g2(xT+1,yT-1))
 
     use_show_default(true)
     aa = sqrt(2) * xH
