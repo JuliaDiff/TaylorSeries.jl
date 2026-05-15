@@ -41,8 +41,10 @@ integrate
 gradient
 jacobian
 jacobian!
+jacobianmatrix
 hessian
 hessian!
+hessianmatrix
 constant_term
 linear_polynomial
 nonlinear_polynomial

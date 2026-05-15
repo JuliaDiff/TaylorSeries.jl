@@ -512,17 +512,19 @@ functions *are not* exported, so its use require the
 prefix `TaylorSeries`. Using the
 polynomials ``p = x^3 + 2x^2 y - 7 x + 2`` and ``q = y-x^4`` defined above,
 we may use [`TaylorSeries.gradient`](@ref) (or `∇`); the results are of
-type `Array{TaylorN{T},1}`. To compute the Jacobian and Hessian of a vector field
-evaluated at a point, we use respectively [`TaylorSeries.jacobian`](@ref) and
-[`TaylorSeries.hessian`](@ref):
-
+type `Array{TaylorN{T},1}`:
 ```@repl userguide
 ∇(p)
 TaylorSeries.gradient( q )
+```
+To compute the Jacobian and Hessian of a vector field, we use respectively [`TaylorSeries.jacobianmatrix`](@ref) and [`TaylorSeries.hessianmatrix`](@ref), which return an `Array{TaylorN{T}, 2}`. In case we also want to evaluate the partial derivatives, [`TaylorSeries.jacobian`](@ref) and
+[`TaylorSeries.hessian`](@ref) are more efficient:
+```@repl userguide
 r = p-q-2*p*q
-TaylorSeries.hessian(ans)
-TaylorSeries.jacobian([p,q], [2,1])
+TaylorSeries.hessianmatrix(r)
 TaylorSeries.hessian(r, [1.0,1.0])
+TaylorSeries.jacobianmatrix([p,q])
+TaylorSeries.jacobian([p,q], [2,1])
 ```
 
 Other specific applications are described in the

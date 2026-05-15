@@ -337,6 +337,26 @@ function jacobian!(jac::Array{T,2}, vf::Array{TaylorN{T},1},
     nothing
 end
 
+"""
+```
+    jacobianmatrix(vf)
+```
+
+Compute the jacobian matrix of `vf`, a vector of `TaylorN` polynomials.
+"""
+function jacobianmatrix(vf::Array{TaylorN{T},1}) where {T <: Number}
+    numVars = get_numvars()
+    jac = Matrix{TaylorN{T}}(undef, numVars, length(vf))
+    ntup = zeros(Int, numVars)
+    for j in axes(jac, 2)
+        for i in axes(jac, 1)
+            ntup .= 0
+            ntup[i] += 1
+            jac[i, j] = differentiate(vf[j], tuple(ntup...))
+        end
+    end
+    return transpose(jac)
+end
 
 """
 ```
@@ -369,6 +389,27 @@ hessian!(hes::Array{T,2}, f::TaylorN{T}, vals::Array{T,1}) where {T<:Number} =
 hessian!(hes::Array{T,2}, f::TaylorN{T}) where {T<:Number} =
     jacobian!(hes, gradient(f))
 
+"""
+```
+    hessianmatrix(f)
+```
+
+Return the hessian matrix (jacobian of the gradient) of `f::TaylorN`.
+"""
+function hessianmatrix(f::TaylorN{T}) where {T <: Number}
+    numVars = get_numvars()
+    hess = Matrix{TaylorN{T}}(undef, numVars, numVars)
+    ntup = zeros(Int, numVars)
+    for j in axes(hess, 2)
+        for i in axes(hess, 1)
+            ntup .= 0
+            ntup[i] += 1
+            ntup[j] += 1
+            hess[i, j] = differentiate(f, tuple(ntup...))
+        end
+    end
+    return hess
+end
 
 ##Integration
 """
