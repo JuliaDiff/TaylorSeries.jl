@@ -163,7 +163,7 @@ function TS.sqr!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
     TS.zero!(c, k)
     # Recursion formula
     kodd = k%2
-    kend = div(k - 2 + kodd, 2)
+    kend = (k - 2 + kodd) >> 1
     @inbounds for i = 0:kend
         c[k] += a[i] * a[k-i]
     end
