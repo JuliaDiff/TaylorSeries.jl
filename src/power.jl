@@ -38,27 +38,32 @@ end
 
 
 ## Real power ##
-for T in (:Taylor1, :TaylorN)
-    @eval function ^(a::$T{T}, r::S) where {T<:Number, S<:Real}
-        a0 = constant_term(a)
-        aux = a0^zero(r)
-        iszero(r) && return $T(aux, get_order(a))
-        aa = aux*a
-        r == 1 && return aa
-        r == 2 && return square(aa)
-        if $T == TaylorN
-            isinteger(r) && r ≥ 0 && return power_by_squaring(a, Integer(r))
-        end
-        r == 0.5 && return sqrt(aa)
-        if $T == TaylorN
-            if iszero(a0)
-                throw(DomainError(a,
-                """The 0-th order TaylorN coefficient must be non-zero
-                in order to expand `^` around 0."""))
-            end
-        end
-        return _pow(aa, r)
+function ^(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
+    a0 = constant_term(a)
+    aux = a0^zero(r)
+    iszero(r) && return Taylor1(aux, get_order(a))
+    aa = aux*a
+    r == 1 && return aa
+    r == 2 && return square(aa)
+    r == 0.5 && return sqrt(aa)
+    return _pow(aa, r)
+end
+
+function ^(a::TaylorN{T}, r::S) where {T<:Number, S<:Real}
+    a0 = constant_term(a)
+    aux = a0^zero(r)
+    iszero(r) && return TaylorN(aux, get_order(a))
+    aa = aux*a
+    r == 1 && return aa
+    r == 2 && return square(aa)
+    isinteger(r) && r >= 0 && return power_by_squaring(a, Integer(r))
+    r == 0.5 && return sqrt(aa)
+    if iszero(a0)
+        throw(DomainError(a,
+        """The 0-th order TaylorN coefficient must be non-zero
+        in order to expand `^` around 0."""))
     end
+    return _pow(aa, r)
 end
 
 
@@ -240,8 +245,8 @@ function pow!(c::Taylor1{T}, a::Taylor1{T}, aux::Taylor1{T},
     end
     for i = 1:k-lnull-1
         ((i+lnull) > get_order(a) || (l0+kprime-i > get_order(a))) && continue
-        aux = r*(kprime-i) - i
-        @inbounds c[k] += aux * c[i+lnull] * a[l0+kprime-i]
+        aaux = r*(kprime-i) - i
+        @inbounds c[k] += aaux * c[i+lnull] * a[l0+kprime-i]
     end
     @inbounds c[k] = c[k] / (kprime * a[l0])
     return nothing
@@ -477,68 +482,79 @@ c_k &= 2 \sum_{j=0}^{(k-2)/2} a_{k-j} a_j + (a_{k/2})^2,
 
 """ sqr!
 
-for T = (:Taylor1, :TaylorN)
-    @eval begin
-        function sqr!(c::$T{T}, a::$T{T}, ::T, k::Int) where {T<:Number}
-            if k == 0
-                sqr_orderzero!(c, a)
-                return nothing
-            end
-            # Sanity
-            zero!(c, k)
-            # Recursion formula
-            kodd = k%2
-            kend = (k - 2 + kodd) >> 1
-            if $T == Taylor1
-                @inbounds for i = 0:kend
-                    c[k] += a[i] * a[k-i]
-                end
-                @inbounds c[k] = 2 * c[k]
-            else
-                @inbounds for i = 0:kend
-                    mul!(c[k], a[i], a[k-i])
-                end
-                @inbounds mul!(c, 2, c, k)
-            end
-            kodd == 1 && return nothing
-            if $T == Taylor1
-                @inbounds c[k] += a[k >> 1]^2
-            else
-                accsqr!(c[k], a[k >> 1])
-            end
-
-            return nothing
-        end
-
-        # in-place squaring: given `c`, compute expansion of `c^2` and save back into `c`
-        function sqr!(c::$T{T}, k::Int) where {T<:NumberNotSeries}
-            if k == 0
-                sqr_orderzero!(c, c)
-                return nothing
-            end
-            # Recursion formula
-            kodd = k%2
-            kend = (k - 2 + kodd) >> 1
-            if $T == Taylor1
-                (kend ≥ 0) && ( @inbounds c[k] = c[0] * c[k] )
-                @inbounds for i = 1:kend
-                    c[k] += c[i] * c[k-i]
-                end
-                @inbounds c[k] = 2 * c[k]
-                (kodd == 0) && ( @inbounds c[k] += c[k >> 1]^2 )
-            else
-                (kend ≥ 0) && ( @inbounds mul!(c, c[0][1], c, k) )
-                @inbounds for i = 1:kend
-                    mul!(c[k], c[i], c[k-i])
-                end
-                @inbounds mul!(c, 2, c, k)
-                if (kodd == 0)
-                    accsqr!(c[k], c[k >> 1])
-                end
-            end
-            return nothing
-        end
+function sqr!(c::Taylor1{T}, a::Taylor1{T}, ::T, k::Int) where {T<:Number}
+    if k == 0
+        sqr_orderzero!(c, a)
+        return nothing
     end
+    # Sanity
+    zero!(c, k)
+    # Recursion formula
+    kodd = k%2
+    kend = (k - 2 + kodd) >> 1
+    @inbounds for i = 0:kend
+        c[k] += a[i] * a[k-i]
+    end
+    @inbounds c[k] = 2 * c[k]
+    kodd == 1 && return nothing
+    @inbounds c[k] += a[k >> 1]^2
+    return nothing
+end
+
+function sqr!(c::TaylorN{T}, a::TaylorN{T}, ::T, k::Int) where {T<:Number}
+    if k == 0
+        sqr_orderzero!(c, a)
+        return nothing
+    end
+    # Sanity
+    zero!(c, k)
+    # Recursion formula
+    kodd = k%2
+    kend = (k - 2 + kodd) >> 1
+    @inbounds for i = 0:kend
+        mul!(c[k], a[i], a[k-i])
+    end
+    @inbounds mul!(c, 2, c, k)
+    kodd == 1 && return nothing
+    accsqr!(c[k], a[k >> 1])
+    return nothing
+end
+
+# in-place squaring: given `c`, compute expansion of `c^2` and save back into `c`
+function sqr!(c::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        sqr_orderzero!(c, c)
+        return nothing
+    end
+    # Recursion formula
+    kodd = k%2
+    kend = (k - 2 + kodd) >> 1
+    (kend >= 0) && ( @inbounds c[k] = c[0] * c[k] )
+    @inbounds for i = 1:kend
+        c[k] += c[i] * c[k-i]
+    end
+    @inbounds c[k] = 2 * c[k]
+    (kodd == 0) && ( @inbounds c[k] += c[k >> 1]^2 )
+    return nothing
+end
+
+function sqr!(c::TaylorN{T}, k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        sqr_orderzero!(c, c)
+        return nothing
+    end
+    # Recursion formula
+    kodd = k%2
+    kend = (k - 2 + kodd) >> 1
+    (kend >= 0) && ( @inbounds mul!(c, c[0][1], c, k) )
+    @inbounds for i = 1:kend
+        mul!(c[k], c[i], c[k-i])
+    end
+    @inbounds mul!(c, 2, c, k)
+    if kodd == 0
+        accsqr!(c[k], c[k >> 1])
+    end
+    return nothing
 end
 
 function sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::TaylorN{T},
