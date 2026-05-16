@@ -245,9 +245,8 @@ function pow!(c::Taylor1{T}, a::Taylor1{T}, aux::Taylor1{T},
     end
     for i = 1:k-lnull-1
         ((i+lnull) > get_order(a) || (l0+kprime-i > get_order(a))) && continue
-        aux = r*(kprime-i) - i
-aaux = r*(kprime-i) - i
-@inbounds c[k] += aaux * c[i+lnull] * a[l0+kprime-i]
+        aaux = r*(kprime-i) - i
+        @inbounds c[k] += aaux * c[i+lnull] * a[l0+kprime-i]
     end
     @inbounds c[k] = c[k] / (kprime * a[l0])
     return nothing
