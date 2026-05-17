@@ -87,11 +87,14 @@ const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
 """
     HomogeneousProductTable
 
-Precomputed output coefficient positions for multiplying two homogeneous
-polynomials in a single `TaylorNSpace`.
+Precomputed input-pair and output-major schedules for multiplying two
+homogeneous polynomials in a single `TaylorNSpace`.
 """
 struct HomogeneousProductTable
-    positions :: Matrix{Int}
+    input_positions :: Vector{Int}
+    output_offsets  :: Vector{Int}
+    output_pairs    :: Vector{UInt32}
+    num_right       :: Int
 end
 
 """

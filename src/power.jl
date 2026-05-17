@@ -635,17 +635,17 @@ function accsqr!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where
         throw(DimensionMismatch("result homogeneous degree must be twice the input degree"))
     order_a = degree_a+1
     @inbounds num_coeffs_a = sp.size_table[order_a]
-    @inbounds positions = sp.mul_table[order_a][order_a].positions
+    @inbounds input_positions = sp.mul_table[order_a][order_a].input_positions
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
         _isthinzero(ca) && continue
-        pos = positions[na, na]
+        pos = input_positions[(na-1)*num_coeffs_a + na]
         c[pos] += ca^2
         @inbounds for nb = na+1:num_coeffs_a
             cb = a[nb]
             _isthinzero(cb) && continue
-            pos = positions[nb, na]
+            pos = input_positions[(na-1)*num_coeffs_a + nb]
             c[pos] += 2 * ca * cb
         end
     end

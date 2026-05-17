@@ -54,18 +54,54 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
     indTa = index_table[order_a+1]
     indTb = index_table[order_b+1]
     posTc = pos_table[order_c+1]
-    positions = Matrix{Int}(undef, length(indTb), length(indTa))
+
+    num_coeffs_a = length(indTa)
+    num_coeffs_b = length(indTb)
+    num_coeffs_c = length(posTc)
+    num_pairs = num_coeffs_a * num_coeffs_b
+    num_pairs ≤ typemax(UInt32) ||
+        error("Product table is too large for UInt32 pair indices")
+
+    input_positions = Vector{Int}(undef, num_pairs)
+    counts = zeros(Int, num_coeffs_c)
+
+    pair = 1
     @inbounds for na in eachindex(indTa)
         inda = indTa[na]
         for nb in eachindex(indTb)
-            positions[nb, na] = posTc[inda + indTb[nb]]
+            pos = posTc[inda + indTb[nb]]
+            input_positions[pair] = pos
+            counts[pos] += 1
+            pair += 1
         end
     end
-    return HomogeneousProductTable(positions)
+
+    output_offsets = Vector{Int}(undef, num_coeffs_c+1)
+    output_offsets[1] = 1
+    @inbounds for pos in 1:num_coeffs_c
+        output_offsets[pos+1] = output_offsets[pos] + counts[pos]
+    end
+
+    output_pairs = Vector{UInt32}(undef, num_pairs)
+    cursors = copy(output_offsets)
+
+    pair = 1
+    @inbounds for na in 1:num_coeffs_a
+        for nb in 1:num_coeffs_b
+            pos = input_positions[pair]
+            cursor = cursors[pos]
+            output_pairs[cursor] = UInt32(pair)
+            cursors[pos] = cursor + 1
+            pair += 1
+        end
+    end
+
+    return HomogeneousProductTable(input_positions, output_offsets,
+        output_pairs, num_coeffs_b)
 end
 
 function generate_multiplication_tables(index_table, pos_table, order::Int)
-    empty_table = HomogeneousProductTable(Matrix{Int}(undef, 0, 0))
+    empty_table = HomogeneousProductTable(Int[], Int[1], UInt32[], 0)
     return [[order_a + order_b ≤ order ?
         _homogeneous_product_table(index_table, pos_table, order_a, order_b) :
         empty_table

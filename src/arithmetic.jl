@@ -465,7 +465,11 @@ for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
         end
         c = zero(a)
         for ord in eachindex(c)
-            mul!(c, a, b, ord) # updates c[ord]
+            if $T == TaylorN
+                _muladd_unchecked!(c, a, b, ord) # updates c[ord]
+            else
+                mul!(c, a, b, ord) # updates c[ord]
+            end
         end
         return c
     end
@@ -517,7 +521,7 @@ function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSe
     end
     res = zero(a)
     for ordT in eachindex(a)
-        mul!(res, a, b, ordT)
+        _mul_unchecked!(res, a, b, ordT)
     end
     return res
 end
@@ -585,10 +589,7 @@ mul!(v::TaylorN{T}, a::NumberNotSeries, b::TaylorN{T}, k::Int) where
 function muladd!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T},
         k::Int) where {T<:Number}
     _check_same_space(c, a, b)
-    @inbounds mul!(c[k], a[0], b[k])
-    @inbounds for i = 1:k
-        mul!(c[k], a[i], b[k-i])
-    end
+    _muladd_unchecked!(c, a, b, k)
     return nothing
 end
 function muladd!(v::TaylorN, a::TaylorN, b::NumberNotSeries, k::Int)
@@ -602,10 +603,7 @@ muladd!(v::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int) = muladd!(v, b, a, k
 function mul_scalar!(c::TaylorN{T}, scalar::NumberNotSeries, a::TaylorN{T},
         b::TaylorN{T}, k::Int) where {T<:Number}
     _check_same_space(c, a, b)
-    @inbounds mul_scalar!(c[k], scalar, a[0], b[k])
-    @inbounds for i = 1:k
-        mul_scalar!(c[k], scalar, a[i], b[k-i])
-    end
+    _mul_scalar_unchecked!(c, scalar, a, b, k)
     return nothing
 end
 
@@ -739,15 +737,21 @@ function mul!(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
     return nothing
 end
 
-function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+function _mul_unchecked!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeries}
-    # Sanity
     zero!(res, ordT)
     for k in 0:ordT
         @inbounds for ordQ in eachindex(a[ordT])
-            mul!(res[ordT], a[k], b[ordT-k], ordQ)
+            _muladd_unchecked!(res[ordT], a[k], b[ordT-k], ordQ)
         end
     end
+    return nothing
+end
+
+function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeries}
+    _check_same_space(res[0], a[0], b[0])
+    _mul_unchecked!(res, a, b, ordT)
     return nothing
 end
 
@@ -772,9 +776,19 @@ function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     end
 end
 
-function mul!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
+function mul!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    _check_same_space(c[0], a[0], b[0])
     for k in eachindex(c)
-        mul!(c, a, b, k)
+        _mul_unchecked!(c, a, b, k)
+    end
+    return nothing
+end
+
+function mul!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
+    _check_same_space(c, a, b)
+    for k in eachindex(c)
+        _muladd_unchecked!(c, a, b, k)
     end
 end
 
@@ -793,8 +807,9 @@ end
 
 function mul_scalar!(c::TaylorN{T}, scalar::NumberNotSeries, a::TaylorN{T},
         b::TaylorN{T}) where {T<:NumberNotSeriesN}
+    _check_same_space(c, a, b)
     for k in eachindex(c)
-        mul_scalar!(c, scalar, a, b, k)
+        _mul_scalar_unchecked!(c, scalar, a, b, k)
     end
 end
 
@@ -815,6 +830,207 @@ c_k = \sum_{j=0}^k a_j b_{k-j}.
 """ mul!
 
 
+@inline function _check_homogeneous_product_order(c::HomogeneousPolynomial,
+        a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+    get_order(c) == get_order(a) + get_order(b) ||
+        throw(DimensionMismatch("result homogeneous degree must equal the sum of input degrees"))
+    return nothing
+end
+
+@inline function _muladd_scalar_unchecked!(c::HomogeneousPolynomial, scalar,
+        a::HomogeneousPolynomial)
+    _isthinzero(scalar) && return nothing
+    @inbounds for i in eachindex(c)
+        ai = a[i]
+        _isthinzero(ai) && continue
+        c[i] += scalar * ai
+    end
+    return nothing
+end
+
+@inline function _mul_unchecked!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
+        b::HomogeneousPolynomial)
+    (_isthinzero(b) || _isthinzero(a)) && return nothing
+    degree_a = get_order(a)
+    degree_b = get_order(b)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
+
+    order_a = degree_a+1
+    order_b = degree_b+1
+    sp = c.space
+    @inbounds num_coeffs_a = sp.size_table[order_a]
+    @inbounds num_coeffs_b = sp.size_table[order_b]
+    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    pair = 1
+    @inbounds for na in 1:num_coeffs_a
+        ca = a[na]
+        if _isthinzero(ca)
+            pair += num_coeffs_b
+            continue
+        end
+        @inbounds for nb in 1:num_coeffs_b
+            cb = b[nb]
+            if !_isthinzero(cb)
+                pos = input_positions[pair]
+                c[pos] += ca * cb
+            end
+            pair += 1
+        end
+    end
+    return nothing
+end
+
+@inline function _mul_output_major_unchecked!(c::HomogeneousPolynomial{Float64},
+        a::HomogeneousPolynomial{Float64}, b::HomogeneousPolynomial{Float64})
+    (_isthinzero(b) || _isthinzero(a)) && return nothing
+    degree_a = get_order(a)
+    degree_b = get_order(b)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
+
+    @inbounds table = c.space.mul_table[degree_a+1][degree_b+1]
+    offsets = table.output_offsets
+    output_pairs = table.output_pairs
+    num_right = table.num_right
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for pos in 1:length(offsets)-1
+        acc = c_coeffs[pos]
+        for csr_pos in offsets[pos]:(offsets[pos+1]-1)
+            pair = Int(output_pairs[csr_pos]) - 1
+            na = pair ÷ num_right + 1
+            nb = pair - (na-1) * num_right + 1
+            acc += a_coeffs[na] * b_coeffs[nb]
+        end
+        c_coeffs[pos] = acc
+    end
+    return nothing
+end
+
+@inline function _mul_unchecked!(c::HomogeneousPolynomial{Float64},
+        a::HomogeneousPolynomial{Float64}, b::HomogeneousPolynomial{Float64})
+    (_isthinzero(b) || _isthinzero(a)) && return nothing
+    degree_a = get_order(a)
+    degree_b = get_order(b)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
+
+    order_a = degree_a+1
+    order_b = degree_b+1
+    sp = c.space
+    @inbounds num_coeffs_a = sp.size_table[order_a]
+    @inbounds num_coeffs_b = sp.size_table[order_b]
+    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    pair = 1
+    @inbounds for na in 1:num_coeffs_a
+        ca = a[na]
+        if iszero(ca)
+            pair += num_coeffs_b
+            continue
+        end
+        @inbounds for nb in 1:num_coeffs_b
+            cb = b[nb]
+            if !iszero(cb)
+                pos = input_positions[pair]
+                c[pos] += ca * cb
+            end
+            pair += 1
+        end
+    end
+    return nothing
+end
+
+@inline function _mul_scalar_unchecked!(c::HomogeneousPolynomial,
+        scalar::NumberNotSeries, a::HomogeneousPolynomial,
+        b::HomogeneousPolynomial)
+    (_isthinzero(scalar) || _isthinzero(b) || _isthinzero(a)) && return nothing
+    degree_a = get_order(a)
+    degree_b = get_order(b)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b[1], a)
+
+    order_a = degree_a+1
+    order_b = degree_b+1
+    sp = c.space
+    @inbounds num_coeffs_a = sp.size_table[order_a]
+    @inbounds num_coeffs_b = sp.size_table[order_b]
+    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    pair = 1
+    @inbounds for na in 1:num_coeffs_a
+        ca = a[na]
+        if _isthinzero(ca)
+            pair += num_coeffs_b
+            continue
+        end
+        sca = scalar * ca
+        @inbounds for nb in 1:num_coeffs_b
+            cb = b[nb]
+            if !_isthinzero(cb)
+                pos = input_positions[pair]
+                c[pos] += sca * cb
+            end
+            pair += 1
+        end
+    end
+    return nothing
+end
+
+@inline function _mul_scalar_unchecked!(c::HomogeneousPolynomial{Float64},
+        scalar::NumberNotSeries, a::HomogeneousPolynomial{Float64},
+        b::HomogeneousPolynomial{Float64})
+    (_isthinzero(scalar) || _isthinzero(b) || _isthinzero(a)) && return nothing
+    degree_a = get_order(a)
+    degree_b = get_order(b)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b[1], a)
+
+    order_a = degree_a+1
+    order_b = degree_b+1
+    sp = c.space
+    @inbounds num_coeffs_a = sp.size_table[order_a]
+    @inbounds num_coeffs_b = sp.size_table[order_b]
+    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    pair = 1
+    @inbounds for na in 1:num_coeffs_a
+        ca = a[na]
+        if iszero(ca)
+            pair += num_coeffs_b
+            continue
+        end
+        sca = scalar * ca
+        @inbounds for nb in 1:num_coeffs_b
+            cb = b[nb]
+            if !iszero(cb)
+                pos = input_positions[pair]
+                c[pos] += sca * cb
+            end
+            pair += 1
+        end
+    end
+    return nothing
+end
+
+@inline function _muladd_unchecked!(c::TaylorN{T}, a::TaylorN{T},
+        b::TaylorN{T}, k::Int) where {T<:Number}
+    @inbounds _mul_unchecked!(c[k], a[0], b[k])
+    @inbounds for i = 1:k
+        _mul_unchecked!(c[k], a[i], b[k-i])
+    end
+    return nothing
+end
+
+@inline function _mul_scalar_unchecked!(c::TaylorN{T}, scalar::NumberNotSeries,
+        a::TaylorN{T}, b::TaylorN{T}, k::Int) where {T<:Number}
+    @inbounds _mul_scalar_unchecked!(c[k], scalar, a[0], b[k])
+    @inbounds for i = 1:k
+        _mul_scalar_unchecked!(c[k], scalar, a[i], b[k-i])
+    end
+    return nothing
+end
+
+
 """
     mul!(c, a, b) --> nothing
 
@@ -825,27 +1041,8 @@ c, a and b are `HomogeneousPolynomial`.
 @inline function mul!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
     _check_same_space(c, a, b)
-    (_isthinzero(b) || _isthinzero(a)) && return nothing
-    degree_a = get_order(a)
-    degree_b = get_order(b)
-    get_order(c) == degree_a + degree_b ||
-        throw(DimensionMismatch("result homogeneous degree must equal the sum of input degrees"))
-    order_a = degree_a+1
-    order_b = degree_b+1
-    sp = c.space
-    @inbounds num_coeffs_a = sp.size_table[order_a]
-    @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds positions = sp.mul_table[order_a][order_b].positions
-    @inbounds for na in 1:num_coeffs_a
-        ca = a[na]
-        _isthinzero(ca) && continue
-        @inbounds for nb in 1:num_coeffs_b
-            cb = b[nb]
-            _isthinzero(cb) && continue
-            pos = positions[nb, na]
-            c[pos] += ca * cb
-        end
-    end
+    _check_homogeneous_product_order(c, a, b)
+    _mul_unchecked!(c, a, b)
     return nothing
 end
 
@@ -860,28 +1057,8 @@ c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
 @inline function mul_scalar!(c::HomogeneousPolynomial, scalar::NumberNotSeries, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
     _check_same_space(c, a, b)
-    (_isthinzero(b) || _isthinzero(a)) && return nothing
-    degree_a = get_order(a)
-    degree_b = get_order(b)
-    get_order(c) == degree_a + degree_b ||
-        throw(DimensionMismatch("result homogeneous degree must equal the sum of input degrees"))
-    order_a = degree_a+1
-    order_b = degree_b+1
-    sp = c.space
-    @inbounds num_coeffs_a = sp.size_table[order_a]
-    @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds positions = sp.mul_table[order_a][order_b].positions
-    @inbounds for na in 1:num_coeffs_a
-        ca = a[na]
-        _isthinzero(ca) && continue
-        sca = scalar * ca
-        @inbounds for nb in 1:num_coeffs_b
-            cb = b[nb]
-            _isthinzero(cb) && continue
-            pos = positions[nb, na]
-            c[pos] += sca * cb
-        end
-    end
+    _check_homogeneous_product_order(c, a, b)
+    _mul_scalar_unchecked!(c, scalar, a, b)
     return nothing
 end
 
