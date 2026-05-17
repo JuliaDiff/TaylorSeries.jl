@@ -826,24 +826,23 @@ c, a and b are `HomogeneousPolynomial`.
         b::HomogeneousPolynomial)
     _check_same_space(c, a, b)
     (_isthinzero(b) || _isthinzero(a)) && return nothing
-    order_a = get_order(a)+1
-    order_b = get_order(b)+1
-    order_c = get_order(c)+1
+    degree_a = get_order(a)
+    degree_b = get_order(b)
+    get_order(c) == degree_a + degree_b ||
+        throw(DimensionMismatch("result homogeneous degree must equal the sum of input degrees"))
+    order_a = degree_a+1
+    order_b = degree_b+1
     sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds posTb = sp.pos_table[order_c]
-    @inbounds indTa = sp.index_table[order_a]
-    @inbounds indTb = sp.index_table[order_b]
+    @inbounds positions = sp.mul_table[order_a][order_b].positions
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
         _isthinzero(ca) && continue
-        inda = indTa[na]
         @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
             _isthinzero(cb) && continue
-            indb = indTb[nb]
-            pos = posTb[inda + indb]
+            pos = positions[nb, na]
             c[pos] += ca * cb
         end
     end
@@ -862,25 +861,25 @@ c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
         b::HomogeneousPolynomial)
     _check_same_space(c, a, b)
     (_isthinzero(b) || _isthinzero(a)) && return nothing
-    order_a = get_order(a)+1
-    order_b = get_order(b)+1
-    order_c = get_order(c)+1
+    degree_a = get_order(a)
+    degree_b = get_order(b)
+    get_order(c) == degree_a + degree_b ||
+        throw(DimensionMismatch("result homogeneous degree must equal the sum of input degrees"))
+    order_a = degree_a+1
+    order_b = degree_b+1
     sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds posTb = sp.pos_table[order_c]
-    @inbounds indTa = sp.index_table[order_a]
-    @inbounds indTb = sp.index_table[order_b]
+    @inbounds positions = sp.mul_table[order_a][order_b].positions
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
         _isthinzero(ca) && continue
-        inda = indTa[na]
+        sca = scalar * ca
         @inbounds for nb in 1:num_coeffs_b
             cb = b[nb]
             _isthinzero(cb) && continue
-            indb = indTb[nb]
-            pos = posTb[inda + indb]
-            c[pos] += scalar * ca * cb
+            pos = positions[nb, na]
+            c[pos] += sca * cb
         end
     end
     return nothing

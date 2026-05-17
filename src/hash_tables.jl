@@ -48,6 +48,39 @@ function generate_tables(num_vars, order)
     return (coeff_table, index_table, size_table, pos_table)
 end
 
+function _homogeneous_product_table(index_table, pos_table, order_a::Int,
+        order_b::Int)
+    order_c = order_a + order_b
+    indTa = index_table[order_a+1]
+    indTb = index_table[order_b+1]
+    posTc = pos_table[order_c+1]
+    positions = Matrix{Int}(undef, length(indTb), length(indTa))
+    @inbounds for na in eachindex(indTa)
+        inda = indTa[na]
+        for nb in eachindex(indTb)
+            positions[nb, na] = posTc[inda + indTb[nb]]
+        end
+    end
+    return HomogeneousProductTable(positions)
+end
+
+function generate_multiplication_tables(index_table, pos_table, order::Int)
+    empty_table = HomogeneousProductTable(Matrix{Int}(undef, 0, 0))
+    return [[order_a + order_b ≤ order ?
+        _homogeneous_product_table(index_table, pos_table, order_a, order_b) :
+        empty_table
+        for order_b in 0:order] for order_a in 0:order]
+end
+
+function TaylorNSpace(order::Int, num_vars::Int, variable_names::Vector{String},
+        variable_symbols::Vector{Symbol}, coeff_table::Vector{Vector{Vector{Int}}},
+        index_table::Vector{Vector{Int}}, size_table::Vector{Int},
+        pos_table::Vector{Dict{Int,Int}})
+    mul_table = generate_multiplication_tables(index_table, pos_table, order)
+    return TaylorNSpace(order, num_vars, variable_names, variable_symbols,
+        coeff_table, index_table, size_table, pos_table, mul_table)
+end
+
 function TaylorNSpace(order::Int, variable_names::Vector{String})
     order ≥ 1 || error("Order must be at least 1")
     num_vars = length(variable_names)
@@ -143,6 +176,7 @@ function set_default_space!(space::TaylorNSpace)
         dst.index_table = space.index_table
         dst.size_table = space.size_table
         dst.pos_table = space.pos_table
+        dst.mul_table = space.mul_table
         dst
     else
         default_space[] = space

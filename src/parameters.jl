@@ -85,6 +85,16 @@ ParamsTaylorN(order, num_vars, variable_names) = ParamsTaylorN(order, num_vars, 
 const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
 
 """
+    HomogeneousProductTable
+
+Precomputed output coefficient positions for multiplying two homogeneous
+polynomials in a single `TaylorNSpace`.
+"""
+struct HomogeneousProductTable
+    positions :: Matrix{Int}
+end
+
+"""
     TaylorNSpace
     JetSpace
 
@@ -101,6 +111,7 @@ mutable struct TaylorNSpace
     index_table      :: Vector{Vector{Int}}
     size_table       :: Vector{Int}
     pos_table        :: Vector{Dict{Int,Int}}
+    mul_table        :: Vector{Vector{HomogeneousProductTable}}
 end
 
 const JetSpace = TaylorNSpace
