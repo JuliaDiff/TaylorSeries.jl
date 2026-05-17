@@ -861,7 +861,7 @@ end
     sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    input_positions = _product_table(sp, order_a, order_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
@@ -889,7 +889,7 @@ end
     degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
     degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
 
-    @inbounds table = c.space.mul_table[degree_a+1][degree_b+1]
+    table = _init_output_major_product_table!(c.space, degree_a+1, degree_b+1)
     offsets = table.output_offsets
     output_pairs = table.output_pairs
     num_right = table.num_right
@@ -922,7 +922,7 @@ end
     sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    input_positions = _product_table(sp, order_a, order_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
@@ -956,7 +956,7 @@ end
     sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    input_positions = _product_table(sp, order_a, order_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
@@ -991,7 +991,7 @@ end
     sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    @inbounds input_positions = sp.mul_table[order_a][order_b].input_positions
+    input_positions = _product_table(sp, order_a, order_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]

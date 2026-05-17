@@ -57,13 +57,11 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
 
     num_coeffs_a = length(indTa)
     num_coeffs_b = length(indTb)
-    num_coeffs_c = length(posTc)
     num_pairs = num_coeffs_a * num_coeffs_b
     num_pairs ≤ typemax(UInt32) ||
         error("Product table is too large for UInt32 pair indices")
 
     input_positions = Vector{Int}(undef, num_pairs)
-    counts = zeros(Int, num_coeffs_c)
 
     pair = 1
     @inbounds for na in eachindex(indTa)
@@ -71,50 +69,88 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
         for nb in eachindex(indTb)
             pos = posTc[inda + indTb[nb]]
             input_positions[pair] = pos
-            counts[pos] += 1
             pair += 1
         end
     end
 
-    output_offsets = Vector{Int}(undef, num_coeffs_c+1)
-    output_offsets[1] = 1
-    @inbounds for pos in 1:num_coeffs_c
-        output_offsets[pos+1] = output_offsets[pos] + counts[pos]
-    end
+    return HomogeneousProductTable(input_positions, Int[], UInt32[], num_coeffs_b)
+end
 
-    output_pairs = Vector{UInt32}(undef, num_pairs)
-    cursors = copy(output_offsets)
+function _init_output_major_product_table!(space::TaylorNSpace, order_a::Int,
+        order_b::Int)
+    table = _product_table(space, order_a, order_b)
+    !isempty(table.output_pairs) && return table
+    num_coeffs_c = space.size_table[order_a + order_b - 1]
+    num_pairs = length(table.input_positions)
+    lock(space.mul_table_lock)
+    try
+        table = _product_table(space, order_a, order_b)
+        !isempty(table.output_pairs) && return table
+        counts = zeros(Int, num_coeffs_c)
+        @inbounds for pair in 1:num_pairs
+            counts[table.input_positions[pair]] += 1
+        end
 
-    pair = 1
-    @inbounds for na in 1:num_coeffs_a
-        for nb in 1:num_coeffs_b
-            pos = input_positions[pair]
+        output_offsets = Vector{Int}(undef, num_coeffs_c+1)
+        output_offsets[1] = 1
+        @inbounds for pos in 1:num_coeffs_c
+            output_offsets[pos+1] = output_offsets[pos] + counts[pos]
+        end
+
+        output_pairs = Vector{UInt32}(undef, num_pairs)
+        cursors = copy(output_offsets)
+
+        @inbounds for pair in 1:num_pairs
+            pos = table.input_positions[pair]
             cursor = cursors[pos]
             output_pairs[cursor] = UInt32(pair)
             cursors[pos] = cursor + 1
-            pair += 1
         end
+        table.output_offsets = output_offsets
+        table.output_pairs = output_pairs
+        return table
+    finally
+        unlock(space.mul_table_lock)
     end
-
-    return HomogeneousProductTable(input_positions, output_offsets,
-        output_pairs, num_coeffs_b)
 end
 
-function generate_multiplication_tables(index_table, pos_table, order::Int)
-    empty_table = HomogeneousProductTable(Int[], Int[1], UInt32[], 0)
-    return [[order_a + order_b ≤ order ?
-        _homogeneous_product_table(index_table, pos_table, order_a, order_b) :
-        empty_table
-        for order_b in 0:order] for order_a in 0:order]
+function generate_multiplication_tables(order::Int)
+    empty_table = HomogeneousProductTable(Int[], Int[], UInt32[], 0)
+    return [[empty_table for _ in 0:order] for _ in 0:order]
+end
+
+@inline function _product_table(space::TaylorNSpace, order_a::Int, order_b::Int)
+    @inbounds table = space.mul_table[order_a][order_b]
+    !isempty(table.input_positions) && return table
+    return _init_product_table!(space, order_a, order_b)
+end
+
+function _init_product_table!(space::TaylorNSpace, order_a::Int, order_b::Int)
+    degree_a = order_a - 1
+    degree_b = order_b - 1
+    degree_a + degree_b ≤ space.order ||
+        throw(DimensionMismatch("homogeneous product order exceeds TaylorNSpace order"))
+    lock(space.mul_table_lock)
+    try
+        @inbounds table = space.mul_table[order_a][order_b]
+        if isempty(table.input_positions)
+            table = _homogeneous_product_table(space.index_table, space.pos_table,
+                degree_a, degree_b)
+            @inbounds space.mul_table[order_a][order_b] = table
+        end
+        return table
+    finally
+        unlock(space.mul_table_lock)
+    end
 end
 
 function TaylorNSpace(order::Int, num_vars::Int, variable_names::Vector{String},
         variable_symbols::Vector{Symbol}, coeff_table::Vector{Vector{Vector{Int}}},
         index_table::Vector{Vector{Int}}, size_table::Vector{Int},
         pos_table::Vector{Dict{Int,Int}})
-    mul_table = generate_multiplication_tables(index_table, pos_table, order)
+    mul_table = generate_multiplication_tables(order)
     return TaylorNSpace(order, num_vars, variable_names, variable_symbols,
-        coeff_table, index_table, size_table, pos_table, mul_table)
+        coeff_table, index_table, size_table, pos_table, mul_table, ReentrantLock())
 end
 
 function TaylorNSpace(order::Int, variable_names::Vector{String})
@@ -213,6 +249,7 @@ function set_default_space!(space::TaylorNSpace)
         dst.size_table = space.size_table
         dst.pos_table = space.pos_table
         dst.mul_table = space.mul_table
+        dst.mul_table_lock = space.mul_table_lock
         dst
     else
         default_space[] = space

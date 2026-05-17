@@ -90,7 +90,7 @@ const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
 Precomputed input-pair and output-major schedules for multiplying two
 homogeneous polynomials in a single `TaylorNSpace`.
 """
-struct HomogeneousProductTable
+mutable struct HomogeneousProductTable
     input_positions :: Vector{Int}
     output_offsets  :: Vector{Int}
     output_pairs    :: Vector{UInt32}
@@ -115,6 +115,7 @@ mutable struct TaylorNSpace
     size_table       :: Vector{Int}
     pos_table        :: Vector{Dict{Int,Int}}
     mul_table        :: Vector{Vector{HomogeneousProductTable}}
+    mul_table_lock   :: ReentrantLock
 end
 
 const JetSpace = TaylorNSpace
