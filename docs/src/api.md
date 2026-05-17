@@ -65,12 +65,12 @@ set_taylor1_varname
 ```@docs
 ParamsTaylor1
 ParamsTaylorN
+HomogeneousProductTable
 _InternalMutFuncs
 generate_tables
 generate_index_vectors
 in_base
 make_inverse_dict
-_coeffsHP
 _coeffsTN
 numtype
 mul!
