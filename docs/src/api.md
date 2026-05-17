@@ -59,6 +59,7 @@ isfinite
 displayBigO
 use_show_default
 set_taylor1_varname
+space
 ```
 
 ## Internals
