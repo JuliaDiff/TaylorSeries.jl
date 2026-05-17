@@ -51,6 +51,36 @@ using Test
     @test TS.pos_table[4][15] == 2
 end
 
+@testset "Explicit TaylorN spaces" begin
+    sx = JetSpace(order=5, variables=[:x, :y, :z])
+    sa = JetSpace(order=3, variables=[:a, :b])
+
+    x, y, z = variables(sx)
+    a, b = variables(sa)
+
+    @test x.space === y.space === z.space === sx
+    @test a.space === b.space === sa
+    @test x.space !== a.space
+    @test get_numvars(x) == 3
+    @test get_variable_names(sx) == ["x", "y", "z"]
+
+    @test x^2 + sin(y) == x^2 + sin(y)
+    @test exp(a*b).space === sa
+    @test_throws ArgumentError x + a
+    @test_throws ArgumentError x * a
+
+    u, v = set_variables("u v", order=2)
+    @test u.space === v.space
+    @test u.space !== sx
+    @test x*y == TaylorN(sx, HomogeneousPolynomial(sx, [0.0, 1.0, 0.0, 0.0, 0.0, 0.0], 2), 5)
+    @test_throws ArgumentError x + u
+
+    tx = Taylor1([x, y], 2)
+    ty = Taylor1([y, z], 2)
+    @test (tx + ty)[0].space === sx
+    @test (tx * ty)[0].space === sx
+end
+
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
     eeuler = Base.MathConstants.e
 

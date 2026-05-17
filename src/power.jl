@@ -14,7 +14,7 @@ end
 
 function ^(a::HomogeneousPolynomial, n::Integer)
     n == 0 && return one(a)
-    n == 1 && return HomogeneousPolynomial(a.coeffs[:], get_order(a))
+    n == 1 && return HomogeneousPolynomial(a.space, a.coeffs[:], get_order(a))
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
     return power_by_squaring(a, n)
@@ -52,7 +52,7 @@ end
 function ^(a::TaylorN{T}, r::S) where {T<:Number, S<:Real}
     a0 = constant_term(a)
     aux = a0^zero(r)
-    iszero(r) && return TaylorN(aux, get_order(a))
+    iszero(r) && return TaylorN(a.space, aux, get_order(a))
     aa = aux*a
     r == 1 && return aa
     r == 2 && return square(aa)
@@ -99,7 +99,7 @@ end
 function _pow(a::TaylorN{T}, r::S) where {T<:Number, S<:Real}
     isinteger(r) && r ≥ 0 && return power_by_squaring(a, Integer(r))
     aux = one(constant_term(a))^r
-    c = TaylorN( zero(aux), get_order(a))
+    c = TaylorN(a.space, zero(aux), get_order(a))
     aux0 = zero(c)
     for ord in eachindex(a)
         pow!(c, a, aux0, r, ord)
@@ -413,8 +413,8 @@ end
 function square(a::HomogeneousPolynomial)
     order = 2*get_order(a)
     # NOTE: the following returns order 0, but could be get_order(), or get_order(a)
-    order > get_order() && return HomogeneousPolynomial(zero(a[1]), 0)
-    res = HomogeneousPolynomial(zero(a[1]), order)
+    order > get_order(a.space) && return HomogeneousPolynomial(a.space, zero(a[1]), 0)
+    res = HomogeneousPolynomial(a.space, zero(a[1]), order)
     accsqr!(res, a)
     return res
 end
@@ -626,11 +626,13 @@ Returns `c += a*a` with no allocation; all parameters are `HomogeneousPolynomial
 """
 function accsqr!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where
         {T<:NumberNotSeriesN}
+    _check_same_space(c, a)
     iszero(a) && return nothing
 
-    @inbounds num_coeffs_a = size_table[get_order(a)+1]
-    @inbounds posTb = pos_table[get_order(c)+1]
-    @inbounds idxTb = index_table[get_order(a)+1]
+    sp = c.space
+    @inbounds num_coeffs_a = sp.size_table[get_order(a)+1]
+    @inbounds posTb = sp.pos_table[get_order(c)+1]
+    @inbounds idxTb = sp.index_table[get_order(a)+1]
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
@@ -683,7 +685,7 @@ function sqrt(a::TaylorN{T}) where {T<:Number}
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `sqrt` around 0."""))
     end
-    c = TaylorN( p0, get_order(a))
+    c = TaylorN(a.space, p0, get_order(a))
     aa = convert(TaylorN{eltype(p0)}, a)
     aux = zero(aa)
     for k in eachindex(c)

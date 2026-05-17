@@ -10,7 +10,12 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 
     ## real, imag, conj and ctranspose ##
     for f in (:real, :imag, :conj)
-        @eval ($f)(a::$T) = $T($f(a.coeffs), get_order(a))
+        @eval function ($f)(a::$T)
+            if $T == HomogeneousPolynomial
+                return HomogeneousPolynomial(a.space, ($f)(a.coeffs), get_order(a))
+            end
+            return $T(($f)(a.coeffs), get_order(a))
+        end
     end
 
     @eval adjoint(a::$T) = conj(a)

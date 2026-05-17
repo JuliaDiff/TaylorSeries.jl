@@ -29,7 +29,7 @@ convert(::Type{Taylor1}, a::T) where {T<:Number} = Taylor1(a, 0)
 
 
 convert(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) where
-    {T<:Number} = HomogeneousPolynomial(convert(Array{T,1}, a.coeffs), get_order(a))
+    {T<:Number} = HomogeneousPolynomial(a.space, convert(Array{T,1}, a.coeffs), get_order(a))
 
 convert(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial{T}) where
     {T<:Number} = a
@@ -40,7 +40,7 @@ function convert(::Type{HomogeneousPolynomial{Rational{T}}},
     la = length(a.coeffs)
     v = Array{Rational{T}}(undef, la)
     v .= rationalize.(a[1:la], tol=eps(one(S)))
-    return HomogeneousPolynomial(v, get_order(a))
+    return HomogeneousPolynomial(a.space, v, get_order(a))
 end
 
 convert(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) where {T<:Number,S<:Number} =
@@ -59,12 +59,12 @@ convert(::Type{HomogeneousPolynomial}, a::Number) = HomogeneousPolynomial([a],0)
 
 
 convert(::Type{TaylorN{T}}, a::TaylorN) where {T<:Number} =
-    TaylorN( convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), get_order(a))
+    TaylorN(a.space, convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), get_order(a))
 
 convert(::Type{TaylorN{T}}, a::TaylorN{T}) where {T<:Number} = a
 
 convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{S}) where {T<:Number,S<:Number} =
-    TaylorN( [convert(HomogeneousPolynomial{T}, b)], get_order(b))
+    TaylorN(b.space, [convert(HomogeneousPolynomial{T}, b)], get_order(b))
 
 convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) where {T<:Number,S<:Number} =
     TaylorN( convert(Array{HomogeneousPolynomial{T},1}, b), maxorderH(b))
@@ -86,7 +86,8 @@ convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     orderN = maximum(get_order.(s[:]))
-    r = zeros(HomogeneousPolynomial{Taylor1{T}}, orderN)
+    sp = s[0].space
+    r = zeros(HomogeneousPolynomial(sp, Taylor1(zero(T), get_order(s)), 0), orderN)
 
     v = zeros(T, get_order(s)+1)
     @inbounds for ordT in eachindex(s)
@@ -99,7 +100,7 @@ function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:
         end
         v[ordT+1] = zero(T)
     end
-    return TaylorN(r)
+    return TaylorN(sp, r)
 end
 
 function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
@@ -109,16 +110,16 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
     end
     vT = Array{TaylorN{T}}(undef, ordert+1)
     @inbounds for ordT in eachindex(vT)
-        vT[ordT] = TaylorN(zero(T), get_order(s))
+        vT[ordT] = TaylorN(s.space, zero(T), get_order(s))
     end
 
     @inbounds for ordN in eachindex(s)
-        vHP = HomogeneousPolynomial(zeros(T, length(s[ordN])))
+        vHP = HomogeneousPolynomial(s.space, zeros(T, length(s[ordN])), get_order(s[ordN]))
         @inbounds for ihp in eachindex(s[ordN].coeffs)
             @inbounds for ind in eachindex(s[ordN][ihp].coeffs)
                 c = s[ordN][ihp][ind-1]
                 vHP[ihp] = c
-                vT[ind] += TaylorN(vHP, get_order(s))
+                vT[ind] += TaylorN(s.space, vHP, get_order(s))
                 vHP[ihp] = zero(T)
             end
         end

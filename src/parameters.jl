@@ -84,14 +84,72 @@ ParamsTaylorN(order, num_vars, variable_names) = ParamsTaylorN(order, num_vars, 
 
 const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
 
+"""
+    TaylorNSpace
+    JetSpace
+
+Explicit multivariate Taylor algebra. A space owns the truncation order,
+variable metadata, and the lookup tables used by `HomogeneousPolynomial`
+and `TaylorN` arithmetic.
+"""
+mutable struct TaylorNSpace
+    order            :: Int
+    num_vars         :: Int
+    variable_names   :: Vector{String}
+    variable_symbols :: Vector{Symbol}
+    coeff_table      :: Vector{Vector{Vector{Int}}}
+    index_table      :: Vector{Vector{Int}}
+    size_table       :: Vector{Int}
+    pos_table        :: Vector{Dict{Int,Int}}
+end
+
+const JetSpace = TaylorNSpace
+
+const default_space = Ref{TaylorNSpace}()
+
+Base.deepcopy_internal(space::TaylorNSpace, stackdict::IdDict) = space
+
+function _variable_names_from(names::Vector{T}; numvars::Int=-1) where
+        {T<:AbstractString}
+    variable_names = String[split(strip(name))[1] for name in names]
+    numvars == -1 || length(variable_names) == numvars ||
+        error("Number of variable names must match `numvars`")
+    return variable_names
+end
+_variable_names_from(symbs::Vector{T}; numvars::Int=-1) where {T<:Symbol} =
+    _variable_names_from(string.(symbs), numvars=numvars)
+
+function _variable_names_from(names::T; numvars::Int=-1) where {T<:AbstractString}
+    variable_names = split(names)
+    if length(variable_names) == 1 && numvars ≥ 1
+        name = variable_names[1]
+        variable_names = string.(name, TS.subscriptify.(1:numvars))
+    end
+    return _variable_names_from(variable_names, numvars=numvars)
+end
+_variable_names_from(symb::Symbol; numvars::Int=-1) =
+    _variable_names_from(string(symb), numvars=numvars)
+
+TaylorNSpace(; order::Int=get_order(), variables) =
+    TaylorNSpace(order, _variable_names_from(variables))
+
 
 ## Utilities to get the maximum order, number of variables, their names and symbols
 get_order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
+get_order(space::TaylorNSpace) = space.order
+get_numvars(space::TaylorNSpace) = space.num_vars
+get_variable_names(space::TaylorNSpace) = space.variable_names
+get_variable_symbols(space::TaylorNSpace) = space.variable_symbols
 function lookupvar(s::Symbol)
     ind = findfirst(x -> x==s, _params_TaylorN_.variable_symbols)
+    isa(ind, Nothing) && return 0
+    return ind
+end
+function lookupvar(space::TaylorNSpace, s::Symbol)
+    ind = findfirst(x -> x==s, space.variable_symbols)
     isa(ind, Nothing) && return 0
     return ind
 end
@@ -110,6 +168,14 @@ get_variables(::Type{T}, order::Int=get_order()) where {T} =
     [TaylorN(T, i, order=order) for i in 1:get_numvars()]
 get_variables(order::Int=get_order()) =
     [TaylorN(Float64, i, order=order) for i in 1:get_numvars()]
+variables(::Type{T}, space::TaylorNSpace; order::Int=get_order(space)) where {T} =
+    [TaylorN(space, T, i, order=order) for i in 1:get_numvars(space)]
+variables(space::TaylorNSpace; order::Int=get_order(space)) =
+    variables(Float64, space, order=order)
+get_variables(::Type{T}, space::TaylorNSpace; order::Int=get_order(space)) where {T} =
+    variables(T, space, order=order)
+get_variables(space::TaylorNSpace; order::Int=get_order(space)) =
+    variables(space, order=order)
 
 """
     set_variables([T::Type], names::String; [order=get_order(), numvars=-1])
@@ -145,33 +211,10 @@ julia> set_variables("x", order=6, numvars=2)
 function set_variables(::Type{R}, names::Vector{T}; order=get_order()) where
         {R, T<:AbstractString}
 
-    order ≥ 1 || error("Order must be at least 1")
-
-    num_vars = length(names)
-    num_vars ≥ 1 || error("Number of variables must be at least 1")
-
-    _params_TaylorN_.variable_names = names
-    _params_TaylorN_.variable_symbols = Symbol.(names)
-
-
-    if !(order == get_order() && num_vars == get_numvars())
-        # if these are unchanged, no need to regenerate tables
-
-        _params_TaylorN_.order = order
-        _params_TaylorN_.num_vars = num_vars
-
-        resize!(coeff_table,order+1)
-        resize!(index_table,order+1)
-        resize!(size_table,order+1)
-        resize!(pos_table,order+1)
-
-        coeff_table[:], index_table[:], size_table[:], pos_table[:] =
-            generate_tables(num_vars, order)
-        GC.gc();
-    end
+    space = set_default_space!(TaylorNSpace(order, _variable_names_from(names)))
 
     # return a list of the new variables
-    return TaylorN.(R, 1:get_numvars())
+    return variables(R, space)
 end
 set_variables(::Type{R}, symbs::Vector{T}; order=get_order()) where
     {R,T<:Symbol} = set_variables(R, string.(symbs), order=order)
@@ -184,14 +227,7 @@ set_variables(symbs::Vector{T}; order=get_order()) where {T<:Symbol} =
 function set_variables(::Type{R}, names::T; order=get_order(), numvars=-1) where
         {R,T<:AbstractString}
 
-    variable_names = split(names)
-
-    if length(variable_names) == 1 && numvars ≥ 1
-        name = variable_names[1]
-        variable_names = string.(name, TS.subscriptify.(1:numvars))
-    end
-
-    return set_variables(R, variable_names, order=order)
+    return set_variables(R, _variable_names_from(names, numvars=numvars), order=order)
 end
 set_variables(::Type{R}, symbs::Symbol; order=get_order(), numvars=-1) where {R} =
     set_variables(R, string(symbs), order=order, numvars=numvars)

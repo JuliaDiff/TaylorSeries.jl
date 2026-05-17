@@ -12,6 +12,9 @@ for T in (:Taylor1, :TaylorN)
         ==(a::$T{T}, b::$T{S}) where {T<:Number,S<:Number} = ==(promote(a,b)...)
 
         function ==(a::$T{T}, b::$T{T}) where {T<:Number}
+            if $T == TaylorN
+                space(a) === space(b) || return false
+            end
             if get_order(a) != get_order(b)
                 a, b = fixorder(a, b)
             end
@@ -27,6 +30,7 @@ end
 ==(b::TaylorN{Taylor1{S}}, a::Taylor1{TaylorN{T}}) where {T, S} = a == b
 
 function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+    space(a) === space(b) || return false
     get_order(a) == get_order(b) && return a.coeffs == b.coeffs
     return iszero(a.coeffs) && iszero(b.coeffs)
 end
@@ -168,4 +172,3 @@ Refs:
 
 Returns `isless(a - b, zero(T))`.
 """ isless
-

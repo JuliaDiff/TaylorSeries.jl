@@ -48,6 +48,15 @@ function generate_tables(num_vars, order)
     return (coeff_table, index_table, size_table, pos_table)
 end
 
+function TaylorNSpace(order::Int, variable_names::Vector{String})
+    order ≥ 1 || error("Order must be at least 1")
+    num_vars = length(variable_names)
+    num_vars ≥ 1 || error("Number of variables must be at least 1")
+    tables = generate_tables(num_vars, order)
+    return TaylorNSpace(order, num_vars, copy(variable_names),
+        Symbol.(variable_names), tables...)
+end
+
 """
     generate_index_vectors(num_vars, degree)
 
@@ -109,6 +118,48 @@ end
 
 const coeff_table, index_table, size_table, pos_table =
     generate_tables(get_numvars(), get_order())
+
+function _sync_legacy_tables!(space::TaylorNSpace)
+    resize!(coeff_table, space.order+1)
+    resize!(index_table, space.order+1)
+    resize!(size_table, space.order+1)
+    resize!(pos_table, space.order+1)
+
+    coeff_table[:] = space.coeff_table
+    index_table[:] = space.index_table
+    size_table[:] = space.size_table
+    pos_table[:] = space.pos_table
+    return nothing
+end
+
+function set_default_space!(space::TaylorNSpace)
+    active_space = if isassigned(default_space)
+        dst = default_space[]
+        dst.order = space.order
+        dst.num_vars = space.num_vars
+        dst.variable_names = space.variable_names
+        dst.variable_symbols = space.variable_symbols
+        dst.coeff_table = space.coeff_table
+        dst.index_table = space.index_table
+        dst.size_table = space.size_table
+        dst.pos_table = space.pos_table
+        dst
+    else
+        default_space[] = space
+        space
+    end
+    _params_TaylorN_.order = active_space.order
+    _params_TaylorN_.num_vars = active_space.num_vars
+    _params_TaylorN_.variable_names = active_space.variable_names
+    _params_TaylorN_.variable_symbols = active_space.variable_symbols
+    _sync_legacy_tables!(active_space)
+    GC.gc()
+    return active_space
+end
+
+default_space[] = TaylorNSpace(get_order(), get_numvars(),
+    copy(get_variable_names()), copy(get_variable_symbols()),
+    coeff_table, index_table, size_table, pos_table)
 
 # Garbage-collect here to free memory
 GC.gc();

@@ -13,7 +13,7 @@ for T in (:Taylor1, :TaylorN)
         function exp(a::$T)
             aux = exp(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, get_order(a))
+            c = _constant_series_like(a, aux, get_order(a))
             for k in eachindex(a)
                 exp!(c, aa, k)
             end
@@ -23,7 +23,7 @@ for T in (:Taylor1, :TaylorN)
         function expm1(a::$T)
             aux = expm1(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, get_order(a))
+            c = _constant_series_like(a, aux, get_order(a))
             for k in eachindex(a)
                 expm1!(c, aa, k)
             end
@@ -35,7 +35,7 @@ for T in (:Taylor1, :TaylorN)
                 """The 0-th order coefficient must be non-zero in order to expand `log` around 0."""))
             aux = log(constant_term(a))
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, get_order(a))
+            c = _constant_series_like(a, aux, get_order(a))
             for k in eachindex(a)
                 log!(c, aa, k)
             end
@@ -48,7 +48,7 @@ for T in (:Taylor1, :TaylorN)
             aux = log1p(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, get_order(a))
+            c = _constant_series_like(a, aux, get_order(a))
             for k in eachindex(a)
                 log1p!(c, aa, k)
             end
@@ -62,8 +62,8 @@ for T in (:Taylor1, :TaylorN)
             aux, auxc = sincos(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            s = $T(aux, order)
-            c = $T(auxc, order)
+            s = _constant_series_like(a, aux, order)
+            c = _constant_series_like(a, auxc, order)
             for k in eachindex(a)
                 sincos!(s, c, aa, k)
             end
@@ -77,8 +77,8 @@ for T in (:Taylor1, :TaylorN)
             aux, auxc = sincospi(constant_term(a))
             aa = one(aux) * a
             # aa = convert($T{typeof(aux)}, a)
-            s = $T(aux, order)
-            c = $T(auxc, order)
+            s = _constant_series_like(a, aux, order)
+            c = _constant_series_like(a, auxc, order)
             for k in eachindex(a)
                 sincospi!(s, c, aa, k)
             end
@@ -90,8 +90,8 @@ for T in (:Taylor1, :TaylorN)
             aux = tan(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            c2 = $T(aux^2, order)
+            c = _constant_series_like(a, aux, order)
+            c2 = _constant_series_like(a, aux^2, order)
             for k in eachindex(a)
                 tan!(c, aa, c2, k)
             end
@@ -106,8 +106,8 @@ for T in (:Taylor1, :TaylorN)
             aux = asin(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            r = $T(sqrt(1 - a0^2), order)
+            c = _constant_series_like(a, aux, order)
+            r = _constant_series_like(a, sqrt(1 - a0^2), order)
             for k in eachindex(a)
                 asin!(c, aa, r, k)
             end
@@ -122,8 +122,8 @@ for T in (:Taylor1, :TaylorN)
             aux = acos(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            r = $T(sqrt(1 - a0^2), order)
+            c = _constant_series_like(a, aux, order)
+            r = _constant_series_like(a, sqrt(1 - a0^2), order)
             for k in eachindex(a)
                 acos!(c, aa, r, k)
             end
@@ -136,8 +136,8 @@ for T in (:Taylor1, :TaylorN)
             aux = atan(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            r = $T(one(aux) + a0^2, order)
+            c = _constant_series_like(a, aux, order)
+            r = _constant_series_like(a, one(aux) + a0^2, order)
             iszero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of atan(x) diverges at x = ±im."""))
             for k in eachindex(a)
@@ -159,8 +159,8 @@ for T in (:Taylor1, :TaylorN)
             aux = sinh(constant_term(a))
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            s = $T(aux, order)
-            c = $T(cosh(constant_term(a)), order)
+            s = _constant_series_like(a, aux, order)
+            c = _constant_series_like(a, cosh(constant_term(a)), order)
             for k in eachindex(a)
                 sinhcosh!(s, c, aa, k)
             end
@@ -172,8 +172,8 @@ for T in (:Taylor1, :TaylorN)
             aux = tanh( constant_term(a) )
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            c2 = $T(aux^2, order)
+            c = _constant_series_like(a, aux, order)
+            c2 = _constant_series_like(a, aux^2, order)
             for k in eachindex(a)
                 tanh!(c, aa, c2, k)
             end
@@ -187,8 +187,8 @@ for T in (:Taylor1, :TaylorN)
             aux = asinh(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            r = $T(sqrt(a0^2 + 1), order)
+            c = _constant_series_like(a, aux, order)
+            r = _constant_series_like(a, sqrt(a0^2 + 1), order)
             iszero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of asinh(x) diverges at x = ±im."""))
             for k in eachindex(a)
@@ -205,8 +205,8 @@ for T in (:Taylor1, :TaylorN)
             aux = acosh(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            r = $T(sqrt(a0^2 - 1), order)
+            c = _constant_series_like(a, aux, order)
+            r = _constant_series_like(a, sqrt(a0^2 - 1), order)
             for k in eachindex(a)
                 acosh!(c, aa, r, k)
             end
@@ -219,8 +219,8 @@ for T in (:Taylor1, :TaylorN)
             aux = atanh(a0)
             # aa = one(aux) * a
             aa = convert($T{typeof(aux)}, a)
-            c = $T(aux, order)
-            r = $T(one(aux) - a0^2, order)
+            c = _constant_series_like(a, aux, order)
+            r = _constant_series_like(a, one(aux) - a0^2, order)
             iszero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of atanh(x) diverges at x = ±1."""))
             for k in eachindex(a)
@@ -1309,7 +1309,7 @@ function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[k][0][1]), get_order(a[0]))
+    tmp = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     # i=0 term of sum
     @inbounds for ordQ in eachindex(a[0])
@@ -1345,7 +1345,7 @@ function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[k][0][1]), get_order(a[0]))
+    tmp = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
@@ -1371,7 +1371,7 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
-    tmp1 = TaylorN( zero(a[k][0][1]), get_order(a[0]))
+    tmp1 = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     @inbounds for ordQ in eachindex(a[0])
         # zero!(res[k], a[0], ordQ)
@@ -1385,7 +1385,7 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN( zero(a[k][0][1]), get_order(a[0]))
+    tmp = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
@@ -1530,7 +1530,7 @@ end
 
 function atan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
+    aux = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]) )
     if k == 0
         res[0] = atan( a[0] )
         # zero!(r, a, 0)
@@ -1582,7 +1582,7 @@ end
 
 function tanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = TaylorN( zero(a[0][0][1]), get_order(a[0]))
+    aux = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         @inbounds res[0] = tanh( a[0] )
         # zero!(res2, res, 0)
@@ -1609,7 +1609,7 @@ end
 
 function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
+    tmp = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         tmp0 = zero(tmp)
         @inbounds res[0] = asinh( a[0] )
@@ -1656,7 +1656,7 @@ end
 
 function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]))
+    tmp = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         tmp0 = zero(tmp)
         @inbounds res[0] = acosh( a[0] )
@@ -1704,7 +1704,7 @@ end
 
 function atanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = TaylorN( zero(a[0][0][1]), get_order(a[0]) )
+    tmp = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]) )
     if k == 0
         res[0] = atanh( a[0] )
         # zero!(r, a, 0)
@@ -1815,10 +1815,10 @@ function inverse_map(p::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
         a Taylor1 series with constant coefficient 0 and re-expand about f(0).
         """))
     end
-    @assert length(p) == get_numvars()
+    @assert length(p) == get_numvars(p[1])
     inv_m_pol = inv(jacobian(p))
     n_pol = inv_m_pol * nonlinear_polynomial(p)
-    scaled_ident = inv_m_pol * TaylorN.(1:get_numvars(), order=get_order(p[1]))
+    scaled_ident = inv_m_pol * TaylorN.(Ref(p[1].space), 1:get_numvars(p[1]), order=get_order(p[1]))
     res = deepcopy(scaled_ident)
     aux = zero.(res)
     auxvec = [zero(res[1]) for val in eachindex(res[1])]
@@ -1826,7 +1826,7 @@ function inverse_map(p::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
     aaux = zero(res[1])
     for ord in 1:get_order(p[1])
         t_res = (res...,)
-        for i = 1:get_numvars()
+        for i = 1:get_numvars(p[1])
             zero!.(auxvec)
             _evaluate!(auxvec, n_pol[i], t_res, valscache, aaux)
             aux[i] = sum( auxvec )
