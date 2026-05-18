@@ -73,6 +73,7 @@ generate_tables
 generate_index_vectors
 in_base
 make_inverse_dict
+_coeffsHP
 _coeffsTN
 numtype
 mul!

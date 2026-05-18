@@ -9,13 +9,9 @@
 ## Auxiliary function ##
 
 """
-    _coeffsHP(x::T, order::Int) where {T<:Number}
-    _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+    space(a::Union{HomogeneousPolynomial,TaylorN})
 
-Returns a `FixedSizeVectorDefault` of size `size_table[order+1]`
-to be used in the construction of an HomogeneousPolynomial of order
-`order`. The returned vector has the first entries of `coeffs`,
-and then it's filled with zeros.
+Return the `TaylorNSpace` associated with the multivariate Taylor object `a`.
 """
 @inline space(a::HomogeneousPolynomial) = a.space
 @inline space(a::TaylorN) = a.space
@@ -60,6 +56,17 @@ end
 _constant_series_like(a::Taylor1, x, order::Int) = Taylor1(x, order)
 _constant_series_like(a::TaylorN, x, order::Int) = TaylorN(a.space, x, order)
 
+"""
+    _coeffsHP(x::T, order::Int) where {T<:Number}
+    _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+    _coeffsHP(space::TaylorNSpace, x::T, order::Int) where {T<:Number}
+    _coeffsHP(space::TaylorNSpace, coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+
+Returns a `FixedSizeVectorDefault` of size `space.size_table[order+1]`
+to be used in the construction of a `HomogeneousPolynomial` of order
+`order`. The returned vector has the first entries of `coeffs`,
+and then is filled with zeros.
+"""
 function _coeffsHP(space::TaylorNSpace, x::T, order::Int) where {T<:NumberNotSeries}
     @assert order ≤ get_order(space)
     num_coeffs = space.size_table[order+1]
