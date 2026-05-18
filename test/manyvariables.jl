@@ -63,6 +63,13 @@ end
     @test x.space !== a.space
     @test get_numvars(x) == 3
     @test get_variable_names(sx) == ["x", "y", "z"]
+    shown_sx = sprint(show, sx)
+    @test occursin("TaylorNSpace", shown_sx)
+    @test occursin("Expansion order:", shown_sx)
+    @test occursin("Number of variables:", shown_sx)
+    @test occursin("Variable names:", shown_sx)
+    @test occursin("[\"x\", \"y\", \"z\"]", shown_sx)
+    @test occursin("[:x, :y, :z]", shown_sx)
 
     @test x^2 + sin(y) == x^2 + sin(y)
     @test exp(a*b).space === sa

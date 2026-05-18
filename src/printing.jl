@@ -245,6 +245,17 @@ name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
 name_taylorNvar(space::TaylorNSpace, i::Int) =
     string(" ", get_variable_names(space)[i])
 
+function Base.show(io::IO, s::TaylorNSpace)
+    tab = "    "
+    println(io,
+        "TaylorNSpace\n",
+        tab, rpad("Expansion order:",     24), get_order(s),            '\n',
+        tab, rpad("Number of variables:", 24), get_numvars(s),          '\n',
+        tab, rpad("Variable names:",      24), get_variable_names(s),   '\n',
+        tab, rpad("Variable symbols:",    24), get_variable_symbols(s), '\n',
+    )
+end
+
 # summary
 summary(a::Taylor1{T}) where {T<:Number} =
     string(get_order(a), "-order ", typeof(a), ":")
