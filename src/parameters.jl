@@ -172,6 +172,7 @@ const JetSpace = TaylorNSpace
 const default_space = Ref{TaylorNSpace}()
 
 Base.deepcopy_internal(space::TaylorNSpace, stackdict::IdDict) = space
+Base.broadcastable(space::TaylorNSpace) = Ref(space)
 
 function _variable_names_from(names::Vector{T}; numvars::Int=-1) where
         {T<:AbstractString}
@@ -220,20 +221,26 @@ end
 
 
 """
-    get_variables(T::Type, [order::Int=get_order()])
+    get_variables([T::Type=Float64], [order::Int=get_order()])
+    variables([T::Type=Float64], space::TaylorNSpace; order=get_order(space))
+    get_variables([T::Type=Float64], space::TaylorNSpace; order=get_order(space))
 
 Return a `TaylorN{T}` vector with each entry representing an
-independent variable. It takes the default `_params_TaylorN_` values
-if `set_variables` hasn't been changed with the exception that `order`
-can be explicitly established by the user without changing internal values
-for `num_vars` or `variable_names`. Omitting `T` defaults to `Float64`.
+independent variable. Without an explicit space, `get_variables` uses the
+compatibility default space configured by `set_variables`, except that `order`
+can be explicitly established by the user without changing internal values for
+`num_vars` or `variable_names`.
+
+For explicit spaces, `variables(space)` is the preferred option. The
+`get_variables(space)` methods are compatibility aliases for the existing
+`get_variables` methods. Omitting `T` defaults to `Float64`.
 """
 get_variables(::Type{T}, order::Int=get_order()) where {T} =
-    [TaylorN(T, i, order=order) for i in 1:get_numvars()]
+    TaylorN.(T, 1:get_numvars(), order=order)
 get_variables(order::Int=get_order()) =
-    [TaylorN(Float64, i, order=order) for i in 1:get_numvars()]
+    TaylorN.(Float64, 1:get_numvars(), order=order)
 variables(::Type{T}, space::TaylorNSpace; order::Int=get_order(space)) where {T} =
-    [TaylorN(space, T, i, order=order) for i in 1:get_numvars(space)]
+    TaylorN.(space, T, 1:get_numvars(space), order=order)
 variables(space::TaylorNSpace; order::Int=get_order(space)) =
     variables(Float64, space, order=order)
 get_variables(::Type{T}, space::TaylorNSpace; order::Int=get_order(space)) where {T} =
