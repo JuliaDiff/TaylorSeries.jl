@@ -48,6 +48,7 @@ function generate_tables(num_vars, order)
     return (coeff_table, index_table, size_table, pos_table)
 end
 
+"""Return the input-position schedule for multiplying two homogeneous degrees."""
 function _homogeneous_product_table(index_table, pos_table, order_a::Int,
         order_b::Int)
     order_c = order_a + order_b
@@ -76,15 +77,16 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
     return HomogeneousProductTable(input_positions, Int[], UInt32[], num_coeffs_b)
 end
 
-function _init_output_major_product_table!(space::TaylorNSpace, order_a::Int,
-        order_b::Int)
-    table = _product_table(space, order_a, order_b)
+"""Initialize and return the output-major product schedule for two degree indices."""
+function _init_output_major_product_table!(space::TaylorNSpace, degree_index_a::Int,
+        degree_index_b::Int)
+    table = _product_table(space, degree_index_a, degree_index_b)
     !isempty(table.output_pairs) && return table
-    num_coeffs_c = space.size_table[order_a + order_b - 1]
+    num_coeffs_c = space.size_table[degree_index_a + degree_index_b - 1]
     num_pairs = length(table.input_positions)
     lock(space.mul_table_lock)
     try
-        table = _product_table(space, order_a, order_b)
+        table = _product_table(space, degree_index_a, degree_index_b)
         !isempty(table.output_pairs) && return table
         counts = zeros(Int, num_coeffs_c)
         @inbounds for pair in 1:num_pairs
@@ -114,29 +116,36 @@ function _init_output_major_product_table!(space::TaylorNSpace, order_a::Int,
     end
 end
 
+"""Return empty per-degree product-table caches for a space of the given order."""
 function generate_multiplication_tables(order::Int)
     empty_table = HomogeneousProductTable(Int[], Int[], UInt32[], 0)
     return [[empty_table for _ in 0:order] for _ in 0:order]
 end
 
-@inline function _product_table(space::TaylorNSpace, order_a::Int, order_b::Int)
-    @inbounds table = space.mul_table[order_a][order_b]
+"""Return the cached product table for two degree indices, initializing it if needed."""
+@inline function _product_table(space::TaylorNSpace, degree_index_a::Int,
+        degree_index_b::Int)
+    @inbounds table = space.mul_table[degree_index_a][degree_index_b]
     !isempty(table.input_positions) && return table
-    return _init_product_table!(space, order_a, order_b)
+    return _init_product_table!(space, degree_index_a, degree_index_b)
 end
 
-function _init_product_table!(space::TaylorNSpace, order_a::Int, order_b::Int)
-    degree_a = order_a - 1
-    degree_b = order_b - 1
+"""Initialize and cache the input-position product table for two degree indices."""
+function _init_product_table!(space::TaylorNSpace, degree_index_a::Int,
+        degree_index_b::Int)
+    # `mul_table` is indexed by degree + 1: index 1 stores degree 0,
+    # index 2 stores degree 1, and so on.
+    degree_a = degree_index_a - 1
+    degree_b = degree_index_b - 1
     degree_a + degree_b ≤ space.order ||
         throw(DimensionMismatch("homogeneous product order exceeds TaylorNSpace order"))
     lock(space.mul_table_lock)
     try
-        @inbounds table = space.mul_table[order_a][order_b]
+        @inbounds table = space.mul_table[degree_index_a][degree_index_b]
         if isempty(table.input_positions)
             table = _homogeneous_product_table(space.index_table, space.pos_table,
                 degree_a, degree_b)
-            @inbounds space.mul_table[order_a][order_b] = table
+            @inbounds space.mul_table[degree_index_a][degree_index_b] = table
         end
         return table
     finally
@@ -144,6 +153,7 @@ function _init_product_table!(space::TaylorNSpace, order_a::Int, order_b::Int)
     end
 end
 
+"""Construct a `TaylorNSpace` from precomputed homogeneous lookup tables."""
 function TaylorNSpace(order::Int, num_vars::Int, variable_names::Vector{String},
         variable_symbols::Vector{Symbol}, coeff_table::Vector{Vector{Vector{Int}}},
         index_table::Vector{Vector{Int}}, size_table::Vector{Int},
@@ -153,6 +163,7 @@ function TaylorNSpace(order::Int, num_vars::Int, variable_names::Vector{String},
         coeff_table, index_table, size_table, pos_table, mul_table, ReentrantLock())
 end
 
+"""Construct a `TaylorNSpace` and generate its lookup tables from variable names."""
 function TaylorNSpace(order::Int, variable_names::Vector{String})
     order ≥ 1 || error("Order must be at least 1")
     num_vars = length(variable_names)
@@ -224,6 +235,7 @@ end
 const coeff_table, index_table, size_table, pos_table =
     generate_tables(get_numvars(), get_order())
 
+"""Sync the legacy global lookup-table vectors with the given `TaylorNSpace`."""
 function _sync_legacy_tables!(space::TaylorNSpace)
     resize!(coeff_table, space.order+1)
     resize!(index_table, space.order+1)
@@ -237,6 +249,7 @@ function _sync_legacy_tables!(space::TaylorNSpace)
     return nothing
 end
 
+"""Set the compatibility default `TaylorNSpace` and refresh legacy globals."""
 function set_default_space!(space::TaylorNSpace)
     active_space = if isassigned(default_space)
         dst = default_space[]

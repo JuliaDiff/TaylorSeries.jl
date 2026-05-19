@@ -89,6 +89,39 @@ const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
 
 Precomputed input-pair and output-major schedules for multiplying two
 homogeneous polynomials in a single `TaylorNSpace`.
+
+For multiplying homogeneous polynomials, say, `c = a * b`, each coefficient of
+`a` multiplies each coefficient of `b`. So the code walks pairs like::
+
+```
+a[1] * b[1]
+a[1] * b[2]
+a[1] * b[3]
+a[2] * b[1]
+...
+```
+
+For each pair of indices, the field `input_positions[pair]` tells us which output
+coefficient `c[pos]` receives that product (in general, many pairs contribute
+to the same output coefficient). The input-pair traversing order schedule
+maps each pair of input coefficients to the output coefficient it contributes to.
+The output-major schedule stores the same products grouped by output coefficient,
+so dense kernels (e.g., `_mul_unchecked!`, `_mul_output_major_unchecked!`)
+can accumulate one output coefficient at a time.
+
+At initialization, only the input-pair table `input_positions` is filled. Later,
+only if a kernel needs the output-major layout, the fields `output_offsets` and
+`output_pairs` are filled, i.e., output-major data is filled lazily only when
+a kernel requests it. Currently, this lazy loading is realized via a mutable
+struct, so that fields can be assigned when appropriate, but it is not
+strictly necessary.
+
+# Fields
+
+- `input_positions`: output coefficient position for each input coefficient pair.
+- `output_offsets`: start positions of each output coefficient's group in `output_pairs`.
+- `output_pairs`: input-pair identifiers grouped by output coefficient.
+- `num_right`: number of coefficients in the right input polynomial.
 """
 mutable struct HomogeneousProductTable
     input_positions :: Vector{Int}
