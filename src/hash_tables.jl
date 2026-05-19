@@ -253,34 +253,27 @@ end
 Set the compatibility default `TaylorNSpace` and refresh legacy globals.
 
 The global `default_space` binding is a constant `Ref`, but its contents are
-mutable. Since `default_space` initially holds an empty `Ref{TaylorNSpace}()`,
-the first call stores `space` in `default_space[]`. This first call normally
-happens during module loading. Later calls update the existing `default_space[]`
-object in place with the fields of `space` instead of replacing the object.
-This preserves references held by objects constructed through the default-space
-tables while still making the default algebra follow `set_variables`.
+mutable. Module loading initializes `default_space[]`; later compatibility calls
+such as `set_variables` update that existing object in place with the fields of
+`space` instead of replacing it. This preserves references held by objects
+constructed through the default-space tables while still making the default
+algebra follow `set_variables`.
 """
 function set_default_space!(space::TaylorNSpace)
-    active_space = if isassigned(default_space)
-        # After module initialization, keep the default-space object stable and
-        # update its fields so legacy objects referring to it remain connected.
-        dst = default_space[]
-        dst.order = space.order
-        dst.num_vars = space.num_vars
-        dst.variable_names = space.variable_names
-        dst.variable_symbols = space.variable_symbols
-        dst.coeff_table = space.coeff_table
-        dst.index_table = space.index_table
-        dst.size_table = space.size_table
-        dst.pos_table = space.pos_table
-        dst.mul_table = space.mul_table
-        dst.mul_table_lock = space.mul_table_lock
-        dst
-    else
-        # First initialization, normally during module loading.
-        default_space[] = space
-        space
-    end
+    # Keep the default-space object stable and update its fields so legacy
+    # objects referring to it remain connected to the active default algebra.
+    active_space = default_space[]
+    active_space.order = space.order
+    active_space.num_vars = space.num_vars
+    active_space.variable_names = space.variable_names
+    active_space.variable_symbols = space.variable_symbols
+    active_space.coeff_table = space.coeff_table
+    active_space.index_table = space.index_table
+    active_space.size_table = space.size_table
+    active_space.pos_table = space.pos_table
+    active_space.mul_table = space.mul_table
+    active_space.mul_table_lock = space.mul_table_lock
+
     # Mirror the active default space into _params_TaylorN_ and the related
     # "legacy" lookup-tables
     _params_TaylorN_.order = active_space.order
@@ -290,8 +283,7 @@ function set_default_space!(space::TaylorNSpace)
     _sync_legacy_tables!(active_space)
     # Updating the default space can replace large lookup tables. Even though
     # this is not strictly necessary, we force here a garbage collection
-    # to match legacy behavior after table initialization (see garbage collection
-    # below default_space declaration).
+    # to match legacy behavior after table initialization.
     GC.gc()
     return active_space
 end
