@@ -70,9 +70,16 @@ ParamsTaylorN
 HomogeneousProductTable
 _InternalMutFuncs
 generate_tables
+_homogeneous_product_table
+_init_output_major_product_table!
+generate_multiplication_tables
+_product_table
+_init_product_table!
 generate_index_vectors
 in_base
 make_inverse_dict
+_sync_legacy_tables!
+set_default_space!
 _coeffsHP
 _coeffsTN
 numtype
