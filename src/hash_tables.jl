@@ -249,9 +249,21 @@ function _sync_legacy_tables!(space::TaylorNSpace)
     return nothing
 end
 
-"""Set the compatibility default `TaylorNSpace` and refresh legacy globals."""
+"""
+Set the compatibility default `TaylorNSpace` and refresh legacy globals.
+
+The global `default_space` binding is a constant `Ref`, but its contents are
+mutable. Since `default_space` initially holds an empty `Ref{TaylorNSpace}()`,
+the first call stores `space` in `default_space[]`. This first call normally
+happens during module loading. Later calls update the existing `default_space[]`
+object in place with the fields of `space` instead of replacing the object.
+This preserves references held by objects constructed through the default-space
+tables while still making the default algebra follow `set_variables`.
+"""
 function set_default_space!(space::TaylorNSpace)
     active_space = if isassigned(default_space)
+        # After module initialization, keep the default-space object stable and
+        # update its fields so legacy objects referring to it remain connected.
         dst = default_space[]
         dst.order = space.order
         dst.num_vars = space.num_vars
@@ -265,14 +277,21 @@ function set_default_space!(space::TaylorNSpace)
         dst.mul_table_lock = space.mul_table_lock
         dst
     else
+        # First initialization, normally during module loading.
         default_space[] = space
         space
     end
+    # Mirror the active default space into _params_TaylorN_ and the related
+    # "legacy" lookup-tables
     _params_TaylorN_.order = active_space.order
     _params_TaylorN_.num_vars = active_space.num_vars
     _params_TaylorN_.variable_names = active_space.variable_names
     _params_TaylorN_.variable_symbols = active_space.variable_symbols
     _sync_legacy_tables!(active_space)
+    # Updating the default space can replace large lookup tables. Even though
+    # this is not strictly necessary, we force here a garbage collection
+    # to match legacy behavior after table initialization (see garbage collection
+    # below default_space declaration).
     GC.gc()
     return active_space
 end

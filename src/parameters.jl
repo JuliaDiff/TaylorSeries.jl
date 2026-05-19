@@ -169,6 +169,10 @@ end
 
 const JetSpace = TaylorNSpace
 
+# The binding `default_space` is constant, but the `Ref` contents are mutable:
+# `default_space[]` can be assigned a `TaylorNSpace`, and the stored space is
+# itself mutable. This keeps a stable global container for compatibility
+# while allowing `set_variables` to update the active default algebra.
 const default_space = Ref{TaylorNSpace}()
 
 Base.deepcopy_internal(space::TaylorNSpace, stackdict::IdDict) = space
