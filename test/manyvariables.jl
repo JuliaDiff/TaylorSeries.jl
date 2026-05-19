@@ -55,8 +55,8 @@ end
     sx = JetSpace(order=5, variables=[:x, :y, :z])
     sa = JetSpace(order=3, variables=[:a, :b])
 
-    x, y, z = variables(sx)
-    a, b = variables(sa)
+    x, y, z = get_variables(sx)
+    a, b = get_variables(sa)
 
     @test x.space === y.space === z.space === sx
     @test a.space === b.space === sa

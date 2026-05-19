@@ -222,7 +222,6 @@ end
 
 """
     get_variables([T::Type=Float64], [order::Int=get_order()])
-    variables([T::Type=Float64], space::TaylorNSpace; order=get_order(space))
     get_variables([T::Type=Float64], space::TaylorNSpace; order=get_order(space))
 
 Return a `TaylorN{T}` vector with each entry representing an
@@ -231,22 +230,17 @@ compatibility default space configured by `set_variables`, except that `order`
 can be explicitly established by the user without changing internal values for
 `num_vars` or `variable_names`.
 
-For explicit spaces, `variables(space)` is the preferred option. The
-`get_variables(space)` methods are compatibility aliases for the existing
-`get_variables` methods. Omitting `T` defaults to `Float64`.
+With an explicit space, `get_variables(space)` returns the independent variables
+for that space. Omitting `T` defaults to `Float64`.
 """
 get_variables(::Type{T}, order::Int=get_order()) where {T} =
     TaylorN.(T, 1:get_numvars(), order=order)
 get_variables(order::Int=get_order()) =
     TaylorN.(Float64, 1:get_numvars(), order=order)
-variables(::Type{T}, space::TaylorNSpace; order::Int=get_order(space)) where {T} =
-    TaylorN.(space, T, 1:get_numvars(space), order=order)
-variables(space::TaylorNSpace; order::Int=get_order(space)) =
-    variables(Float64, space, order=order)
 get_variables(::Type{T}, space::TaylorNSpace; order::Int=get_order(space)) where {T} =
-    variables(T, space, order=order)
+    TaylorN.(space, T, 1:get_numvars(space), order=order)
 get_variables(space::TaylorNSpace; order::Int=get_order(space)) =
-    variables(space, order=order)
+    get_variables(Float64, space, order=order)
 
 """
     set_variables([T::Type], names::String; [order=get_order(), numvars=-1])
@@ -285,7 +279,7 @@ function set_variables(::Type{R}, names::Vector{T}; order=get_order()) where
     space = set_default_space!(TaylorNSpace(order, _variable_names_from(names)))
 
     # return a list of the new variables
-    return variables(R, space)
+    return get_variables(R, space)
 end
 set_variables(::Type{R}, symbs::Vector{T}; order=get_order()) where
     {R,T<:Symbol} = set_variables(R, string.(symbs), order=order)

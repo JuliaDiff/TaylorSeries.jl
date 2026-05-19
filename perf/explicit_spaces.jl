@@ -28,7 +28,7 @@ function bench_mul_loop!(res, f, g, n)
 end
 
 space = JetSpace(order=6, variables=[:x1, :x2, :x3, :x4])
-x = variables(space)
+x = get_variables(space)
 
 f = sin(x[1] + x[2]*x[3]) + exp(x[4])
 g = cos(x[2] - x[4]) + x[1]^2

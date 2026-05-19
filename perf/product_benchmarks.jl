@@ -47,7 +47,7 @@ end
 
 function product_inputs(; da_order::Int=DA_ORDER, time_order::Int=TIME_ORDER)
     space = JetSpace(order=da_order, variables=[:x1, :x2, :x3, :x4])
-    x = variables(space)
+    x = get_variables(space)
 
     f = sin(x[1] + x[2]*x[3]) + exp(x[4]) + (x[1]-x[2]+x[3])^3
     g = cos(x[2] - x[4]) + x[1]^2 - x[3]*x[4] + exp(x[1]*x[2])
