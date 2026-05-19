@@ -116,7 +116,7 @@ function _init_output_major_product_table!(space::TaylorNSpace, degree_index_a::
     end
 end
 
-"""Return empty per-degree product-table caches for a space of the given order."""
+"""Return empty per-degree product-table placeholders for lazy cache initialization."""
 function generate_multiplication_tables(order::Int)
     empty_table = HomogeneousProductTable(Int[], Int[], UInt32[], 0)
     return [[empty_table for _ in 0:order] for _ in 0:order]

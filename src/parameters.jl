@@ -137,6 +137,22 @@ end
 Explicit multivariate Taylor algebra. A space owns the truncation order,
 variable metadata, and the lookup tables used by `HomogeneousPolynomial`
 and `TaylorN` arithmetic.
+
+# Fields
+
+- `order`: maximum total degree.
+- `num_vars`: number of variables.
+- `variable_names`: variable names used for printing and compatibility APIs.
+- `variable_symbols`: variable symbols corresponding to `variable_names`.
+- `coeff_table`: exponent vectors grouped by homogeneous degree.
+- `index_table`: hashed exponent-vector labels grouped by homogeneous degree.
+- `size_table`: number of monomials for each homogeneous degree.
+- `pos_table`: maps hashed exponent labels to coefficient positions.
+- `mul_table`: product-table cache indexed by `degree + 1` for the left and right
+  homogeneous factors. Entries start as empty placeholders; `input_positions` is
+  filled on first product-table use, while `output_offsets` and `output_pairs`
+  are filled only if an output-grouped multiplication routine requests them.
+- `mul_table_lock`: lock guarding lazy initialization of `mul_table` entries.
 """
 mutable struct TaylorNSpace
     order            :: Int
