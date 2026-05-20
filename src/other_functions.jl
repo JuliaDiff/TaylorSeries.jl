@@ -6,18 +6,15 @@
 # MIT Expat license
 #
 
-for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
-
-    ## real, imag, conj and ctranspose ##
-    for f in (:real, :imag, :conj)
-        @eval function ($f)(a::$T)
-            if $T == HomogeneousPolynomial
-                return HomogeneousPolynomial(a.space, ($f)(a.coeffs), get_order(a))
-            end
-            return $T(($f)(a.coeffs), get_order(a))
-        end
+## real, imag, conj and ctranspose ##
+for f in (:real, :imag, :conj)
+    @eval ($f)(a::Taylor1) = Taylor1(($f)(a.coeffs), get_order(a))
+    for T in (:HomogeneousPolynomial, :TaylorN)
+        @eval ($f)(a::$T) = $T(a.space, ($f)(a.coeffs), get_order(a))
     end
+end
 
+for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval adjoint(a::$T) = conj(a)
 
     ## isinf and isnan ##

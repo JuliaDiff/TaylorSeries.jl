@@ -452,26 +452,33 @@ _isthinzero(x) = iszero(x)
 
 
 ## findfirst, findlast
-for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+# Finds the first non zero entry
+function Base.findfirst(a::HomogeneousPolynomial{T}) where {T<:Number}
+    first = findfirst(!_isthinzero, a.coeffs)
+    isnothing(first) && return -1
+    return first
+end
+
+# Finds the last non-zero entry
+function Base.findlast(a::HomogeneousPolynomial{T}) where {T<:Number}
+    last = findlast(!_isthinzero, a.coeffs)
+    isnothing(last) && return -1
+    return last
+end
+
+for T in (:Taylor1, :TaylorN)
     # Finds the first non zero entry
     @eval function Base.findfirst(a::$T{T}) where {T<:Number}
         first = findfirst(!_isthinzero, a.coeffs)
         isnothing(first) && return -1
-        if $T == HomogeneousPolynomial
-            return first
-        else
-            return first-1
-        end
+        return first-1
     end
+
     # Finds the last non-zero entry
     @eval function Base.findlast(a::$T{T}) where {T<:Number}
         last = findlast(!_isthinzero, a.coeffs)
         isnothing(last) && return -1
-        if $T == HomogeneousPolynomial
-            return last
-        else
-            return last-1
-        end
+        return last-1
     end
 end
 

@@ -1007,15 +1007,19 @@ function /(a::Taylor1{Rational{T}}, b::S) where {T<:Integer, S<:NumberNotSeries}
     return Taylor1(v, get_order(a))
 end
 
-for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
+function /(a::Taylor1{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    @inbounds aux = a.coeffs[1] / b
+    v = FixedSizeVectorDefault{typeof(aux)}(undef, length(a.coeffs))
+    v .= a.coeffs ./ b
+    return Taylor1(v, get_order(a))
+end
+
+for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function /(a::$T{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = a.coeffs[1] / b
         v = FixedSizeVectorDefault{typeof(aux)}(undef, length(a.coeffs))
         v .= a.coeffs ./ b
-        if $T == HomogeneousPolynomial
-            return HomogeneousPolynomial(a.space, v, get_order(a))
-        end
-        return $T(v, get_order(a))
+        return $T(a.space, v, get_order(a))
     end
 
     # @eval function /(a::$T{T}, b::T) where {T<:Number}
@@ -1035,10 +1039,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         R = typeof(aux)
         coeffs = FixedSizeVectorDefault{R}(undef, length(b.coeffs))
         coeffs .= b.coeffs ./ a
-        if $T == HomogeneousPolynomial
-            return HomogeneousPolynomial(b.space, coeffs, get_order(b))
-        end
-        return $T(coeffs, get_order(b))
+        return $T(b.space, coeffs, get_order(b))
     end
 
     @eval function /(b::$T{Taylor1{T}}, a::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
@@ -1046,10 +1047,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         R = typeof(aux)
         coeffs = FixedSizeVectorDefault{R}(undef, length(b.coeffs))
         coeffs .= b.coeffs ./ a
-        if $T == HomogeneousPolynomial
-            return HomogeneousPolynomial(b.space, coeffs, get_order(b))
-        end
-        return $T(coeffs, get_order(b))
+        return $T(b.space, coeffs, get_order(b))
     end
 
     @eval function /(b::Taylor1{$T{S}}, a::$T{T}) where
