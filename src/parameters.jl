@@ -88,7 +88,7 @@ const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
     HomogeneousProductTable
 
 Precomputed input-pair and output-major schedules for multiplying two
-homogeneous polynomials in a single `TaylorNSpace`.
+homogeneous polynomials in a single `JetSpace`.
 
 For multiplying homogeneous polynomials, say, `c = a * b`, each coefficient of
 `a` multiplies each coefficient of `b`. So the code walks pairs like::
@@ -131,7 +131,6 @@ mutable struct HomogeneousProductTable
 end
 
 """
-    TaylorNSpace
     JetSpace
 
 Explicit multivariate Taylor algebra. A space owns the truncation order,
@@ -156,7 +155,7 @@ and `TaylorN` arithmetic.
   requests them.
 - `mul_table_lock`: lock guarding lazy initialization of `mul_table` entries.
 """
-mutable struct TaylorNSpace
+mutable struct JetSpace
     order            :: Int
     num_vars         :: Int
     variable_names   :: Vector{String}
@@ -169,16 +168,14 @@ mutable struct TaylorNSpace
     mul_table_lock   :: ReentrantLock
 end
 
-const JetSpace = TaylorNSpace
-
 # The binding `default_space` is constant, but the `Ref` contents are mutable:
-# `default_space[]` can be assigned a `TaylorNSpace`, and the stored space is
+# `default_space[]` can be assigned a `JetSpace`, and the stored space is
 # itself mutable. This keeps a stable global container for compatibility
 # while allowing `set_variables` to update the active default algebra.
-const default_space = Ref{TaylorNSpace}()
+const default_space = Ref{JetSpace}()
 
-Base.deepcopy_internal(space::TaylorNSpace, stackdict::IdDict) = space
-Base.broadcastable(space::TaylorNSpace) = Ref(space)
+Base.deepcopy_internal(space::JetSpace, stackdict::IdDict) = space
+Base.broadcastable(space::JetSpace) = Ref(space)
 
 function _variable_names_from(names::Vector{T}; numvars::Int=-1) where
         {T<:AbstractString}
@@ -201,8 +198,8 @@ end
 _variable_names_from(symb::Symbol; numvars::Int=-1) =
     _variable_names_from(string(symb), numvars=numvars)
 
-TaylorNSpace(; order::Int=get_order(), variables) =
-    TaylorNSpace(order, _variable_names_from(variables))
+JetSpace(; order::Int=get_order(), variables) =
+    JetSpace(order, _variable_names_from(variables))
 
 
 ## Utilities to get the maximum order, number of variables, their names and symbols
@@ -210,16 +207,16 @@ get_order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
-get_order(space::TaylorNSpace) = space.order
-get_numvars(space::TaylorNSpace) = space.num_vars
-get_variable_names(space::TaylorNSpace) = space.variable_names
-get_variable_symbols(space::TaylorNSpace) = space.variable_symbols
+get_order(space::JetSpace) = space.order
+get_numvars(space::JetSpace) = space.num_vars
+get_variable_names(space::JetSpace) = space.variable_names
+get_variable_symbols(space::JetSpace) = space.variable_symbols
 function lookupvar(s::Symbol)
     ind = findfirst(x -> x==s, _params_TaylorN_.variable_symbols)
     isa(ind, Nothing) && return 0
     return ind
 end
-function lookupvar(space::TaylorNSpace, s::Symbol)
+function lookupvar(space::JetSpace, s::Symbol)
     ind = findfirst(x -> x==s, space.variable_symbols)
     isa(ind, Nothing) && return 0
     return ind
@@ -228,7 +225,7 @@ end
 
 """
     get_variables([T::Type=Float64], [order::Int=get_order()])
-    get_variables([T::Type=Float64], space::TaylorNSpace; order=get_order(space))
+    get_variables([T::Type=Float64], space::JetSpace; order=get_order(space))
 
 Return a `TaylorN{T}` vector with each entry representing an
 independent variable. Without an explicit space, `get_variables` uses the
@@ -243,9 +240,9 @@ get_variables(::Type{T}, order::Int=get_order()) where {T} =
     TaylorN.(T, 1:get_numvars(), order=order)
 get_variables(order::Int=get_order()) =
     TaylorN.(Float64, 1:get_numvars(), order=order)
-get_variables(::Type{T}, space::TaylorNSpace; order::Int=get_order(space)) where {T} =
+get_variables(::Type{T}, space::JetSpace; order::Int=get_order(space)) where {T} =
     TaylorN.(space, T, 1:get_numvars(space), order=order)
-get_variables(space::TaylorNSpace; order::Int=get_order(space)) =
+get_variables(space::JetSpace; order::Int=get_order(space)) =
     get_variables(Float64, space, order=order)
 
 """
@@ -282,7 +279,7 @@ julia> set_variables("x", order=6, numvars=2)
 function set_variables(::Type{R}, names::Vector{T}; order=get_order()) where
         {R, T<:AbstractString}
 
-    space = set_default_space!(TaylorNSpace(order, _variable_names_from(names)))
+    space = set_default_space!(JetSpace(order, _variable_names_from(names)))
 
     # return a list of the new variables
     return get_variables(R, space)

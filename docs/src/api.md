@@ -18,7 +18,7 @@ Taylor1
 HomogeneousPolynomial
 TaylorN
 AbstractSeries
-TaylorNSpace
+JetSpace
 ```
 
 ## Functions and methods

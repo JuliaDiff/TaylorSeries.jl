@@ -51,7 +51,7 @@ using Test
     @test TS.pos_table[4][15] == 2
 end
 
-@testset "Explicit TaylorN spaces" begin
+@testset "Explicit JetSpaces" begin
     sx = JetSpace(order=5, variables=[:x, :y, :z])
     sa = JetSpace(order=3, variables=[:a, :b])
 
@@ -64,7 +64,7 @@ end
     @test get_numvars(x) == 3
     @test get_variable_names(sx) == ["x", "y", "z"]
     shown_sx = sprint(show, sx)
-    @test occursin("TaylorNSpace", shown_sx)
+    @test occursin("JetSpace", shown_sx)
     @test occursin("Expansion order:", shown_sx)
     @test occursin("Number of variables:", shown_sx)
     @test occursin("Variable names:", shown_sx)

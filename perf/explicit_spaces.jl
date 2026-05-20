@@ -1,4 +1,4 @@
-# Focused checks for explicit TaylorN spaces.
+# Focused checks for explicit JetSpaces.
 #
 # Run from the repository root with:
 #     julia --project=. perf/explicit_spaces.jl

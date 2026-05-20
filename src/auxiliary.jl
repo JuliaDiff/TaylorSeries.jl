@@ -11,19 +11,19 @@
 """
     space(a::Union{HomogeneousPolynomial,TaylorN})
 
-Return the `TaylorNSpace` associated with the multivariate Taylor object `a`.
+Return the `JetSpace` associated with the multivariate Taylor object `a`.
 """
 @inline space(a::HomogeneousPolynomial) = a.space
 @inline space(a::TaylorN) = a.space
 
-function _space_mismatch_error(space_a::TaylorNSpace, space_b::TaylorNSpace)
+function _space_mismatch_error(space_a::JetSpace, space_b::JetSpace)
     throw(ArgumentError(
-        "TaylorN algebra mismatch: operands belong to different spaces. " *
+        "JetSpace mismatch: operands belong to different spaces. " *
         "Use an explicit projection or conversion before combining them."))
 end
 
 """
-    _check_same_space(space_a::TaylorNSpace, space_b::TaylorNSpace)
+    _check_same_space(space_a::JetSpace, space_b::JetSpace)
     _check_same_space(a::Taylor1, b::Taylor1)
     _check_same_space(a::Taylor1, b::Taylor1, c::Taylor1)
     _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
@@ -31,12 +31,12 @@ end
     _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
         b::Union{HomogeneousPolynomial,TaylorN},
         c::Union{HomogeneousPolynomial,TaylorN})
-    _check_same_space(space::TaylorNSpace, v::AbstractVector{<:HomogeneousPolynomial})
+    _check_same_space(space::JetSpace, v::AbstractVector{<:HomogeneousPolynomial})
 
-Throw an `ArgumentError` unless all arguments belong to the same `TaylorNSpace`
+Throw an `ArgumentError` unless all arguments belong to the same `JetSpace`
 by object identity.
 """
-@inline function _check_same_space(space_a::TaylorNSpace, space_b::TaylorNSpace)
+@inline function _check_same_space(space_a::JetSpace, space_b::JetSpace)
     space_a === space_b || _space_mismatch_error(space_a, space_b)
     return nothing
 end
@@ -53,7 +53,7 @@ end
     return nothing
 end
 
-function _check_same_space(space::TaylorNSpace,
+function _check_same_space(space::JetSpace,
         v::AbstractVector{<:HomogeneousPolynomial})
     for pol in v
         _check_same_space(space, pol.space)
@@ -62,7 +62,7 @@ function _check_same_space(space::TaylorNSpace,
 end
 
 function _space_from_homogeneous_vector(v::AbstractVector{<:HomogeneousPolynomial},
-        fallback::TaylorNSpace)
+        fallback::JetSpace)
     isempty(v) && return fallback
     space = v[1].space
     _check_same_space(space, v)
@@ -75,15 +75,15 @@ _constant_series_like(a::TaylorN, x, order::Int) = TaylorN(a.space, x, order)
 """
     _coeffsHP(x::T, order::Int) where {T<:Number}
     _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
-    _coeffsHP(space::TaylorNSpace, x::T, order::Int) where {T<:Number}
-    _coeffsHP(space::TaylorNSpace, coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
+    _coeffsHP(space::JetSpace, x::T, order::Int) where {T<:Number}
+    _coeffsHP(space::JetSpace, coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
 
 Returns a `FixedSizeVectorDefault` of size `space.size_table[order+1]`
 to be used in the construction of a `HomogeneousPolynomial` of order
 `order`. The returned vector has the first entries of `coeffs`,
 and then is filled with zeros.
 """
-function _coeffsHP(space::TaylorNSpace, x::T, order::Int) where {T<:NumberNotSeries}
+function _coeffsHP(space::JetSpace, x::T, order::Int) where {T<:NumberNotSeries}
     @assert order ≤ get_order(space)
     num_coeffs = space.size_table[order+1]
     v = FixedSizeVectorDefault{T}(undef, num_coeffs)
@@ -93,7 +93,7 @@ function _coeffsHP(space::TaylorNSpace, x::T, order::Int) where {T<:NumberNotSer
 end
 _coeffsHP(x::T, order::Int) where {T<:NumberNotSeries} =
     _coeffsHP(default_space[], x, order)
-function _coeffsHP(space::TaylorNSpace, x::Taylor1{T}, order::Int) where
+function _coeffsHP(space::JetSpace, x::Taylor1{T}, order::Int) where
         {T<:NumberNotSeries}
     @assert order ≤ get_order(space)
     v = FixedSizeVectorDefault{Taylor1{T}}(undef, space.size_table[order+1])
@@ -103,7 +103,7 @@ function _coeffsHP(space::TaylorNSpace, x::Taylor1{T}, order::Int) where
 end
 _coeffsHP(x::Taylor1{T}, order::Int) where {T<:NumberNotSeries} =
     _coeffsHP(default_space[], x, order)
-function _coeffsHP(space::TaylorNSpace, coeffs::AbstractArray{T,1},
+function _coeffsHP(space::JetSpace, coeffs::AbstractArray{T,1},
         order::Int) where {T<:Number}
     @assert order ≤ get_order(space)
     ll = length( coeffs )
@@ -129,7 +129,7 @@ size `order+1`, to be used in the construction of a TaylorN{T} of order
 location according to their `order`, and otherwise it is filled with
 the corresponding zeros.
 """
-function _coeffsTN(space::TaylorNSpace, v::AbstractVector{HomogeneousPolynomial{T}},
+function _coeffsTN(space::JetSpace, v::AbstractVector{HomogeneousPolynomial{T}},
         order::Int) where {T}
     coeffs = zeros(HomogeneousPolynomial(space, v[1][1], get_order(v[1])), order)
     vord = get_order.(v)
@@ -156,7 +156,7 @@ _coeffsTN(v::AbstractVector{HomogeneousPolynomial{T}}, order::Int) where {T} =
 
 
 ## Minimum order of an HomogeneousPolynomial compatible with the vector's length
-function orderH(space::TaylorNSpace, coeffs::AbstractArray{T,1}) where {T<:Number}
+function orderH(space::JetSpace, coeffs::AbstractArray{T,1}) where {T<:Number}
     ord = 0
     ll = length(coeffs)
     for i = 1:get_order(space)+1

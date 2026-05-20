@@ -46,7 +46,7 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero, isless,
 import Base.float
 
 export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries, TS,
-    TaylorNSpace, JetSpace
+    JetSpace
 
 export getcoeff, derivative, integrate, differentiate,
     evaluate, evaluate!, inverse, inverse_map, set_taylor1_varname,

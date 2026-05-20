@@ -242,13 +242,13 @@ function numbr2str(zz::Complex, ifirst::Bool=false)
 end
 
 name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
-name_taylorNvar(space::TaylorNSpace, i::Int) =
+name_taylorNvar(space::JetSpace, i::Int) =
     string(" ", get_variable_names(space)[i])
 
-function Base.show(io::IO, s::TaylorNSpace)
+function Base.show(io::IO, s::JetSpace)
     tab = "    "
     println(io,
-        "TaylorNSpace\n",
+        "JetSpace\n",
         tab, rpad("Expansion order:",     24), get_order(s),            '\n',
         tab, rpad("Number of variables:", 24), get_numvars(s),          '\n',
         tab, rpad("Variable names:",      24), get_variable_names(s),   '\n',

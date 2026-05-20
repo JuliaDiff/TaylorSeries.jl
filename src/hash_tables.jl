@@ -78,7 +78,7 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
 end
 
 """Initialize and return the output-major product schedule for two positive degrees."""
-function _init_output_major_product_table!(space::TaylorNSpace, degree_a::Int,
+function _init_output_major_product_table!(space::JetSpace, degree_a::Int,
         degree_b::Int)
     table = _product_table(space, degree_a, degree_b)
     !isempty(table.output_pairs) && return table
@@ -123,7 +123,7 @@ function generate_multiplication_tables(order::Int)
 end
 
 """Return the cached product table for two positive degrees, initializing it if needed."""
-@inline function _product_table(space::TaylorNSpace, degree_a::Int,
+@inline function _product_table(space::JetSpace, degree_a::Int,
         degree_b::Int)
     @boundscheck degree_a > 0 && degree_b > 0 ||
         throw(ArgumentError("product tables are stored only for positive degrees"))
@@ -133,10 +133,10 @@ end
 end
 
 """Initialize and cache the input-position product table for two positive degrees."""
-function _init_product_table!(space::TaylorNSpace, degree_a::Int,
+function _init_product_table!(space::JetSpace, degree_a::Int,
         degree_b::Int)
     degree_a + degree_b ≤ space.order ||
-        throw(DimensionMismatch("homogeneous product order exceeds TaylorNSpace order"))
+        throw(DimensionMismatch("homogeneous product order exceeds JetSpace order"))
     lock(space.mul_table_lock)
     try
         @inbounds table = space.mul_table[degree_a][degree_b]
@@ -151,23 +151,23 @@ function _init_product_table!(space::TaylorNSpace, degree_a::Int,
     end
 end
 
-"""Construct a `TaylorNSpace` from precomputed homogeneous lookup tables."""
-function TaylorNSpace(order::Int, num_vars::Int, variable_names::Vector{String},
+"""Construct a `JetSpace` from precomputed homogeneous lookup tables."""
+function JetSpace(order::Int, num_vars::Int, variable_names::Vector{String},
         variable_symbols::Vector{Symbol}, coeff_table::Vector{Vector{Vector{Int}}},
         index_table::Vector{Vector{Int}}, size_table::Vector{Int},
         pos_table::Vector{Dict{Int,Int}})
     mul_table = generate_multiplication_tables(order)
-    return TaylorNSpace(order, num_vars, variable_names, variable_symbols,
+    return JetSpace(order, num_vars, variable_names, variable_symbols,
         coeff_table, index_table, size_table, pos_table, mul_table, ReentrantLock())
 end
 
-"""Construct a `TaylorNSpace` and generate its lookup tables from variable names."""
-function TaylorNSpace(order::Int, variable_names::Vector{String})
+"""Construct a `JetSpace` and generate its lookup tables from variable names."""
+function JetSpace(order::Int, variable_names::Vector{String})
     order ≥ 1 || error("Order must be at least 1")
     num_vars = length(variable_names)
     num_vars ≥ 1 || error("Number of variables must be at least 1")
     tables = generate_tables(num_vars, order)
-    return TaylorNSpace(order, num_vars, copy(variable_names),
+    return JetSpace(order, num_vars, copy(variable_names),
         Symbol.(variable_names), tables...)
 end
 
@@ -233,8 +233,8 @@ end
 const coeff_table, index_table, size_table, pos_table =
     generate_tables(get_numvars(), get_order())
 
-"""Sync the legacy global lookup-table vectors with the given `TaylorNSpace`."""
-function _sync_legacy_tables!(space::TaylorNSpace)
+"""Sync the legacy global lookup-table vectors with the given `JetSpace`."""
+function _sync_legacy_tables!(space::JetSpace)
     resize!(coeff_table, space.order+1)
     resize!(index_table, space.order+1)
     resize!(size_table, space.order+1)
@@ -248,7 +248,7 @@ function _sync_legacy_tables!(space::TaylorNSpace)
 end
 
 """
-Set the compatibility default `TaylorNSpace` and refresh legacy globals.
+Set the compatibility default `JetSpace` and refresh legacy globals.
 
 The global `default_space` binding is a constant `Ref`, but its contents are
 mutable. Module loading initializes `default_space[]`; later compatibility calls
@@ -257,7 +257,7 @@ such as `set_variables` update that existing object in place with the fields of
 constructed through the default-space tables while still making the default
 algebra follow `set_variables`.
 """
-function set_default_space!(space::TaylorNSpace)
+function set_default_space!(space::JetSpace)
     # Keep the default-space object stable and update its fields so legacy
     # objects referring to it remain connected to the active default algebra.
     active_space = default_space[]
@@ -286,7 +286,7 @@ function set_default_space!(space::TaylorNSpace)
     return active_space
 end
 
-default_space[] = TaylorNSpace(get_order(), get_numvars(),
+default_space[] = JetSpace(get_order(), get_numvars(),
     copy(get_variable_names()), copy(get_variable_symbols()),
     coeff_table, index_table, size_table, pos_table)
 
