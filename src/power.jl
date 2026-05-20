@@ -633,9 +633,10 @@ function accsqr!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where
     degree_a = get_order(a)
     get_order(c) == 2 * degree_a ||
         throw(DimensionMismatch("result homogeneous degree must be twice the input degree"))
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], a)
     order_a = degree_a+1
     @inbounds num_coeffs_a = sp.size_table[order_a]
-    input_positions = _product_table(sp, order_a, order_a).input_positions
+    input_positions = _product_table(sp, degree_a, degree_a).input_positions
 
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]

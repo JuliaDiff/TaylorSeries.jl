@@ -455,7 +455,7 @@ function *(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     end
     c = zero(a)
     for ord in eachindex(c)
-        mul!(c, a, b, ord) # updates c[ord]
+        _muladd_unchecked!(c, a, b, ord) # updates c[ord]
     end
     return c
 end
@@ -552,6 +552,12 @@ function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
     for k in eachindex(c)
         muladd!(c, a, b, k)
     end
+    return nothing
+end
+
+@inline function _muladd_unchecked!(c::Taylor1{T}, a::Taylor1{T},
+        b::Taylor1{T}, k::Int) where {T<:Number}
+    mul!(c, a, b, k)
     return nothing
 end
 
@@ -853,12 +859,12 @@ end
     degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
     degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
 
+    sp = c.space
     order_a = degree_a+1
     order_b = degree_b+1
-    sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    input_positions = _product_table(sp, order_a, order_b).input_positions
+    input_positions = _product_table(sp, degree_a, degree_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
@@ -886,7 +892,7 @@ end
     degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
     degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
 
-    table = _init_output_major_product_table!(c.space, degree_a+1, degree_b+1)
+    table = _init_output_major_product_table!(c.space, degree_a, degree_b)
     offsets = table.output_offsets
     output_pairs = table.output_pairs
     num_right = table.num_right
@@ -914,12 +920,12 @@ end
     degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
     degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
 
+    sp = c.space
     order_a = degree_a+1
     order_b = degree_b+1
-    sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    input_positions = _product_table(sp, order_a, order_b).input_positions
+    input_positions = _product_table(sp, degree_a, degree_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
@@ -948,12 +954,12 @@ end
     degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a[1], b)
     degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b[1], a)
 
+    sp = c.space
     order_a = degree_a+1
     order_b = degree_b+1
-    sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    input_positions = _product_table(sp, order_a, order_b).input_positions
+    input_positions = _product_table(sp, degree_a, degree_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]
@@ -983,12 +989,12 @@ end
     degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a[1], b)
     degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b[1], a)
 
+    sp = c.space
     order_a = degree_a+1
     order_b = degree_b+1
-    sp = c.space
     @inbounds num_coeffs_a = sp.size_table[order_a]
     @inbounds num_coeffs_b = sp.size_table[order_b]
-    input_positions = _product_table(sp, order_a, order_b).input_positions
+    input_positions = _product_table(sp, degree_a, degree_b).input_positions
     pair = 1
     @inbounds for na in 1:num_coeffs_a
         ca = a[na]

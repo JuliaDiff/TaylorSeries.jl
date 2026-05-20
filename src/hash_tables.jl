@@ -77,16 +77,16 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
     return HomogeneousProductTable(input_positions, Int[], UInt32[], num_coeffs_b)
 end
 
-"""Initialize and return the output-major product schedule for two degree indices."""
-function _init_output_major_product_table!(space::TaylorNSpace, degree_index_a::Int,
-        degree_index_b::Int)
-    table = _product_table(space, degree_index_a, degree_index_b)
+"""Initialize and return the output-major product schedule for two positive degrees."""
+function _init_output_major_product_table!(space::TaylorNSpace, degree_a::Int,
+        degree_b::Int)
+    table = _product_table(space, degree_a, degree_b)
     !isempty(table.output_pairs) && return table
-    num_coeffs_c = space.size_table[degree_index_a + degree_index_b - 1]
+    num_coeffs_c = space.size_table[degree_a + degree_b + 1]
     num_pairs = length(table.input_positions)
     lock(space.mul_table_lock)
     try
-        table = _product_table(space, degree_index_a, degree_index_b)
+        table = _product_table(space, degree_a, degree_b)
         !isempty(table.output_pairs) && return table
         counts = zeros(Int, num_coeffs_c)
         @inbounds for pair in 1:num_pairs
@@ -116,36 +116,34 @@ function _init_output_major_product_table!(space::TaylorNSpace, degree_index_a::
     end
 end
 
-"""Return empty per-degree product-table placeholders for lazy cache initialization."""
+"""Return empty positive-degree product-table placeholders for lazy initialization."""
 function generate_multiplication_tables(order::Int)
     empty_table = HomogeneousProductTable(Int[], Int[], UInt32[], 0)
-    return [[empty_table for _ in 0:order] for _ in 0:order]
+    return [[empty_table for _ in 1:order] for _ in 1:order]
 end
 
-"""Return the cached product table for two degree indices, initializing it if needed."""
-@inline function _product_table(space::TaylorNSpace, degree_index_a::Int,
-        degree_index_b::Int)
-    @inbounds table = space.mul_table[degree_index_a][degree_index_b]
+"""Return the cached product table for two positive degrees, initializing it if needed."""
+@inline function _product_table(space::TaylorNSpace, degree_a::Int,
+        degree_b::Int)
+    @boundscheck degree_a > 0 && degree_b > 0 ||
+        throw(ArgumentError("product tables are stored only for positive degrees"))
+    @inbounds table = space.mul_table[degree_a][degree_b]
     !isempty(table.input_positions) && return table
-    return _init_product_table!(space, degree_index_a, degree_index_b)
+    return _init_product_table!(space, degree_a, degree_b)
 end
 
-"""Initialize and cache the input-position product table for two degree indices."""
-function _init_product_table!(space::TaylorNSpace, degree_index_a::Int,
-        degree_index_b::Int)
-    # `mul_table` is indexed by degree + 1: index 1 stores degree 0,
-    # index 2 stores degree 1, and so on.
-    degree_a = degree_index_a - 1
-    degree_b = degree_index_b - 1
+"""Initialize and cache the input-position product table for two positive degrees."""
+function _init_product_table!(space::TaylorNSpace, degree_a::Int,
+        degree_b::Int)
     degree_a + degree_b ≤ space.order ||
         throw(DimensionMismatch("homogeneous product order exceeds TaylorNSpace order"))
     lock(space.mul_table_lock)
     try
-        @inbounds table = space.mul_table[degree_index_a][degree_index_b]
+        @inbounds table = space.mul_table[degree_a][degree_b]
         if isempty(table.input_positions)
             table = _homogeneous_product_table(space.index_table, space.pos_table,
                 degree_a, degree_b)
-            @inbounds space.mul_table[degree_index_a][degree_index_b] = table
+            @inbounds space.mul_table[degree_a][degree_b] = table
         end
         return table
     finally

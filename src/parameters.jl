@@ -148,10 +148,12 @@ and `TaylorN` arithmetic.
 - `index_table`: hashed exponent-vector labels grouped by homogeneous degree.
 - `size_table`: number of monomials for each homogeneous degree.
 - `pos_table`: maps hashed exponent labels to coefficient positions.
-- `mul_table`: product-table cache indexed by `degree + 1` for the left and right
-  homogeneous factors. Entries start as empty placeholders; `input_positions` is
-  filled on first product-table use, while `output_offsets` and `output_pairs`
-  are filled only if an output-grouped multiplication routine requests them.
+- `mul_table`: product-table cache indexed directly by the positive degrees of
+  the left and right homogeneous factors. Degree-zero products are scalar
+  shortcuts and are not cached. Entries start as empty placeholders;
+  `input_positions` is filled on first product-table use, while `output_offsets`
+  and `output_pairs` are filled only if an output-grouped multiplication routine
+  requests them.
 - `mul_table_lock`: lock guarding lazy initialization of `mul_table` entries.
 """
 mutable struct TaylorNSpace
