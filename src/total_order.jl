@@ -10,17 +10,22 @@
 for T in (:Taylor1, :TaylorN)
     @eval begin
         ==(a::$T{T}, b::$T{S}) where {T<:Number,S<:Number} = ==(promote(a,b)...)
-
-        function ==(a::$T{T}, b::$T{T}) where {T<:Number}
-            if $T == TaylorN
-                space(a) === space(b) || return false
-            end
-            if get_order(a) != get_order(b)
-                a, b = fixorder(a, b)
-            end
-            return a.coeffs == b.coeffs
-        end
     end
+end
+
+function ==(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
+    if get_order(a) != get_order(b)
+        a, b = fixorder(a, b)
+    end
+    return a.coeffs == b.coeffs
+end
+
+function ==(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
+    space(a) === space(b) || return false
+    if get_order(a) != get_order(b)
+        a, b = fixorder(a, b)
+    end
+    return a.coeffs == b.coeffs
 end
 
 function ==(a::Taylor1{TaylorN{T}}, b::TaylorN{Taylor1{S}}) where {T, S}

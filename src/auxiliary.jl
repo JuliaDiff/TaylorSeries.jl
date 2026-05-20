@@ -24,6 +24,8 @@ end
 
 """
     _check_same_space(space_a::TaylorNSpace, space_b::TaylorNSpace)
+    _check_same_space(a::Taylor1, b::Taylor1)
+    _check_same_space(a::Taylor1, b::Taylor1, c::Taylor1)
     _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
         b::Union{HomogeneousPolynomial,TaylorN})
     _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
@@ -38,6 +40,8 @@ by object identity.
     space_a === space_b || _space_mismatch_error(space_a, space_b)
     return nothing
 end
+@inline _check_same_space(a::Taylor1, b::Taylor1) = nothing
+@inline _check_same_space(a::Taylor1, b::Taylor1, c::Taylor1) = nothing
 @inline _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
     b::Union{HomogeneousPolynomial,TaylorN}) =
         _check_same_space(space(a), space(b))

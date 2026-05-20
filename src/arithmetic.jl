@@ -16,9 +16,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 ($f)(promote(a, b)...)
 
             function ($f)(a::$T{T}, b::$T{T}) where {T<:Number}
-                if $T == TaylorN
-                    _check_same_space(a, b)
-                end
+                _check_same_space(a, b)
                 if get_order(a) != get_order(b)
                     a, b = fixorder(a, b)
                 end
@@ -37,43 +35,10 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return c
             end
 
-            function ($f)(a::$T{T}, b::S) where {T<:Number, S<:NumberNotSeries}
-                if $T == TaylorN
-                    R = promote_type(T, S)
-                    aa = convert(TaylorN{R}, a)
-                    bb = convert(R, b)
-                    c = TaylorN(aa.coeffs[:], get_order(aa))
-                    if $(QuoteNode(f)) == :+
-                        c[0][1] = aa[0][1] + bb
-                    else
-                        c[0][1] = aa[0][1] - bb
-                    end
-                    return c
-                end
-                return ($f)(promote(a, b)...)
-            end
-
             function ($f)(a::$T{T}, b::T) where {T<:Number}
                 c = $T(a.coeffs[:])
                 c[0] = $f(a[0], b)
                 return c
-            end
-
-            function ($f)(b::S, a::$T{T}) where {T<:Number, S<:NumberNotSeries}
-                if $T == TaylorN
-                    R = promote_type(T, S)
-                    aa = convert(TaylorN{R}, a)
-                    bb = convert(R, b)
-                    if $(QuoteNode(f)) == :+
-                        c = TaylorN(aa.coeffs[:], get_order(aa))
-                        c[0][1] = bb + aa[0][1]
-                    else
-                        c = TaylorN((-aa).coeffs[:], get_order(aa))
-                        c[0][1] = bb - aa[0][1]
-                    end
-                    return c
-                end
-                return ($f)(promote(b, a)...)
             end
 
             function ($f)(b::T, a::$T{T}) where {T<:Number}
@@ -87,8 +52,18 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 @inbounds v[k] = k==0 ? ($f)(a) : zero(a)
                 return nothing
             end
+        end
 
-            if $T == Taylor1
+        if T == :Taylor1
+            @eval begin
+                function ($f)(a::$T{T}, b::S) where {T<:Number, S<:NumberNotSeries}
+                    return ($f)(promote(a, b)...)
+                end
+
+                function ($f)(b::S, a::$T{T}) where {T<:Number, S<:NumberNotSeries}
+                    return ($f)(promote(b, a)...)
+                end
+
                 function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
                     @inbounds v[k] = ($f)(a[k])
                     return nothing
@@ -168,7 +143,36 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     return nothing
                 end
 
-            else
+            end
+        else
+            @eval begin
+                function ($f)(a::$T{T}, b::S) where {T<:Number, S<:NumberNotSeries}
+                    R = promote_type(T, S)
+                    aa = convert(TaylorN{R}, a)
+                    bb = convert(R, b)
+                    c = TaylorN(aa.coeffs[:], get_order(aa))
+                    if $(QuoteNode(f)) == :+
+                        c[0][1] = aa[0][1] + bb
+                    else
+                        c[0][1] = aa[0][1] - bb
+                    end
+                    return c
+                end
+
+                function ($f)(b::S, a::$T{T}) where {T<:Number, S<:NumberNotSeries}
+                    R = promote_type(T, S)
+                    aa = convert(TaylorN{R}, a)
+                    bb = convert(R, b)
+                    if $(QuoteNode(f)) == :+
+                        c = TaylorN(aa.coeffs[:], get_order(aa))
+                        c[0][1] = bb + aa[0][1]
+                    else
+                        c = TaylorN((-aa).coeffs[:], get_order(aa))
+                        c[0][1] = bb - aa[0][1]
+                    end
+                    return c
+                end
+
                 function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
                     @inbounds for l in eachindex(v[k])
                         v[k][l] = ($f)(a[k][l])
@@ -202,7 +206,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
             end
         end
-
     end
 
     @eval ($f)(a::T, b::S) where {T<:Taylor1, S<:TaylorN} = ($f)(promote(a, b)...)
@@ -455,24 +458,27 @@ for T in (:HomogeneousPolynomial, :TaylorN)
     end
 end
 
-for (T, W) in ((:Taylor1, :Number), (:TaylorN, :NumberNotSeriesN))
-    @eval function *(a::$T{T}, b::$T{T}) where {T<:$W}
-        if $T == TaylorN
-            _check_same_space(a, b)
-        end
-        if get_order(a) != get_order(b)
-            a, b = fixorder(a, b)
-        end
-        c = zero(a)
-        for ord in eachindex(c)
-            if $T == TaylorN
-                _muladd_unchecked!(c, a, b, ord) # updates c[ord]
-            else
-                mul!(c, a, b, ord) # updates c[ord]
-            end
-        end
-        return c
+function *(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
+    if get_order(a) != get_order(b)
+        a, b = fixorder(a, b)
     end
+    c = zero(a)
+    for ord in eachindex(c)
+        mul!(c, a, b, ord) # updates c[ord]
+    end
+    return c
+end
+
+function *(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
+    _check_same_space(a, b)
+    if get_order(a) != get_order(b)
+        a, b = fixorder(a, b)
+    end
+    c = zero(a)
+    for ord in eachindex(c)
+        _muladd_unchecked!(c, a, b, ord) # updates c[ord]
+    end
+    return c
 end
 
 function *(a::T, b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
