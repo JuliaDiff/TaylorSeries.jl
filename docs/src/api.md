@@ -82,6 +82,7 @@ _sync_legacy_tables!
 set_default_space!
 _coeffsHP
 _coeffsTN
+_check_same_space
 numtype
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)

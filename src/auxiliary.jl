@@ -22,6 +22,18 @@ function _space_mismatch_error(space_a::TaylorNSpace, space_b::TaylorNSpace)
         "Use an explicit projection or conversion before combining them."))
 end
 
+"""
+    _check_same_space(space_a::TaylorNSpace, space_b::TaylorNSpace)
+    _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
+        b::Union{HomogeneousPolynomial,TaylorN})
+    _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
+        b::Union{HomogeneousPolynomial,TaylorN},
+        c::Union{HomogeneousPolynomial,TaylorN})
+    _check_same_space(space::TaylorNSpace, v::AbstractVector{<:HomogeneousPolynomial})
+
+Throw an `ArgumentError` unless all arguments belong to the same `TaylorNSpace`
+by object identity.
+"""
 @inline function _check_same_space(space_a::TaylorNSpace, space_b::TaylorNSpace)
     space_a === space_b || _space_mismatch_error(space_a, space_b)
     return nothing
