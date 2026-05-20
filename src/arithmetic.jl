@@ -947,41 +947,6 @@ end
     return nothing
 end
 
-@inline function _mul_scalar_unchecked!(c::HomogeneousPolynomial{Float64},
-        scalar::NumberNotSeries, a::HomogeneousPolynomial{Float64},
-        b::HomogeneousPolynomial{Float64})
-    (_isthinzero(scalar) || _isthinzero(b) || _isthinzero(a)) && return nothing
-    degree_a = get_order(a)
-    degree_b = get_order(b)
-    degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a[1], b)
-    degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b[1], a)
-
-    sp = c.space
-    order_a = degree_a+1
-    order_b = degree_b+1
-    @inbounds num_coeffs_a = sp.size_table[order_a]
-    @inbounds num_coeffs_b = sp.size_table[order_b]
-    input_positions = _product_table(sp, degree_a, degree_b).input_positions
-    pair = 1
-    @inbounds for na in 1:num_coeffs_a
-        ca = a[na]
-        if iszero(ca)
-            pair += num_coeffs_b
-            continue
-        end
-        sca = scalar * ca
-        @inbounds for nb in 1:num_coeffs_b
-            cb = b[nb]
-            if !iszero(cb)
-                pos = input_positions[pair]
-                c[pos] += sca * cb
-            end
-            pair += 1
-        end
-    end
-    return nothing
-end
-
 @inline function _muladd_unchecked!(c::TaylorN{T}, a::TaylorN{T},
         b::TaylorN{T}, k::Int) where {T<:Number}
     @inbounds _mul_unchecked!(c[k], a[0], b[k])
