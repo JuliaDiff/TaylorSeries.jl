@@ -151,11 +151,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     aa = convert(TaylorN{R}, a)
                     bb = convert(R, b)
                     c = TaylorN(aa.coeffs[:], get_order(aa))
-                    if $(QuoteNode(f)) == :+
-                        c[0][1] = aa[0][1] + bb
-                    else
-                        c[0][1] = aa[0][1] - bb
-                    end
+                    c[0][1] = ($f)(aa[0][1], bb)
                     return c
                 end
 
@@ -163,13 +159,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     R = promote_type(T, S)
                     aa = convert(TaylorN{R}, a)
                     bb = convert(R, b)
-                    if $(QuoteNode(f)) == :+
-                        c = TaylorN(aa.coeffs[:], get_order(aa))
-                        c[0][1] = bb + aa[0][1]
-                    else
-                        c = TaylorN((-aa).coeffs[:], get_order(aa))
-                        c[0][1] = bb - aa[0][1]
-                    end
+                    c = TaylorN(($f)(aa.coeffs[:]), get_order(aa))
+                    c[0][1] = bb + aa[0][1]
                     return c
                 end
 
