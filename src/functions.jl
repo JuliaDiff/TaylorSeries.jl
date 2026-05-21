@@ -1309,7 +1309,7 @@ function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
+    tmp = _constant_series_like(a[k], zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     # i=0 term of sum
     @inbounds for ordQ in eachindex(a[0])
@@ -1345,7 +1345,7 @@ function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
+    tmp = _constant_series_like(a[k], zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
@@ -1371,7 +1371,7 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
-    tmp1 = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
+    tmp1 = _constant_series_like(a[k], zero(a[k][0][1]), get_order(a[0]))
     zero!(res[k])
     @inbounds for ordQ in eachindex(a[0])
         # zero!(res[k], a[0], ordQ)
@@ -1385,7 +1385,7 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         return nothing
     end
     # The recursion formula
-    tmp = TaylorN(a[0].space, zero(a[k][0][1]), get_order(a[0]))
+    tmp = _constant_series_like(a[k], zero(a[k][0][1]), get_order(a[0]))
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
             tmp[ordQ] = (k-i) * res[k-i][ordQ]
