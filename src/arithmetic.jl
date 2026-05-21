@@ -160,7 +160,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     aa = convert(TaylorN{R}, a)
                     bb = convert(R, b)
                     c = TaylorN(($f)(aa.coeffs[:]), get_order(aa))
-                    c[0][1] = bb + aa[0][1]
+                    c[0][1] = ($f)(bb, aa[0][1])
                     return c
                 end
 
