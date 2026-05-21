@@ -264,7 +264,7 @@ end
 
 #update! function for TaylorN
 function update!(a::TaylorN{T}, vals::Vector{T}) where {T<:Number}
-    a.coeffs .= evaluate(a, get_variables(get_order(a)) .+ vals).coeffs
+    a.coeffs .= evaluate(a, variables(get_order(a)) .+ vals).coeffs
     return nothing
 end
 function update!(a::TaylorN{T}, vals::Vector{S}) where {T<:Number, S<:Number}

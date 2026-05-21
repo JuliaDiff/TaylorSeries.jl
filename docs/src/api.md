@@ -28,7 +28,7 @@ Taylor1(::Type{T}, ::Int) where {T<:Number}
 HomogeneousPolynomial(::Type{T}, ::Int) where {T<:Number}
 TaylorN(::Type{T}, ::Int; ::Int=get_order()) where {T<:Number}
 set_variables
-get_variables
+variables
 show_params_TaylorN
 show_monomials
 getcoeff

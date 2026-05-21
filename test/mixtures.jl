@@ -221,7 +221,7 @@ using Test
     @test typeof(y+t) == TaylorN{Taylor1{Float64}}
 
     t = Taylor1(4)
-    xN, yN = get_variables()
+    xN, yN = variables()
     @test evaluate(1.0 + t + t^2, xN) == 1.0 + xN + xN^2
     v1 = [1.0 + t + t^2 + t^4, 1.0 - t^2 + t^3]
     @test v1(yN^2) == [1.0 + yN^2 + yN^4, 1.0 - yN^4 + yN^6]
@@ -472,7 +472,7 @@ using Test
     @test_throws ArgumentError TaylorN(2) / Taylor1(1)
 
     # Issue #342 and PR #343
-    z0N = -1.333+get_variables()[1]
+    z0N = -1.333+variables()[1]
     z = Taylor1(z0N,20)
     z[20][1][1] = 5.0
     @test z[0][0][1] == -1.333
@@ -491,7 +491,7 @@ using Test
         @test iszero(intz[i])
     end
 
-    a = sum(exp.(get_variables()).^2)
+    a = sum(exp.(variables()).^2)
     b = Taylor1([a])
     bcopy = deepcopy(b)
     c = Taylor1(constant_term(b),0)
@@ -513,14 +513,14 @@ using Test
     @test two/x == 2/x == 2.0/x
     @test (2one(x))/x == 2/x
 
-    dq = get_variables()
+    dq = variables()
     x = Taylor1(exp.(dq), 5)
     x[1] = sin(dq[1]*dq[2])
     @test x[1] == sin(dq[1]*dq[2])
     @test x[1] !== sin(dq[1]*dq[2])
 
     @testset "Test Base.float overloads for Taylor1 and TaylorN mixtures" begin
-        q = get_variables(Int)
+        q = variables(Int)
         x1N = Taylor1(q)
         @test float(x1N) == Taylor1(float.(q))
         xN1 = convert(TaylorN{Taylor1{Int}}, x1N)

@@ -282,15 +282,15 @@ variable name and the optional keyword argument `numvars`:
 set_variables("α", numvars=3)
 ```
 
-Alternatively to `set_variables`, [`get_variables`](@ref) can be used if one
-does not want to change internal dictionaries. `get_variables` returns a vector
+Alternatively to `set_variables`, [`variables`](@ref) can be used if one
+does not want to change internal dictionaries. `variables` returns a vector
 of `TaylorN` independent variables of a desired `order`
 (lesser than `get_order` so the
 internals doesn't have to change) with the length and variable names defined
 by `set_variables` initially.
 
 ```@repl userguide
-get_variables(2) # vector of independent variables of order 2
+variables(2) # vector of independent variables of order 2
 ```
 
 !!! warning

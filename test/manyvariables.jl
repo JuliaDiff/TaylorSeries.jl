@@ -55,8 +55,8 @@ end
     sx = JetSpace(order=5, variables=[:x, :y, :z])
     sa = JetSpace(order=3, variables=[:a, :b])
 
-    x, y, z = get_variables(sx)
-    a, b = get_variables(sa)
+    x, y, z = variables(sx)
+    a, b = variables(sa)
 
     @test x.space === y.space === z.space === sx
     @test a.space === b.space === sa
@@ -99,11 +99,14 @@ end
     @test get_order() == 6
     @test get_numvars() == 2
 
-    @test get_order(get_variables()[1]) == get_order()
-    @test get_order(get_variables(2)[1]) == 2
-    @test get_variables(3)[1] == TaylorN(1, order=3)
-    @test get_variables(Int, 3)[1] == TaylorN(Int, 1, order=3)
-    @test length(get_variables()) == get_numvars()
+    @test get_order(variables()[1]) == get_order()
+    @test get_order(variables(2)[1]) == 2
+    @test variables(3)[1] == TaylorN(1, order=3)
+    @test variables(Int, 3)[1] == TaylorN(Int, 1, order=3)
+    @test length(variables()) == get_numvars()
+    # These tests should be removed when get_variables is removed from src/deprecated.jl (next minor release)
+    @test get_order(@test_deprecated get_variables(2)[1]) == 2
+    @test (@test_deprecated get_variables(Int, 3)[1]) == TaylorN(Int, 1, order=3)
 
     x, y = set_variables("x y", order=6)
     @test axes(x) == axes(y) == ()
@@ -158,7 +161,7 @@ end
     @test findfirst(hpol_v) == -1
     @test findlast(hpol_v) == -1
 
-    xv = TaylorSeries.get_variables()
+    xv = TaylorSeries.variables()
     @test (xv[1] - 1.0)^3 == -1 + 3xv[1] - 3xv[1]^2 + xv[1]^3
     @test (xv[1] - 1.0)^4 == 1 - 4xv[1] + 6xv[1]^2 - 4xv[1]^3 + xv[1]^4
     @test (xv[2] - 1.0)^3 == -1 + 3xv[2] - 3xv[2]^2 + xv[2]^3
@@ -815,7 +818,7 @@ end
     f33(x,y) = 3x+y
     @test eltype(taylor_expand(f33,1,1)) == TaylorN{eltype(1)}
     @test TS.numtype(taylor_expand(f33,1,1)) == eltype(1)
-    x,y = get_variables()
+    x,y = variables()
     xysq = x^2 + y^2
     update!(xysq,[1.0,-2.0])
     @test xysq == (x+1.0)^2 + (y-2.0)^2
