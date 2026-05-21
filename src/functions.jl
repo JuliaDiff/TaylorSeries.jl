@@ -1582,7 +1582,7 @@ end
 
 function tanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]))
+    aux = _constant_series_like(a[0], zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         @inbounds res[0] = tanh( a[0] )
         # zero!(res2, res, 0)
@@ -1609,7 +1609,7 @@ end
 
 function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]))
+    tmp = _constant_series_like(a[0], zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         tmp0 = zero(tmp)
         @inbounds res[0] = asinh( a[0] )
@@ -1656,7 +1656,7 @@ end
 
 function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]))
+    tmp = _constant_series_like(a[0], zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         tmp0 = zero(tmp)
         @inbounds res[0] = acosh( a[0] )
@@ -1704,7 +1704,7 @@ end
 
 function atanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]) )
+    tmp = _constant_series_like(a[0], zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         res[0] = atanh( a[0] )
         # zero!(r, a, 0)
