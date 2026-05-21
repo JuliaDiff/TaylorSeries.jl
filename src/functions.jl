@@ -1530,7 +1530,7 @@ end
 
 function atan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = TaylorN(a[0].space, zero(a[0][0][1]), get_order(a[0]) )
+    aux = _constant_series_like(a[0], zero(a[0][0][1]), get_order(a[0]))
     if k == 0
         res[0] = atan( a[0] )
         # zero!(r, a, 0)
