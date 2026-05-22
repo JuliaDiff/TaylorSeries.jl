@@ -23,4 +23,4 @@ for file in testfiles
 end
 
 # Back to TaylorN default parameters
-set_variables("x", order=6, numvars=2);
+variables!("x", order=6, numvars=2);

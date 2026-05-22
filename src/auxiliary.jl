@@ -16,11 +16,6 @@ Return the `JetSpace` associated with the multivariate Taylor object `a`.
 @inline space(a::HomogeneousPolynomial) = a.space
 @inline space(a::TaylorN) = a.space
 
-@inline Base.getproperty(a::TaylorN, name::Symbol) =
-    name === :order ? get_order(a) : getfield(a, name)
-Base.propertynames(a::TaylorN, private::Bool=false) =
-    private ? (:coeffs, :space, :order) : (:coeffs, :space, :order)
-
 function _space_mismatch_error(space_a::JetSpace, space_b::JetSpace)
     throw(ArgumentError(
         "JetSpace mismatch: operands belong to different spaces. " *
@@ -89,7 +84,7 @@ to be used in the construction of a `HomogeneousPolynomial` of order
 and then is filled with zeros.
 """
 function _coeffsHP(space::JetSpace, x::T, order::Int) where {T<:NumberNotSeries}
-    @assert order ≤ get_order(space)
+    @assert order ≤ TS.order(space)
     num_coeffs = space.size_table[order+1]
     v = FixedSizeVectorDefault{T}(undef, num_coeffs)
     v .= zero.(x)
@@ -100,7 +95,7 @@ _coeffsHP(x::T, order::Int) where {T<:NumberNotSeries} =
     _coeffsHP(default_space[], x, order)
 function _coeffsHP(space::JetSpace, x::Taylor1{T}, order::Int) where
         {T<:NumberNotSeries}
-    @assert order ≤ get_order(space)
+    @assert order ≤ TS.order(space)
     v = FixedSizeVectorDefault{Taylor1{T}}(undef, space.size_table[order+1])
     v .= zero.(x)
     v[1].coeffs .= x.coeffs
@@ -110,7 +105,7 @@ _coeffsHP(x::Taylor1{T}, order::Int) where {T<:NumberNotSeries} =
     _coeffsHP(default_space[], x, order)
 function _coeffsHP(space::JetSpace, coeffs::AbstractArray{T,1},
         order::Int) where {T<:Number}
-    @assert order ≤ get_order(space)
+    @assert order ≤ TS.order(space)
     ll = length( coeffs )
     num_coeffs = space.size_table[order+1]
     num_coeffs == ll && return FixedSizeVectorDefault(coeffs)
@@ -136,8 +131,8 @@ the corresponding zeros.
 """
 function _coeffsTN(space::JetSpace, v::AbstractVector{HomogeneousPolynomial{T}},
         order::Int) where {T}
-    coeffs = zeros(HomogeneousPolynomial(space, v[1][1], get_order(v[1])), order)
-    vord = get_order.(v)
+    coeffs = zeros(HomogeneousPolynomial(space, v[1][1], TS.order(v[1])), order)
+    vord = TS.order.(v)
     max_order = maximum(vord)
     if allunique(vord) && (max_order ≤ order)
         for i in eachindex(v)
@@ -164,7 +159,7 @@ _coeffsTN(v::AbstractVector{HomogeneousPolynomial{T}}, order::Int) where {T} =
 function orderH(space::JetSpace, coeffs::AbstractArray{T,1}) where {T<:Number}
     ord = 0
     ll = length(coeffs)
-    for i = 1:get_order(space)+1
+    for i = 1:TS.order(space)+1
         ll ≤ space.size_table[i] && return ord
         ord += 1
     end
@@ -175,7 +170,7 @@ orderH(coeffs::AbstractArray{T,1}) where {T<:Number} =
 
 ## Maximum order of a HomogeneousPolynomial vector; used by TaylorN constructor
 maxorderH(v::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
-    isempty(v) ? 0 : maximum(get_order.(v))
+    isempty(v) ? 0 : maximum(TS.order.(v))
 
 
 ## getcoeff ##
@@ -185,7 +180,7 @@ maxorderH(v::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
 Return the coefficient of order `n::Int` of a `a::Taylor1` polynomial; the constant
 term corresponds to n=0.
 """
-getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ get_order(a); return a[n])
+getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ TS.order(a); return a[n])
 
 getindex(a::Taylor1, n::Int) = a.coeffs[n+1]
 getindex(a::Taylor1, u::UnitRange{Int}) = view(a.coeffs, u .+ 1 )
@@ -198,7 +193,7 @@ setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
 # setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} =
 #     setindex!(a.coeffs, deepcopy(x), n+1)
 setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(x.coeffs, get_order(x))
+    {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(x.coeffs, TS.order(x))
 setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1{T}(x.coeffs[:])
 function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
@@ -210,7 +205,7 @@ function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     return a.coeffs[n+1]
 end
 setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1(x.coeffs[:], get_order(x))
+    {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1(x.coeffs[:], TS.order(x))
 setindex!(a::Taylor1{T}, x::T, u::UnitRange{Int}) where {T<:Number} =
     a.coeffs[u .+ 1] .= x
 function setindex!(a::Taylor1{T}, x::AbstractArray{T,1},
@@ -243,8 +238,8 @@ monomial.
 function getcoeff(a::HomogeneousPolynomial, v::NTuple{N,Int}) where {N}
     sp = space(a)
     @assert N == get_numvars(sp) && all(v .>= 0)
-    kdic = in_base(get_order(sp), v)
-    @inbounds n = sp.pos_table[get_order(a)+1][kdic]
+    kdic = in_base(TS.order(sp), v)
+    @inbounds n = sp.pos_table[TS.order(a)+1][kdic]
     a[n]
 end
 getcoeff(a::HomogeneousPolynomial, v::AbstractArray{Int,1}) =
@@ -280,7 +275,7 @@ monomial.
 """
 function getcoeff(a::TaylorN, v::NTuple{N,Int}) where {N}
     order = sum(v)
-    @assert order ≤ get_order(a)
+    @assert order ≤ TS.order(a)
     getcoeff(a[order], v)
 end
 getcoeff(a::TaylorN, v::AbstractArray{Int,1}) = getcoeff(a, (v...,))
@@ -292,7 +287,7 @@ getindex(a::TaylorN, u::StepRange{Int,Int}) = view(a.coeffs, u[:] .+ 1)
 
 function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
         {T<:Number}
-    @assert get_order(x) == n
+    @assert TS.order(x) == n
     _check_same_space(a, x)
     return a.coeffs[n+1] = x
 end
@@ -352,25 +347,25 @@ function setindex!(a::TaylorN{T}, x::Array{T,1},
 end
 
 
-## eltype, length, get_order, etc ##
+## eltype, length, order, etc ##
 for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval begin
         if $T == HomogeneousPolynomial
-            @inline get_order(a::$T) = a.order
+            @inline order(a::$T) = a.order
             @inline iterate(a::$T, state=1) =
                 state > length(a) ? nothing : (a.coeffs[state], state+1)
             # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
-            @inline length(a::$T) = a.space.size_table[get_order(a)+1]
+            @inline length(a::$T) = a.space.size_table[TS.order(a)+1]
             @inline firstindex(a::$T) = 1
             @inline lastindex(a::$T) = length(a)
         else
-            @inline get_order(a::$T) = size(a.coeffs, 1)-1
+            @inline order(a::$T) = size(a.coeffs, 1)-1
             @inline iterate(a::$T, state=0) =
-                state > get_order(a) ? nothing : (a.coeffs[state+1], state+1)
+                state > TS.order(a) ? nothing : (a.coeffs[state+1], state+1)
             # Base.iterate(rS::Iterators.Reverse{$T}, state=rS.itr.order) = state < 0 ? nothing : (a.coeffs[state], state-1)
             @inline length(a::$T) = length(a.coeffs)
             @inline firstindex(a::$T) = 0
-            @inline lastindex(a::$T) = get_order(a)
+            @inline lastindex(a::$T) = TS.order(a)
         end
         @inline eachindex(a::$T) = firstindex(a):lastindex(a)
         @inline numtype(::$T{S}) where {S<:Number} = S
@@ -393,7 +388,7 @@ Returns the type of the elements of the coefficients of `a`.
 
 ## _minorder
 function _minorder(a, b)
-    minorder, maxorder = minmax(get_order(a), get_order(b))
+    minorder, maxorder = minmax(TS.order(a), TS.order(b))
     if minorder ≤ 0
         minorder = maxorder
     end
@@ -405,7 +400,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         @inline function fixorder(a::$T, b::$T)
-            get_order(a) == get_order(b) && return a, b
+            TS.order(a) == TS.order(b) && return a, b
             minorder = _minorder(a, b)
             return $T(a.coeffs, minorder), $T(b.coeffs, minorder)
         end
@@ -413,19 +408,19 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function fixorder(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-    @assert get_order(a) == get_order(b)
+    @assert TS.order(a) == TS.order(b)
     return a, b
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function fixorder(a::Taylor1{$T{T}}, b::Taylor1{$T{S}}) where
             {T<:NumberNotSeries, S<:NumberNotSeries}
-        (get_order(a) == get_order(b)) && (all(get_order.(a.coeffs) .== get_order.(b.coeffs))) && return a, b
+        (TS.order(a) == TS.order(b)) && (all(TS.order.(a.coeffs) .== TS.order.(b.coeffs))) && return a, b
         minordT = _minorder(a, b)
         aa = Taylor1(a.coeffs, minordT)
         bb = Taylor1(b.coeffs, minordT)
         for ind in eachindex(aa)
-            get_order(aa[ind]) == get_order(bb[ind]) && continue
+            TS.order(aa[ind]) == TS.order(bb[ind]) && continue
             minordQ = _minorder(aa[ind], bb[ind])
             aa[ind] = $T(aa[ind].coeffs, minordQ)
             bb[ind] = $T(bb[ind].coeffs, minordQ)
@@ -525,12 +520,12 @@ constant_term(a::Number) = a
 Returns the linear part of `a` as a polynomial (`Taylor1` or `TaylorN`),
 *without* the constant term. The fallback behavior is to return `a` itself.
 """
-linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]], get_order(a))
+linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]], TS.order(a))
 
 linear_polynomial(a::HomogeneousPolynomial) =
-    HomogeneousPolynomial(a.space, a[1], get_order(a))
+    HomogeneousPolynomial(a.space, a[1], TS.order(a))
 
-linear_polynomial(a::TaylorN) = TaylorN(a[1], get_order(a))
+linear_polynomial(a::TaylorN) = TaylorN(a[1], TS.order(a))
 
 linear_polynomial(a::Vector{T}) where {T<:Number} = linear_polynomial.(a)
 

@@ -26,10 +26,10 @@ JetSpace
 ```@docs
 Taylor1(::Type{T}, ::Int) where {T<:Number}
 HomogeneousPolynomial(::Type{T}, ::Int) where {T<:Number}
-TaylorN(::Type{T}, ::Int; ::Int=get_order()) where {T<:Number}
-set_variables
+TaylorN(::Type{T}, ::Int; ::Int=order()) where {T<:Number}
+variables!
 variables
-get_order
+order
 show_params_TaylorN
 show_monomials
 getcoeff

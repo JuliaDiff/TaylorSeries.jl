@@ -31,9 +31,9 @@ Base.iszero(::SymbNumber) = false
     @test TS.normalize_taylor(tim) == tim
 
     @test Taylor1([1,2,3,4,5], 2) == Taylor1([1,2,3])
-    @test Taylor1(t[0:3]) == Taylor1(t[0:get_order(t)], 4)
-    @test get_order(t) == 15
-    @test get_order(Taylor1([1,2,3,4,5], 2)) == 2
+    @test Taylor1(t[0:3]) == Taylor1(t[0:order(t)], 4)
+    @test order(t) == 15
+    @test order(Taylor1([1,2,3,4,5], 2)) == 2
 
     @test size(t) == (16,)
     @test firstindex(t) == 0
@@ -156,7 +156,7 @@ Base.iszero(::SymbNumber) = false
     @test linear_polynomial(2) == 2
     @test linear_polynomial(t) == t
     @test linear_polynomial(1+tim^2) == zero(tim)
-    @test get_order(linear_polynomial(1+tim^2)) == get_order(tim)
+    @test order(linear_polynomial(1+tim^2)) == order(tim)
     @test linear_polynomial([zero(tim), tim, tim^2]) == [zero(tim), tim, zero(tim)]
     @test nonlinear_polynomial(2im) == 0im
     @test nonlinear_polynomial(1+t) == zero(t)
@@ -182,23 +182,23 @@ Base.iszero(::SymbNumber) = false
     @test (-t)^2 == tsquare
     @test t^3 == tsquare*t
     @test zero(t)/t == zero(t)
-    @test get_order(zero(t)/t) == get_order(t)
+    @test order(zero(t)/t) == order(t)
     @test one(t)/one(t) == 1.0
     @test tsquare/t == t
-    @test get_order(tsquare/t) == get_order(tsquare)-1
+    @test order(tsquare/t) == order(tsquare)-1
     @test t/(t*3) == (1/3)*ot
-    @test get_order(t/(t*3)) == get_order(t)-1
+    @test order(t/(t*3)) == order(t)-1
     @test t/3im == -tim/3
-    @test 1/(1-t) == Taylor1(ones(get_order(t)+1))
+    @test 1/(1-t) == Taylor1(ones(order(t)+1))
     @test Taylor1([0,1,1])/t == t+1
-    @test get_order(Taylor1([0,1,1])/t) == 1
+    @test order(Taylor1([0,1,1])/t) == 1
     @test (t+im)^2 == tsquare+2im*t-1
     @test (t+im)^3 == Taylor1([-1im,-3,3im,1],15)
     @test (t+im)^4 == Taylor1([1,-4im,-6,4im,1],15)
     @test imag(tsquare+2im*t-1) == 2t
     @test (Rational(1,2)*tsquare)[2] == 1//2
     @test t^2/tsquare == ot
-    @test get_order(t^2/tsquare) == get_order(t)-2
+    @test order(t^2/tsquare) == order(t)-2
     @test ((1+t)^(1/3))[2]+1/9 ≤ tol1
     @test (1.0-tsquare)^3 == (1.0-t)^3*(1.0+t)^3
     @test (1-tsquare)^2 == (1+t)^2.0 * (1-t)^2.0
@@ -218,13 +218,13 @@ Base.iszero(::SymbNumber) = false
 
     # These tests involve some sort of factorization
     @test t/(t+t^2) == 1/(1+t)
-    @test get_order(t/(t+t^2)) == get_order(1/(1+t))-1
+    @test order(t/(t+t^2)) == order(1/(1+t))-1
     @test sqrt(t^2+t^3) == t*sqrt(1+t)
-    @test get_order(sqrt(t^2+t^3)) == get_order(t) >> 1
-    @test get_order(t*sqrt(1+t)) == get_order(t)
+    @test order(sqrt(t^2+t^3)) == order(t) >> 1
+    @test order(t*sqrt(1+t)) == order(t)
     @test (t^3+t^4)^(1/3) ≈ t*(1+t)^(1/3)
     @test norm((t^3+t^4)^(1/3) - t*(1+t)^(1/3), Inf) < eps()
-    @test get_order((t^3+t^4)^(1/3)) == 5
+    @test order((t^3+t^4)^(1/3)) == 5
     @test ((t^3+t^4)^(1/3))[5] == -10/243
 
     trational = ta(0//1)
@@ -363,8 +363,8 @@ Base.iszero(::SymbNumber) = false
     @test sinh(acosh(t_complex)) ≈ sqrt(t_complex^2 - 1)
 
     @test asin(t) + acos(t) == pi/2
-    @test differentiate(acos(t)) == - 1/sqrt(1-Taylor1(get_order(t)-1)^2)
-    @test get_order(differentiate(acos(t))) == get_order(t)-1
+    @test differentiate(acos(t)) == - 1/sqrt(1-Taylor1(order(t)-1)^2)
+    @test order(differentiate(acos(t))) == order(t)-1
 
     @test - sinh(t) + cosh(t) == exp(-t)
     @test  sinh(t) + cosh(t) == exp(t)
@@ -481,9 +481,9 @@ Base.iszero(::SymbNumber) = false
     @test mres == mres_expected
 
     ee_ta = exp(ta(1.0))
-    @test get_order(differentiate(ee_ta, 0)) == 15
-    @test get_order(differentiate(ee_ta, 1)) == 14
-    @test get_order(differentiate(ee_ta, 16)) == 0
+    @test order(differentiate(ee_ta, 0)) == 15
+    @test order(differentiate(ee_ta, 1)) == 14
+    @test order(differentiate(ee_ta, 16)) == 0
     @test differentiate(ee_ta, 0) == ee_ta
     expected_result_approx = Taylor1(ee_ta[0:10])
     @test differentiate(exp(ta(1.0)), 5) ≈ expected_result_approx atol=eps() rtol=0.0
@@ -727,7 +727,7 @@ end
 #         # do we get the same result when using the `A*B` form?
 #         @test A*B≈Y
 #         # Y should be extended after the multilpication
-#         @test reduce(&, [get_order(y1) for y1 in Y] .== get_order(Y[1]))
+#         @test reduce(&, [order(y1) for y1 in Y] .== order(Y[1]))
 #         # B should be unchanged
 #         @test B==Bcopy
 

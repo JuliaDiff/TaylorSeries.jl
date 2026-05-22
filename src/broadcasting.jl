@@ -65,7 +65,7 @@ Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
 #     # Scan the inputs for the Taylor1:
 #     A = find_taylor(bc)
 #     # Create the output
-#     return Taylor1(similar(A.coeffs, R), get_order(A))
+#     return Taylor1(similar(A.coeffs, R), TS.order(A))
 # end
 #
 # function similar(bc::Broadcasted{HomogeneousPolynomialStyle{S}}, ::Type{T}) where {S, T}
@@ -75,7 +75,7 @@ Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
 #     # Scan the inputs for the HomogeneousPolynomial:
 #     A = find_taylor(bc)
 #     # Create the output
-#     return HomogeneousPolynomial(similar(A.coeffs, R), get_order(A))
+#     return HomogeneousPolynomial(similar(A.coeffs, R), TS.order(A))
 # end
 #
 # function similar(bc::Broadcasted{TaylorNStyle{S}}, ::Type{T}) where {S, T}
@@ -84,7 +84,7 @@ Base.Broadcast.eltypes(t::Tuple{AbstractArray,TaylorN}) =
 #     # Scan the inputs for the TaylorN:
 #     A = find_taylor(bc)
 #     # Create the output
-#     return TaylorN(similar(A.coeffs, R), get_order(A))
+#     return TaylorN(similar(A.coeffs, R), TS.order(A))
 # end
 
 

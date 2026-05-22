@@ -93,7 +93,7 @@ make_variable(name, index::Int) = string(name, TaylorSeries.subscriptify(index))
 variable_names = [make_variable("α", i) for i in 1:4]
 append!(variable_names, [make_variable("β", i) for i in 1:4])
 # Create the TaylorN variables (order=4, numvars=8)
-a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4)
+a1, a2, a3, a4, b1, b2, b3, b4 = variables!(variable_names, order=4)
 a1 # variable a1
 ```
 
@@ -136,7 +136,7 @@ Mathematica does).
 ```@repl fateman
 using TaylorSeries
 const order = 20
-const x, y, z, w = set_variables(Int128, "x", numvars=4, order=2order)
+const x, y, z, w = variables!(Int128, "x", numvars=4, order=2order)
 function fateman1(degree::Int)
     T = Int128
     s = one(T) + x + y + z + w
@@ -176,7 +176,7 @@ getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
 ans > typemax(Int)
 length(f2)
 sum(TaylorSeries.size_table)
-set_variables("x", numvars=2, order=6) # hide
+variables!("x", numvars=2, order=6) # hide
 ```
 
 These examples show that

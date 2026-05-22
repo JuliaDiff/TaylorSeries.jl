@@ -32,7 +32,7 @@ const SECONDS = parse(Float64, get(ENV, "TS_PRODUCT_BENCH_SECONDS", "1.0"))
 const SAMPLES = parse(Int, get(ENV, "TS_PRODUCT_BENCH_SAMPLES", "10000"))
 
 function lift_taylor1(a::TaylorN{Float64}, orderT::Int)
-    coeffs = Vector{HomogeneousPolynomial{Taylor1{Float64}}}(undef, get_order(a)+1)
+    coeffs = Vector{HomogeneousPolynomial{Taylor1{Float64}}}(undef, TS.order(a)+1)
     for ord in eachindex(a)
         hp = a[ord]
         hpc = Vector{Taylor1{Float64}}(undef, length(hp))
@@ -42,7 +42,7 @@ function lift_taylor1(a::TaylorN{Float64}, orderT::Int)
         end
         coeffs[ord+1] = HomogeneousPolynomial(a.space, hpc, ord)
     end
-    return TaylorN(a.space, coeffs, get_order(a))
+    return TaylorN(a.space, coeffs, TS.order(a))
 end
 
 function product_inputs(; da_order::Int=DA_ORDER, time_order::Int=TIME_ORDER)

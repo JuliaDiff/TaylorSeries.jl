@@ -231,7 +231,7 @@ end
 
 
 const coeff_table, index_table, size_table, pos_table =
-    generate_tables(get_numvars(), get_order())
+    generate_tables(get_numvars(), TS.order())
 
 """Sync the legacy global lookup-table vectors with the given `JetSpace`."""
 function _sync_legacy_tables!(space::JetSpace)
@@ -252,10 +252,10 @@ Set the compatibility default `JetSpace` and refresh legacy globals.
 
 The global `default_space` binding is a constant `Ref`, but its contents are
 mutable. Module loading initializes `default_space[]`; later compatibility calls
-such as `set_variables` update that existing object in place with the fields of
+such as `variables!` update that existing object in place with the fields of
 `space` instead of replacing it. This preserves references held by objects
 constructed through the default-space tables while still making the default
-algebra follow `set_variables`.
+algebra follow `variables!`.
 """
 function set_default_space!(space::JetSpace)
     # Keep the default-space object stable and update its fields so legacy
@@ -286,7 +286,7 @@ function set_default_space!(space::JetSpace)
     return active_space
 end
 
-default_space[] = JetSpace(get_order(), get_numvars(),
+default_space[] = JetSpace(TS.order(), get_numvars(),
     copy(get_variable_names()), copy(get_variable_symbols()),
     coeff_table, index_table, size_table, pos_table)
 

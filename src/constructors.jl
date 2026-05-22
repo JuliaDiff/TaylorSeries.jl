@@ -192,9 +192,8 @@ DataType for polynomial expansions in many (>1) independent variables.
 homogeneous polynomial of degree ``i-1``.
 - `space   :: JetSpace`  multivariate algebra associated with the polynomial.
 
-Use [`get_order`](@ref) to obtain the maximum order of the polynomial
-expansion. For backwards compatibility, `a.order` is supported as a computed
-property equivalent to `get_order(a)`.
+Use [`order`](@ref) to obtain the maximum order of the polynomial
+expansion.
 
 Note that `TaylorN` variables are callable. For more information, see
 [`evaluate`](@ref).
@@ -243,9 +242,9 @@ TaylorN(x::HomogeneousPolynomial{T}, order::Int) where {T<:Number} =
 TaylorN(space::JetSpace, x::HomogeneousPolynomial{T}, order::Int) where
     {T<:Number} = TaylorN{T}(space, [x], order )
 TaylorN(x::HomogeneousPolynomial{T}) where {T<:Number} =
-    TaylorN{T}([x], get_order(x))
+    TaylorN{T}([x], TS.order(x))
 TaylorN(space::JetSpace, x::HomogeneousPolynomial{T}) where {T<:Number} =
-    TaylorN{T}(space, [x], get_order(x))
+    TaylorN{T}(space, [x], TS.order(x))
 TaylorN(x::T, order::Int) where {T<:Number} =
     TaylorN(HomogeneousPolynomial(x, 0), order)
 TaylorN(space::JetSpace, x::T, order::Int) where {T<:Number} =
@@ -253,11 +252,11 @@ TaylorN(space::JetSpace, x::T, order::Int) where {T<:Number} =
 
 # Shortcut to define TaylorN independent variables
 """
-    TaylorN([T::Type=Float64], nv::Int; [order::Int=get_order()])
+    TaylorN([T::Type=Float64], nv::Int; [order::Int=order()])
 
 Shortcut to define the `nv`-th independent `TaylorN{T}` variable as a
 polynomial. The order is defined through the keyword parameter `order`,
-whose default corresponds to `get_order()`. The default of type for
+whose default corresponds to `order()`. The default of type for
 `T` is `Float64`.
 
 ```julia
@@ -268,13 +267,13 @@ julia> TaylorN(Rational{Int},2)
  1//1 x₂ + 𝒪(‖x‖⁷)
 ```
 """
-TaylorN(::Type{T}, nv::Int; order::Int=get_order()) where {T<:Number} =
+TaylorN(::Type{T}, nv::Int; order::Int=TS.order()) where {T<:Number} =
     TaylorN( HomogeneousPolynomial(T, nv), order )
-TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
+TaylorN(nv::Int; order::Int=TS.order()) = TaylorN(Float64, nv, order=order)
 TaylorN(space::JetSpace, ::Type{T}, nv::Int;
-    order::Int=get_order(space)) where {T<:Number} =
+    order::Int=TS.order(space)) where {T<:Number} =
         TaylorN(space, HomogeneousPolynomial(space, T, nv), order)
-TaylorN(space::JetSpace, nv::Int; order::Int=get_order(space)) =
+TaylorN(space::JetSpace, nv::Int; order::Int=TS.order(space)) =
     TaylorN(space, Float64, nv, order=order)
 
 
@@ -287,7 +286,7 @@ const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 
 ## Additional Taylor1 and TaylorN outer constructor ##
 Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
-TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), TaylorSeries.get_order())
+TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), TS.order())
 
 
 # """

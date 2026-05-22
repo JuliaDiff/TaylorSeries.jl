@@ -70,7 +70,7 @@ DataType holding the current parameters for `TaylorN` and
 - `variable_names   :: Vector{String}`  Names of the variables
 - `variable_symbols :: Vector{Symbol}`  Symbols of the variables
 
-These parameters can be changed using [`set_variables`](@ref)
+These parameters can be changed using [`variables!`](@ref)
 """
 mutable struct ParamsTaylorN
     order            :: Int
@@ -171,7 +171,7 @@ end
 # The binding `default_space` is constant, but the `Ref` contents are mutable:
 # `default_space[]` can be assigned a `JetSpace`, and the stored space is
 # itself mutable. This keeps a stable global container for compatibility
-# while allowing `set_variables` to update the active default algebra.
+# while allowing `variables!` to update the active default algebra.
 const default_space = Ref{JetSpace}()
 
 Base.deepcopy_internal(space::JetSpace, stackdict::IdDict) = space
@@ -198,24 +198,24 @@ end
 _variable_names_from(symb::Symbol; numvars::Int=-1) =
     _variable_names_from(string(symb), numvars=numvars)
 
-JetSpace(; order::Int=get_order(), variables) =
+JetSpace(; order::Int=TS.order(), variables) =
     JetSpace(order, _variable_names_from(variables))
 
 
 ## Utilities to get the maximum order, number of variables, their names and symbols
 """
-    get_order()
-    get_order(a)
-    get_order(space::JetSpace)
+    order()
+    order(a)
+    order(space::JetSpace)
 
 Return the maximum expansion order of the current default multivariate algebra,
 of a Taylor series or homogeneous polynomial `a`, or of an explicit `JetSpace`.
 """
-get_order() = _params_TaylorN_.order
+order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
-get_order(space::JetSpace) = space.order
+order(space::JetSpace) = space.order
 get_numvars(space::JetSpace) = space.num_vars
 get_variable_names(space::JetSpace) = space.variable_names
 get_variable_symbols(space::JetSpace) = space.variable_symbols
@@ -232,59 +232,60 @@ end
 
 
 """
-    variables([T::Type=Float64], [order::Int=get_order()])
-    variables([T::Type=Float64], space::JetSpace; order=get_order(space))
+    variables([T::Type=Float64], [order::Int=order()])
+    variables([T::Type=Float64], space::JetSpace; order=order(space))
 
 Return a `TaylorN{T}` vector with each entry representing an
 independent variable. Without an explicit space, `variables` uses the
-compatibility default space configured by `set_variables`, except that `order`
-can be explicitly established by the user without changing internal values for
-`num_vars` or `variable_names`.
+current compatibility default space. The `order` can be explicitly set without
+changing the default-space values for `num_vars` or `variable_names`.
 
 With an explicit space, `variables(space)` returns the independent variables
 for that space. Omitting `T` defaults to `Float64`.
 """
-variables(::Type{T}, order::Int=get_order()) where {T} =
+variables(::Type{T}, order::Int=TS.order()) where {T} =
     TaylorN.(T, 1:get_numvars(), order=order)
-variables(order::Int=get_order()) =
+variables(order::Int=TS.order()) =
     TaylorN.(Float64, 1:get_numvars(), order=order)
-variables(::Type{T}, space::JetSpace; order::Int=get_order(space)) where {T} =
+variables(::Type{T}, space::JetSpace; order::Int=TS.order(space)) where {T} =
     TaylorN.(space, T, 1:get_numvars(space), order=order)
-variables(space::JetSpace; order::Int=get_order(space)) =
+variables(space::JetSpace; order::Int=TS.order(space)) =
     variables(Float64, space, order=order)
 
 """
-    set_variables([T::Type], names::String; [order=get_order(), numvars=-1])
+    variables!([T::Type], names::String; [order=order(), numvars=-1])
 
 Return a `TaylorN{T}` vector with each entry representing an
 independent variable. `names` defines the output for each variable
 (separated by a space). The default type `T` is `Float64`,
-and the default for `order` is the one defined globally.
-Changing the `order` or `numvars` resets the hash_tables.
+and the default for `order` is the current default-space order.
+
+This function updates the compatibility default `JetSpace` and syncs the
+legacy lookup-table globals used by older code.
 
 If `numvars` is not specified, it is inferred from `names`. If only
 one variable name is defined and `numvars>1`, it uses this name with
 subscripts for the different variables.
 
 ```julia
-julia> set_variables(Int, "x y z", order=4)
+julia> variables!(Int, "x y z", order=4)
 3-element Array{TaylorSeries.TaylorN{Int},1}:
   1 x + 𝒪(‖x‖⁵)
   1 y + 𝒪(‖x‖⁵)
   1 z + 𝒪(‖x‖⁵)
 
-julia> set_variables("α", numvars=2)
+julia> variables!("α", numvars=2)
 2-element Array{TaylorSeries.TaylorN{Float64},1}:
   1.0 α₁ + 𝒪(‖x‖⁵)
   1.0 α₂ + 𝒪(‖x‖⁵)
 
-julia> set_variables("x", order=6, numvars=2)
+julia> variables!("x", order=6, numvars=2)
 2-element Array{TaylorSeries.TaylorN{Float64},1}:
   1.0 x₁ + 𝒪(‖x‖⁷)
   1.0 x₂ + 𝒪(‖x‖⁷)
 ```
 """
-function set_variables(::Type{R}, names::Vector{T}; order=get_order()) where
+function variables!(::Type{R}, names::Vector{T}; order=TS.order()) where
         {R, T<:AbstractString}
 
     space = set_default_space!(JetSpace(order, _variable_names_from(names)))
@@ -292,26 +293,26 @@ function set_variables(::Type{R}, names::Vector{T}; order=get_order()) where
     # return a list of the new variables
     return variables(R, space)
 end
-set_variables(::Type{R}, symbs::Vector{T}; order=get_order()) where
-    {R,T<:Symbol} = set_variables(R, string.(symbs), order=order)
+variables!(::Type{R}, symbs::Vector{T}; order=TS.order()) where
+    {R,T<:Symbol} = variables!(R, string.(symbs), order=order)
 
-set_variables(names::Vector{T}; order=get_order()) where {T<:AbstractString} =
-    set_variables(Float64, names, order=order)
-set_variables(symbs::Vector{T}; order=get_order()) where {T<:Symbol} =
-    set_variables(Float64, symbs, order=order)
+variables!(names::Vector{T}; order=TS.order()) where {T<:AbstractString} =
+    variables!(Float64, names, order=order)
+variables!(symbs::Vector{T}; order=TS.order()) where {T<:Symbol} =
+    variables!(Float64, symbs, order=order)
 
-function set_variables(::Type{R}, names::T; order=get_order(), numvars=-1) where
+function variables!(::Type{R}, names::T; order=TS.order(), numvars=-1) where
         {R,T<:AbstractString}
 
-    return set_variables(R, _variable_names_from(names, numvars=numvars), order=order)
+    return variables!(R, _variable_names_from(names, numvars=numvars), order=order)
 end
-set_variables(::Type{R}, symbs::Symbol; order=get_order(), numvars=-1) where {R} =
-    set_variables(R, string(symbs), order=order, numvars=numvars)
+variables!(::Type{R}, symbs::Symbol; order=TS.order(), numvars=-1) where {R} =
+    variables!(R, string(symbs), order=order, numvars=numvars)
 
-set_variables(names::T; order=get_order(), numvars=-1) where {T<:AbstractString} =
-    set_variables(Float64, names, order=order, numvars=numvars)
-set_variables(symbs::Symbol; order=get_order(), numvars=-1) =
-    set_variables(Float64, string(symbs), order=order, numvars=numvars)
+variables!(names::T; order=TS.order(), numvars=-1) where {T<:AbstractString} =
+    variables!(Float64, names, order=order, numvars=numvars)
+variables!(symbs::Symbol; order=TS.order(), numvars=-1) =
+    variables!(Float64, string(symbs), order=order, numvars=numvars)
 
 
 """
@@ -321,7 +322,7 @@ Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
 """
 show_params_TaylorN() = @info( """
     Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = $(get_order())
+    Maximum order       = $(TS.order())
     Number of variables = $(get_numvars())
     Variable names      = $(get_variable_names())
     Variable symbols    = $(Symbol.(get_variable_names()))

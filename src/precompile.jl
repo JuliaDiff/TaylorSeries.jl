@@ -12,7 +12,7 @@ using PrecompileTools
     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
     # precompile file and potentially make loading faster.
     t = Taylor1(20)
-    δ = set_variables("δ", order=6, numvars=2)
+    δ = variables!("δ", order=6, numvars=2)
     tN = one(δ[1]) + Taylor1(typeof(δ[1]), 20)
     # tb = Taylor1(Float128, 20)
     # δb = zero(Float128) .+ δ

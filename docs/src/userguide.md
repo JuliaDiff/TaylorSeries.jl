@@ -181,7 +181,7 @@ set by the user (the default is zero); the order of the integrated polynomial
 for the integral is *kept unchanged*. The *value* of the ``n``-th (``n \ge 0``)
 derivative is obtained using `differentiate(n,a)`, where `a` is a Taylor series;
 likewise, the `Taylor1` polynomial of the ``n``-th derivative is obtained as
-`differentiate(a,n)`; the resulting polynomial is of order `get_order(a)-n`.
+`differentiate(a,n)`; the resulting polynomial is of order `order(a)-n`.
 
 ```@repl userguide
 differentiate(exp(t)) # exp(t) is of order 5; the derivative is of order 4
@@ -266,7 +266,7 @@ xy_space = JetSpace(order=6, variables=[:x, :y])
 x, y = variables(xy_space)
 typeof(x)
 TaylorSeries.space(x) === xy_space
-x.order
+order(x)
 x.coeffs
 ```
 
@@ -276,32 +276,35 @@ space; combining objects from different spaces throws an error instead of
 silently mixing their lookup tables. This makes it possible to keep several
 multivariate algebras alive at once.
 
-For backwards compatibility, [`set_variables`](@ref) remains available. It
-updates the default `JetSpace` used by constructors and functions that do not
-receive an explicit space, and returns the resulting Taylor variables:
+To update the compatibility default `JetSpace`, use [`variables!`](@ref). It
+changes the default space used by constructors and functions that do not receive
+an explicit space, and returns the resulting Taylor variables:
 
 ```@repl userguide
-x, y = set_variables("x y")
+x, y = variables!("x y")
 typeof(x)
-x.order
+order(x)
 x.coeffs
 ```
 
 As shown, the resulting objects are of `TaylorN{Float64}` type.
-There is an optional `order` keyword argument in [`set_variables`](@ref),
+There is an optional `order` keyword argument in [`variables!`](@ref),
 used to specify the maximum order of the default `JetSpace`. Note that one can
 specify the variables using a vector of symbols.
 
 ```@repl userguide
-set_variables([:x, :y], order=10)
+variables!([:x, :y], order=10)
 ```
 
 Similarly, subindexed variables are also available by specifying a single
 variable name and the optional keyword argument `numvars`:
 
 ```@repl userguide
-set_variables("α", numvars=3)
+variables!("α", numvars=3)
 ```
+
+The old `set_variables` name is deprecated and remains available as an alias
+for `variables!`.
 
 Without an explicit space, [`variables`](@ref) returns variables in the current
 default `JetSpace`. A smaller order can be requested without changing the
@@ -335,21 +338,21 @@ the coefficients of a [`HomogeneousPolynomial`](@ref) of given order into the
 corresponding multi-variable monomials, or the other way around. Reusing the
 same space lets all polynomials in that algebra share these tables and related
 arithmetic caches. The initial default space has `order = 6` and `num_vars = 2`;
-calling `set_variables` changes that default space for compatibility with older
+calling `variables!` changes that default space for compatibility with older
 code.
 
 The easiest way to construct a [`TaylorN`](@ref) object is by defining
 the independent variables. This can be done using `JetSpace` and `variables`,
-or through `set_variables` as above. The method
+or through `variables!` as above. The method
 [`TaylorN{T<:Number}(::Type{T}, nv::Int)`](@ref) constructs the `nv`
 independent `TaylorN{T}` variable in the default space;
 the order can be also specified using the optional keyword argument `order`.
 
 ```@repl userguide
-x, y = set_variables("x y", numvars=2, order=6);
+x, y = variables!("x y", numvars=2, order=6);
 x
 TaylorN(1, order=4) # variable 1 of order 4
-TaylorN(Int, 2)    # variable 2, type Int, order=get_order()=6
+TaylorN(Int, 2)    # variable 2, type Int, order=order()=6
 TaylorN(xy_space, Int, 2) # variable 2 in an explicit space
 ```
 
@@ -358,7 +361,7 @@ using [`HomogeneousPolynomial`](@ref)
 objects directly, which is uncomfortable.
 
 ```@repl userguide
-set_variables(:x, numvars=2); # symbols can be used
+variables!(:x, numvars=2); # symbols can be used
 HomogeneousPolynomial([1,-1])
 TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
 ```
@@ -386,7 +389,7 @@ Essentially, the lexicographic order works as follows: smaller order monomials
 are *larger* than higher order monomials; when the order is the same, *larger* monomials
 appear before in the hash-tables; the function [`show_monomials`](@ref).
 ```@repl userguide
-x, y = set_variables("x y", order=10);
+x, y = variables!("x y", order=10);
 
 show_monomials(2)
 ```
@@ -567,7 +570,7 @@ is a subtype of `Number`. Then, we may actually define Taylor expansions in
 somewhat special.
 
 ```@repl userguide
-x, y = set_variables("x y", order=3)
+x, y = variables!("x y", order=3)
 t1N = Taylor1([zero(x), one(x)], 5)
 ```
 

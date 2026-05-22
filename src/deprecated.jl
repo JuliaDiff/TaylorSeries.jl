@@ -6,4 +6,6 @@
 # MIT Expat license
 #
 
+Base.@deprecate set_variables(args...; kwargs...) variables!(args...; kwargs...)
 Base.@deprecate get_variables(args...; kwargs...) variables(args...; kwargs...)
+Base.@deprecate get_order(args...; kwargs...) order(args...; kwargs...)

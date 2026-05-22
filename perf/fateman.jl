@@ -1,7 +1,7 @@
 using TaylorSeries
 
 const order = 20
-const x, y, z, w = set_variables(Int128, "x", numvars=4, order=2order)
+const x, y, z, w = variables!(Int128, "x", numvars=4, order=2order)
 
 function fateman1(degree::Int)
     T = Int128

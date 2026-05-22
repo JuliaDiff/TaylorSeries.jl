@@ -41,7 +41,7 @@ for I in (:Interval, :ComplexI)
         TS._isthinzero(x::$I{T}) where {T<:Real} = isthinzero(x)
 
         function ==(a::Taylor1{$I{T}}, b::Taylor1{$I{S}}) where {T<:NumTypes, S<:NumTypes}
-            if get_order(a) != get_order(b)
+            if TS.order(a) != TS.order(b)
                 a, b = TS.fixorder(a, b)
             end
             return all(isequal_interval.(a.coeffs, b.coeffs))
@@ -49,7 +49,7 @@ for I in (:Interval, :ComplexI)
 
         function ==(a::HomogeneousPolynomial{$I{T}},
                 b::HomogeneousPolynomial{$I{S}}) where {T<:NumTypes, S<:NumTypes}
-            get_order(a) == get_order(b) &&
+            TS.order(a) == TS.order(b) &&
                 return all(isequal_interval.(a.coeffs, b.coeffs))
             return all(TS._isthinzero.(a.coeffs)) && all(TS._isthinzero.(b.coeffs))
         end
@@ -114,7 +114,7 @@ function _pow(a::Taylor1{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
     aux = one(a0^r)
     a[0] = aux * a0
     r == 0.5 && return sqrt(a)
-    a_order = get_order(a)
+    a_order = TS.order(a)
     l0 = findfirst(a)
     # Index of first non-zero coefficient of the result; must be integer
     !isinteger(r*l0) && throw(DomainError(a,
@@ -138,7 +138,7 @@ function _pow(a::TaylorN{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
     aux = one(a0^r)
     a[0] = aux * a0
     r == 0.5 && return sqrt(a)
-    a_order = get_order(a)
+    a_order = TS.order(a)
     if TS._isthinzero(a0)
         throw(DomainError(a,
             """The 0-th order TaylorN coefficient must be non-zero
@@ -232,9 +232,9 @@ end
 function TS.accsqr!(c::HomogeneousPolynomial{Interval{T}},
         a::HomogeneousPolynomial{Interval{T}}) where {T<:NumTypes}
     iszero(a) && return nothing
-    @inbounds num_coeffs_a = TS.size_table[get_order(a)+1]
-    @inbounds posTb = TS.pos_table[get_order(c)+1]
-    @inbounds idxTb = TS.index_table[get_order(a)+1]
+    @inbounds num_coeffs_a = TS.size_table[TS.order(a)+1]
+    @inbounds posTb = TS.pos_table[TS.order(c)+1]
+    @inbounds idxTb = TS.index_table[TS.order(a)+1]
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
         TS._isthinzero(ca) && continue
@@ -264,7 +264,7 @@ function sqrt(a::Taylor1{Interval{T}}) where {T<:NumTypes}
     aa = convert(Taylor1{typeof(aux)}, a)
     aa[0] = one(aux)*a0
     l0nz = findfirst(aa)
-    order = get_order(a)
+    order = TS.order(a)
     if l0nz < 0
         return Taylor1(zero(aux), order)
     elseif l0nz%2 == 1 # l0nz must be pair
@@ -293,7 +293,7 @@ function sqrt(a::TaylorN{Interval{T}}) where {T<:NumTypes}
     # First non-zero coefficient
     aa = convert(TaylorN{typeof(aux)}, a)
     aa[0] = one(aux)*a0
-    order = get_order(a)
+    order = TS.order(a)
     c = TaylorN( zero(aux), order)
     for k in eachindex(aa)
         TS.sqrt!(c, aa, zero(a0), k)
@@ -309,7 +309,7 @@ function TS.sqrt!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
     end
     kodd = (k - k0)%2
     kend = div(k - k0 - 2 + kodd, 2)
-    a_order = get_order(a)
+    a_order = TS.order(a)
     imax = min(k0+kend, a_order)
     imin = max(k0+1, k+k0-a_order)
     imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
@@ -367,7 +367,7 @@ for T in (:Taylor1, :TaylorN)
             aa = convert($T{typeof(aux)}, a)
             # aa = one(aux) * a
             aa[0] = one(aux) * a0
-            order = get_order(a)
+            order = TS.order(a)
             c = $T( aux, order )
             for k in eachindex(a)
                 TS.log!(c, aa, k)
@@ -385,7 +385,7 @@ for T in (:Taylor1, :TaylorN)
             uno = one(aux)
             isequal_interval(a0sqr, uno) && throw(DomainError(a,
                     """Series expansion of asin(x) diverges at x = ±1."""))
-            order = get_order(a)
+            order = TS.order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
             c = $T( aux, order )
@@ -406,7 +406,7 @@ for T in (:Taylor1, :TaylorN)
             uno = one(a0)
             isequal_interval(a0sqr, uno) && throw(DomainError(a,
                     """Series expansion of acos(x) diverges at x = ±1."""))
-            order = get_order(a)
+            order = TS.order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
             c = $T( aux, order )
@@ -427,7 +427,7 @@ for T in (:Taylor1, :TaylorN)
             uno = one(a0)
             isequal_interval(a0sqr, uno) && throw(DomainError(a,
                 """Series expansion of acosh(x) diverges at x = ±1."""))
-            order = get_order(a)
+            order = TS.order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
             c = $T( aux, order )
@@ -444,7 +444,7 @@ for T in (:Taylor1, :TaylorN)
             aux = atanh(a0)
             isempty_interval(aux) && throw(DomainError(a,
                 """The 0-th order coefficient must have a non-empty intersection with $domain."""))
-            order = get_order(a)
+            order = TS.order(a)
             uno = one(a0)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
@@ -943,7 +943,7 @@ function TS.evaluate(a::Taylor1{Interval{T}}, dx::S) where {T<:NumTypes, S<:NumT
 end
 
 function TS.evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
-    order = get_order(a)
+    order = TS.order(a)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -963,7 +963,7 @@ function TS.evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
 end
 
 function TS.evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumTypes}
-    order = get_order(a)
+    order = TS.order(a)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -1001,7 +1001,7 @@ TS.evaluate(a::TaylorN{T}, vals::AbstractVector{TaylorN{Interval{T}}}) where
         {T<:NumTypes} = evaluate(a, (vals...,); sorting=false)
 
 function TS.evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Real}
-    order = get_order(a)
+    order = TS.order(a)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -1038,8 +1038,8 @@ TS.evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{Interval{S}}) where
 # _evaluate
 function TS._evaluate(a::HomogeneousPolynomial{T},
         dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
-    get_order(a) == 0 && return a[1] + interval(zero(T))
-    ct = TS.coeff_table[get_order(a)+1]
+    TS.order(a) == 0 && return a[1] + interval(zero(T))
+    ct = TS.coeff_table[TS.order(a)+1]
     @inbounds suma = a[1]*interval(zero(T))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
@@ -1051,8 +1051,8 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}},
         ::Val{true} ) where {T<:Real, S<:NumTypes}
-    get_order(a) == 0 && return a[1] + interval(zero(T))
-    ct = TS.coeff_table[get_order(a)+1]
+    TS.order(a) == 0 && return a[1] + interval(zero(T))
+    ct = TS.coeff_table[TS.order(a)+1]
     @inbounds suma = a[1]*interval(zero(T))
     Ieven = interval(zero(T), one(T))
     for (i, a_coeff) in enumerate(a.coeffs)
@@ -1073,7 +1073,7 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}},
         ::Val{false} ) where {T<:Real, S<:NumTypes}
-    get_order(a) == 0 && return a[1] + interval(zero(T))
+    TS.order(a) == 0 && return a[1] + interval(zero(T))
     @inbounds suma = zero(a[1])*dx[1]
     @inbounds for homPol in a.coeffs
         suma += homPol*dx[1]
@@ -1106,7 +1106,7 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T},
         vals::NTuple{N,TaylorN{Interval{S}}}) where {N, T<:Real, S<:NumTypes}
-    ct = TS.coeff_table[get_order(a)+1]
+    ct = TS.coeff_table[TS.order(a)+1]
     suma = zero(a[1])*vals[1]
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
@@ -1143,13 +1143,13 @@ aff_normalize(x, I::Interval, ::Val{false}) = interval(inf(I)) + x * interval(di
 for bb in (:true, :false)
     @eval function _normalize(a::Taylor1, I::Interval{T}, ::Val{$bb}) where {T<:NumTypes}
         S = promote_type(TS.numtype(a), Interval{T})
-        t = Taylor1(S, get_order(a))
+        t = Taylor1(S, TS.order(a))
         return a(aff_normalize(t, I, Val($bb)))
     end
 
     @eval function _normalize(a::TaylorN, I::AbstractVector{Interval{T}},
             ::Val{$bb}) where {T<:NumTypes}
-        order = get_order(a)
+        order = TS.order(a)
         S = promote_type(TS.numtype(a), Interval{T})
         x = Vector{TaylorN{S}}(undef, length(I))
         @inbounds for ind in eachindex(x)
