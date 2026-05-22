@@ -43,7 +43,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
             function ($f)(b::T, a::$T{T}) where {T<:Number}
                 c = $T($f(a.coeffs[:]))
-                c[0] = b + a[0]
+                c[0] = $f(b, a[0])
                 return c
             end
 
@@ -884,8 +884,8 @@ end
     return nothing
 end
 
-@inline function _mul_output_major_unchecked!(c::HomogeneousPolynomial{Float64},
-        a::HomogeneousPolynomial{Float64}, b::HomogeneousPolynomial{Float64})
+@inline function _mul_output_major_unchecked!(c::HomogeneousPolynomial,
+        a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     (_isthinzero(b) || _isthinzero(a)) && return nothing
     degree_a = get_order(a)
     degree_b = get_order(b)
@@ -949,9 +949,11 @@ end
 
 @inline function _muladd_unchecked!(c::TaylorN{T}, a::TaylorN{T},
         b::TaylorN{T}, k::Int) where {T<:Number}
-    @inbounds _mul_unchecked!(c[k], a[0], b[k])
+    # @inbounds _mul_unchecked!(c[k], a[0], b[k])
+    @inbounds _mul_output_major_unchecked!(c[k], a[0], b[k])
     @inbounds for i = 1:k
-        _mul_unchecked!(c[k], a[i], b[k-i])
+        # _mul_unchecked!(c[k], a[i], b[k-i])
+        _mul_output_major_unchecked!(c[k], a[i], b[k-i])
     end
     return nothing
 end
@@ -977,7 +979,8 @@ c, a and b are `HomogeneousPolynomial`.
         b::HomogeneousPolynomial)
     _check_same_space(c, a, b)
     _check_homogeneous_product_order(c, a, b)
-    _mul_unchecked!(c, a, b)
+    # _mul_unchecked!(c, a, b)
+    _mul_output_major_unchecked!(c, a, b)
     return nothing
 end
 
