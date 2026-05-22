@@ -254,10 +254,31 @@ was discussed [here](https://groups.google.com/forum/#!msg/julia-users/AkK_UdST3
 The structure [`TaylorN`](@ref) is constructed as a vector of parameterized
 homogeneous polynomials
 defined by the type [`HomogeneousPolynomial`](@ref), which in turn is an ordered vector of
-coefficients of given order (degree). This implementation imposes the user
-to specify the (maximum) order considered and the number of independent
-variables at the beginning, which can be conveniently done using
-[`set_variables`](@ref). A vector of the resulting Taylor variables is returned:
+coefficients of given order (degree). Each multivariate polynomial belongs to a
+[`JetSpace`](@ref), which stores the maximum order, the independent-variable
+metadata, and the lookup tables used by multivariate arithmetic.
+
+The recommended way to create an independent multivariate algebra is to create a
+`JetSpace` explicitly and then request its variables with [`variables`](@ref):
+
+```@repl userguide
+xy_space = JetSpace(order=6, variables=[:x, :y])
+x, y = variables(xy_space)
+typeof(x)
+TaylorSeries.space(x) === xy_space
+x.order
+x.coeffs
+```
+
+Different `JetSpace` objects are independent, even if they have the same order
+and variable names. Arithmetic is defined for objects belonging to the same
+space; combining objects from different spaces throws an error instead of
+silently mixing their lookup tables. This makes it possible to keep several
+multivariate algebras alive at once.
+
+For backwards compatibility, [`set_variables`](@ref) remains available. It
+updates the default `JetSpace` used by constructors and functions that do not
+receive an explicit space, and returns the resulting Taylor variables:
 
 ```@repl userguide
 x, y = set_variables("x y")
@@ -268,8 +289,8 @@ x.coeffs
 
 As shown, the resulting objects are of `TaylorN{Float64}` type.
 There is an optional `order` keyword argument in [`set_variables`](@ref),
-used to specify the maximum order of the `TaylorN` polynomials. Note that
-one can specify the variables using a vector of symbols.
+used to specify the maximum order of the default `JetSpace`. Note that one can
+specify the variables using a vector of symbols.
 
 ```@repl userguide
 set_variables([:x, :y], order=10)
@@ -282,15 +303,20 @@ variable name and the optional keyword argument `numvars`:
 set_variables("α", numvars=3)
 ```
 
-Alternatively to `set_variables`, [`variables`](@ref) can be used if one
-does not want to change internal dictionaries. `variables` returns a vector
-of `TaylorN` independent variables of a desired `order`
-(lesser than `get_order` so the
-internals doesn't have to change) with the length and variable names defined
-by `set_variables` initially.
+Without an explicit space, [`variables`](@ref) returns variables in the current
+default `JetSpace`. A smaller order can be requested without changing the
+default-space tables:
 
 ```@repl userguide
 variables(2) # vector of independent variables of order 2
+```
+
+With an explicit space, `variables` returns variables in that space:
+
+```@repl userguide
+ab_space = JetSpace(order=3, variables=[:a, :b])
+a, b = variables(ab_space)
+TaylorSeries.space(a) === ab_space
 ```
 
 !!! warning
@@ -304,18 +330,19 @@ parameters, in an info block.
 show_params_TaylorN()
 ```
 
-Internally, changing the parameters (maximum order and number of variables)
-redefines the hash-tables that
-translate the index of the coefficients of a [`HomogeneousPolynomial`](@ref)
-of given order into the corresponding
-multi-variable monomials, or the other way around.
-Fixing these values from the start is imperative; the initial (default) values
-are `order = 6` and `num_vars=2`.
+Internally, each `JetSpace` owns the hash tables that translate the index of
+the coefficients of a [`HomogeneousPolynomial`](@ref) of given order into the
+corresponding multi-variable monomials, or the other way around. Reusing the
+same space lets all polynomials in that algebra share these tables and related
+arithmetic caches. The initial default space has `order = 6` and `num_vars = 2`;
+calling `set_variables` changes that default space for compatibility with older
+code.
 
 The easiest way to construct a [`TaylorN`](@ref) object is by defining
-the independent variables. This can be done using `set_variables` as above,
-or through the method [`TaylorN{T<:Number}(::Type{T}, nv::Int)`](@ref)
-for the `nv` independent `TaylorN{T}` variable;
+the independent variables. This can be done using `JetSpace` and `variables`,
+or through `set_variables` as above. The method
+[`TaylorN{T<:Number}(::Type{T}, nv::Int)`](@ref) constructs the `nv`
+independent `TaylorN{T}` variable in the default space;
 the order can be also specified using the optional keyword argument `order`.
 
 ```@repl userguide
@@ -323,6 +350,7 @@ x, y = set_variables("x y", numvars=2, order=6);
 x
 TaylorN(1, order=4) # variable 1 of order 4
 TaylorN(Int, 2)    # variable 2, type Int, order=get_order()=6
+TaylorN(xy_space, Int, 2) # variable 2 in an explicit space
 ```
 
 Other ways of constructing [`TaylorN`](@ref) polynomials involve
