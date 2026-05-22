@@ -61,6 +61,10 @@ end
     @test x.space === y.space === z.space === sx
     @test a.space === b.space === sa
     @test x.space !== a.space
+    @test x.order == get_order(x) == get_order(sx)
+    x_low_order = variables(sx, order=2)[1]
+    @test x_low_order.order == get_order(x_low_order) == 2
+    @test x_low_order.space.order == get_order(sx)
     @test get_numvars(x) == 3
     @test get_variable_names(sx) == ["x", "y", "z"]
     shown_sx = sprint(show, sx)

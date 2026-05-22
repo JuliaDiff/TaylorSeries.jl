@@ -16,6 +16,11 @@ Return the `JetSpace` associated with the multivariate Taylor object `a`.
 @inline space(a::HomogeneousPolynomial) = a.space
 @inline space(a::TaylorN) = a.space
 
+@inline Base.getproperty(a::TaylorN, name::Symbol) =
+    name === :order ? get_order(a) : getfield(a, name)
+Base.propertynames(a::TaylorN, private::Bool=false) =
+    private ? (:coeffs, :space, :order) : (:coeffs, :space, :order)
+
 function _space_mismatch_error(space_a::JetSpace, space_b::JetSpace)
     throw(ArgumentError(
         "JetSpace mismatch: operands belong to different spaces. " *

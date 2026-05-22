@@ -190,7 +190,11 @@ DataType for polynomial expansions in many (>1) independent variables.
 - `coeffs  :: Array{HomogeneousPolynomial{T},1}` Vector containing the
 `HomogeneousPolynomial` entries. The ``i``-th component corresponds to the
 homogeneous polynomial of degree ``i-1``.
-- `order   :: Int`  maximum order of the polynomial expansion.
+- `space   :: JetSpace`  multivariate algebra associated with the polynomial.
+
+Use [`get_order`](@ref) to obtain the maximum order of the polynomial
+expansion. For backwards compatibility, `a.order` is supported as a computed
+property equivalent to `get_order(a)`.
 
 Note that `TaylorN` variables are callable. For more information, see
 [`evaluate`](@ref).

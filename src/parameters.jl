@@ -203,6 +203,14 @@ JetSpace(; order::Int=get_order(), variables) =
 
 
 ## Utilities to get the maximum order, number of variables, their names and symbols
+"""
+    get_order()
+    get_order(a)
+    get_order(space::JetSpace)
+
+Return the maximum expansion order of the current default multivariate algebra,
+of a Taylor series or homogeneous polynomial `a`, or of an explicit `JetSpace`.
+"""
 get_order() = _params_TaylorN_.order
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
