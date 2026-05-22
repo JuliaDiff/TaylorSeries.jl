@@ -111,8 +111,8 @@ end
     # These tests should be removed when the deprecated aliases are removed from src/deprecated.jl (next minor release)
     @test order(@test_deprecated get_variables(2)[1]) == 2
     @test (@test_deprecated get_variables(Int, 3)[1]) == TaylorN(Int, 1, order=3)
-    @test (@test_deprecated get_order()) == order()
-    @test (@test_deprecated get_order(variables(2)[1])) == 2
+    @test get_order() == order()
+    @test get_order(variables(2)[1]) == 2
     @test order((@test_deprecated set_variables("u v", order=2))[1]) == 2
 
     x, y = variables!("x y", order=6)

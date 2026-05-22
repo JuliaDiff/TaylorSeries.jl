@@ -106,8 +106,8 @@ coefficient `c[pos]` receives that product (in general, many pairs contribute
 to the same output coefficient). The input-pair traversing order schedule
 maps each pair of input coefficients to the output coefficient it contributes to.
 The output-major schedule stores the same products grouped by output coefficient,
-so dense kernels (e.g., `_mul_unchecked!`, `_mul_output_major_unchecked!`)
-can accumulate one output coefficient at a time.
+so dense kernels (e.g., `_mul_output_major_unchecked!`) can accumulate one
+output coefficient at a time.
 
 At initialization, only the input-pair table `input_positions` is filled. Later,
 only if a kernel needs the output-major layout, the fields `output_offsets` and
@@ -212,6 +212,7 @@ Return the maximum expansion order of the current default multivariate algebra,
 of a Taylor series or homogeneous polynomial `a`, or of an explicit `JetSpace`.
 """
 order() = _params_TaylorN_.order
+get_order(args...; kwargs...) = order(args...; kwargs...)
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols

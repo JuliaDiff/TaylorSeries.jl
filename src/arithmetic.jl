@@ -949,10 +949,8 @@ end
 
 @inline function _muladd_unchecked!(c::TaylorN{T}, a::TaylorN{T},
         b::TaylorN{T}, k::Int) where {T<:Number}
-    # @inbounds _mul_unchecked!(c[k], a[0], b[k])
     @inbounds _mul_output_major_unchecked!(c[k], a[0], b[k])
     @inbounds for i = 1:k
-        # _mul_unchecked!(c[k], a[i], b[k-i])
         _mul_output_major_unchecked!(c[k], a[i], b[k-i])
     end
     return nothing
@@ -979,7 +977,6 @@ c, a and b are `HomogeneousPolynomial`.
         b::HomogeneousPolynomial)
     _check_same_space(c, a, b)
     _check_homogeneous_product_order(c, a, b)
-    # _mul_unchecked!(c, a, b)
     _mul_output_major_unchecked!(c, a, b)
     return nothing
 end

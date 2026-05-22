@@ -247,12 +247,12 @@ name_taylorNvar(space::JetSpace, i::Int) =
 
 function Base.show(io::IO, s::JetSpace)
     tab = "    "
-    println(io,
+    print(io,
         "JetSpace\n",
-        tab, rpad("Expansion order:",     24), TS.order(s),            '\n',
+        tab, rpad("Expansion order:",     24), TS.order(s),             '\n',
         tab, rpad("Number of variables:", 24), get_numvars(s),          '\n',
         tab, rpad("Variable names:",      24), get_variable_names(s),   '\n',
-        tab, rpad("Variable symbols:",    24), get_variable_symbols(s), '\n',
+        tab, rpad("Variable symbols:",    24), get_variable_symbols(s)
     )
 end
 
