@@ -50,7 +50,7 @@ function pretty_print(a::Taylor1)
     # z = zero(a[0])
     var = _params_Taylor1_.var_name[1]
     space = string(" ")
-    bigO = str_bigO(var, TS.order(a))
+    bigO = str_bigO(var, order(a))
     TS._isthinzero(a) && return string(space, 0, space, bigO)
     strout::String = space
     ifirst = true
@@ -70,7 +70,7 @@ function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
     z = zero(a[0])
     var = _params_Taylor1_.var_name[1]
     space = string(" ")
-    bigO = str_bigO(var, TS.order(a))
+    bigO = str_bigO(var, order(a))
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -93,7 +93,7 @@ function pretty_print(a::Taylor1{<:AbstractSeries})
     end
     var = _params_Taylor1_.var_name[get_numvars(a)]
     space = string(" ")
-    bigO = str_bigO(var, TS.order(a))
+    bigO = str_bigO(var, order(a))
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -122,7 +122,7 @@ end
 function pretty_print(a::TaylorN{T}) where {T<:Number}
     z = zero(a[0])
     space = string("")
-    bigO :: String = str_bigO("‖x‖", TS.order(a), false)
+    bigO :: String = str_bigO("‖x‖", order(a), false)
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -249,7 +249,7 @@ function Base.show(io::IO, s::JetSpace)
     tab = "    "
     print(io,
         "JetSpace\n",
-        tab, rpad("Expansion order:",     24), TS.order(s),             '\n',
+        tab, rpad("Expansion order:",     24), order(s),                '\n',
         tab, rpad("Number of variables:", 24), get_numvars(s),          '\n',
         tab, rpad("Variable names:",      24), get_variable_names(s),   '\n',
         tab, rpad("Variable symbols:",    24), get_variable_symbols(s)
@@ -258,16 +258,16 @@ end
 
 # summary
 summary(a::Taylor1{T}) where {T<:Number} =
-    string(TS.order(a), "-order ", typeof(a), ":")
+    string(order(a), "-order ", typeof(a), ":")
 
 function summary(a::Union{HomogeneousPolynomial{T}, TaylorN{T}}) where {T<:Number}
-    string(TS.order(a), "-order ", typeof(a), " in ", get_numvars(a), " variables:")
+    string(order(a), "-order ", typeof(a), " in ", get_numvars(a), " variables:")
 end
 
 # show
 _show_default_series(io::IO, a::Taylor1) = Base.show_default(IOContext(io, :compact => false), a)
 function _show_default_series(io::IO, a::HomogeneousPolynomial)
-    print(io, typeof(a), "(", a.coeffs, ", ", TS.order(a), ")")
+    print(io, typeof(a), "(", a.coeffs, ", ", order(a), ")")
 end
 function _show_default_series(io::IO, a::TaylorN)
     print(io, typeof(a), "(", a.coeffs, ")")

@@ -231,7 +231,7 @@ end
 
 
 const coeff_table, index_table, size_table, pos_table =
-    generate_tables(get_numvars(), TS.order())
+    generate_tables(get_numvars(), order())
 
 """Sync the legacy global lookup-table vectors with the given `JetSpace`."""
 function _sync_legacy_tables!(space::JetSpace)
@@ -286,7 +286,7 @@ function set_default_space!(space::JetSpace)
     return active_space
 end
 
-default_space[] = JetSpace(TS.order(), get_numvars(),
+default_space[] = JetSpace(order(), get_numvars(),
     copy(get_variable_names()), copy(get_variable_symbols()),
     coeff_table, index_table, size_table, pos_table)
 

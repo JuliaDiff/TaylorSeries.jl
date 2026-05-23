@@ -242,9 +242,9 @@ TaylorN(x::HomogeneousPolynomial{T}, order::Int) where {T<:Number} =
 TaylorN(space::JetSpace, x::HomogeneousPolynomial{T}, order::Int) where
     {T<:Number} = TaylorN{T}(space, [x], order )
 TaylorN(x::HomogeneousPolynomial{T}) where {T<:Number} =
-    TaylorN{T}([x], TS.order(x))
+    TaylorN{T}([x], order(x))
 TaylorN(space::JetSpace, x::HomogeneousPolynomial{T}) where {T<:Number} =
-    TaylorN{T}(space, [x], TS.order(x))
+    TaylorN{T}(space, [x], order(x))
 TaylorN(x::T, order::Int) where {T<:Number} =
     TaylorN(HomogeneousPolynomial(x, 0), order)
 TaylorN(space::JetSpace, x::T, order::Int) where {T<:Number} =
@@ -286,7 +286,7 @@ const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 
 ## Additional Taylor1 and TaylorN outer constructor ##
 Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
-TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), TS.order())
+TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), order())
 
 
 # """

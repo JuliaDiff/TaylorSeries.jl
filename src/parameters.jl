@@ -323,7 +323,7 @@ Display the current parameters for `TaylorN` and `HomogeneousPolynomial` types.
 """
 show_params_TaylorN() = @info( """
     Parameters for `TaylorN` and `HomogeneousPolynomial`:
-    Maximum order       = $(TS.order())
+    Maximum order       = $(order())
     Number of variables = $(get_numvars())
     Variable names      = $(get_variable_names())
     Variable symbols    = $(Symbol.(get_variable_names()))

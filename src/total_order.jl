@@ -14,7 +14,7 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function ==(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
-    if TS.order(a) != TS.order(b)
+    if order(a) != order(b)
         a, b = fixorder(a, b)
     end
     return a.coeffs == b.coeffs
@@ -22,7 +22,7 @@ end
 
 function ==(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
     space(a) === space(b) || return false
-    if TS.order(a) != TS.order(b)
+    if order(a) != order(b)
         a, b = fixorder(a, b)
     end
     return a.coeffs == b.coeffs
@@ -36,7 +36,7 @@ end
 
 function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
     space(a) === space(b) || return false
-    TS.order(a) == TS.order(b) && return a.coeffs == b.coeffs
+    order(a) == order(b) && return a.coeffs == b.coeffs
     return iszero(a.coeffs) && iszero(b.coeffs)
 end
 
@@ -95,13 +95,13 @@ _zero_abstractfloat(a::Taylor1{Taylor1{T}}) where {T<:Number} =
 
 
 @inline function isless(a::HomogeneousPolynomial{<:Number}, b::Real)
-    TS.order(a) == 0 && return isless(a[1], b)
+    order(a) == 0 && return isless(a[1], b)
     !iszero(b) && return isless(zero(a[1]), b)
     nz = max(findfirst(a), 1)
     return isless(a[nz], b)
 end
 @inline function isless(b::Real, a::HomogeneousPolynomial{<:Number})
-    TS.order(a) == 0 && return isless(b, a[1])
+    order(a) == 0 && return isless(b, a[1])
     !iszero(b) && return isless(b, zero(a[1]))
     nz = max(findfirst(a),1)
     return isless(b, a[nz])
@@ -111,8 +111,8 @@ end
     {T<:Number, S<:Number} = isless(promote(a,b)...)
 @inline function isless(a::HomogeneousPolynomial{T},
         b::HomogeneousPolynomial{T}) where {T<:Number}
-    orda = TS.order(a)
-    ordb = TS.order(b)
+    orda = order(a)
+    ordb = order(b)
     if orda == ordb
         return isless(a-b, zero(a[1]))
     elseif orda < ordb
@@ -133,8 +133,8 @@ end
     isless(promote(a, b)...)
 @inline function isless(a::HomogeneousPolynomial{Taylor1{T}},
         b::HomogeneousPolynomial{Taylor1{T}}) where {T<:NumberNotSeries}
-    orda = TS.order(a)
-    ordb = TS.order(b)
+    orda = order(a)
+    ordb = order(b)
     if orda == ordb
         return isless(a-b, zero(T))
     elseif orda < ordb

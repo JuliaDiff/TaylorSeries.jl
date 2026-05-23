@@ -74,7 +74,7 @@ function _space_spec(space::JetSpace)
     space_id = objectid(space)
     _write_space_cache[(session_id, space_id)] = space
     return JetSpaceSerialization(session_id, space_id,
-        TS.order(space), copy(TS.get_variable_names(space)),
+        order(space), copy(TS.get_variable_names(space)),
         copy(TS.get_variable_symbols(space)))
 end
 
@@ -119,7 +119,7 @@ function convert(::Type{TaylorNSerialization{T}}, eph::TaylorN{T}) where {T}
     # Number of variables
     n = length(vars)
     # TaylorN order
-    varorder = TS.order(eph)
+    varorder = order(eph)
     # Number of coefficients in each TaylorN
     L = varorder + 1
     # Number of coefficients in each HomogeneousPolynomial
@@ -143,7 +143,7 @@ end
 
 # Convert method to write .jld2 files using explicit JetSpace metadata.
 function convert(::Type{TaylorNSerializationV2{T}}, eph::TaylorN{T}) where {T}
-    varorder = TS.order(eph)
+    varorder = order(eph)
     num_coeffs = 0
     for degree in 0:varorder
         num_coeffs += length(eph.coeffs[degree+1].coeffs)
@@ -197,7 +197,7 @@ end
 function convert(::Type{TaylorN{T}}, eph::TaylorNSerializationV2{T}) where {T}
     space = _cached_space(eph.space)
     varorder = eph.varorder
-    varorder ≤ TS.order(space) ||
+    varorder ≤ order(space) ||
         error("invalid serialized TaylorN: order exceeds serialized JetSpace order")
 
     i = 1

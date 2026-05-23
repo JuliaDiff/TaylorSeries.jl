@@ -8,9 +8,9 @@
 
 ## real, imag, conj and ctranspose ##
 for f in (:real, :imag, :conj)
-    @eval ($f)(a::Taylor1) = Taylor1(($f)(a.coeffs), TS.order(a))
+    @eval ($f)(a::Taylor1) = Taylor1(($f)(a.coeffs), order(a))
     for T in (:HomogeneousPolynomial, :TaylorN)
-        @eval ($f)(a::$T) = $T(a.space, ($f)(a.coeffs), TS.order(a))
+        @eval ($f)(a::$T) = $T(a.space, ($f)(a.coeffs), order(a))
     end
 end
 
@@ -31,7 +31,7 @@ for op in (:mod, :rem)
             function ($op)(a::$T{T}, x::T) where {T<:Real}
                 coeffs = copy(a.coeffs)
                 @inbounds coeffs[1] = ($op)(constant_term(a), x)
-                return $T(coeffs, TS.order(a))
+                return $T(coeffs, order(a))
             end
 
             function ($op)(a::$T{T}, x::S) where {T<:Real,S<:Real}
@@ -46,7 +46,7 @@ for op in (:mod, :rem)
         function ($op)(a::TaylorN{Taylor1{T}}, x::T) where {T<:Real}
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(constant_term(a), x)
-            return TaylorN( coeffs, TS.order(a) )
+            return TaylorN( coeffs, order(a) )
         end
 
         function ($op)(a::TaylorN{Taylor1{T}}, x::S) where {T<:Real,S<:Real}
@@ -58,7 +58,7 @@ for op in (:mod, :rem)
         function ($op)(a::Taylor1{TaylorN{T}}, x::T) where {T<:Real}
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = ($op)(constant_term(a), x)
-            return Taylor1( coeffs, TS.order(a) )
+            return Taylor1( coeffs, order(a) )
         end
 
         @inbounds function ($op)(a::Taylor1{TaylorN{T}}, x::S) where {T<:Real,S<:Real}
@@ -76,7 +76,7 @@ for T in (:Taylor1, :TaylorN)
         function mod2pi(a::$T{T}) where {T<:Real}
             coeffs = copy(a.coeffs)
             @inbounds coeffs[1] = mod2pi( constant_term(a) )
-            return $T(coeffs, TS.order(a))
+            return $T(coeffs, order(a))
         end
 
         function abs(a::$T{T}) where {T<:Real}
@@ -100,13 +100,13 @@ end
 function mod2pi(a::TaylorN{Taylor1{T}}) where {T<:Real}
     coeffs = copy(a.coeffs)
     @inbounds coeffs[1] = mod2pi( constant_term(a) )
-    return TaylorN( coeffs, TS.order(a) )
+    return TaylorN( coeffs, order(a) )
 end
 
 function mod2pi(a::Taylor1{TaylorN{T}}) where {T<:Real}
     coeffs = copy(a.coeffs)
     @inbounds coeffs[1] = mod2pi( constant_term(a) )
-    return Taylor1( coeffs, TS.order(a) )
+    return Taylor1( coeffs, order(a) )
 end
 
 function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
@@ -254,7 +254,7 @@ end
 Takes `a <: Union{Taylo1,TaylorN}` and expands it around the coordinate `x0`.
 """
 function update!(a::Taylor1{T}, x0::T) where {T<:Number}
-    a.coeffs .= evaluate(a, Taylor1([x0, one(x0)], TS.order(a)) ).coeffs
+    a.coeffs .= evaluate(a, Taylor1([x0, one(x0)], order(a)) ).coeffs
     return nothing
 end
 function update!(a::Taylor1{T}, x0::S) where {T<:Number, S<:Number}
@@ -264,7 +264,7 @@ end
 
 #update! function for TaylorN
 function update!(a::TaylorN{T}, vals::Vector{T}) where {T<:Number}
-    a.coeffs .= evaluate(a, variables(TS.order(a)) .+ vals).coeffs
+    a.coeffs .= evaluate(a, variables(order(a)) .+ vals).coeffs
     return nothing
 end
 function update!(a::TaylorN{T}, vals::Vector{S}) where {T<:Number, S<:Number}

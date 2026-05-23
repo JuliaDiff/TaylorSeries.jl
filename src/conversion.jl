@@ -29,7 +29,7 @@ convert(::Type{Taylor1}, a::T) where {T<:Number} = Taylor1(a, 0)
 
 
 convert(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial) where
-    {T<:Number} = HomogeneousPolynomial(a.space, convert(Array{T,1}, a.coeffs), TS.order(a))
+    {T<:Number} = HomogeneousPolynomial(a.space, convert(Array{T,1}, a.coeffs), order(a))
 
 convert(::Type{HomogeneousPolynomial{T}}, a::HomogeneousPolynomial{T}) where
     {T<:Number} = a
@@ -40,7 +40,7 @@ function convert(::Type{HomogeneousPolynomial{Rational{T}}},
     la = length(a.coeffs)
     v = Array{Rational{T}}(undef, la)
     v .= rationalize.(a[1:la], tol=eps(one(S)))
-    return HomogeneousPolynomial(a.space, v, TS.order(a))
+    return HomogeneousPolynomial(a.space, v, order(a))
 end
 
 convert(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) where {T<:Number,S<:Number} =
@@ -59,40 +59,40 @@ convert(::Type{HomogeneousPolynomial}, a::Number) = HomogeneousPolynomial([a],0)
 
 
 convert(::Type{TaylorN{T}}, a::TaylorN) where {T<:Number} =
-    TaylorN(a.space, convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), TS.order(a))
+    TaylorN(a.space, convert(Array{HomogeneousPolynomial{T},1}, a.coeffs), order(a))
 
 convert(::Type{TaylorN{T}}, a::TaylorN{T}) where {T<:Number} = a
 
 convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{S}) where {T<:Number,S<:Number} =
-    TaylorN(b.space, [convert(HomogeneousPolynomial{T}, b)], TS.order(b))
+    TaylorN(b.space, [convert(HomogeneousPolynomial{T}, b)], order(b))
 
 convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) where {T<:Number,S<:Number} =
     TaylorN( convert(Array{HomogeneousPolynomial{T},1}, b), maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::S)  where {T<:Number,S<:Number} =
-     TaylorN( [HomogeneousPolynomial([convert(T, b)], 0)], 0) # TS.order()
+     TaylorN( [HomogeneousPolynomial([convert(T, b)], 0)], 0) # order()
 
 convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) where {T<:Number} =
-    TaylorN( [b], TS.order(b))
+    TaylorN( [b], order(b))
 
 convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) where {T<:Number} =
     TaylorN( b, maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::T) where {T<:Number} =
-    TaylorN( [HomogeneousPolynomial([b], 0)], 0) # TS.order()
+    TaylorN( [HomogeneousPolynomial([b], 0)], 0) # order()
 
-convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 0) # TS.order()
+convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 0) # order()
 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    orderN = maximum(TS.order.(s[:]))
+    orderN = maximum(order.(s[:]))
     sp = s[0].space
-    r = zeros(HomogeneousPolynomial(sp, Taylor1(zero(T), TS.order(s)), 0), orderN)
+    r = zeros(HomogeneousPolynomial(sp, Taylor1(zero(T), order(s)), 0), orderN)
 
-    v = zeros(T, TS.order(s)+1)
+    v = zeros(T, order(s)+1)
     @inbounds for ordT in eachindex(s)
         v[ordT+1] = one(T)
-        @inbounds for ordHP in 0:TS.order(s[ordT])
+        @inbounds for ordHP in 0:order(s[ordT])
             @inbounds for ic in eachindex(s[ordT][ordHP].coeffs)
                 coef = s[ordT][ordHP][ic]
                 r[ordHP+1][ic] += Taylor1( coef.*v )
@@ -106,20 +106,20 @@ end
 function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:NumberNotSeries}
     ordert = 0
     for ordHP in eachindex(s)
-        ordert = max(ordert, TS.order(s[ordHP][1]))
+        ordert = max(ordert, order(s[ordHP][1]))
     end
     vT = Array{TaylorN{T}}(undef, ordert+1)
     @inbounds for ordT in eachindex(vT)
-        vT[ordT] = TaylorN(s.space, zero(T), TS.order(s))
+        vT[ordT] = TaylorN(s.space, zero(T), order(s))
     end
 
     @inbounds for ordN in eachindex(s)
-        vHP = HomogeneousPolynomial(s.space, zeros(T, length(s[ordN])), TS.order(s[ordN]))
+        vHP = HomogeneousPolynomial(s.space, zeros(T, length(s[ordN])), order(s[ordN]))
         @inbounds for ihp in eachindex(s[ordN].coeffs)
             @inbounds for ind in eachindex(s[ordN][ihp].coeffs)
                 c = s[ordN][ihp][ind-1]
                 vHP[ihp] = c
-                vT[ind] += TaylorN(s.space, vHP, TS.order(s))
+                vT[ind] += TaylorN(s.space, vHP, order(s))
                 vHP[ihp] = zero(T)
             end
         end

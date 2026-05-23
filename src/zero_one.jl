@@ -23,7 +23,7 @@ end
 zero(v::Vector{T}) where {T<:AbstractSeries} = zero.(v)
 
 zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
-    HomogeneousPolynomial(a.space, zero(a.coeffs[1]), TS.order(a))
+    HomogeneousPolynomial(a.space, zero(a.coeffs[1]), order(a))
 
 function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
@@ -37,7 +37,7 @@ zeros(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
 
 
 one(a::HomogeneousPolynomial{T}) where {T<:Number} =
-    HomogeneousPolynomial(a.space, one.(a.coeffs), TS.order(a))
+    HomogeneousPolynomial(a.space, one.(a.coeffs), order(a))
 
 function ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     order == 0 && return [HomogeneousPolynomial(a.space, [one(a[1])], 0)]

@@ -11,12 +11,12 @@
     differentiate(a)
 
 Return the `Taylor1` polynomial of the differential of `a::Taylor1`.
-The order of the result is `TS.order(a)-1`.
+The order of the result is `order(a)-1`.
 
 The function `derivative` is an exact synonym of `differentiate`.
 """
 function differentiate(a::Taylor1)
-    res = Taylor1(zero(a[0]), TS.order(a)-1)
+    res = Taylor1(zero(a[0]), order(a)-1)
     for ord in eachindex(res)
         differentiate!(res, a, ord)
     end
@@ -59,13 +59,13 @@ p_k = (k+1) a_{k+1}.
 """
 function differentiate!(p::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    k >= TS.order(a) && return nothing
+    k >= order(a) && return nothing
     @inbounds p[k] = (k+1)*a[k+1]
     return nothing
 end
 function differentiate!(p::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where
         {T<:NumberNotSeries}
-    k >= TS.order(a) && return nothing
+    k >= order(a) && return nothing
     @inbounds for ord in eachindex(p[k])
         zero!(p[k], ord)
         mul!(p[k], a[k+1], k+1, ord)
@@ -74,7 +74,7 @@ function differentiate!(p::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) 
 end
 function differentiate!(p::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, k::Int) where
         {T<:NumberNotSeriesN}
-    k >= TS.order(a) && return nothing
+    k >= order(a) && return nothing
     # @inbounds p[k] = (k+1)*a[k+1]
     @inbounds for ord in eachindex(p[k])
         mul!(p[k], a[k+1], k+1, ord)
@@ -87,12 +87,12 @@ end
     differentiate(a, n)
 
 Compute recursively the `Taylor1` polynomial of the n-th derivative of
-`a::Taylor1`. The order of the result is `TS.order(a)-n`.
+`a::Taylor1`. The order of the result is `order(a)-n`.
 """
 function differentiate(a::Taylor1{T}, n::Int) where {T <: Number}
-    if n > TS.order(a)
+    if n > order(a)
         return Taylor1(zero(T), 0)
-    elseif n == TS.order(a)
+    elseif n == order(a)
         return Taylor1(differentiate(n, a), 0)
     elseif n==0
         return a
@@ -101,7 +101,7 @@ function differentiate(a::Taylor1{T}, n::Int) where {T <: Number}
     for i = 2:n
         differentiate!(res, res)
     end
-    return Taylor1(res.coeffs[1:TS.order(a)-n+1])
+    return Taylor1(res.coeffs[1:order(a)-n+1])
 end
 
 """
@@ -110,7 +110,7 @@ end
 Return the value of the `n`-th differentiate of the polynomial `a`.
 """
 function differentiate(n::Int, a::Taylor1{T}) where {T<:Number}
-    @assert TS.order(a) ≥ n ≥ 0
+    @assert order(a) ≥ n ≥ 0
     return factorial( widen(n) ) * a[n] :: T
 end
 
@@ -121,7 +121,7 @@ end
 
 Return the integral of `a::Taylor1`. The constant of integration
 (0-th order coefficient) is set to `x`, which is zero if omitted.
-Note that the order of the result is `TS.order(a)+1`.
+Note that the order of the result is `order(a)+1`.
 """
 function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
     order = TS.order(a)
@@ -157,14 +157,14 @@ function differentiate(a::HomogeneousPolynomial, r::Int)
     sp = a.space
     @assert 1 ≤ r ≤ get_numvars(sp)
     T = TS.numtype(a)
-    TS.order(a) == 0 && return HomogeneousPolynomial(sp, zero(a[1]), 0)
-    @inbounds num_coeffs = sp.size_table[TS.order(a)]
+    order(a) == 0 && return HomogeneousPolynomial(sp, zero(a[1]), 0)
+    @inbounds num_coeffs = sp.size_table[order(a)]
     coeffs = zeros(T, num_coeffs)
-    @inbounds posTb = sp.pos_table[TS.order(a)]
-    @inbounds num_coeffs = sp.size_table[TS.order(a)+1]
+    @inbounds posTb = sp.pos_table[order(a)]
+    @inbounds num_coeffs = sp.size_table[order(a)+1]
     ct = zeros(Int, get_numvars(sp), num_coeffs)
     for i = 1:num_coeffs
-        ct[:, i] .= sp.coeff_table[TS.order(a)+1][i][:]
+        ct[:, i] .= sp.coeff_table[order(a)+1][i][:]
     end
     @inbounds for i = 1:num_coeffs
         # iind = @isonethread coeff_table[TS.order(a)+1][i]
@@ -172,13 +172,13 @@ function differentiate(a::HomogeneousPolynomial, r::Int)
         n = iind[r]
         n == 0 && continue
         iind[r] -= 1
-        kdic = in_base(TS.order(sp), iind)
+        kdic = in_base(order(sp), iind)
         pos = posTb[kdic]
         coeffs[pos] = n * a[i]
         iind[r] += 1
     end
 
-    return HomogeneousPolynomial{T}(sp, coeffs, TS.order(a)-1)
+    return HomogeneousPolynomial{T}(sp, coeffs, order(a)-1)
 end
 differentiate(a::HomogeneousPolynomial, s::Symbol) =
     differentiate(a, lookupvar(a.space, s))
@@ -192,12 +192,12 @@ specified through its symbol.
 """
 function differentiate(a::TaylorN, r=1::Int)
     T = TS.numtype(a)
-    coeffs = Array{HomogeneousPolynomial{T}}(undef, TS.order(a))
+    coeffs = Array{HomogeneousPolynomial{T}}(undef, order(a))
 
-    @inbounds for ord = 1:TS.order(a)
+    @inbounds for ord = 1:order(a)
         coeffs[ord] = differentiate( a[ord], r)
     end
-    return TaylorN{T}(a.space, coeffs, TS.order(a) )
+    return TaylorN{T}(a.space, coeffs, order(a) )
 end
 differentiate(a::TaylorN, s::Symbol) = differentiate(a, lookupvar(a.space, s))
 
@@ -213,7 +213,7 @@ function differentiate(a::TaylorN, ntup::NTuple{N,Int}) where {N}
 
     @assert N == get_numvars(a) && all(ntup .>= 0)
 
-    sum(ntup) > TS.order(a) && return zero(a)
+    sum(ntup) > order(a) && return zero(a)
     sum(ntup) == 0 && return copy(a)
 
     aa = copy(a)
@@ -419,23 +419,23 @@ end
 
 Integrate the `a::HomogeneousPolynomial` with respect to the `r`-th
 variable. The returned `HomogeneousPolynomial` has no added constant of
-integration. If the order of a corresponds to `TS.order()`, a zero
+integration. If the order of a corresponds to `order()`, a zero
 `HomogeneousPolynomial` of 0-th order is returned.
 
 """
 function integrate(a::HomogeneousPolynomial, r::Int)
     sp = a.space
     @assert 1 ≤ r ≤ get_numvars(sp)
-    order_max = TS.order(sp)
-    # NOTE: the following returns order 0, but could be TS.order(), or TS.order(a)
-    TS.order(a) == order_max && return HomogeneousPolynomial(sp, zero(a[1]/1), 0)
-    @inbounds posTb = sp.pos_table[TS.order(a)+2]
-    @inbounds num_coeffs = sp.size_table[TS.order(a)+1]
+    order_max = order(sp)
+    # NOTE: the following returns order 0, but could be order(), or order(a)
+    order(a) == order_max && return HomogeneousPolynomial(sp, zero(a[1]/1), 0)
+    @inbounds posTb = sp.pos_table[order(a)+2]
+    @inbounds num_coeffs = sp.size_table[order(a)+1]
     T = promote_type(TS.numtype(a), TS.numtype(a[1]/1))
-    coeffs = zeros(T, sp.size_table[TS.order(a)+2])
+    coeffs = zeros(T, sp.size_table[order(a)+2])
     ct = zeros(Int, get_numvars(sp), num_coeffs)
     for i = 1:num_coeffs
-        ct[:, i] .= sp.coeff_table[TS.order(a)+1][i][:]
+        ct[:, i] .= sp.coeff_table[order(a)+1][i][:]
     end
     @inbounds for i = 1:num_coeffs
         # iind = @isonethread coeff_table[TS.order(a)+1][i]
@@ -443,12 +443,12 @@ function integrate(a::HomogeneousPolynomial, r::Int)
         n = iind[r]
         n == order_max && continue
         iind[r] += 1
-        kdic = in_base(TS.order(sp), iind)
+        kdic = in_base(order(sp), iind)
         pos = posTb[kdic]
         coeffs[pos] = a[i] / (n+1)
         iind[r] -= 1
     end
-    return HomogeneousPolynomial(sp, coeffs, TS.order(a)+1)
+    return HomogeneousPolynomial(sp, coeffs, order(a)+1)
 end
 integrate(a::HomogeneousPolynomial, s::Symbol) = integrate(a, lookupvar(a.space, s))
 
@@ -462,7 +462,7 @@ of the `r`-th variable; if `x0` is omitted, it is taken as zero.
 """
 function integrate(a::TaylorN, r::Int)
     T = promote_type(TS.numtype(a), TS.numtype(a[0]/1))
-    order_max = min(TS.order(a.space), TS.order(a)+1)
+    order_max = min(order(a.space), order(a)+1)
     coeffs = zeros(HomogeneousPolynomial(a.space, zero(T), 0), order_max)
 
     @inbounds for ord = 0:order_max-1
