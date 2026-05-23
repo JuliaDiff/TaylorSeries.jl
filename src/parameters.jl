@@ -212,7 +212,6 @@ Return the maximum expansion order of the current default multivariate algebra,
 of a Taylor series or homogeneous polynomial `a`, or of an explicit `JetSpace`.
 """
 order() = _params_TaylorN_.order
-get_order(args...; kwargs...) = order(args...; kwargs...)
 get_numvars() = _params_TaylorN_.num_vars
 get_variable_names() = _params_TaylorN_.variable_names
 get_variable_symbols() = _params_TaylorN_.variable_symbols
