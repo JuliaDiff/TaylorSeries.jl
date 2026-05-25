@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         julia-version: ['lts', '1', 'nightly']
-        julia-arch: [x64]
+        # julia-arch: [x64]
         os: [ubuntu-latest, macOS-latest, windows-latest]
         # # 32-bit Julia binaries are not available on macOS
         # exclude:
@@ -44,18 +44,24 @@ jobs:
           - '1'
         include:
           - os: ubuntu-latest
+            julia-arch: x64
+          - os: windows-latest
+            julia-arch: x64
+          - os: macos-latest
+            julia-arch: aarch64
+          - os: ubuntu-latest
             julia-version: '1'
             julia-arch: x64
             julia-threads: '2'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: "Set up Julia"
-        uses: julia-actions/setup-julia@v2
+        uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         env:
           cache-name: cache-artifacts
         with:
