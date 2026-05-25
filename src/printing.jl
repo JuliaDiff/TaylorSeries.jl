@@ -50,7 +50,7 @@ function pretty_print(a::Taylor1)
     # z = zero(a[0])
     var = _params_Taylor1_.var_name[1]
     space = string(" ")
-    bigO = str_bigO(var, get_order(a))
+    bigO = str_bigO(var, order(a))
     TS._isthinzero(a) && return string(space, 0, space, bigO)
     strout::String = space
     ifirst = true
@@ -70,7 +70,7 @@ function pretty_print(a::Taylor1{T}) where {T<:NumberNotSeries}
     z = zero(a[0])
     var = _params_Taylor1_.var_name[1]
     space = string(" ")
-    bigO = str_bigO(var, get_order(a))
+    bigO = str_bigO(var, order(a))
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -93,7 +93,7 @@ function pretty_print(a::Taylor1{<:AbstractSeries})
     end
     var = _params_Taylor1_.var_name[get_numvars(a)]
     space = string(" ")
-    bigO = str_bigO(var, get_order(a))
+    bigO = str_bigO(var, order(a))
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -122,7 +122,7 @@ end
 function pretty_print(a::TaylorN{T}) where {T<:Number}
     z = zero(a[0])
     space = string("")
-    bigO :: String = str_bigO("‖x‖", get_order(a), false)
+    bigO :: String = str_bigO("‖x‖", order(a), false)
     TS._isthinzero(a) && return string(space, z, space, bigO)
     strout::String = space
     ifirst = true
@@ -139,19 +139,20 @@ function pretty_print(a::TaylorN{T}) where {T<:Number}
 end
 
 function homogPol2str(a::HomogeneousPolynomial{T}) where {T<:Number}
-    numVars = get_numvars()
-    order = get_order(a)
+    sp = a.space
+    numVars = get_numvars(sp)
+    order = TS.order(a)
     z = zero(a.coeffs[1])
     space = string(" ")
     strout::String = space
     ifirst = true
     iIndices = zeros(Int, numVars)
-    for pos = 1:size_table[order+1]
+    for pos = 1:sp.size_table[order+1]
         monom::String = string("")
-        @inbounds iIndices[:] = coeff_table[order+1][pos]
+        @inbounds iIndices[:] = sp.coeff_table[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]
-            monom = string(monom, monom_string(powivar, name_taylorNvar(ivar), false))
+            monom = string(monom, monom_string(powivar, name_taylorNvar(sp, ivar), false))
         end
         @inbounds c = a[pos]
         TS._isthinzero(c) && continue
@@ -163,19 +164,20 @@ function homogPol2str(a::HomogeneousPolynomial{T}) where {T<:Number}
 end
 
 function homogPol2str(a::HomogeneousPolynomial{Taylor1{T}}) where {T<:Number}
-    numVars = get_numvars()
-    order = get_order(a)
+    sp = a.space
+    numVars = get_numvars(sp)
+    order = TS.order(a)
     z = zero(a[1])
     space = string(" ")
     strout::String = space
     ifirst = true
     iIndices = zeros(Int, numVars)
-    for pos = 1:size_table[order+1]
+    for pos = 1:sp.size_table[order+1]
         monom::String = string("")
-        @inbounds iIndices[:] = coeff_table[order+1][pos]
+        @inbounds iIndices[:] = sp.coeff_table[order+1][pos]
         for ivar = 1:numVars
             powivar = iIndices[ivar]
-            monom = string(monom, monom_string(powivar, name_taylorNvar(ivar), false))
+            monom = string(monom, monom_string(powivar, name_taylorNvar(sp, ivar), false))
         end
         @inbounds c = a[pos]
         TS._isthinzero(c) && continue
@@ -240,19 +242,40 @@ function numbr2str(zz::Complex, ifirst::Bool=false)
 end
 
 name_taylorNvar(i::Int) = string(" ", get_variable_names()[i])
+name_taylorNvar(space::JetSpace, i::Int) =
+    string(" ", get_variable_names(space)[i])
+
+function Base.show(io::IO, s::JetSpace)
+    tab = "    "
+    print(io,
+        "JetSpace\n",
+        tab, rpad("Expansion order:",     24), order(s),                '\n',
+        tab, rpad("Number of variables:", 24), get_numvars(s),          '\n',
+        tab, rpad("Variable names:",      24), get_variable_names(s),   '\n',
+        tab, rpad("Variable symbols:",    24), get_variable_symbols(s)
+    )
+end
 
 # summary
 summary(a::Taylor1{T}) where {T<:Number} =
-    string(get_order(a), "-order ", typeof(a), ":")
+    string(order(a), "-order ", typeof(a), ":")
 
 function summary(a::Union{HomogeneousPolynomial{T}, TaylorN{T}}) where {T<:Number}
-    string(get_order(a), "-order ", typeof(a), " in ", get_numvars(), " variables:")
+    string(order(a), "-order ", typeof(a), " in ", get_numvars(a), " variables:")
 end
 
 # show
+_show_default_series(io::IO, a::Taylor1) = Base.show_default(IOContext(io, :compact => false), a)
+function _show_default_series(io::IO, a::HomogeneousPolynomial)
+    print(io, typeof(a), "(", a.coeffs, ", ", order(a), ")")
+end
+function _show_default_series(io::IO, a::TaylorN)
+    print(io, typeof(a), "(", a.coeffs, ")")
+end
+
 function show(io::IO, a::AbstractSeries)
     if _show_default[end]
-        return Base.show_default(IOContext(io, :compact => false), a)
+        return _show_default_series(io, a)
     else
         return print(io, pretty_print(a))
     end

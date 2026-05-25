@@ -58,7 +58,7 @@ evaluate(a::Taylor1{T}, x::Taylor1{S}) where {T<:Number, S<:Number} =
     evaluate(promote(a, x)...)
 
 function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
-    if get_order(a) != get_order(x)
+    if order(a) != order(x)
         a, x = fixorder(a, x)
     end
     @inbounds suma = a[end]*zero(x)
@@ -83,17 +83,17 @@ evaluate(p::Taylor1{T}, x::AbstractArray{S}) where {T<:Number, S<:Number} =
 
 # Substitute a TaylorN into a Taylor1
 function evaluate(a::Taylor1{T}, dx::TaylorN{T}) where {T<:NumberNotSeries}
-    suma = TaylorN( zero(T), get_order(dx))
+    suma = TaylorN(dx.space, zero(T), order(dx))
     _horner!(suma, a, dx, zero(suma))
     return suma
 end
 
 function evaluate(a::Taylor1{T}, dx::Taylor1{TaylorN{T}}) where
         {T<:NumberNotSeries}
-    if get_order(a) != get_order(dx)
+    if order(a) != order(dx)
         a, dx = fixorder(a, dx)
     end
-    suma = Taylor1( zero(dx[0]), get_order(a))
+    suma = Taylor1( zero(dx[0]), order(a))
     aux  = zero(suma)
     _horner!(suma, a, dx, aux)
     return suma
@@ -103,24 +103,25 @@ end
 # as a substitution on the TaylorN vars
 function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{S}) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
-    @assert length(dx) == get_numvars()
-    suma = Taylor1( zero(a[0][0][1])*one(dx[1]), get_order(a))
+    @assert length(dx) == get_numvars(a[0])
+    suma = Taylor1( zero(a[0][0][1])*one(dx[1]), order(a))
     suma.coeffs .= evaluate.(a[:], Ref(dx))
     return suma
 end
 
 function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{TaylorN{T}}) where
         {T<:NumberNotSeries}
-    @assert length(dx) == get_numvars()
-    suma = Taylor1( zero(a[0]), get_order(a))
+    @assert length(dx) == get_numvars(a[0])
+    _check_same_space(a[0], dx[1])
+    suma = Taylor1( zero(a[0]), order(a))
     suma.coeffs .= evaluate.(a[:], Ref(dx))
     return suma
 end
 
 function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::T) where
         {T<:NumberNotSeries}
-    @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
-    suma = Taylor1( zero(a[0]), get_order(a))
+    @assert (1 ≤ ind ≤ get_numvars(a[0])) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    suma = Taylor1( zero(a[0]), order(a))
     for ord in eachindex(suma)
         for ordQ in eachindex(a[0])
             _evaluate!(suma[ord], a[ord][ordQ], ind, dx)
@@ -131,8 +132,9 @@ end
 
 function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::TaylorN{T}) where
         {T<:NumberNotSeries}
-    @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
-    suma = Taylor1( zero(a[0]), get_order(a))
+    @assert (1 ≤ ind ≤ get_numvars(a[0])) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    _check_same_space(a[0], dx)
+    suma = Taylor1( zero(a[0]), order(a))
     aux = zero(dx)
     for ord in eachindex(suma)
         for ordQ in eachindex(a[0])
@@ -160,7 +162,7 @@ it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
 `evaluate(a, vals)`; and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::HomogeneousPolynomial, vals::NTuple{N,<:Number}) where {N}
-    @assert length(vals) == get_numvars()
+    @assert length(vals) == get_numvars(a)
     return _evaluate(a, vals)
 end
 
@@ -173,15 +175,15 @@ evaluate(a::HomogeneousPolynomial, v, vals::Vararg{Number,N}) where {N} =
 evaluate(a::HomogeneousPolynomial, v) = evaluate(a, promote(v...,))
 
 function evaluate(a::HomogeneousPolynomial{T}) where {T}
-    get_order(a) == 0 && return a[1]
+    order(a) == 0 && return a[1]
     return zero(a[1])
 end
 
 # Internal method that avoids checking that the length of `vals` is the appropriate
 function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple) where {T}
     # @assert length(vals) == get_numvars()
-    get_order(a) == 0 && return a[1]*one(vals[1])
-    ct = coeff_table[get_order(a)+1]
+    order(a) == 0 && return a[1]*one(vals[1])
+    ct = a.space.coeff_table[order(a)+1]
     suma = zero(a[1])*vals[1]
     vv = vals .^ ct[1]
     for (i, a_coeff) in enumerate(a.coeffs)
@@ -196,7 +198,9 @@ end
 function _evaluate!(res::TaylorN{T}, a::HomogeneousPolynomial{T},
         vals::NTuple{N,<:TaylorN{T}}, valscache::Vector{TaylorN{T}},
         aux::TaylorN{T}) where {N,T<:NumberNotSeries}
-    ct = coeff_table[get_order(a)+1]
+    _check_same_space(res, a)
+    _check_same_space(a, vals[1])
+    ct = a.space.coeff_table[order(a)+1]
     for el in eachindex(valscache)
         power_by_squaring!(valscache[el], vals[el], aux, ct[1][el])
     end
@@ -225,8 +229,9 @@ end
 function _evaluate(a::HomogeneousPolynomial{T},
         vals::NTuple{N,<:TaylorN{T}}) where {N,T<:NumberNotSeries}
     # @assert length(vals) == get_numvars()
-    get_order(a) == 0 && return a[1]*one(vals[1])
-    suma = TaylorN(zero(T), get_order(vals[1]))
+    order(a) == 0 && return a[1]*one(vals[1])
+    _check_same_space(a, vals[1])
+    suma = TaylorN(vals[1].space, zero(T), order(vals[1]))
     valscache = [zero(val) for val in vals]
     aux = zero(suma)
     _evaluate!(suma, a, vals, valscache, aux)
@@ -235,7 +240,7 @@ end
 
 function _evaluate(a::HomogeneousPolynomial{T}, ind::Int, val::T) where
         {T<:NumberNotSeries}
-    suma = TaylorN(zero(T), get_order())
+    suma = TaylorN(a.space, zero(T), order(a.space))
     _evaluate!(suma, a, ind, val)
     return suma
 end
@@ -264,13 +269,13 @@ evaluate(a, x, sorting=b).
 """
 function evaluate(a::TaylorN, vals::NTuple{N,<:Number};
         sorting::Bool=true) where {N}
-    @assert get_numvars() == N
+    @assert get_numvars(a) == N
     return _evaluate(a, vals, Val(sorting))
 end
 
 function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
         sorting::Bool=false) where {N}
-    @assert get_numvars() == N
+    @assert get_numvars(a) == N
     return _evaluate(a, vals, Val(sorting))
 end
 
@@ -285,26 +290,27 @@ evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{S};
 
 function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
         {T<:Number, S<:NumberNotSeriesN}
-    ind = lookupvar(s)
-    @assert (1 ≤ ind ≤ get_numvars()) "Symbol is not a TaylorN variable; see `get_variable_names()`"
+    ind = lookupvar(a.space, s)
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Symbol is not a TaylorN variable; see `get_variable_names()`"
     return evaluate(a, ind, val)
 end
 
 function evaluate(a::TaylorN{T}, ind::Int, val::S) where {T<:Number,
         S<:NumberNotSeriesN}
-    @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     R = promote_type(T,S)
     return _evaluate(convert(TaylorN{R}, a), ind, convert(R, val))
 end
 
 function evaluate(a::TaylorN{T}, s::Symbol, val::TaylorN) where {T<:Number}
-    ind = lookupvar(s)
-    @assert (1 ≤ ind ≤ get_numvars()) "Symbol is not a TaylorN variable; see `get_variable_names()`"
+    ind = lookupvar(a.space, s)
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Symbol is not a TaylorN variable; see `get_variable_names()`"
     return evaluate(a, ind, val)
 end
 
 function evaluate(a::TaylorN{T}, ind::Int, val::TaylorN) where {T<:Number}
-    @assert (1 ≤ ind ≤ get_numvars()) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    _check_same_space(a, val)
     a, val = fixorder(a, val)
     a, val = promote(a, val)
     return _evaluate(a, ind, val)
@@ -326,7 +332,8 @@ _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{false}) where {T<:Number} =
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where
         {N,T<:Number}
     R = promote_type(T, TS.numtype(vals[1]))
-    res = TaylorN(zero(R), get_order(vals[1]))
+    _check_same_space(a, vals[1])
+    res = TaylorN(vals[1].space, zero(R), order(vals[1]))
     vvals = ntuple(i -> convert(TaylorN{R}, vals[i]), length(vals))
     valscache = [zero(val) for val in vvals]
     aux = zero(res)
@@ -347,7 +354,8 @@ end
 
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}) where {N,T<:Number}
     R = promote_type(T, TS.numtype(vals[1]))
-    suma = [TaylorN(zero(R), get_order(vals[1])) for _ in eachindex(a)]
+    _check_same_space(a, vals[1])
+    suma = [TaylorN(vals[1].space, zero(R), order(vals[1])) for _ in eachindex(a)]
     valscache = [zero(val) for val in vals]
     aux = zero(suma[1])
     _evaluate!(suma, a, vals, valscache, aux)
@@ -356,7 +364,7 @@ end
 
 
 function _evaluate(a::TaylorN{T}, ind::Int, val::T) where {T<:NumberNotSeriesN}
-    suma = TaylorN(zero(a[0]*val), get_order(a))
+    suma = TaylorN(a.space, zero(a[0]*val), order(a))
     vval = convert(numtype(suma), val)
     suma, a = promote(suma, a)
     @inbounds for ordQ in eachindex(a)
@@ -367,7 +375,8 @@ end
 
 function _evaluate(a::TaylorN{T}, ind::Int, val::TaylorN{T}) where
         {T<:NumberNotSeriesN}
-    suma = TaylorN(zero(a[0]), get_order(a))
+    _check_same_space(a, val)
+    suma = TaylorN(a.space, zero(a[0]), order(a))
     aux = zero(suma)
     @inbounds for ordQ in eachindex(a)
         _evaluate!(suma, a[ordQ], ind, val, aux)
@@ -386,28 +395,29 @@ end
 
 function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
         val::T) where {T<:NumberNotSeriesN}
-    order = get_order(a)
-    orderTN = get_order()
+    _check_same_space(suma, a)
+    order = TS.order(a)
+    orderTN = TS.order(a.space)
     if order == 0
         suma[0][1] = a[1]*one(val)
         return nothing
     end
     vv = val .^ (0:order)
-    vct = zero(coeff_table[order+1][1])
-    zct = zero(coeff_table[order+1][1])
+    vct = zero(a.space.coeff_table[order+1][1])
+    zct = zero(a.space.coeff_table[order+1][1])
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        vpow = coeff_table[order+1][i][ind]
+        vpow = a.space.coeff_table[order+1][i][ind]
         if vpow == 0
             suma[order][i] += a_coeff
             continue
         end
-        vct .= coeff_table[order+1][i]
+        vct .= a.space.coeff_table[order+1][i]
         zct[ind] = vpow
         red_order = order - vpow
         kdic = in_base(orderTN, vct - zct)
         zct[ind] = 0
-        pos = pos_table[red_order+1][kdic]
+        pos = a.space.pos_table[red_order+1][kdic]
         suma[red_order][pos] += a_coeff * vv[vpow+1]
     end
     return nothing
@@ -415,7 +425,8 @@ end
 
 function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
         val::TaylorN{T}, aux::TaylorN{T}) where {T<:NumberNotSeriesN}
-    order = get_order(a)
+    _check_same_space(suma, a, val)
+    order = TS.order(a)
     if order == 0
         suma[0][1] = a[1]
         return nothing
@@ -425,7 +436,7 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
     za = zero(a)
     for (i, a_coeff) in enumerate(a.coeffs)
         iszero(a_coeff) && continue
-        vpow = coeff_table[order+1][i][ind]
+        vpow = a.space.coeff_table[order+1][i][ind]
         if vpow == 0
             suma[order][i] += a_coeff
             continue

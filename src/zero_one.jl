@@ -23,12 +23,12 @@ end
 zero(v::Vector{T}) where {T<:AbstractSeries} = zero.(v)
 
 zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
-    HomogeneousPolynomial(zero(a.coeffs[1]), get_order(a))
+    HomogeneousPolynomial(a.space, zero(a.coeffs[1]), order(a))
 
 function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
     z = zero(a[1])
-    v .= HomogeneousPolynomial.(z, 0:order)
+    v .= HomogeneousPolynomial.(Ref(a.space), z, 0:order)
     return v
 end
 
@@ -37,13 +37,13 @@ zeros(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
 
 
 one(a::HomogeneousPolynomial{T}) where {T<:Number} =
-    HomogeneousPolynomial(one.(a.coeffs), get_order(a))
+    HomogeneousPolynomial(a.space, one.(a.coeffs), order(a))
 
 function ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 && return [HomogeneousPolynomial([one(a[1])], 0)]
+    order == 0 && return [HomogeneousPolynomial(a.space, [one(a[1])], 0)]
     v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
     for ord in eachindex(v)
-        v[ord] = HomogeneousPolynomial(ones(T, size_table[ord]), ord-1)
+        v[ord] = HomogeneousPolynomial(a.space, ones(T, a.space.size_table[ord]), ord-1)
     end
     return v
 end

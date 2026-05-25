@@ -45,13 +45,14 @@ import Base: zero, one, zeros, ones, isinf, isnan, iszero, isless,
 
 import Base.float
 
-export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries, TS
+export Taylor1, TaylorN, HomogeneousPolynomial, AbstractSeries, TS,
+    JetSpace
 
 export getcoeff, derivative, integrate, differentiate,
     evaluate, evaluate!, inverse, inverse_map, set_taylor1_varname,
     show_params_TaylorN, show_monomials, displayBigO, use_show_default,
-    get_order, get_numvars,
-    set_variables, get_variables,
+    order, get_order, get_numvars,
+    variables!, set_variables, variables, get_variables,
     get_variable_names, get_variable_symbols,
     # jacobian, hessian, jacobian!, hessian!,
     ∇, taylor_expand, update!,
@@ -77,5 +78,6 @@ include("calculus.jl")
 include("dictmutfunct.jl")
 include("broadcasting.jl")
 include("printing.jl")
+include("deprecated.jl")
 
 end # module

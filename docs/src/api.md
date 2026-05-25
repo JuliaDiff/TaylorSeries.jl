@@ -18,6 +18,7 @@ Taylor1
 HomogeneousPolynomial
 TaylorN
 AbstractSeries
+JetSpace
 ```
 
 ## Functions and methods
@@ -25,9 +26,10 @@ AbstractSeries
 ```@docs
 Taylor1(::Type{T}, ::Int) where {T<:Number}
 HomogeneousPolynomial(::Type{T}, ::Int) where {T<:Number}
-TaylorN(::Type{T}, ::Int; ::Int=get_order()) where {T<:Number}
-set_variables
-get_variables
+TaylorN(::Type{T}, ::Int; ::Int=order()) where {T<:Number}
+variables!
+variables
+order
 show_params_TaylorN
 show_monomials
 getcoeff
@@ -58,6 +60,7 @@ isfinite
 displayBigO
 use_show_default
 set_taylor1_varname
+space
 ```
 
 ## Internals
@@ -65,13 +68,22 @@ set_taylor1_varname
 ```@docs
 ParamsTaylor1
 ParamsTaylorN
+HomogeneousProductTable
 _InternalMutFuncs
 generate_tables
+_homogeneous_product_table
+_init_output_major_product_table!
+generate_multiplication_tables
+_product_table
+_init_product_table!
 generate_index_vectors
 in_base
 make_inverse_dict
+_sync_legacy_tables!
+set_default_space!
 _coeffsHP
 _coeffsTN
+_check_same_space
 numtype
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)

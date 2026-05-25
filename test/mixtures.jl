@@ -11,7 +11,7 @@ using Test
     @test TS.NumberNotSeries == Union{Real,Complex}
     @test TS.NumberNotSeriesN == Union{Real,Complex,Taylor1}
 
-    set_variables("x", numvars=2, order=6)
+    variables!("x", numvars=2, order=6)
     xH = HomogeneousPolynomial(Int, 1)
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
@@ -24,7 +24,7 @@ using Test
     @test eltype(tN) == Taylor1{TaylorN{Float64}}
     @test TS.numtype(tN) == TaylorN{Float64}
     @test normalize_taylor(tN) == tN
-    @test get_order(tN) == 3
+    @test order(tN) == 3
 
     @testset "Lexicographic order: Taylor1{HomogeneousPolynomial{T}} and Taylor1{TaylorN{T}}" begin
         @test HomogeneousPolynomial([1]) > xH > yH > 0.0
@@ -92,7 +92,7 @@ using Test
     @test TS.numtype(Taylor1([xH])) == HomogeneousPolynomial{Int}
     @test TS.numtype(t1N) == TaylorN{Float64}
     @test normalize_taylor(tN1) == tN1
-    @test get_order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) == 1
+    @test order(HomogeneousPolynomial([Taylor1(1), 1.0+Taylor1(2)])) == 1
     @test 3*tN1 == TaylorN([HomogeneousPolynomial([3t]),3xHt,3yHt^2])
     @test t*tN1 == TaylorN([HomogeneousPolynomial([t^2]),xHt*t,t*yHt^2])
     @test string(tN1) ==
@@ -112,7 +112,7 @@ using Test
     @test oneN1[0] == one(tN1[0])
     @test oneN1[1:end] == zero.(tN1[1:end])
     for i in eachindex(tN1.coeffs)
-        @test get_order(tN1.coeffs[i]) == get_order(zeroN1.coeffs[i]) == get_order(oneN1.coeffs[i])
+        @test order(tN1.coeffs[i]) == order(zeroN1.coeffs[i]) == order(oneN1.coeffs[i])
     end
     @test string(t1N*t1N) ==
         "  1.0 x₁² + 𝒪(‖x‖³) + ( 2.0 x₁ + 𝒪(‖x‖³)) t + ( 1.0 + 𝒪(‖x‖³)) t² + ( 2.0 x₂² + 𝒪(‖x‖³)) t³ + 𝒪(t⁴)"
@@ -167,9 +167,9 @@ using Test
     @test evaluate(tN1, 1, 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
     @test evaluate(t, t1N) == t1N
     @test evaluate(t1N, 0.5) == t1N[0] + t1N[1]/2 + t1N[2]/4
-    @test evaluate(t1N, [t1N[0], zero(t1N[0])]) == Taylor1([t1N[0], t1N[1]], get_order(t))
-    @test evaluate(t1N, 2, 0.0) == Taylor1([t1N[0], t1N[1]], get_order(t))
-    @test evaluate(t1N, 1, 0.0) == Taylor1([zero(t1N[0]), t1N[1], t1N[2]], get_order(t))
+    @test evaluate(t1N, [t1N[0], zero(t1N[0])]) == Taylor1([t1N[0], t1N[1]], order(t))
+    @test evaluate(t1N, 2, 0.0) == Taylor1([t1N[0], t1N[1]], order(t))
+    @test evaluate(t1N, 1, 0.0) == Taylor1([zero(t1N[0]), t1N[1], t1N[2]], order(t))
 
     # Tests for functions of mixtures
     t1N = Taylor1([zero(TaylorN(Float64,1)), one(TaylorN(Float64,1))], 6)
@@ -198,9 +198,9 @@ using Test
     end
     @test iszero(ee[6])
     @test getcoeff.(ee, 0:5) == getcoeff.(ee_orig, 0:5)
-    ee = differentiate(t1N, get_order(t1N))
+    ee = differentiate(t1N, order(t1N))
     @test iszero(ee)
-    @test iszero(get_order(ee))
+    @test iszero(order(ee))
 
     vt = zeros(Taylor1{Float64},2)
     @test isnothing(evaluate!([tN1, tN1^2], [t, t], vt))
@@ -221,7 +221,7 @@ using Test
     @test typeof(y+t) == TaylorN{Taylor1{Float64}}
 
     t = Taylor1(4)
-    xN, yN = get_variables()
+    xN, yN = variables()
     @test evaluate(1.0 + t + t^2, xN) == 1.0 + xN + xN^2
     v1 = [1.0 + t + t^2 + t^4, 1.0 - t^2 + t^3]
     @test v1(yN^2) == [1.0 + yN^2 + yN^4, 1.0 - yN^4 + yN^6]
@@ -231,10 +231,10 @@ using Test
     @test q1N(-xN^2) == 1.0 - xN^2*yN
 
     # See #92 and #94
-    δx, δy = set_variables("δx δy")
+    δx, δy = variables!("δx δy")
     xx = 1+Taylor1(δx, 5)
     yy = 1+Taylor1(δy, 5)
-    tt = Taylor1([zero(δx), one(δx)], get_order(xx))
+    tt = Taylor1([zero(δx), one(δx)], order(xx))
     @test all((xx, yy) .== (TS.fixorder(xx, yy)))
     @test typeof(xx) == Taylor1{TaylorN{Float64}}
     @test eltype(xx) == Taylor1{TaylorN{Float64}}
@@ -262,7 +262,7 @@ using Test
     res = 1/(1+δx)^2
     @test (xx^2 + yy^2)/(xx*yy) == xx/yy + yy/xx
     @test ((xx+yy)*tt)^2/((xx+yy)*tt) == (xx+yy)*tt
-    @test sqrt(xx) == Taylor1(sqrt(xx[0]), get_order(xx))
+    @test sqrt(xx) == Taylor1(sqrt(xx[0]), order(xx))
     @test xx^0.25 == sqrt(sqrt(xx))
     @test (xx*yy*tt^2)^0.5 == sqrt(xx*yy)*tt
     FF(x,y,t) = (1 + x + y + t)^4
@@ -348,7 +348,7 @@ using Test
     p = cos(t)
     q = sin(t)
     a = [p,q]
-    dx = set_variables("x", numvars=4, order=10)
+    dx = variables!("x", numvars=4, order=10)
     P = sin.(dx)
     v = [1.0,2,3,4]
     F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
@@ -404,7 +404,7 @@ using Test
     diff_a11b11 = a11(t)-b11
     @test norm(diff_a11b11.coeffs, Inf) < 1E-19
 
-    X, Y = set_variables(Taylor1{Float64}, "x y")
+    X, Y = variables!(Taylor1{Float64}, "x y")
     @test typeof( norm(X) ) == Float64
     @test norm(X) > 0
     @test norm(X+Y) == sqrt(2)
@@ -436,7 +436,7 @@ using Test
     #rndTN generates a random `ordHP`-th order TaylorN of of Taylor1s, each with order `ord1`
     rndTN(ordN, ord1) = TaylorN([rndHP(i, ord1) for i in 0:ordN])
 
-    P = rndTN(get_order(), 3)
+    P = rndTN(order(), 3)
     @test P ≈ P
     Q = deepcopy(P)
     Q[2][2] = Taylor1([NaN, Inf])
@@ -455,13 +455,13 @@ using Test
     @test !isapprox(Q, P, atol=eps(), rtol=0)
     @test P ≉ Q^2
 
-    X, Y = set_variables(BigFloat, "x y", numvars=2, order=6)
+    X, Y = variables!(BigFloat, "x y", numvars=2, order=6)
     p1N = Taylor1([X^2,X*Y,Y+X,Y^2])
     q1N = Taylor1([X^2,(1.0+sqrt(eps(BigFloat)))*X*Y,Y+X,Y^2])
     @test p1N ≈ p1N
     @test p1N ≈ q1N
 
-    Pv = [rndTN(get_order(), 3), rndTN(get_order(), 3)]
+    Pv = [rndTN(order(), 3), rndTN(order(), 3)]
     Qv = convert.(Taylor1{TaylorN{Float64}}, Pv)
 
     @test TS.jacobian(Pv) == TS.jacobian(Qv)
@@ -472,7 +472,7 @@ using Test
     @test_throws ArgumentError TaylorN(2) / Taylor1(1)
 
     # Issue #342 and PR #343
-    z0N = -1.333+get_variables()[1]
+    z0N = -1.333+variables()[1]
     z = Taylor1(z0N,20)
     z[20][1][1] = 5.0
     @test z[0][0][1] == -1.333
@@ -491,7 +491,7 @@ using Test
         @test iszero(intz[i])
     end
 
-    a = sum(exp.(get_variables()).^2)
+    a = sum(exp.(variables()).^2)
     b = Taylor1([a])
     bcopy = deepcopy(b)
     c = Taylor1(constant_term(b),0)
@@ -513,14 +513,14 @@ using Test
     @test two/x == 2/x == 2.0/x
     @test (2one(x))/x == 2/x
 
-    dq = get_variables()
+    dq = variables()
     x = Taylor1(exp.(dq), 5)
     x[1] = sin(dq[1]*dq[2])
     @test x[1] == sin(dq[1]*dq[2])
     @test x[1] !== sin(dq[1]*dq[2])
 
     @testset "Test Base.float overloads for Taylor1 and TaylorN mixtures" begin
-        q = get_variables(Int)
+        q = variables(Int)
         x1N = Taylor1(q)
         @test float(x1N) == Taylor1(float.(q))
         xN1 = convert(TaylorN{Taylor1{Int}}, x1N)
@@ -554,9 +554,9 @@ end
     @test string(titii) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
     @test titii == Taylor1([zero(ti), ti], 9)
     @test titii / tii == ti
-    @test get_order(titii/tii) == get_order(tii)-1
+    @test order(titii/tii) == order(tii)-1
     @test titii / ti == tii
-    @test get_order(titii/ti) == get_order(tii)
+    @test order(titii/ti) == order(tii)
     @test ti^2-tii^2 == (ti+tii)*(ti-tii)
     @test findfirst(ti^2-tii^2) == 0
     @test sin(tii) ≈ Taylor1(one(ti) .* sin(Taylor1(10)).coeffs, 9)
@@ -565,17 +565,17 @@ end
     @test ti(1 + tii) == 1 + tii
     @test constant_term(ti+tii) == ti
     @test linear_polynomial(ti*tii) == Taylor1([zero(ti), ti], 9)
-    @test get_order(linear_polynomial(tii)) == get_order(tii)
+    @test order(linear_polynomial(tii)) == order(tii)
     @test nonlinear_polynomial(tii+ti*tii^2) == Taylor1([zero(ti), zero(ti), ti], 9)
     @test ti(1 + tii) isa Taylor1{Taylor1{Float64}}
     @test sqrt(titii^2) == titii
-    @test get_order(sqrt(titii^2)) == get_order(tii) >> 1
+    @test order(sqrt(titii^2)) == order(tii) >> 1
     @test (titii^3)^(1/3) == titii
-    @test get_order(sqrt(titii^2)) == get_order(tii) >> 1
+    @test order(sqrt(titii^2)) == order(tii) >> 1
     ti2tii = ti^2 * tii
     tti = (ti2tii/tii)/ti
-    @test get_order(tti) == get_order(tii)-1
-    @test get_order(tti[0]) == get_order(ti)-1
+    @test order(tti) == order(tii)-1
+    @test order(tti[0]) == order(ti)-1
     @test isapprox(abs2(exp(im*tii)), one(tii))
     @test isapprox(abs(exp(im*tii)), one(tii))
     tii = Taylor1([1/(1+ti), one(ti)], 9)

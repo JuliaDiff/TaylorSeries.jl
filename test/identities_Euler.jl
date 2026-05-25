@@ -10,7 +10,7 @@ using Test
     variable_names = String[make_variable("α", i) for i in 1:4]
     append!(variable_names, [make_variable("β", i) for i in 1:4])
 
-    a1, a2, a3, a4, b1, b2, b3, b4 = set_variables(variable_names, order=4)
+    a1, a2, a3, a4, b1, b2, b3, b4 = variables!(variable_names, order=4)
 
     lhs1 = a1^2 + a2^2 + a3^2 + a4^2
     lhs2 = b1^2 + b2^2 + b3^2 + b4^2

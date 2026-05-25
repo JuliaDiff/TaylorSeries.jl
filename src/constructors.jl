@@ -117,20 +117,33 @@ see [`evaluate`](@ref).
 struct HomogeneousPolynomial{T<:Number} <: AbstractSeries{T}
         coeffs  :: FixedSizeVectorDefault{T}
         order   :: Int
+        space   :: JetSpace
     ## Inner constructors ##
     HomogeneousPolynomial{T}(x::T, order::Int) where {T<:Number} =
-        new{T}(_coeffsHP(x, order), order)
+        new{T}(_coeffsHP(default_space[], x, order), order, default_space[])
+    HomogeneousPolynomial{T}(space::JetSpace, x::T, order::Int) where
+            {T<:Number} =
+        new{T}(_coeffsHP(space, x, order), order, space)
     HomogeneousPolynomial{T}(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number} =
-        new{T}(_coeffsHP(coeffs, order), order)
+        new{T}(_coeffsHP(default_space[], coeffs, order), order, default_space[])
+    HomogeneousPolynomial{T}(space::JetSpace, coeffs::AbstractArray{T,1},
+            order::Int) where {T<:Number} =
+        new{T}(_coeffsHP(space, coeffs, order), order, space)
 end
 
 HomogeneousPolynomial(x::HomogeneousPolynomial{T}) where {T<:Number} = x
 HomogeneousPolynomial(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number} =
     HomogeneousPolynomial{T}(coeffs, order)
+HomogeneousPolynomial(space::JetSpace, coeffs::AbstractArray{T,1},
+    order::Int) where {T<:Number} = HomogeneousPolynomial{T}(space, coeffs, order)
 HomogeneousPolynomial(coeffs::AbstractArray{T,1}) where {T<:Number} =
     HomogeneousPolynomial{T}(coeffs, orderH(coeffs))
+HomogeneousPolynomial(space::JetSpace, coeffs::AbstractArray{T,1}) where
+    {T<:Number} = HomogeneousPolynomial{T}(space, coeffs, orderH(space, coeffs))
 HomogeneousPolynomial(x::T, order::Int) where {T<:Number} =
     HomogeneousPolynomial{T}(x, order)
+HomogeneousPolynomial(space::JetSpace, x::T, order::Int) where {T<:Number} =
+    HomogeneousPolynomial{T}(space, x, order)
 
 # Shortcut to define HomogeneousPolynomial independent variable
 """
@@ -148,14 +161,18 @@ julia> HomogeneousPolynomial(Rational{Int}, 2)
 ```
 """
 function HomogeneousPolynomial(::Type{T}, nv::Int) where {T<:Number}
-    @assert 0 < nv ≤ get_numvars()
-    v = FixedSizeVectorDefault{T}(undef, get_numvars())
+    return HomogeneousPolynomial(default_space[], T, nv)
+end
+function HomogeneousPolynomial(space::JetSpace, ::Type{T}, nv::Int) where
+        {T<:Number}
+    @assert 0 < nv ≤ get_numvars(space)
+    v = FixedSizeVectorDefault{T}(undef, get_numvars(space))
     v .= zero(T)
     v[nv] = one(T)
-    return HomogeneousPolynomial(v, 1)
+    return HomogeneousPolynomial(space, v, 1)
 end
 function HomogeneousPolynomial(nv::Int)
-    res = HomogeneousPolynomial(0.0, 1)
+    res = HomogeneousPolynomial(default_space[], 0.0, 1)
     res[nv] = 1.0
     return res
 end
@@ -173,20 +190,31 @@ DataType for polynomial expansions in many (>1) independent variables.
 - `coeffs  :: Array{HomogeneousPolynomial{T},1}` Vector containing the
 `HomogeneousPolynomial` entries. The ``i``-th component corresponds to the
 homogeneous polynomial of degree ``i-1``.
-- `order   :: Int`  maximum order of the polynomial expansion.
+- `space   :: JetSpace`  multivariate algebra associated with the polynomial.
+
+Use [`order`](@ref) to obtain the maximum order of the polynomial
+expansion.
 
 Note that `TaylorN` variables are callable. For more information, see
 [`evaluate`](@ref).
 """
 struct TaylorN{T<:Number} <: AbstractSeries{T}
         coeffs  :: FixedSizeVectorDefault{HomogeneousPolynomial{T}}
+        space   :: JetSpace
     ## Inner constructor ##
     function TaylorN{T}(v::AbstractArray{HomogeneousPolynomial{T},1},
             order::Int) where {T<:Number}
+        space = _space_from_homogeneous_vector(v, default_space[])
+        return TaylorN{T}(space, v, order)
+    end
+    function TaylorN{T}(space::JetSpace,
+            v::AbstractArray{HomogeneousPolynomial{T},1},
+            order::Int) where {T<:Number}
         isempty(v) &&
-            return new{T}(zeros(HomogeneousPolynomial(zero(T),0), order))
-        coeffs = _coeffsTN(v, order)
-        return new{T}(coeffs)
+            return new{T}(zeros(HomogeneousPolynomial(space, zero(T), 0), order), space)
+        _check_same_space(space, v)
+        coeffs = _coeffsTN(space, v, order)
+        return new{T}(coeffs, space)
     end
 end
 
@@ -198,22 +226,37 @@ function TaylorN(x::AbstractArray{HomogeneousPolynomial{T},1},
     end
     return TaylorN{T}(x, order)
 end
+function TaylorN(space::JetSpace, x::AbstractArray{HomogeneousPolynomial{T},1},
+        order::Int) where {T<:Number}
+    if order == 0
+        order = maxorderH(x)
+    end
+    return TaylorN{T}(space, x, order)
+end
 TaylorN(x::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
     TaylorN{T}(x, maxorderH(x))
+TaylorN(space::JetSpace, x::AbstractArray{HomogeneousPolynomial{T},1}) where
+    {T<:Number} = TaylorN{T}(space, x, maxorderH(x))
 TaylorN(x::HomogeneousPolynomial{T}, order::Int) where {T<:Number} =
     TaylorN{T}([x], order )
+TaylorN(space::JetSpace, x::HomogeneousPolynomial{T}, order::Int) where
+    {T<:Number} = TaylorN{T}(space, [x], order )
 TaylorN(x::HomogeneousPolynomial{T}) where {T<:Number} =
-    TaylorN{T}([x], get_order(x))
+    TaylorN{T}([x], order(x))
+TaylorN(space::JetSpace, x::HomogeneousPolynomial{T}) where {T<:Number} =
+    TaylorN{T}(space, [x], order(x))
 TaylorN(x::T, order::Int) where {T<:Number} =
     TaylorN(HomogeneousPolynomial(x, 0), order)
+TaylorN(space::JetSpace, x::T, order::Int) where {T<:Number} =
+    TaylorN(space, HomogeneousPolynomial(space, x, 0), order)
 
 # Shortcut to define TaylorN independent variables
 """
-    TaylorN([T::Type=Float64], nv::Int; [order::Int=get_order()])
+    TaylorN([T::Type=Float64], nv::Int; [order::Int=order()])
 
 Shortcut to define the `nv`-th independent `TaylorN{T}` variable as a
 polynomial. The order is defined through the keyword parameter `order`,
-whose default corresponds to `get_order()`. The default of type for
+whose default corresponds to `order()`. The default of type for
 `T` is `Float64`.
 
 ```julia
@@ -224,9 +267,14 @@ julia> TaylorN(Rational{Int},2)
  1//1 x₂ + 𝒪(‖x‖⁷)
 ```
 """
-TaylorN(::Type{T}, nv::Int; order::Int=get_order()) where {T<:Number} =
+TaylorN(::Type{T}, nv::Int; order::Int=TS.order()) where {T<:Number} =
     TaylorN( HomogeneousPolynomial(T, nv), order )
-TaylorN(nv::Int; order::Int=get_order()) = TaylorN(Float64, nv, order=order)
+TaylorN(nv::Int; order::Int=TS.order()) = TaylorN(Float64, nv, order=order)
+TaylorN(space::JetSpace, ::Type{T}, nv::Int;
+    order::Int=TS.order(space)) where {T<:Number} =
+        TaylorN(space, HomogeneousPolynomial(space, T, nv), order)
+TaylorN(space::JetSpace, nv::Int; order::Int=TS.order(space)) =
+    TaylorN(space, Float64, nv, order=order)
 
 
 
@@ -238,7 +286,7 @@ const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 
 ## Additional Taylor1 and TaylorN outer constructor ##
 Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
-TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), TaylorSeries.get_order())
+TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), order())
 
 
 # """
@@ -250,4 +298,5 @@ TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), T
 get_numvars(t::Number) = 0
 get_numvars(t::Taylor1) = 1
 get_numvars(t::Taylor1{Taylor1{T}}) where {T<:Number} = get_numvars(t[0])+1
-get_numvars(::T) where {T<:Union{HomogeneousPolynomial, TaylorN}} = _params_TaylorN_.num_vars
+get_numvars(t::T) where {T<:Union{HomogeneousPolynomial, TaylorN}} =
+    get_numvars(t.space)
