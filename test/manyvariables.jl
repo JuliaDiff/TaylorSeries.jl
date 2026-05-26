@@ -70,6 +70,10 @@ end
     @test x_low_order.space.order == order(sx)
     @test get_numvars(x) == 3
     @test get_variable_names(sx) == ["x", "y", "z"]
+    @test length(sx.mul_table) == 4
+    @test length.(sx.mul_table) == [4, 3, 2, 1]
+    @test length(sa.mul_table) == 2
+    @test length.(sa.mul_table) == [2, 1]
     shown_sx = sprint(show, sx)
     @test occursin("JetSpace", shown_sx)
     @test occursin("Expansion order:", shown_sx)

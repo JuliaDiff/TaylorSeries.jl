@@ -116,10 +116,10 @@ function _init_output_major_product_table!(space::JetSpace, degree_a::Int,
     end
 end
 
-"""Return empty positive-degree product-table placeholders for lazy initialization."""
+"""Return empty valid positive-degree product-table placeholders for lazy initialization."""
 function generate_multiplication_tables(order::Int)
     empty_table = HomogeneousProductTable(Int[], Int[], UInt32[], 0)
-    return [[empty_table for _ in 1:order] for _ in 1:order]
+    return [[empty_table for _ in 1:(order - degree_a)] for degree_a in 1:(order - 1)]
 end
 
 """Return the cached product table for two positive degrees, initializing it if needed."""
@@ -127,6 +127,8 @@ end
         degree_b::Int)
     @boundscheck degree_a > 0 && degree_b > 0 ||
         throw(ArgumentError("product tables are stored only for positive degrees"))
+    @boundscheck degree_a + degree_b ≤ space.order ||
+        throw(DimensionMismatch("homogeneous product order exceeds JetSpace order"))
     @inbounds table = space.mul_table[degree_a][degree_b]
     !isempty(table.input_positions) && return table
     return _init_product_table!(space, degree_a, degree_b)
@@ -135,6 +137,8 @@ end
 """Initialize and cache the input-position product table for two positive degrees."""
 function _init_product_table!(space::JetSpace, degree_a::Int,
         degree_b::Int)
+    degree_a > 0 && degree_b > 0 ||
+        throw(ArgumentError("product tables are stored only for positive degrees"))
     degree_a + degree_b ≤ space.order ||
         throw(DimensionMismatch("homogeneous product order exceeds JetSpace order"))
     lock(space.mul_table_lock)
