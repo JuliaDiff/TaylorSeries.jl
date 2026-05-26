@@ -303,9 +303,6 @@ variable name and the optional keyword argument `numvars`:
 variables!("α", numvars=3)
 ```
 
-The old `set_variables` name is deprecated and remains available as an alias
-for `variables!`.
-
 Without an explicit space, [`variables`](@ref) returns variables in the current
 default `JetSpace`. A smaller order can be requested without changing the
 default-space tables:

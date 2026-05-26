@@ -36,7 +36,7 @@ julia> exp(t)
  ```
 Multivariate Taylor series
  ```julia
-julia> x, y = set_variables("x y", order=2);
+julia> x, y = variables!("x y", order=2);
 
 julia> exp(x + y)
  1.0 + 1.0 x + 1.0 y + 0.5 x² + 1.0 x y + 0.5 y² + 𝒪(‖x‖³)
@@ -44,7 +44,7 @@ julia> exp(x + y)
 ```
 Differential and integral calculus on Taylor series:
 ```julia
-julia> x, y = set_variables("x y", order=4);
+julia> x, y = variables!("x y", order=4);
 
 julia> p = x^3 + 2x^2 * y - 7x + 2
  2.0 - 7.0 x + 1.0 x³ + 2.0 x² y + 𝒪(‖x‖⁵)
