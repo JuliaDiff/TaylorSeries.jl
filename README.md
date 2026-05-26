@@ -42,7 +42,7 @@ julia> exp(x + y)
  1.0 + 1.0 x + 1.0 y + 0.5 x² + 1.0 x y + 0.5 y² + 𝒪(‖x‖³)
 
 ```
-The examples above use the default variable space. It is also possible to use
+The examples above use the default `JetSpace` params. It is also possible to use
 co-existing user-defined variable spaces with different numbers of variables
 and expansion orders:
 ```julia
