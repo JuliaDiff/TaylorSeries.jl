@@ -232,9 +232,11 @@ end
 function TS.accsqr!(c::HomogeneousPolynomial{Interval{T}},
         a::HomogeneousPolynomial{Interval{T}}) where {T<:NumTypes}
     iszero(a) && return nothing
-    @inbounds num_coeffs_a = TS.size_table[order(a)+1]
-    @inbounds posTb = TS.pos_table[order(c)+1]
-    @inbounds idxTb = TS.index_table[order(a)+1]
+    TS._check_same_space(c, a)
+    sp = a.space
+    @inbounds num_coeffs_a = sp.size_table[order(a)+1]
+    @inbounds posTb = sp.pos_table[order(c)+1]
+    @inbounds idxTb = sp.index_table[order(a)+1]
     @inbounds for na = 1:num_coeffs_a
         ca = a[na]
         TS._isthinzero(ca) && continue
@@ -983,17 +985,17 @@ function TS.evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumType
 end
 
 function TS.evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{S}) where {T<:NumTypes, S<:NumTypes}
-    @assert length(dx) == get_numvars()
+    @assert length(dx) == get_numvars(a.space)
     return evaluate(a, (dx...,); sorting=false)
 end
 
 function TS.evaluate(a::TaylorN{T}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
-    @assert length(dx) == get_numvars()
+    @assert length(dx) == get_numvars(a.space)
     return evaluate(a, (dx...,); sorting=false)
 end
 
 function TS.evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
-    @assert length(dx) == get_numvars()
+    @assert length(dx) == get_numvars(a.space)
     return evaluate(a, (dx...,); sorting=false)
 end
 
@@ -1023,7 +1025,7 @@ end
 
 function TS.evaluate(a::HomogeneousPolynomial{T},
         dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
-    @assert length(dx) == get_numvars()
+    @assert length(dx) == get_numvars(a.space)
     all(isequal_interval.(dx, interval(-one(T), one(T)))) &&
         return TS._evaluate(a, dx, Val(true))
     all(isequal_interval.(dx, interval(zero(T), one(T)))) &&
@@ -1039,7 +1041,7 @@ TS.evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{Interval{S}}) where
 function TS._evaluate(a::HomogeneousPolynomial{T},
         dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
     order(a) == 0 && return a[1] + interval(zero(T))
-    ct = TS.coeff_table[order(a)+1]
+    ct = a.space.coeff_table[order(a)+1]
     @inbounds suma = a[1]*interval(zero(T))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
@@ -1052,7 +1054,7 @@ end
 function TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}},
         ::Val{true} ) where {T<:Real, S<:NumTypes}
     order(a) == 0 && return a[1] + interval(zero(T))
-    ct = TS.coeff_table[order(a)+1]
+    ct = a.space.coeff_table[order(a)+1]
     @inbounds suma = a[1]*interval(zero(T))
     Ieven = interval(zero(T), one(T))
     for (i, a_coeff) in enumerate(a.coeffs)
@@ -1083,7 +1085,7 @@ end
 
 function TS._evaluate(a::TaylorN{T}, vals::NTuple{N,TaylorN{Interval{S}}}) where
         {N, T<:Real, S<:NumTypes}
-    @assert get_numvars() == N
+    @assert get_numvars(a.space) == N
     R = promote_type(TS.numtype(a), typeof(vals[1]))
     a_length = length(a)
     suma = zeros(R, a_length)
@@ -1095,7 +1097,7 @@ end
 
 function TS._evaluate(a::TaylorN{Interval{T}}, vals::NTuple{N,TaylorN{Interval{T}}}) where
         {N, T<:NumTypes}
-    @assert get_numvars() == N
+    @assert get_numvars(a.space) == N
     a_length = length(a)
     suma = zeros(T, a_length)
     @inbounds for homPol in 1:a_length
@@ -1106,7 +1108,7 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T},
         vals::NTuple{N,TaylorN{Interval{S}}}) where {N, T<:Real, S<:NumTypes}
-    ct = TS.coeff_table[order(a)+1]
+    ct = a.space.coeff_table[order(a)+1]
     suma = zero(a[1])*vals[1]
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue

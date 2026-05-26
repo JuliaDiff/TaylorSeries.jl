@@ -67,7 +67,6 @@ space
 
 ```@docs
 ParamsTaylor1
-ParamsTaylorN
 HomogeneousProductTable
 _InternalMutFuncs
 generate_tables
@@ -79,7 +78,6 @@ _init_product_table!
 generate_index_vectors
 in_base
 make_inverse_dict
-_sync_legacy_tables!
 set_default_space!
 _coeffsHP
 _coeffsTN

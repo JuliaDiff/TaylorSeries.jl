@@ -5,8 +5,8 @@
 """
     generate_tables(num_vars, order)
 
-Return the hash tables `coeff_table`, `index_table`, `size_table`
-and `pos_table`. Internally, these are treated as `const`.
+Return the lookup tables `coeff_table`, `index_table`, `size_table`
+and `pos_table` used by a `JetSpace`.
 
 # Hash tables
 
@@ -230,25 +230,8 @@ function in_base(order, v)
 end
 
 
-const coeff_table, index_table, size_table, pos_table =
-    generate_tables(get_numvars(), order())
-
-"""Sync the legacy global lookup-table vectors with the given `JetSpace`."""
-function _sync_legacy_tables!(space::JetSpace)
-    resize!(coeff_table, space.order+1)
-    resize!(index_table, space.order+1)
-    resize!(size_table, space.order+1)
-    resize!(pos_table, space.order+1)
-
-    coeff_table[:] = space.coeff_table
-    index_table[:] = space.index_table
-    size_table[:] = space.size_table
-    pos_table[:] = space.pos_table
-    return nothing
-end
-
 """
-Set the compatibility default `JetSpace` and refresh legacy globals.
+Set the compatibility default `JetSpace`.
 
 The global `default_space` binding is a constant `Ref`, but its contents are
 mutable. Module loading initializes `default_space[]`; later compatibility calls
@@ -258,7 +241,7 @@ constructed through the default-space tables while still making the default
 algebra follow `variables!`.
 """
 function set_default_space!(space::JetSpace)
-    # Keep the default-space object stable and update its fields so legacy
+    # Keep the default-space object stable and update its fields so existing
     # objects referring to it remain connected to the active default algebra.
     active_space = default_space[]
     active_space.order = space.order
@@ -272,23 +255,14 @@ function set_default_space!(space::JetSpace)
     active_space.mul_table = space.mul_table
     active_space.mul_table_lock = space.mul_table_lock
 
-    # Mirror the active default space into _params_TaylorN_ and the related
-    # "legacy" lookup-tables
-    _params_TaylorN_.order = active_space.order
-    _params_TaylorN_.num_vars = active_space.num_vars
-    _params_TaylorN_.variable_names = active_space.variable_names
-    _params_TaylorN_.variable_symbols = active_space.variable_symbols
-    _sync_legacy_tables!(active_space)
     # Updating the default space can replace large lookup tables. Even though
     # this is not strictly necessary, we force here a garbage collection
-    # to match legacy behavior after table initialization.
+    # to match the previous behavior after table initialization.
     GC.gc()
     return active_space
 end
 
-default_space[] = JetSpace(order(), get_numvars(),
-    copy(get_variable_names()), copy(get_variable_symbols()),
-    coeff_table, index_table, size_table, pos_table)
+default_space[] = JetSpace(DEFAULT_TAYLORN_ORDER, copy(DEFAULT_TAYLORN_VARIABLE_NAMES))
 
 # Garbage-collect here to free memory
 GC.gc();
@@ -301,8 +275,9 @@ List the indices and corresponding of a `HomogeneousPolynomial`
 of degree `ord`.
 """
 function show_monomials(ord::Int)
-    z = zeros(Int, TS.size_table[ord+1])
-    for (index, value) in enumerate(TS.coeff_table[ord+1])
+    sp = default_space[]
+    z = zeros(Int, sp.size_table[ord+1])
+    for (index, value) in enumerate(sp.coeff_table[ord+1])
         z[index] = 1
         pol = HomogeneousPolynomial(z)
         println(" $index  -->  $(homogPol2str(pol)[4:end])")
