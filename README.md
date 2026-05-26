@@ -42,6 +42,22 @@ julia> exp(x + y)
  1.0 + 1.0 x + 1.0 y + 0.5 x² + 1.0 x y + 0.5 y² + 𝒪(‖x‖³)
 
 ```
+The examples above use the default variable space. It is also possible to use
+co-existing user-defined variable spaces with different numbers of variables
+and expansion orders:
+```julia
+xyz_space = JetSpace(order=5, variables=[:x, :y, :z])
+ab_space = JetSpace(order=3, variables=[:a, :b])
+
+x, y, z = variables(xyz_space)
+a, b = variables(ab_space)
+
+f = x^2 + sin(y) + z
+g = exp(a*b)
+
+x + a # throws: the two TaylorN objects belong to different JetSpaces
+```
+
 Differential and integral calculus on Taylor series:
 ```julia
 julia> x, y = variables!("x y", order=4);
