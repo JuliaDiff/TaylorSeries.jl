@@ -175,7 +175,7 @@ required, since some coefficients are larger than `typemax(Int)`:
 getcoeff(f2, (1,6,7,20)) # coefficient of x y^6 z^7 w^{20}
 ans > typemax(Int)
 length(f2)
-sum(TaylorSeries.size_table)
+sum(TaylorSeries.space(f2).size_table)
 variables!("x", numvars=2, order=6) # hide
 ```
 

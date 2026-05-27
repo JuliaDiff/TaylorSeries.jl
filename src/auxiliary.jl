@@ -547,7 +547,7 @@ nonlinear_polynomial(a::Number) = zero(a)
     @isonethread (expr)
 
 Internal macro used to check the number of threads in use, to prevent a data race
-that modifies `coeff_table` when using `differentiate` or `integrate`; see
+that modifies coefficient tables when using `differentiate` or `integrate`; see
 https://github.com/JuliaDiff/TaylorSeries.jl/issues/318.
 
 This macro is inspired by the macro `@threaded`; see https://github.com/trixi-framework/Trixi.jl/blob/main/src/auxiliary/auxiliary.jl;

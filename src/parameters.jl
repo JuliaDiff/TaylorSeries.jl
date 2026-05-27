@@ -57,32 +57,8 @@ end
 
 
 
-"""
-    ParamsTaylorN
-
-DataType holding the current parameters for `TaylorN` and
-`HomogeneousPolynomial`.
-
-**Fields:**
-
-- `order            :: Int`  Order (degree) of the polynomials
-- `num_vars         :: Int`  Number of variables
-- `variable_names   :: Vector{String}`  Names of the variables
-- `variable_symbols :: Vector{Symbol}`  Symbols of the variables
-
-These parameters can be changed using [`variables!`](@ref)
-"""
-mutable struct ParamsTaylorN
-    order            :: Int
-    num_vars         :: Int
-    variable_names   :: Vector{String}
-    variable_symbols :: Vector{Symbol}
-end
-
-
-ParamsTaylorN(order, num_vars, variable_names) = ParamsTaylorN(order, num_vars, variable_names, Symbol.(variable_names))
-
-const _params_TaylorN_ = ParamsTaylorN(6, 2, ["x₁", "x₂"])
+const DEFAULT_TAYLORN_ORDER = 6
+const DEFAULT_TAYLORN_VARIABLE_NAMES = ["x₁", "x₂"]
 
 """
     HomogeneousProductTable
@@ -147,12 +123,13 @@ and `TaylorN` arithmetic.
 - `index_table`: hashed exponent-vector labels grouped by homogeneous degree.
 - `size_table`: number of monomials for each homogeneous degree.
 - `pos_table`: maps hashed exponent labels to coefficient positions.
-- `mul_table`: product-table cache indexed directly by the positive degrees of
-  the left and right homogeneous factors. Degree-zero products are scalar
-  shortcuts and are not cached. Entries start as empty placeholders;
-  `input_positions` is filled on first product-table use, while `output_offsets`
-  and `output_pairs` are filled only if an output-grouped multiplication routine
-  requests them.
+- `mul_table`: product-table cache indexed by the positive degrees of the left
+  and right homogeneous factors. Only products that fit within the truncation
+  order are stored: row `degree_a` contains entries for
+  `degree_b = 1:(order-degree_a)`. Degree-zero products are scalar shortcuts
+  and are not cached. Entries start as empty placeholders; `input_positions` is
+  filled on first product-table use, while `output_offsets` and `output_pairs`
+  are filled only if an output-grouped multiplication routine requests them.
 - `mul_table_lock`: lock guarding lazy initialization of `mul_table` entries.
 """
 mutable struct JetSpace
@@ -169,9 +146,9 @@ mutable struct JetSpace
 end
 
 # The binding `default_space` is constant, but the `Ref` contents are mutable:
-# `default_space[]` can be assigned a `JetSpace`, and the stored space is
-# itself mutable. This keeps a stable global container for compatibility
-# while allowing `variables!` to update the active default algebra.
+# `default_space[]` can be assigned a `JetSpace`. This keeps a stable global
+# container for compatibility while allowing `variables!` to replace the active
+# default algebra without mutating spaces held by existing TaylorN objects.
 const default_space = Ref{JetSpace}()
 
 Base.deepcopy_internal(space::JetSpace, stackdict::IdDict) = space
@@ -198,7 +175,7 @@ end
 _variable_names_from(symb::Symbol; numvars::Int=-1) =
     _variable_names_from(string(symb), numvars=numvars)
 
-JetSpace(; order::Int=TS.order(), variables) =
+JetSpace(; order::Int=DEFAULT_TAYLORN_ORDER, variables) =
     JetSpace(order, _variable_names_from(variables))
 
 
@@ -211,16 +188,16 @@ JetSpace(; order::Int=TS.order(), variables) =
 Return the maximum expansion order of the current default multivariate algebra,
 of a Taylor series or homogeneous polynomial `a`, or of an explicit `JetSpace`.
 """
-order() = _params_TaylorN_.order
-get_numvars() = _params_TaylorN_.num_vars
-get_variable_names() = _params_TaylorN_.variable_names
-get_variable_symbols() = _params_TaylorN_.variable_symbols
+order() = order(default_space[])
+get_numvars() = get_numvars(default_space[])
+get_variable_names() = get_variable_names(default_space[])
+get_variable_symbols() = get_variable_symbols(default_space[])
 order(space::JetSpace) = space.order
 get_numvars(space::JetSpace) = space.num_vars
 get_variable_names(space::JetSpace) = space.variable_names
 get_variable_symbols(space::JetSpace) = space.variable_symbols
 function lookupvar(s::Symbol)
-    ind = findfirst(x -> x==s, _params_TaylorN_.variable_symbols)
+    ind = findfirst(x -> x==s, get_variable_symbols())
     isa(ind, Nothing) && return 0
     return ind
 end
@@ -260,8 +237,7 @@ independent variable. `names` defines the output for each variable
 (separated by a space). The default type `T` is `Float64`,
 and the default for `order` is the current default-space order.
 
-This function updates the compatibility default `JetSpace` and syncs the
-legacy lookup-table globals used by older code.
+This function updates the compatibility default `JetSpace`.
 
 If `numvars` is not specified, it is inferred from `names`. If only
 one variable name is defined and `numvars>1`, it uses this name with
@@ -325,7 +301,7 @@ show_params_TaylorN() = @info( """
     Maximum order       = $(order())
     Number of variables = $(get_numvars())
     Variable names      = $(get_variable_names())
-    Variable symbols    = $(Symbol.(get_variable_names()))
+    Variable symbols    = $(get_variable_symbols())
     """)
 
 

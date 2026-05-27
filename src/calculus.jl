@@ -167,7 +167,6 @@ function differentiate(a::HomogeneousPolynomial, r::Int)
         ct[:, i] .= sp.coeff_table[order(a)+1][i][:]
     end
     @inbounds for i = 1:num_coeffs
-        # iind = @isonethread coeff_table[TS.order(a)+1][i]
         iind = view(ct, :, i)
         n = iind[r]
         n == 0 && continue
@@ -438,7 +437,6 @@ function integrate(a::HomogeneousPolynomial, r::Int)
         ct[:, i] .= sp.coeff_table[order(a)+1][i][:]
     end
     @inbounds for i = 1:num_coeffs
-        # iind = @isonethread coeff_table[TS.order(a)+1][i]
         iind = view(ct, :, i)
         n = iind[r]
         n == order_max && continue
@@ -475,7 +473,7 @@ function integrate(a::TaylorN, r::Int, x0::TaylorN)
     # Check constant of integration is independent of re
     @assert differentiate(x0, r) == 0.0 """
     The integration constant ($x0) must be independent of the
-    $(_params_TaylorN_.variable_names[r]) variable"""
+    $(get_variable_names(a.space)[r]) variable"""
 
     res = integrate(a, r)
     return x0+res

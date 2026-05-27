@@ -36,15 +36,31 @@ julia> exp(t)
  ```
 Multivariate Taylor series
  ```julia
-julia> x, y = set_variables("x y", order=2);
+julia> x, y = variables!("x y", order=2);
 
 julia> exp(x + y)
  1.0 + 1.0 x + 1.0 y + 0.5 x² + 1.0 x y + 0.5 y² + 𝒪(‖x‖³)
 
 ```
+The examples above use the default `JetSpace` params. It is also possible to use
+co-existing user-defined variable spaces with different numbers of variables
+and expansion orders:
+```julia
+xyz_space = JetSpace(order=5, variables=[:x, :y, :z])
+ab_space = JetSpace(order=3, variables=[:a, :b])
+
+x, y, z = variables(xyz_space)
+a, b = variables(ab_space)
+
+f = x^2 + sin(y) + z
+g = exp(a*b)
+
+x + a # throws: the two TaylorN objects belong to different JetSpaces
+```
+
 Differential and integral calculus on Taylor series:
 ```julia
-julia> x, y = set_variables("x y", order=4);
+julia> x, y = variables!("x y", order=4);
 
 julia> p = x^3 + 2x^2 * y - 7x + 2
  2.0 - 7.0 x + 1.0 x³ + 2.0 x² y + 𝒪(‖x‖⁵)
@@ -96,5 +112,5 @@ material and contributing energy and ideas.
 
 We acknowledge financial support from DGAPA-UNAM PAPIME grants
 PE-105911 and PE-107114, and DGAPA-PAPIIT grants IG-101113,
-IG-100616, IG-100819 and IG-101122.
+IG-100616, IG-100819, IG-101122, and IN-112726.
 LB acknowledges support through a *Cátedra Moshinsky* (2013).

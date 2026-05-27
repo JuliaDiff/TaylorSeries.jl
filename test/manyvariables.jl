@@ -14,26 +14,28 @@ using Test
     @test_throws MethodError TaylorN(-4//7im)
     # Issue #85 is solved!
     variables!("x", numvars=66, order=1)
-    @test TS._params_TaylorN_.order == order() == 1
-    @test TS._params_TaylorN_.num_vars == get_numvars() == 66
-    @test TS._params_TaylorN_.variable_names[end] == "x₆₆"
-    @test TS._params_TaylorN_.variable_symbols[6] == :x₆
-    @test sum(TS.size_table) == 67
-    @test TS.coeff_table[2][1] == vcat([1], zeros(Int, 65))
-    @test TS.index_table[2][1] == 3^65
-    @test TS.pos_table[2][3^64] == 2
+    sp = TS.default_space[]
+    @test order(sp) == order() == 1
+    @test get_numvars(sp) == get_numvars() == 66
+    @test get_variable_names(sp)[end] == "x₆₆"
+    @test get_variable_symbols(sp)[6] == :x₆
+    @test sum(sp.size_table) == 67
+    @test sp.coeff_table[2][1] == vcat([1], zeros(Int, 65))
+    @test sp.index_table[2][1] == 3^65
+    @test sp.pos_table[2][3^64] == 2
     #
     variables!("x", numvars=66, order=2)
-    @test TS._params_TaylorN_.order == order() == 2
-    @test TS._params_TaylorN_.num_vars == get_numvars() == 66
-    @test sum(TS.size_table) == binomial(66+2, 2)
-    @test TS.coeff_table[2][1] == vcat([1], zeros(Int, 65))
-    @test TS.index_table[2][1] == 3^65
-    @test TS.pos_table[2][3^64] == 2
+    sp = TS.default_space[]
+    @test order(sp) == order() == 2
+    @test get_numvars(sp) == get_numvars() == 66
+    @test sum(sp.size_table) == binomial(66+2, 2)
+    @test sp.coeff_table[2][1] == vcat([1], zeros(Int, 65))
+    @test sp.index_table[2][1] == 3^65
+    @test sp.pos_table[2][3^64] == 2
 
     @test eltype(variables!("a", order=1, numvars=2))  == TaylorN{Float64}
-    @test TS._params_TaylorN_.variable_names[1] == "a₁"
-    @test TS._params_TaylorN_.variable_symbols[2] == :a₂
+    @test get_variable_names()[1] == "a₁"
+    @test get_variable_symbols()[2] == :a₂
     @test eltype(variables!(Int, "x", numvars=2, order=6)) == TaylorN{Int}
     @test eltype(variables!("x", numvars=2, order=6)) == TaylorN{Float64}
     @test eltype(variables!(BigInt, "x y", order=6)) == TaylorN{BigInt}
@@ -45,10 +47,11 @@ using Test
     @test typeof(show_params_TaylorN()) == Nothing
     @test typeof(show_monomials(2)) == Nothing
 
-    @test TS.coeff_table[2][1] == [1,0]
-    @test TS.index_table[2][1] == 7
+    sp = TS.default_space[]
+    @test sp.coeff_table[2][1] == [1,0]
+    @test sp.index_table[2][1] == 7
     @test TS.in_base(order(), [2,1]) == 15
-    @test TS.pos_table[4][15] == 2
+    @test sp.pos_table[4][15] == 2
 end
 
 @testset "Explicit JetSpaces" begin
@@ -67,6 +70,10 @@ end
     @test x_low_order.space.order == order(sx)
     @test get_numvars(x) == 3
     @test get_variable_names(sx) == ["x", "y", "z"]
+    @test length(sx.mul_table) == 4
+    @test length.(sx.mul_table) == [4, 3, 2, 1]
+    @test length(sa.mul_table) == 2
+    @test length.(sa.mul_table) == [2, 1]
     shown_sx = sprint(show, sx)
     @test occursin("JetSpace", shown_sx)
     @test occursin("Expansion order:", shown_sx)
@@ -74,11 +81,30 @@ end
     @test occursin("Variable names:", shown_sx)
     @test occursin("[\"x\", \"y\", \"z\"]", shown_sx)
     @test occursin("[:x, :y, :z]", shown_sx)
+    shown_monomials_sa = mktemp() do path, io
+        redirect_stdout(io) do
+            show_monomials(sa, 2)
+        end
+        flush(io)
+        read(path, String)
+    end
+    @test occursin("a", shown_monomials_sa)
+    @test occursin("b", shown_monomials_sa)
+    @test !occursin("x", shown_monomials_sa)
 
     @test x^2 + sin(y) == x^2 + sin(y)
     @test exp(a*b).space === sa
     @test_throws ArgumentError x + a
     @test_throws ArgumentError x * a
+
+    old_default_space = TS.default_space[]
+    dx, dy = variables()
+    new_default_space = JetSpace(order=4, variables=[:δx, :δy, :δz])
+    @test TS.set_default_space!(new_default_space) === new_default_space
+    @test TS.default_space[] === new_default_space
+    @test dx.space === old_default_space
+    @test dx.space !== TS.default_space[]
+    @test sprint(show, dx) isa String
 
     u, v = variables!("u v", order=2)
     @test u.space === v.space
@@ -108,12 +134,6 @@ end
     @test variables(3)[1] == TaylorN(1, order=3)
     @test variables(Int, 3)[1] == TaylorN(Int, 1, order=3)
     @test length(variables()) == get_numvars()
-    # These tests should be removed when the deprecated aliases are removed from src/deprecated.jl (next minor release)
-    @test order(@test_deprecated get_variables(2)[1]) == 2
-    @test (@test_deprecated get_variables(Int, 3)[1]) == TaylorN(Int, 1, order=3)
-    @test (@test_deprecated get_order()) == order()
-    @test (@test_deprecated get_order(variables(2)[1])) == 2
-    @test order((@test_deprecated set_variables("u v", order=2))[1]) == 2
 
     x, y = variables!("x y", order=6)
     @test axes(x) == axes(y) == ()
@@ -131,8 +151,8 @@ end
 
     @test order(x) == 6
     @test TS.name_taylorNvar(1) == " x"
-    @test TS._params_TaylorN_.variable_names == ["x","y"]
-    @test TS._params_TaylorN_.variable_symbols == [:x, :y]
+    @test get_variable_names() == ["x","y"]
+    @test get_variable_symbols() == [:x, :y]
     @test get_variable_symbols() == [:x, :y]
     @test TS.lookupvar(:x) == 1
     @test TS.lookupvar(:α) == 0
@@ -357,7 +377,7 @@ end
     vr = rand(2)
     @test hp(vr) == evaluate(hp, vr)
 
-    ctab = copy(TS.coeff_table)
+    ctab = deepcopy(xT.space.coeff_table)
     @test integrate(yH,1) == integrate(xH, :x₂)
     p = (xT-yT)^6
     @test integrate(differentiate(p, 1), 1, yT^6) == p
@@ -373,7 +393,7 @@ end
     @test integrate(xT^17, 1, yT) == yT
     @test integrate(xT^17, 1, 2.0) == TaylorN(2.0, order())
     @test integrate(xT^17, :x₁, 2.0) == TaylorN(2.0, order())
-    @test ctab == TS.@isonethread(TS.coeff_table)
+    @test ctab == TS.@isonethread(xT.space.coeff_table)
     @test_throws AssertionError integrate(xT, 1, xT)
     @test_throws AssertionError integrate(xT, :x₁, xT)
     @test_throws AssertionError differentiate(xT, (1,))
@@ -401,8 +421,10 @@ end
     txy[2:end-1] .= ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
     @test txy[2:end-1] == ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
 
-    ident = [xT, yT]
-    pN = [x+y, x-y]
+    # Build the identity and map from the same space/order. Earlier default
+    # variables keep their original space when the default JetSpace changes.
+    ident = [1.0*xT, 1.0*yT]
+    pN = [ident[1]+ident[2], ident[1]-ident[2]]
     @test evaluate.(inverse_map(pN), Ref(pN)) == ident
     @test evaluate.(pN, Ref(inverse_map(pN))) == ident
     pN = [exp(xT)-1, log(1+yT)]
@@ -946,7 +968,8 @@ end
 @testset "Consistency of coeff_table" begin
     order = 20
     x, y, z, w = variables!(Int128, "x y z w", numvars=4, order=2order)
-    ctab = deepcopy(TS.coeff_table);
+    sp = x.space
+    ctab = deepcopy(sp.coeff_table);
 
     function fun(degree::Int)
         s = x + y + z + w + 1
@@ -973,11 +996,11 @@ end
     df_exact = 4*order*fun(order-1);
 
     df1 = diffs1(f);
-    @test ctab == TS.coeff_table
+    @test ctab == sp.coeff_table
     @test df1 == df_exact
 
     df2 = diffs2(f);
-    @test ctab == TS.coeff_table
+    @test ctab == sp.coeff_table
     @test df1 == df_exact
 
     function integ1(f)
@@ -999,7 +1022,7 @@ end
 
     ii1 = integ1(f);
     ii2 = integ2(f);
-    @test ctab == TS.coeff_table
+    @test ctab == sp.coeff_table
     @test ii1 == ii2
 
     function ev1(f)
@@ -1021,7 +1044,7 @@ end
 
     ee1 = ev1(f);
     ee2 = ev2(f);
-    @test ctab == TS.coeff_table
+    @test ctab == sp.coeff_table
     @test ee1 == ee2
 
 end

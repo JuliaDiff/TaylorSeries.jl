@@ -5,8 +5,8 @@
 """
     generate_tables(num_vars, order)
 
-Return the hash tables `coeff_table`, `index_table`, `size_table`
-and `pos_table`. Internally, these are treated as `const`.
+Return the lookup tables `coeff_table`, `index_table`, `size_table`
+and `pos_table` used by a `JetSpace`.
 
 # Hash tables
 
@@ -116,10 +116,10 @@ function _init_output_major_product_table!(space::JetSpace, degree_a::Int,
     end
 end
 
-"""Return empty positive-degree product-table placeholders for lazy initialization."""
+"""Return empty valid positive-degree product-table placeholders for lazy initialization."""
 function generate_multiplication_tables(order::Int)
     empty_table = HomogeneousProductTable(Int[], Int[], UInt32[], 0)
-    return [[empty_table for _ in 1:order] for _ in 1:order]
+    return [[empty_table for _ in 1:(order - degree_a)] for degree_a in 1:(order - 1)]
 end
 
 """Return the cached product table for two positive degrees, initializing it if needed."""
@@ -127,6 +127,8 @@ end
         degree_b::Int)
     @boundscheck degree_a > 0 && degree_b > 0 ||
         throw(ArgumentError("product tables are stored only for positive degrees"))
+    @boundscheck degree_a + degree_b ≤ space.order ||
+        throw(DimensionMismatch("homogeneous product order exceeds JetSpace order"))
     @inbounds table = space.mul_table[degree_a][degree_b]
     !isempty(table.input_positions) && return table
     return _init_product_table!(space, degree_a, degree_b)
@@ -135,6 +137,8 @@ end
 """Initialize and cache the input-position product table for two positive degrees."""
 function _init_product_table!(space::JetSpace, degree_a::Int,
         degree_b::Int)
+    degree_a > 0 && degree_b > 0 ||
+        throw(ArgumentError("product tables are stored only for positive degrees"))
     degree_a + degree_b ≤ space.order ||
         throw(DimensionMismatch("homogeneous product order exceeds JetSpace order"))
     lock(space.mul_table_lock)
@@ -230,65 +234,39 @@ function in_base(order, v)
 end
 
 
-const coeff_table, index_table, size_table, pos_table =
-    generate_tables(get_numvars(), order())
-
-"""Sync the legacy global lookup-table vectors with the given `JetSpace`."""
-function _sync_legacy_tables!(space::JetSpace)
-    resize!(coeff_table, space.order+1)
-    resize!(index_table, space.order+1)
-    resize!(size_table, space.order+1)
-    resize!(pos_table, space.order+1)
-
-    coeff_table[:] = space.coeff_table
-    index_table[:] = space.index_table
-    size_table[:] = space.size_table
-    pos_table[:] = space.pos_table
-    return nothing
-end
-
 """
-Set the compatibility default `JetSpace` and refresh legacy globals.
+Set the compatibility default `JetSpace`.
 
 The global `default_space` binding is a constant `Ref`, but its contents are
 mutable. Module loading initializes `default_space[]`; later compatibility calls
-such as `variables!` update that existing object in place with the fields of
-`space` instead of replacing it. This preserves references held by objects
-constructed through the default-space tables while still making the default
-algebra follow `variables!`.
+such as `variables!` replace `default_space[]` with `space`. Existing `TaylorN`
+and `HomogeneousPolynomial` objects keep their original spaces, while future
+default-space constructors use the new default algebra.
 """
 function set_default_space!(space::JetSpace)
-    # Keep the default-space object stable and update its fields so legacy
-    # objects referring to it remain connected to the active default algebra.
-    active_space = default_space[]
-    active_space.order = space.order
-    active_space.num_vars = space.num_vars
-    active_space.variable_names = space.variable_names
-    active_space.variable_symbols = space.variable_symbols
-    active_space.coeff_table = space.coeff_table
-    active_space.index_table = space.index_table
-    active_space.size_table = space.size_table
-    active_space.pos_table = space.pos_table
-    active_space.mul_table = space.mul_table
-    active_space.mul_table_lock = space.mul_table_lock
+    old_space = default_space[]
+    old_space === space && return space
 
-    # Mirror the active default space into _params_TaylorN_ and the related
-    # "legacy" lookup-tables
-    _params_TaylorN_.order = active_space.order
-    _params_TaylorN_.num_vars = active_space.num_vars
-    _params_TaylorN_.variable_names = active_space.variable_names
-    _params_TaylorN_.variable_symbols = active_space.variable_symbols
-    _sync_legacy_tables!(active_space)
-    # Updating the default space can replace large lookup tables. Even though
-    # this is not strictly necessary, we force here a garbage collection
-    # to match legacy behavior after table initialization.
+    msg = "Updating TaylorSeries.default_space[]; existing TaylorN and " *
+        "HomogeneousPolynomial objects keep their original JetSpace, while " *
+        "future default-space constructors use the new default JetSpace."
+    old_order = order(old_space)
+    old_numvars = get_numvars(old_space)
+    new_order = order(space)
+    new_numvars = get_numvars(space)
+    @warn msg old_order old_numvars new_order new_numvars
+
+    # Replace the active default space. Do not mutate the old object in place:
+    # existing TaylorN/HomogeneousPolynomial objects may still depend on it.
+    default_space[] = space
+
+    # The previous default space may own large lookup tables. If no existing
+    # series still references it, this gives the GC a chance to reclaim them.
     GC.gc()
-    return active_space
+    return space
 end
 
-default_space[] = JetSpace(order(), get_numvars(),
-    copy(get_variable_names()), copy(get_variable_symbols()),
-    coeff_table, index_table, size_table, pos_table)
+default_space[] = JetSpace(DEFAULT_TAYLORN_ORDER, copy(DEFAULT_TAYLORN_VARIABLE_NAMES))
 
 # Garbage-collect here to free memory
 GC.gc();
@@ -296,15 +274,19 @@ GC.gc();
 
 """
     show_monomials(ord::Int) --> nothing
+    show_monomials(space::JetSpace, ord::Int) --> nothing
 
-List the indices and corresponding of a `HomogeneousPolynomial`
-of degree `ord`.
+List the indices and corresponding monomials of a `HomogeneousPolynomial`
+of degree `ord`, using either the default `JetSpace` or the given explicit
+`space`.
 """
-function show_monomials(ord::Int)
-    z = zeros(Int, TS.size_table[ord+1])
-    for (index, value) in enumerate(TS.coeff_table[ord+1])
+show_monomials(ord::Int) = show_monomials(default_space[], ord)
+
+function show_monomials(space::JetSpace, ord::Int)
+    z = zeros(Int, space.size_table[ord+1])
+    for index in eachindex(space.coeff_table[ord+1])
         z[index] = 1
-        pol = HomogeneousPolynomial(z)
+        pol = HomogeneousPolynomial(space, z, ord)
         println(" $index  -->  $(homogPol2str(pol)[4:end])")
         z[index] = 0
     end
