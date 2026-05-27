@@ -244,6 +244,18 @@ and `HomogeneousPolynomial` objects keep their original spaces, while future
 default-space constructors use the new default algebra.
 """
 function set_default_space!(space::JetSpace)
+    old_space = default_space[]
+    old_space === space && return space
+
+    msg = "Updating TaylorSeries.default_space[]; existing TaylorN and " *
+        "HomogeneousPolynomial objects keep their original JetSpace, while " *
+        "future default-space constructors use the new default JetSpace."
+    old_order = order(old_space)
+    old_numvars = get_numvars(old_space)
+    new_order = order(space)
+    new_numvars = get_numvars(space)
+    @warn msg old_order old_numvars new_order new_numvars
+
     # Replace the active default space. Do not mutate the old object in place:
     # existing TaylorN/HomogeneousPolynomial objects may still depend on it.
     default_space[] = space
