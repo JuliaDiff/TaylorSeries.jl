@@ -246,7 +246,8 @@ algebra follow `variables!`.
 """
 function set_default_space!(space::JetSpace)
     # Keep the default-space object stable and update its fields so existing
-    # objects referring to it remain connected to the active default algebra.
+    # Reset the `TS.default_space` object and update its fields, *new*
+    # objects can be simpler created that refer to this `default_space` . 
     active_space = default_space[]
     active_space.order = space.order
     active_space.num_vars = space.num_vars
