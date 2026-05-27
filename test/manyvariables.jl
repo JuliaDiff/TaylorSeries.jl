@@ -411,8 +411,8 @@ end
     txy[2:end-1] .= ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
     @test txy[2:end-1] == ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
 
-    ident = [xT, yT]
-    pN = [x+y, x-y]
+    ident = [1.0*xT, 1.0*yT]
+    pN = [ident[1]+ident[2], ident[1]-ident[2]]
     @test evaluate.(inverse_map(pN), Ref(pN)) == ident
     @test evaluate.(pN, Ref(inverse_map(pN))) == ident
     pN = [exp(xT)-1, log(1+yT)]
