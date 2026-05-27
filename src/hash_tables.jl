@@ -266,7 +266,7 @@ function set_default_space!(space::JetSpace)
     return active_space
 end
 
-default_space[] = JetSpace(DEFAULT_TAYLORN_ORDER, copy(DEFAULT_TAYLORN_VARIABLE_NAMES))
+const default_space[] = JetSpace(DEFAULT_TAYLORN_ORDER, copy(DEFAULT_TAYLORN_VARIABLE_NAMES))
 
 # Garbage-collect here to free memory
 GC.gc();
