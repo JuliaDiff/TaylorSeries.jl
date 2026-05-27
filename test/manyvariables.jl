@@ -411,6 +411,8 @@ end
     txy[2:end-1] .= ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
     @test txy[2:end-1] == ( 1.0 - xT*yT + 0.5*xT^2*yT - (2/3)*xT*yT^3 - 0.5*xT^2*yT^2  + 7*xT^3*yT )[2:end-1]
 
+    # Build the identity and map from the same space/order. Earlier default
+    # variables keep their original space when the default JetSpace changes.
     ident = [1.0*xT, 1.0*yT]
     pN = [ident[1]+ident[2], ident[1]-ident[2]]
     @test evaluate.(inverse_map(pN), Ref(pN)) == ident
