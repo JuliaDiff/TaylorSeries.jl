@@ -146,9 +146,9 @@ mutable struct JetSpace
 end
 
 # The binding `default_space` is constant, but the `Ref` contents are mutable:
-# `default_space[]` can be assigned a `JetSpace`, and the stored space is
-# itself mutable. This keeps a stable global container for compatibility
-# while allowing `variables!` to update the active default algebra.
+# `default_space[]` can be assigned a `JetSpace`. This keeps a stable global
+# container for compatibility while allowing `variables!` to replace the active
+# default algebra without mutating spaces held by existing TaylorN objects.
 const default_space = Ref{JetSpace}()
 
 Base.deepcopy_internal(space::JetSpace, stackdict::IdDict) = space

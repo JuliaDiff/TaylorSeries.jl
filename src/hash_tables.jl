@@ -239,31 +239,19 @@ Set the compatibility default `JetSpace`.
 
 The global `default_space` binding is a constant `Ref`, but its contents are
 mutable. Module loading initializes `default_space[]`; later compatibility calls
-such as `variables!` update that existing object in place with the fields of
-`space` instead of replacing it. This preserves references held by objects
-constructed through the default-space tables while still making the default
-algebra follow `variables!`.
+such as `variables!` replace `default_space[]` with `space`. Existing `TaylorN`
+and `HomogeneousPolynomial` objects keep their original spaces, while future
+default-space constructors use the new default algebra.
 """
 function set_default_space!(space::JetSpace)
-    # Reset the `TS.default_space` object and update its fields, so that *new*
-    # objects refer to this `default_space`.
-    active_space = default_space[]
-    active_space.order = space.order
-    active_space.num_vars = space.num_vars
-    active_space.variable_names = space.variable_names
-    active_space.variable_symbols = space.variable_symbols
-    active_space.coeff_table = space.coeff_table
-    active_space.index_table = space.index_table
-    active_space.size_table = space.size_table
-    active_space.pos_table = space.pos_table
-    active_space.mul_table = space.mul_table
-    active_space.mul_table_lock = space.mul_table_lock
+    # Replace the active default space. Do not mutate the old object in place:
+    # existing TaylorN/HomogeneousPolynomial objects may still depend on it.
+    default_space[] = space
 
-    # Updating the default space can replace large lookup tables. Even though
-    # this is not strictly necessary, we force here a garbage collection
-    # to match the previous behavior after table initialization.
+    # The previous default space may own large lookup tables. If no existing
+    # series still references it, this gives the GC a chance to reclaim them.
     GC.gc()
-    return active_space
+    return space
 end
 
 default_space[] = JetSpace(DEFAULT_TAYLORN_ORDER, copy(DEFAULT_TAYLORN_VARIABLE_NAMES))

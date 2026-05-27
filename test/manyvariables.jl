@@ -87,6 +87,15 @@ end
     @test_throws ArgumentError x + a
     @test_throws ArgumentError x * a
 
+    old_default_space = TS.default_space[]
+    dx, dy = variables()
+    new_default_space = JetSpace(order=4, variables=[:δx, :δy, :δz])
+    @test TS.set_default_space!(new_default_space) === new_default_space
+    @test TS.default_space[] === new_default_space
+    @test dx.space === old_default_space
+    @test dx.space !== TS.default_space[]
+    @test sprint(show, dx) isa String
+
     u, v = variables!("u v", order=2)
     @test u.space === v.space
     @test u.space !== sx
