@@ -81,6 +81,16 @@ end
     @test occursin("Variable names:", shown_sx)
     @test occursin("[\"x\", \"y\", \"z\"]", shown_sx)
     @test occursin("[:x, :y, :z]", shown_sx)
+    shown_monomials_sa = mktemp() do path, io
+        redirect_stdout(io) do
+            show_monomials(sa, 2)
+        end
+        flush(io)
+        read(path, String)
+    end
+    @test occursin("a", shown_monomials_sa)
+    @test occursin("b", shown_monomials_sa)
+    @test !occursin("x", shown_monomials_sa)
 
     @test x^2 + sin(y) == x^2 + sin(y)
     @test exp(a*b).space === sa

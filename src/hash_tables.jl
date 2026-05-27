@@ -274,16 +274,19 @@ GC.gc();
 
 """
     show_monomials(ord::Int) --> nothing
+    show_monomials(space::JetSpace, ord::Int) --> nothing
 
-List the indices and corresponding of a `HomogeneousPolynomial`
-of degree `ord`.
+List the indices and corresponding monomials of a `HomogeneousPolynomial`
+of degree `ord`, using either the default `JetSpace` or the given explicit
+`space`.
 """
-function show_monomials(ord::Int)
-    sp = default_space[]
-    z = zeros(Int, sp.size_table[ord+1])
-    for (index, value) in enumerate(sp.coeff_table[ord+1])
+show_monomials(ord::Int) = show_monomials(default_space[], ord)
+
+function show_monomials(space::JetSpace, ord::Int)
+    z = zeros(Int, space.size_table[ord+1])
+    for index in eachindex(space.coeff_table[ord+1])
         z[index] = 1
-        pol = HomogeneousPolynomial(z)
+        pol = HomogeneousPolynomial(space, z, ord)
         println(" $index  -->  $(homogPol2str(pol)[4:end])")
         z[index] = 0
     end
