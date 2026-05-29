@@ -69,6 +69,7 @@ end
 
 # _pow
 _pow(a::Taylor1, n::Integer) = a^float(n)
+_pow(a::Taylor1{T}, n::Integer) where {T<:NumberNotSeries} = a^float(n)
 
 _pow(a::TaylorN, n::Integer) = power_by_squaring(a, n)
 
@@ -79,6 +80,22 @@ for T in (:Taylor1, :TaylorN)
         n < 0 && return inv( a^(-n) )
         return power_by_squaring(a, n)
     end
+end
+
+function _pow(a::Taylor1{T}, r::S) where {T<:NumberNotSeries, S<:Real}
+    aux = one(constant_term(a))^r
+    iszero(r) && return Taylor1(aux, order(a))
+    l0 = findfirst(a)
+    lnull = trunc(Int, r*l0 )
+    (lnull > order(a)) && return Taylor1( zero(aux), order(a))
+    c_order = l0 == 0 ? order(a) : min(order(a), trunc(Int, r*order(a)))
+    c = Taylor1(zero(aux), c_order)
+    order_a = order(a)
+    lastnz = isinteger(r) && r > 0 ? findlast(a) : order_a
+    for k in eachindex(c)
+        _pow_taylor1_cached!(c, a, r, k, l0, lnull, lastnz, order_a)
+    end
+    return c
 end
 
 function _pow(a::Taylor1{T}, r::S) where {T<:Number, S<:Real}
@@ -214,42 +231,55 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
+@inline function _pow_taylor1_cached!(c::Taylor1{T}, a::Taylor1{T},
+        r::S, k::Int, l0::Int, lnull::Int, lastnz::Int,
+        order_a::Int) where {T<:NumberNotSeries, S<:Real}
+    zero!(c, k)
+    l0 < 0 && return nothing
+    !isinteger(r*l0) && throw(DomainError(a,
+        """The 0-th order Taylor1 coefficient must be non-zero
+        to raise the Taylor1 polynomial to a non-integer exponent."""))
+    kprime = k-lnull
+    (kprime < 0 || lnull > order_a) && return nothing
+    isinteger(r) && r > 0 && (k > r*lastnz) && return nothing
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k+1
+    @inbounds a_l0 = a_coeffs[l0+1]
+    if k == lnull
+        @inbounds c_coeffs[kk] = a_l0^float(r)
+        return nothing
+    end
+
+    @inbounds acc = zero(c_coeffs[kk])
+    if l0+kprime ≤ order_a
+        @inbounds acc = r * kprime * c_coeffs[lnull+1] * a_coeffs[l0+kprime+1]
+    end
+    ilo = max(1, l0+kprime-order_a)
+    ihi = min(k-lnull-1, order_a-lnull)
+    @inbounds for i = ilo:ihi
+        aaux = r*(kprime-i) - i
+        acc += aaux * c_coeffs[i+lnull+1] * a_coeffs[l0+kprime-i+1]
+    end
+    @inbounds c_coeffs[kk] = acc / (kprime * a_l0)
+    return nothing
+end
+
 function pow!(c::Taylor1{T}, a::Taylor1{T}, aux::Taylor1{T},
                 r::S, k::Int) where {T<:NumberNotSeries, S<:Real}
     (r == 0) && return one!(c, a, k)
     (r == 1) && return identity!(c, a, k)
     (r == 2) && return sqr!(c, a, constant_term(aux), k)
     (r == 0.5) && return sqrt!(c, a, aux, k)
-    # Sanity
-    zero!(c, k)
-    # First non-zero coefficient
     l0 = findfirst(a)
-    l0 < 0 && return nothing
-    # Index of first non-zero coefficient of the result; must be integer
-    !isinteger(r*l0) && throw(DomainError(a,
-        """The 0-th order Taylor1 coefficient must be non-zero
-        to raise the Taylor1 polynomial to a non-integer exponent."""))
-    lnull = trunc(Int, r*l0 )
-    kprime = k-lnull
-    (kprime < 0 || lnull > order(a)) && return nothing
-    # Relevant for positive integer r, to avoid round-off errors
-    isinteger(r) && r > 0 && (k > r*findlast(a)) && return nothing
-    # First non-zero coeff
-    if k == lnull
-        @inbounds c[k] = (a[l0])^float(r)
+    if l0 < 0
+        zero!(c, k)
         return nothing
     end
-    # The recursion formula
-    if l0+kprime ≤ order(a)
-        @inbounds c[k] = r * kprime * c[lnull] * a[l0+kprime]
-    end
-    for i = 1:k-lnull-1
-        ((i+lnull) > order(a) || (l0+kprime-i > order(a))) && continue
-        aaux = r*(kprime-i) - i
-        @inbounds c[k] += aaux * c[i+lnull] * a[l0+kprime-i]
-    end
-    @inbounds c[k] = c[k] / (kprime * a[l0])
-    return nothing
+    lnull = trunc(Int, r*l0)
+    order_a = order(a)
+    lastnz = isinteger(r) && r > 0 ? findlast(a) : order_a
+    return _pow_taylor1_cached!(c, a, r, k, l0, lnull, lastnz, order_a)
 end
 
 function pow!(c::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
@@ -487,17 +517,21 @@ function sqr!(c::Taylor1{T}, a::Taylor1{T}, ::T, k::Int) where {T<:Number}
         sqr_orderzero!(c, a)
         return nothing
     end
-    # Sanity
-    zero!(c, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
-    @inbounds for i = 0:kend
-        c[k] += a[i] * a[k-i]
+    @inbounds for i = 1:kend+1
+        acc += a_coeffs[i] * a_coeffs[kk-i+1]
     end
-    @inbounds c[k] = 2 * c[k]
-    kodd == 1 && return nothing
-    @inbounds c[k] += a[k >> 1]^2
+    acc = 2 * acc
+    if kodd == 0
+        @inbounds acc += a_coeffs[(k >> 1)+1]^2
+    end
+    @inbounds c_coeffs[kk] = acc
     return nothing
 end
 
@@ -526,15 +560,19 @@ function sqr!(c::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
         sqr_orderzero!(c, c)
         return nothing
     end
+    c_coeffs = c.coeffs
+    kk = k+1
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
-    (kend >= 0) && ( @inbounds c[k] = c[0] * c[k] )
-    @inbounds for i = 1:kend
-        c[k] += c[i] * c[k-i]
+    @inbounds acc = zero(c_coeffs[kk])
+    (kend >= 0) && ( @inbounds acc = c_coeffs[1] * c_coeffs[kk] )
+    @inbounds for i = 2:kend+1
+        acc += c_coeffs[i] * c_coeffs[kk-i+1]
     end
-    @inbounds c[k] = 2 * c[k]
-    (kodd == 0) && ( @inbounds c[k] += c[k >> 1]^2 )
+    acc = 2 * acc
+    (kodd == 0) && ( @inbounds acc += c_coeffs[(k >> 1)+1]^2 )
+    @inbounds c_coeffs[kk] = acc
     return nothing
 end
 

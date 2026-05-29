@@ -35,6 +35,16 @@ using Test
     @test t2[2] == 1.0
     #
     res = zero(t1)
+    TS.add!(res, t1, t2)
+    @test res == t1 + t2
+    TS.subst!(res, t1, t2)
+    @test res == t1 - t2
+    TS.mul!(res, t1, t2)
+    @test res == t1 * t2
+    TS.zero!(res)
+    TS.muladd!(res, t1, t2)
+    @test res == t1 * t2
+
     TS.add!(res, t1, t2, 3)
     @test res[3] == 0.0
     TS.add!(res, 1, t2, 3)

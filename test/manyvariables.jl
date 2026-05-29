@@ -13,7 +13,7 @@ using Test
     @test b isa TaylorN{Complex{Float64}}
     @test_throws MethodError TaylorN(-4//7im)
     # Issue #85 is solved!
-    variables!("x", numvars=66, order=1)
+    variables!("x", numvars=66, order=1, nowarn=true)
     sp = TS.default_space[]
     @test order(sp) == order() == 1
     @test get_numvars(sp) == get_numvars() == 66
@@ -24,7 +24,7 @@ using Test
     @test sp.index_table[2][1] == 3^65
     @test sp.pos_table[2][3^64] == 2
     #
-    variables!("x", numvars=66, order=2)
+    variables!("x", numvars=66, order=2, nowarn=true)
     sp = TS.default_space[]
     @test order(sp) == order() == 2
     @test get_numvars(sp) == get_numvars() == 66
@@ -33,17 +33,17 @@ using Test
     @test sp.index_table[2][1] == 3^65
     @test sp.pos_table[2][3^64] == 2
 
-    @test eltype(variables!("a", order=1, numvars=2))  == TaylorN{Float64}
+    @test eltype(variables!("a", order=1, numvars=2, nowarn=true))  == TaylorN{Float64}
     @test get_variable_names()[1] == "a₁"
     @test get_variable_symbols()[2] == :a₂
-    @test eltype(variables!(Int, "x", numvars=2, order=6)) == TaylorN{Int}
-    @test eltype(variables!("x", numvars=2, order=6)) == TaylorN{Float64}
-    @test eltype(variables!(BigInt, "x y", order=6)) == TaylorN{BigInt}
-    @test eltype(variables!("x y", order=6)) == TaylorN{Float64}
-    @test eltype(variables!(Int, :x, numvars=2, order=6)) == TaylorN{Int}
-    @test eltype(variables!(:x, numvars=2, order=6)) == TaylorN{Float64}
-    @test eltype(variables!(BigInt, [:x, :y], order=6)) == TaylorN{BigInt}
-    @test eltype(variables!([:x, :y], order=6)) == TaylorN{Float64}
+    @test eltype(variables!(Int, "x", numvars=2, order=6, nowarn=true)) == TaylorN{Int}
+    @test eltype(variables!("x", numvars=2, order=6, nowarn=true)) == TaylorN{Float64}
+    @test eltype(variables!(BigInt, "x y", order=6, nowarn=true)) == TaylorN{BigInt}
+    @test eltype(variables!("x y", order=6, nowarn=true)) == TaylorN{Float64}
+    @test eltype(variables!(Int, :x, numvars=2, order=6, nowarn=true)) == TaylorN{Int}
+    @test eltype(variables!(:x, numvars=2, order=6, nowarn=true)) == TaylorN{Float64}
+    @test eltype(variables!(BigInt, [:x, :y], order=6, nowarn=true)) == TaylorN{BigInt}
+    @test eltype(variables!([:x, :y], order=6, nowarn=true)) == TaylorN{Float64}
     @test typeof(show_params_TaylorN()) == Nothing
     @test typeof(show_monomials(2)) == Nothing
 
@@ -100,13 +100,13 @@ end
     old_default_space = TS.default_space[]
     dx, dy = variables()
     new_default_space = JetSpace(order=4, variables=[:δx, :δy, :δz])
-    @test TS.set_default_space!(new_default_space) === new_default_space
+    @test TS.set_default_space!(new_default_space; nowarn=true) === new_default_space
     @test TS.default_space[] === new_default_space
     @test dx.space === old_default_space
     @test dx.space !== TS.default_space[]
     @test sprint(show, dx) isa String
 
-    u, v = variables!("u v", order=2)
+    u, v = variables!("u v", order=2, nowarn=true)
     @test u.space === v.space
     @test u.space !== sx
     @test x*y == TaylorN(sx, HomogeneousPolynomial(sx, [0.0, 1.0, 0.0, 0.0, 0.0, 0.0], 2), 5)
@@ -125,7 +125,7 @@ end
     @test HomogeneousPolynomial{Int} <: AbstractSeries{Int}
     @test TaylorN{Float64} <: AbstractSeries{Float64}
 
-    variables!([:x, :y], order=6)
+    variables!([:x, :y], order=6, nowarn=true)
     @test order() == 6
     @test get_numvars() == 2
 
@@ -135,7 +135,7 @@ end
     @test variables(Int, 3)[1] == TaylorN(Int, 1, order=3)
     @test length(variables()) == get_numvars()
 
-    x, y = variables!("x y", order=6)
+    x, y = variables!("x y", order=6, nowarn=true)
     @test axes(x) == axes(y) == ()
     @test axes(x[1]) == axes(y[2]) == ()
     @test size(x) == (7,)
@@ -163,7 +163,7 @@ end
     @test y == HomogeneousPolynomial(2)
     @test !isnan(x)
 
-    variables!("x", numvars=2, order=17)
+    variables!("x", numvars=2, order=17, nowarn=true)
     v = [1,2]
     vv = TS._coeffsHP(v, 2)
     @test vv isa FixedSizeVectorDefault{Int}
@@ -863,7 +863,7 @@ end
     @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(rand(2)) == 1
     @test ( -sinh(xT+yT)^2 + cosh(xT+yT)^2 )(zeros(2)) == 1
     #number of variables changed to 4...
-    dx = variables!("x", numvars=4, order=10)
+    dx = variables!("x", numvars=4, order=10, nowarn=true)
     P = sin.(dx)
     v = [1.0,2,3,4]
     for i in 1:4
@@ -885,7 +885,7 @@ end
     @test Q() == evaluate(Q)
     @test Q[1:3]() == evaluate(Q[1:3])
 
-    dx = variables!("x", numvars=4, order=10)
+    dx = variables!("x", numvars=4, order=10, nowarn=true)
     for i in 1:4
         @test deg2rad(180+dx[i]) == pi + deg2rad(1.0)dx[i]
         @test rad2deg(pi+dx[i]) == 180.0+rad2deg(1.0)dx[i]
@@ -924,7 +924,7 @@ end
     end
 
     @testset "Test evaluate! method for arrays of TaylorN" begin
-        x = variables!("x", order=2, numvars=4)
+        x = variables!("x", order=2, numvars=4, nowarn=true)
         function radntn!(y)
             for k in eachindex(y)
                 for l in eachindex(y[k])
@@ -954,7 +954,7 @@ end
 
 @testset "Integrate for several variables" begin
 
-    t, x, y = variables!("t x y")
+    t, x, y = variables!("t x y", nowarn=true)
 
     @test integrate(t, 1) == 0.5*t^2
     @test integrate(t, 2) == t * x
@@ -967,7 +967,7 @@ end
 
 @testset "Consistency of coeff_table" begin
     order = 20
-    x, y, z, w = variables!(Int128, "x y z w", numvars=4, order=2order)
+    x, y, z, w = variables!(Int128, "x y z w", numvars=4, order=2order, nowarn=true)
     sp = x.space
     ctab = deepcopy(sp.coeff_table);
 

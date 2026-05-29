@@ -317,6 +317,46 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     end
 end
 
+function add!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
+        {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for i in eachindex(v_coeffs)
+        v_coeffs[i] = a_coeffs[i] + b_coeffs[i]
+    end
+    return nothing
+end
+
+function subst!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
+        {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for i in eachindex(v_coeffs)
+        v_coeffs[i] = a_coeffs[i] - b_coeffs[i]
+    end
+    return nothing
+end
+
+function +(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
+    if order(a) != order(b)
+        a, b = fixorder(a, b)
+    end
+    c = zero(a)
+    add!(c, a, b)
+    return c
+end
+
+function -(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
+    if order(a) != order(b)
+        a, b = fixorder(a, b)
+    end
+    c = zero(a)
+    subst!(c, a, b)
+    return c
+end
+
 for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     @eval begin
         function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
@@ -527,13 +567,20 @@ end
 # Internal multiplication functions
 function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    zero!(c, k)
-    muladd!(c, a, b, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
+    @inbounds for i = 1:kk
+        acc += a_coeffs[i] * b_coeffs[kk-i+1]
+    end
+    @inbounds c_coeffs[kk] = acc
     return nothing
 end
 function mul!(v::Taylor1{T}, a::Taylor1{S}, b::NumberNotSeries, k::Int) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
-    @inbounds v[k] = a[k] * b
+    @inbounds v.coeffs[k+1] = a.coeffs[k+1] * b
     return nothing
 end
 mul!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{S}, k::Int) where
@@ -541,16 +588,29 @@ mul!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{S}, k::Int) where
 #
 function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    @inbounds for i = 0:k
-        c[k] += a[i] * b[k-i]
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds acc = c_coeffs[kk]
+    @inbounds for i = 1:kk
+        acc += a_coeffs[i] * b_coeffs[kk-i+1]
     end
+    @inbounds c_coeffs[kk] = acc
     return nothing
 end
 
 function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
         {T<:NumberNotSeries}
-    for k in eachindex(c)
-        muladd!(c, a, b, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for kk in eachindex(c_coeffs)
+        acc = c_coeffs[kk]
+        for i = 1:kk
+            acc += a_coeffs[i] * b_coeffs[kk-i+1]
+        end
+        c_coeffs[kk] = acc
     end
     return nothing
 end
@@ -571,8 +631,15 @@ end
 # Implements c[k] = scalar \sum_i a[i] b[k-i]
 function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
         b::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    mul!(c, a, b, k)
-    mul!(c, scalar, c, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
+    @inbounds for i = 1:kk
+        acc += a_coeffs[i] * b_coeffs[kk-i+1]
+    end
+    @inbounds c_coeffs[kk] = scalar * acc
     return nothing
 end
 
@@ -771,8 +838,24 @@ mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, b::NumberNotSeries,
     k::Int) where {T<:NumberNotSeries} = mul!(res, b, a, k)
 
 
-# in-place product (assumes equal order among TaylorNs)
-# NOTE: the result of the product is *accumulated* in c[k]
+# in-place product (assumes equal order)
+function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
+        {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for kk in eachindex(c_coeffs)
+        acc = zero(c_coeffs[kk])
+        for i = 1:kk
+            acc += a_coeffs[i] * b_coeffs[kk-i+1]
+        end
+        c_coeffs[kk] = acc
+    end
+    return nothing
+end
+
+# Fallback for nested coefficient types; scalar Taylor1 has a coefficient-vector
+# specialization above.
 function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     for k in eachindex(c)
         mul!(c, a, b, k)

@@ -6,7 +6,7 @@ using TaylorSeries, StaticArrays
 using Test
 
 @testset "Tests TaylorSeries operations over StaticArrays types" begin
-    q = variables!("q", order=2, numvars=2)
+    q = variables!("q", order=2, numvars=2, nowarn=true)
     m = @SMatrix fill(Taylor1(rand(2).*q), 3, 3)
     mt = m'
     @test m isa SMatrix{3, 3, Taylor1{TaylorN{Float64}}, 9}

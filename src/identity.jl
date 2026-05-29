@@ -17,8 +17,11 @@ for T in (:Taylor1, :TaylorN)
         identity!(c[k], a[k])
 end
 
-identity!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:NumberNotSeries} =
+function identity!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+        {T<:NumberNotSeries}
     c[k] = a[k]
+    return nothing
+end
 
 @inline function identity!(c::Taylor1{T}, a::T, k::Int) where {T<:NumberNotSeries}
     zero!(c[k])

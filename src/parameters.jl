@@ -230,14 +230,15 @@ variables(space::JetSpace; order::Int=TS.order(space)) =
     variables(Float64, space, order=order)
 
 """
-    variables!([T::Type], names::String; [order=order(), numvars=-1])
+    variables!([T::Type], names::String; [order=order(), numvars=-1, nowarn=false])
 
 Return a `TaylorN{T}` vector with each entry representing an
 independent variable. `names` defines the output for each variable
 (separated by a space). The default type `T` is `Float64`,
 and the default for `order` is the current default-space order.
 
-This function updates the compatibility default `JetSpace`.
+This function updates the compatibility default `JetSpace`. Set `nowarn=true`
+to suppress the warning emitted when the default space changes.
 
 If `numvars` is not specified, it is inferred from `names`. If only
 one variable name is defined and `numvars>1`, it uses this name with
@@ -261,34 +262,47 @@ julia> variables!("x", order=6, numvars=2)
   1.0 x₂ + 𝒪(‖x‖⁷)
 ```
 """
-function variables!(::Type{R}, names::Vector{T}; order=TS.order()) where
+function variables!(::Type{R}, names::Vector{T}; order=TS.order(),
+        nowarn::Bool=false) where
         {R, T<:AbstractString}
 
-    space = set_default_space!(JetSpace(order, _variable_names_from(names)))
+    space = set_default_space!(JetSpace(order, _variable_names_from(names));
+        nowarn=nowarn)
 
     # return a list of the new variables
     return variables(R, space)
 end
-variables!(::Type{R}, symbs::Vector{T}; order=TS.order()) where
-    {R,T<:Symbol} = variables!(R, string.(symbs), order=order)
+variables!(::Type{R}, symbs::Vector{T}; order=TS.order(),
+    nowarn::Bool=false) where {R,T<:Symbol} =
+        variables!(R, string.(symbs), order=order, nowarn=nowarn)
 
-variables!(names::Vector{T}; order=TS.order()) where {T<:AbstractString} =
-    variables!(Float64, names, order=order)
-variables!(symbs::Vector{T}; order=TS.order()) where {T<:Symbol} =
-    variables!(Float64, symbs, order=order)
+variables!(names::Vector{T}; order=TS.order(),
+    nowarn::Bool=false) where {T<:AbstractString} =
+        variables!(Float64, names, order=order, nowarn=nowarn)
+variables!(symbs::Vector{T}; order=TS.order(),
+    nowarn::Bool=false) where {T<:Symbol} =
+        variables!(Float64, symbs, order=order, nowarn=nowarn)
 
-function variables!(::Type{R}, names::T; order=TS.order(), numvars=-1) where
+function variables!(::Type{R}, names::T; order=TS.order(), numvars=-1,
+        nowarn::Bool=false) where
         {R,T<:AbstractString}
 
-    return variables!(R, _variable_names_from(names, numvars=numvars), order=order)
+    return variables!(R, _variable_names_from(names, numvars=numvars),
+        order=order, nowarn=nowarn)
 end
-variables!(::Type{R}, symbs::Symbol; order=TS.order(), numvars=-1) where {R} =
-    variables!(R, string(symbs), order=order, numvars=numvars)
+variables!(::Type{R}, symbs::Symbol; order=TS.order(), numvars=-1,
+    nowarn::Bool=false) where {R} =
+        variables!(R, string(symbs), order=order, numvars=numvars,
+            nowarn=nowarn)
 
-variables!(names::T; order=TS.order(), numvars=-1) where {T<:AbstractString} =
-    variables!(Float64, names, order=order, numvars=numvars)
-variables!(symbs::Symbol; order=TS.order(), numvars=-1) =
-    variables!(Float64, string(symbs), order=order, numvars=numvars)
+variables!(names::T; order=TS.order(), numvars=-1,
+    nowarn::Bool=false) where {T<:AbstractString} =
+        variables!(Float64, names, order=order, numvars=numvars,
+            nowarn=nowarn)
+variables!(symbs::Symbol; order=TS.order(), numvars=-1,
+    nowarn::Bool=false) =
+        variables!(Float64, string(symbs), order=order, numvars=numvars,
+            nowarn=nowarn)
 
 
 """

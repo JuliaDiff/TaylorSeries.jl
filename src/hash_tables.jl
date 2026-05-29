@@ -242,8 +242,11 @@ mutable. Module loading initializes `default_space[]`; later compatibility calls
 such as `variables!` replace `default_space[]` with `space`. Existing `TaylorN`
 and `HomogeneousPolynomial` objects keep their original spaces, while future
 default-space constructors use the new default algebra.
+
+Use `nowarn=true` to suppress the warning emitted when replacing the default
+space.
 """
-function set_default_space!(space::JetSpace)
+function set_default_space!(space::JetSpace; nowarn::Bool=false)
     old_space = default_space[]
     old_space === space && return space
 
@@ -254,7 +257,7 @@ function set_default_space!(space::JetSpace)
     old_numvars = get_numvars(old_space)
     new_order = order(space)
     new_numvars = get_numvars(space)
-    @warn msg old_order old_numvars new_order new_numvars
+    nowarn || @warn msg old_order old_numvars new_order new_numvars
 
     # Replace the active default space. Do not mutate the old object in place:
     # existing TaylorN/HomogeneousPolynomial objects may still depend on it.
