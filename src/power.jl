@@ -364,6 +364,61 @@ end
 
 function pow!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         aux::Taylor1{Taylor1{T}}, r::S, k::Int) where
+        {T<:NumberNotSeries, S<:Real}
+    (r == 0) && return one!(c, a, k)
+    (r == 1) && return identity!(c, a, k)
+    (r == 2) && return sqr!(c, a, constant_term(aux), k)
+    (r == 0.5) && return sqrt!(c, a, aux, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    aux_coeffs = aux.coeffs
+    kk = k+1
+    @inbounds c_k = c_coeffs[kk]
+    zero!(c_k)
+    # First non-zero coefficient
+    l0 = findfirst(a)
+    l0 < 0 && return nothing
+    # Index of first non-zero coefficient of the result; must be integer
+    !isinteger(r*l0) && throw(DomainError(a,
+        """The 0-th order Taylor1 coefficient must be non-zero
+        to raise the Taylor1 polynomial to a non-integer exponent."""))
+    lnull = trunc(Int, r*l0 )
+    kprime = k-lnull
+    order_a = order(a)
+    (kprime < 0 || lnull > order_a) && return nothing
+    # Relevant for positive integer r, to avoid round-off errors
+    lastnz = isinteger(r) && r > 0 ? findlast(a) : order_a
+    isinteger(r) && r > 0 && (k > r*lastnz) && return nothing
+    @inbounds a_l0 = a_coeffs[l0+1]
+    if k == lnull
+        @inbounds aux0 = aux_coeffs[1]
+        @inbounds for j in eachindex(a_l0)
+            pow!(c_k, a_l0, aux0, float(r), j)
+        end
+        return nothing
+    end
+    # The recursion formula
+    @inbounds aux_k = aux_coeffs[kk]
+    ilo = max(0, l0+kprime-order_a)
+    ihi = min(k-lnull-1, order_a-lnull)
+    @inbounds for i = ilo:ihi
+        rr = r*(kprime-i) - i
+        mul_scalar!(aux_k, rr, c_coeffs[i+lnull+1], a_coeffs[l0+kprime-i+1])
+        add!(c_k, c_k, aux_k)
+    end
+    # c[k] = c[k] / (kprime * a[l0])
+    @inbounds copyto!(aux_k.coeffs, c_k.coeffs)
+    @inbounds for j in eachindex(a_l0)
+        div!(c_k, aux_k, a_l0, j)
+    end
+    @inbounds for j in eachindex(a_l0)
+        div!(c_k, c_k, kprime, j)
+    end
+    return nothing
+end
+
+function pow!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        aux::Taylor1{Taylor1{T}}, r::S, k::Int) where
         {T<:NumberNotSeriesN, S<:Real}
     (r == 0) && return one!(c, a, k)
     (r == 1) && return identity!(c, a, k)
@@ -622,6 +677,36 @@ function sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::TaylorN{T},
     @inbounds for ordQ in eachindex(a[ordT])
         mul!(res[ordT], 2, res[ordT], ordQ)
     end
+    return nothing
+end
+
+function sqr!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{T},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        sqr_orderzero!(c, a)
+        return nothing
+    end
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k+1
+    @inbounds c_k = c_coeffs[kk]
+    zero!(c_k)
+    # Recursion formula
+    kodd = k%2
+    kend = (k - 2 + kodd) >> 1
+    @inbounds for i = 0:kend
+        mul_scalar!(aux, 2, a_coeffs[i+1], a_coeffs[kk-i])
+        add!(c_k, c_k, aux)
+    end
+    kodd == 1 && return nothing
+    # c[k] += a[k >> 1]^2
+    aaux = zero(aux[0])
+    zero!(aux)
+    @inbounds a_mid = a_coeffs[(k >> 1)+1]
+    @inbounds for j in eachindex(a_mid)
+        sqr!(aux, a_mid, aaux, j)
+    end
+    add!(c_k, c_k, aux)
     return nothing
 end
 

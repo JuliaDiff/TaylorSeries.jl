@@ -339,6 +339,28 @@ function subst!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
     return nothing
 end
 
+function add!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for i in eachindex(v_coeffs)
+        add!(v_coeffs[i], a_coeffs[i], b_coeffs[i])
+    end
+    return nothing
+end
+
+function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for i in eachindex(v_coeffs)
+        subst!(v_coeffs[i], a_coeffs[i], b_coeffs[i])
+    end
+    return nothing
+end
+
 function +(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
     if order(a) != order(b)
         a, b = fixorder(a, b)
@@ -349,6 +371,26 @@ function +(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
 end
 
 function -(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
+    if order(a) != order(b)
+        a, b = fixorder(a, b)
+    end
+    c = zero(a)
+    subst!(c, a, b)
+    return c
+end
+
+function +(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
+        {T<:NumberNotSeries}
+    if order(a) != order(b)
+        a, b = fixorder(a, b)
+    end
+    c = zero(a)
+    add!(c, a, b)
+    return c
+end
+
+function -(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
+        {T<:NumberNotSeries}
     if order(a) != order(b)
         a, b = fixorder(a, b)
     end
@@ -585,6 +627,18 @@ function mul!(v::Taylor1{T}, a::Taylor1{S}, b::NumberNotSeries, k::Int) where
 end
 mul!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{S}, k::Int) where
         {T<:NumberNotSeries, S<:NumberNotSeries} = mul!(v, b, a, k)
+
+function mul!(v::Taylor1{T}, a::Taylor1{S}, b::NumberNotSeries) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    @inbounds for i in eachindex(v_coeffs)
+        v_coeffs[i] = a_coeffs[i] * b
+    end
+    return nothing
+end
+mul!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{S}) where
+        {T<:NumberNotSeries, S<:NumberNotSeries} = mul!(v, b, a)
 #
 function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
@@ -643,6 +697,21 @@ function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
     return nothing
 end
 
+function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
+        b::Taylor1{T}) where {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for kk in eachindex(c_coeffs)
+        acc = zero(c_coeffs[kk])
+        for i = 1:kk
+            acc += a_coeffs[i] * b_coeffs[kk-i+1]
+        end
+        c_coeffs[kk] = scalar * acc
+    end
+    return nothing
+end
+
 # NOTE: For TaylorN, `mul!` (`muladd!`) *accumulates* the result of a * b in c[k]
 mul!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T}, k::Int) where
         {T<:Number} = muladd!(c, a, b, k)
@@ -678,6 +747,32 @@ function mul_scalar!(c::TaylorN{T}, scalar::NumberNotSeries, a::TaylorN{T},
 end
 
 # Nested Taylor1s
+function add!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    @inbounds add!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
+    return nothing
+end
+
+function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    @inbounds subst!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
+    return nothing
+end
+
+function mul!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}},
+        k::Int) where {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds c_k = c_coeffs[kk]
+    zero!(c_k)
+    @inbounds for i = 1:kk
+        muladd!(c_k, a_coeffs[i], b_coeffs[kk-i+1])
+    end
+    return nothing
+end
+
 function mul!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}},
         k::Int) where {T<:NumberNotSeriesN}
     @inbounds for j in eachindex(c[k])
@@ -688,8 +783,21 @@ function mul!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1
     end
     return nothing
 end
+
 mul!(v::Taylor1{Taylor1{T}}, a::Taylor1{T}, b::Taylor1{Taylor1{T}}, k::Int) where
         {T<:NumberNotSeriesN} = mul!(v, b, a, k)
+function mul!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{T}, k::Int) where
+        {T<:NumberNotSeries}
+    @inbounds v_k = v.coeffs[k+1]
+    @inbounds a_k = a.coeffs[k+1]
+    if v_k === a_k
+        mul!(v_k, b)
+    else
+        mul!(v_k, a_k, b)
+    end
+    return nothing
+end
+
 function mul!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeriesN}
     @inbounds for i in eachindex(v[k])
@@ -697,8 +805,15 @@ function mul!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{T}, k::
     end
     return nothing
 end
+
 mul!(v::Taylor1{Taylor1{T}}, a::NumberNotSeries, b::Taylor1{Taylor1{T}}, k::Int) where
         {T<:NumberNotSeriesN} = mul!(v, b, a, k)
+function mul!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::NumberNotSeries,
+        k::Int) where {T<:NumberNotSeries}
+    @inbounds mul!(v.coeffs[k+1], a.coeffs[k+1], b)
+    return nothing
+end
+
 function mul!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::NumberNotSeries,
         k::Int) where {T<:NumberNotSeriesN}
     @inbounds for i in eachindex(v[k])
@@ -706,6 +821,20 @@ function mul!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::NumberNotSeries
     end
     return nothing
 end
+
+function muladd!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds c_k = c_coeffs[kk]
+    @inbounds for i = 1:kk
+        muladd!(c_k, a_coeffs[i], b_coeffs[kk-i+1])
+    end
+    return nothing
+end
+
 function muladd!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
     @inbounds for j in eachindex(c[k])
@@ -715,6 +844,7 @@ function muladd!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     end
     return nothing
 end
+
 # muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{T}, b::Taylor1{Taylor1{T}}, k::Int) where
 #         {T<:NumberNotSeriesN} = muladd!(v, b, a, k)
 # function muladd!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{T}, k::Int) where
@@ -734,11 +864,50 @@ end
 # muladd!(v::Taylor1{Taylor1{T}}, a::T, b::Taylor1{Taylor1{T}}, k::Int) where
 #     {T<:NumberNotSeriesN} = muladd!(v, b, a, k)
 function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
+        a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}, k::Int) where
+        {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds c_k = c_coeffs[kk]
+    zero!(c_k)
+    @inbounds for i = 1:kk
+        muladd!(c_k, a_coeffs[i], b_coeffs[kk-i+1])
+    end
+    c_k_coeffs = c_k.coeffs
+    @inbounds for i in eachindex(c_k_coeffs)
+        c_k_coeffs[i] *= scalar
+    end
+    return nothing
+end
+
+function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
         a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}, k::Int) where {T<:Number}
     mul!(c, a, b, k)
     # c[k] <- scalar * c[k]
     for ord in eachindex(c[k])
         mul!(c[k], c[k], scalar, ord)
+    end
+    return nothing
+end
+
+function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
+        a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
+        {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for kk in eachindex(c_coeffs)
+        c_k = c_coeffs[kk]
+        zero!(c_k)
+        for i = 1:kk
+            muladd!(c_k, a_coeffs[i], b_coeffs[kk-i+1])
+        end
+        c_k_coeffs = c_k.coeffs
+        for i in eachindex(c_k_coeffs)
+            c_k_coeffs[i] *= scalar
+        end
     end
     return nothing
 end
@@ -792,6 +961,20 @@ function mul!(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
     end
     return nothing
 end
+function mul!(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
+        {T<:NumberNotSeries}
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for kk in reverse(eachindex(a_coeffs))
+        a_k = a_coeffs[kk]
+        mul!(a_k, b_coeffs[1])
+        for l = 2:kk
+            muladd!(a_k, a_coeffs[kk-l+1], b_coeffs[l])
+        end
+    end
+    return nothing
+end
+
 function mul!(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
         {T<:NumberNotSeriesN}
     @inbounds for k in reverse(eachindex(a))
@@ -860,6 +1043,21 @@ function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     for k in eachindex(c)
         mul!(c, a, b, k)
     end
+end
+
+function mul!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for kk in eachindex(c_coeffs)
+        c_k = c_coeffs[kk]
+        zero!(c_k)
+        for i = 1:kk
+            muladd!(c_k, a_coeffs[i], b_coeffs[kk-i+1])
+        end
+    end
+    return nothing
 end
 
 function mul!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},

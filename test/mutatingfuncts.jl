@@ -103,4 +103,26 @@ using Test
     TaylorSeries.zero!(t2)
     @test TaylorSeries.iszero(t2)
 
+    outer_order = 5
+    inner_order = 4
+    nt1 = Taylor1([Taylor1([0.5 + i + 0.1*j for j in 0:inner_order],
+        inner_order) for i in 0:outer_order], outer_order)
+    nt2 = Taylor1([Taylor1([1.0 + 0.2*i - 0.03*j for j in 0:inner_order],
+        inner_order) for i in 0:outer_order], outer_order)
+    nres = zero(nt1)
+    TS.add!(nres, nt1, nt2)
+    @test nres == nt1 + nt2
+    TS.subst!(nres, nt1, nt2)
+    @test nres == nt1 - nt2
+    TS.mul!(nres, nt1, nt2)
+    @test nres ≈ nt1 * nt2
+    TS.zero!(nres)
+    for k in eachindex(nres)
+        TS.muladd!(nres, nt1, nt2, k)
+    end
+    @test nres ≈ nt1 * nt2
+    ninplace = deepcopy(nt1)
+    TS.mul!(ninplace, nt2)
+    @test ninplace ≈ nt1 * nt2
+
 end
