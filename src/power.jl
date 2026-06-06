@@ -867,8 +867,10 @@ coefficient, which must be even.
 function sqrt!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, k::Int, k0::Int=0) where
         {T<:NumberNotSeries}
     k < k0 && return nothing
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
     if k == k0
-        @inbounds c[k] = sqrt(a[2*k0])
+        @inbounds c_coeffs[k+1] = sqrt(a_coeffs[2*k0+1])
         return nothing
     end
     # Recursion formula
@@ -877,17 +879,19 @@ function sqrt!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, k::Int, k0::Int=0) wh
     kend = (k - k0 - 2 + kodd) >> 1
     imax = min(k0+kend, order(a))
     imin = max(k0+1, k+k0-order(a))
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
     if k+k0 ≤ order(a)
-        @inbounds c[k] = a[k+k0]
+        @inbounds acc = a_coeffs[k+k0+1]
     end
     if kodd == 0
-        @inbounds c[k] -= (c[kend+k0+1])^2
+        @inbounds acc -= (c_coeffs[kend+k0+2])^2
     end
-    imin ≤ imax && ( @inbounds c[k] -= 2 * c[imin] * c[k+k0-imin] )
+    imin ≤ imax && ( @inbounds acc -= 2 * c_coeffs[imin+1] * c_coeffs[k+k0-imin+1] )
     @inbounds for i = imin+1:imax
-        c[k] -= 2 * c[i] * c[k+k0-i]
+        acc -= 2 * c_coeffs[i+1] * c_coeffs[k+k0-i+1]
     end
-    @inbounds c[k] = c[k] / (2*c[k0])
+    @inbounds c_coeffs[kk] = acc / (2*c_coeffs[k0+1])
     return nothing
 end
 

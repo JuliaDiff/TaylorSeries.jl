@@ -235,15 +235,18 @@ end
 # Taylor1 mutating functions
 function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
     if k == 0
-        @inbounds c[0] = exp(constant_term(a))
+        @inbounds c_coeffs[1] = exp(a_coeffs[1])
         return nothing
     end
-    zero!(c, k)
-    @inbounds for i = 0:k-1
-        c[k] += (k-i) * a[k-i] * c[i]
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
+    @inbounds for i = 1:k
+        acc += (k-i+1) * a_coeffs[k-i+2] * c_coeffs[i]
     end
-    div!(c, c, k, k)
+    @inbounds c_coeffs[kk] = acc / k
     return nothing
 end
 function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -308,13 +311,14 @@ end
 function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     if k == 0
-        @inbounds c[0] = expm1(constant_term(a))
+        @inbounds c.coeffs[1] = expm1(a.coeffs[1])
         return nothing
     end
-    cc = c[0]
-    c[0] += one(c[0])
+    c_coeffs = c.coeffs
+    @inbounds cc = c_coeffs[1]
+    @inbounds c_coeffs[1] += one(cc)
     exp!(c, a, k)
-    c[0] = cc
+    @inbounds c_coeffs[1] = cc
     return nothing
 end
 function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -334,18 +338,22 @@ end
 
 function log!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    @inbounds a0 = a_coeffs[1]
     if k == 0
-        @inbounds c[0] = log(constant_term(a))
+        @inbounds c_coeffs[1] = log(a0)
         return nothing
     elseif k == 1
-        @inbounds c[1] = a[1] / constant_term(a)
+        @inbounds c_coeffs[2] = a_coeffs[2] / a0
         return nothing
     end
-    zero!(c, k)
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
     @inbounds for i = 1:k-1
-        c[k] += (k-i) * a[i] * c[k-i]
+        acc += (k-i) * a_coeffs[i+1] * c_coeffs[k-i+1]
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
+    @inbounds c_coeffs[kk] = (a_coeffs[kk] - acc/k) / a0
     return nothing
 end
 function log!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -388,20 +396,23 @@ end
 
 function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    a0 = constant_term(a)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    @inbounds a0 = a_coeffs[1]
     a0p1 = a0+one(a0)
     if k == 0
-        @inbounds c[0] = log1p(a0)
+        @inbounds c_coeffs[1] = log1p(a0)
         return nothing
     elseif k == 1
-        @inbounds c[1] = a[1] / a0p1
+        @inbounds c_coeffs[2] = a_coeffs[2] / a0p1
         return nothing
     end
-    zero!(c, k)
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
     @inbounds for i = 1:k-1
-        c[k] += (k-i) * a[i] * c[k-i]
+        acc += (k-i) * a_coeffs[i+1] * c_coeffs[k-i+1]
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / a0p1
+    @inbounds c_coeffs[kk] = (a_coeffs[kk] - acc/k) / a0p1
     return nothing
 end
 function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -443,19 +454,23 @@ end
 
 function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    s_coeffs = s.coeffs
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
     if k == 0
-        @inbounds s[0], c[0] = sincos( constant_term(a) )
+        @inbounds s_coeffs[1], c_coeffs[1] = sincos(a_coeffs[1])
         return nothing
     end
-    zero!(s, k)
-    zero!(c, k)
+    kk = k+1
+    @inbounds s_acc = zero(s_coeffs[kk])
+    @inbounds c_acc = zero(c_coeffs[kk])
     @inbounds for i = 1:k
-        x = i * a[i]
-        s[k] += x * c[k-i]
-        c[k] -= x * s[k-i]
+        x = i * a_coeffs[i+1]
+        s_acc += x * c_coeffs[k-i+1]
+        c_acc -= x * s_coeffs[k-i+1]
     end
-    s[k] = s[k] / k
-    c[k] = c[k] / k
+    @inbounds s_coeffs[kk] = s_acc / k
+    @inbounds c_coeffs[kk] = c_acc / k
     return nothing
 end
 function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -489,20 +504,23 @@ end
 
 function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    s_coeffs = s.coeffs
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
     if k == 0
-        a0 = constant_term(a)
-        @inbounds s[0], c[0] = sincospi( a0 )
+        @inbounds s_coeffs[1], c_coeffs[1] = sincospi(a_coeffs[1])
         return nothing
     end
-    zero!(s, k)
-    zero!(c, k)
+    kk = k+1
+    @inbounds s_acc = zero(s_coeffs[kk])
+    @inbounds c_acc = zero(c_coeffs[kk])
     @inbounds for i = 1:k
-        x = (i * pi) * a[i]
-        s[k] += x * c[k-i]
-        c[k] -= x * s[k-i]
+        x = (i * pi) * a_coeffs[i+1]
+        s_acc += x * c_coeffs[k-i+1]
+        c_acc -= x * s_coeffs[k-i+1]
     end
-    s[k] = s[k] / k
-    c[k] = c[k] / k
+    @inbounds s_coeffs[kk] = s_acc / k
+    @inbounds c_coeffs[kk] = c_acc / k
     return nothing
 end
 function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -537,21 +555,22 @@ end
 
 function tan!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    c2_coeffs = c2.coeffs
     if k == 0
-        @inbounds aux = tan( constant_term(a) )
-        @inbounds c[0] = aux
-        @inbounds c2[0] = aux^2
+        @inbounds aux = tan(a_coeffs[1])
+        @inbounds c_coeffs[1] = aux
+        @inbounds c2_coeffs[1] = aux^2
         return nothing
     end
-    zero!(c, k)
-    @inbounds for i = 0:k-1
-        c[k] += (k-i) * a[k-i] * c2[i]
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
+    @inbounds for i = 1:k
+        acc += (k-i+1) * a_coeffs[k-i+2] * c2_coeffs[i]
     end
-    # c[k] <- c[k]/k
-    div!(c, c, k, k)
-    # c[k] <- c[k] + a[k]
-    add!(c, a, c, k)
-    sqr!(c2, c, zero(c[0]), k)
+    @inbounds c_coeffs[kk] = acc / k + a_coeffs[kk]
+    @inbounds sqr!(c2, c, zero(c_coeffs[1]), k)
     return nothing
 end
 function tan!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
@@ -700,18 +719,22 @@ end
 
 function atan!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    r_coeffs = r.coeffs
     if k == 0
-        a0 = constant_term(a)
-        @inbounds c[0] = atan( a0 )
-        @inbounds r[0] = 1 + a0^2
+        @inbounds a0 = a_coeffs[1]
+        @inbounds c_coeffs[1] = atan(a0)
+        @inbounds r_coeffs[1] = 1 + a0^2
         return nothing
     end
-    zero!(c, k)
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
     @inbounds for i in 1:k-1
-        c[k] += (k-i) * r[i] * c[k-i]
+        acc += (k-i) * r_coeffs[i+1] * c_coeffs[k-i+1]
     end
-    sqr!(r, a, zero(a[0]), k)
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+    @inbounds sqr!(r, a, zero(a_coeffs[1]), k)
+    @inbounds c_coeffs[kk] = (a_coeffs[kk] - acc/k) / r_coeffs[1]
     return nothing
 end
 function atan!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
@@ -748,21 +771,25 @@ end
 
 function sinhcosh!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    s_coeffs = s.coeffs
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
     if k == 0
-        @inbounds s[0] = sinh( constant_term(a) )
-        @inbounds c[0] = cosh( constant_term(a) )
+        @inbounds a0 = a_coeffs[1]
+        @inbounds s_coeffs[1] = sinh(a0)
+        @inbounds c_coeffs[1] = cosh(a0)
         return nothing
     end
-    x = a[1]
-    zero!(s, k)
-    zero!(c, k)
+    kk = k+1
+    @inbounds s_acc = zero(s_coeffs[kk])
+    @inbounds c_acc = zero(c_coeffs[kk])
     @inbounds for i = 1:k
-        x = i * a[i]
-        s[k] += x * c[k-i]
-        c[k] += x * s[k-i]
+        x = i * a_coeffs[i+1]
+        s_acc += x * c_coeffs[k-i+1]
+        c_acc += x * s_coeffs[k-i+1]
     end
-    @inbounds div!(s, s, k, k)
-    @inbounds div!(c, c, k, k)
+    @inbounds s_coeffs[kk] = s_acc / k
+    @inbounds c_coeffs[kk] = c_acc / k
     return nothing
 end
 function sinhcosh!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
@@ -793,18 +820,22 @@ end
 
 function tanh!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    c2_coeffs = c2.coeffs
     if k == 0
-        @inbounds aux = tanh( constant_term(a) )
-        @inbounds c[0] = aux
-        @inbounds c2[0] = aux^2
+        @inbounds aux = tanh(a_coeffs[1])
+        @inbounds c_coeffs[1] = aux
+        @inbounds c2_coeffs[1] = aux^2
         return nothing
     end
-    zero!(c, k)
-    @inbounds for i = 0:k-1
-        c[k] += (k-i) * a[k-i] * c2[i]
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
+    @inbounds for i = 1:k
+        acc += (k-i+1) * a_coeffs[k-i+2] * c2_coeffs[i]
     end
-    @inbounds c[k] = a[k] - c[k]/k
-    sqr!(c2, c, zero(c[0]), k)
+    @inbounds c_coeffs[kk] = a_coeffs[kk] - acc/k
+    @inbounds sqr!(c2, c, zero(c_coeffs[1]), k)
     return nothing
 end
 function tanh!(c::Taylor1{T}, a::Taylor1{T}, c2::Taylor1{T}, k::Int) where
@@ -933,18 +964,22 @@ end
 
 function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    a0 = constant_term(a)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    r_coeffs = r.coeffs
+    @inbounds a0 = a_coeffs[1]
     if k == 0
-        @inbounds c[0] = atanh( a0 )
-        @inbounds r[0] = 1 - a0^2
+        @inbounds c_coeffs[1] = atanh(a0)
+        @inbounds r_coeffs[1] = 1 - a0^2
         return nothing
     end
-    zero!(c, k)
+    kk = k+1
+    @inbounds acc = zero(c_coeffs[kk])
     @inbounds for i in 1:k-1
-        c[k] += (k-i) * r[i] * c[k-i]
+        acc += (k-i) * r_coeffs[i+1] * c_coeffs[k-i+1]
     end
-    sqr!(r, a, zero(a0), k)
-    @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
+    @inbounds sqr!(r, a, zero(a0), k)
+    @inbounds c_coeffs[kk] = (a_coeffs[kk] + acc/k) / r_coeffs[1]
     return nothing
 end
 function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where

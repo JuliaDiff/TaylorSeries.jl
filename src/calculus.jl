@@ -16,7 +16,7 @@ The order of the result is `order(a)-1`.
 The function `derivative` is an exact synonym of `differentiate`.
 """
 function differentiate(a::Taylor1)
-    res = Taylor1(zero(a[0]), order(a)-1)
+    res = Taylor1(zero(a.coeffs[1]), order(a)-1)
     for ord in eachindex(res)
         differentiate!(res, a, ord)
     end
@@ -60,7 +60,14 @@ p_k = (k+1) a_{k+1}.
 function differentiate!(p::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     k >= order(a) && return nothing
-    @inbounds p[k] = (k+1)*a[k+1]
+    @inbounds p.coeffs[k+1] = (k+1)*a.coeffs[k+2]
+    return nothing
+end
+
+function differentiate!(p::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        k::Int) where {T<:NumberNotSeries}
+    k >= order(a) && return nothing
+    @inbounds mul!(p.coeffs[k+1], a.coeffs[k+2], k+1)
     return nothing
 end
 function differentiate!(p::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where
@@ -111,7 +118,7 @@ Return the value of the `n`-th differentiate of the polynomial `a`.
 """
 function differentiate(n::Int, a::Taylor1{T}) where {T<:Number}
     @assert order(a) ≥ n ≥ 0
-    return factorial( widen(n) ) * a[n] :: T
+    return factorial( widen(n) ) * a.coeffs[n+1] :: T
 end
 
 
@@ -125,24 +132,38 @@ Note that the order of the result is `order(a)+1`.
 """
 function integrate(a::Taylor1{T}, x::S) where {T<:Number, S<:Number}
     order = TS.order(a)
-    aa = zero(a[0])/1 + zero(x)
+    aa = zero(a.coeffs[1])/1 + zero(x)
     res = Taylor1(aa, order)
     integrate!(res, a, convert(typeof(aa), x))
     return res
 end
-integrate(a::Taylor1{T}) where {T<:Number} = integrate(a, zero(a[0]))
+integrate(a::Taylor1{T}) where {T<:Number} = integrate(a, zero(a.coeffs[1]))
 
 # In-place method
 function integrate!(res::Taylor1{T}, a::Taylor1{T}, x::T) where {T<:Number}
     order = TS.order(a)
+    res_coeffs = res.coeffs
+    a_coeffs = a.coeffs
     @inbounds for i = 1:order
-        res.coeffs[i+1] = a[i-1] / i
+        res_coeffs[i+1] = a_coeffs[i] / i
     end
-    @inbounds res.coeffs[1] = x
+    @inbounds res_coeffs[1] = x
     return nothing
 end
 integrate!(res::Taylor1{T}, a::Taylor1{T}) where {T<:Number} =
-    integrate!(res, a, zero(a[0]))
+    integrate!(res, a, zero(a.coeffs[1]))
+
+function integrate!(res::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        x::Taylor1{T}) where {T<:NumberNotSeries}
+    order = TS.order(a)
+    res_coeffs = res.coeffs
+    a_coeffs = a.coeffs
+    @inbounds for i = 1:order
+        div!(res_coeffs[i+1], a_coeffs[i], i)
+    end
+    @inbounds res_coeffs[1] = x
+    return nothing
+end
 
 
 

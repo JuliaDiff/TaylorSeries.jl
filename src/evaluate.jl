@@ -15,23 +15,25 @@ omitted, its value is considered as zero. Note that the syntax `a(dx)` is
 equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::Taylor1{T}, dx::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
-    @inbounds suma = zero(a[end])
+    a_coeffs = a.coeffs
+    @inbounds suma = zero(a_coeffs[end])
     # suma = evalpoly(dx, view(a.coeffs,:) )
-    @inbounds for k in reverse(eachindex(a))
-        suma = suma * dx + a[k]
+    @inbounds for k in reverse(eachindex(a_coeffs))
+        suma = suma * dx + a_coeffs[k]
     end
     return suma
 end
 
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
-    suma = a[end]*zero(dx)
-    @inbounds for k in reverse(eachindex(a))
-        suma = suma * dx + a[k]
+    a_coeffs = a.coeffs
+    suma = a_coeffs[end]*zero(dx)
+    @inbounds for k in reverse(eachindex(a_coeffs))
+        suma = suma * dx + a_coeffs[k]
     end
     return suma
 end
 
-evaluate(a::Taylor1{T}) where {T<:Number} = a[0]
+evaluate(a::Taylor1{T}) where {T<:Number} = a.coeffs[1]
 
 
 """
@@ -57,11 +59,28 @@ Note that the syntax `a(x)` is equivalent to `evaluate(a, x)`.
 evaluate(a::Taylor1{T}, x::Taylor1{S}) where {T<:Number, S<:Number} =
     evaluate(promote(a, x)...)
 
+function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:NumberNotSeries}
+    if order(a) != order(x)
+        a, x = fixorder(a, x)
+    end
+    suma = zero(x)
+    aux = zero(x)
+    suma_coeffs = suma.coeffs
+    aux_coeffs = aux.coeffs
+    a_coeffs = a.coeffs
+    @inbounds for k in reverse(eachindex(a_coeffs))
+        mul!(aux, suma, x)
+        copyto!(suma_coeffs, aux_coeffs)
+        suma_coeffs[1] += a_coeffs[k]
+    end
+    return suma
+end
+
 function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
     if order(a) != order(x)
         a, x = fixorder(a, x)
     end
-    @inbounds suma = a[end]*zero(x)
+    @inbounds suma = a.coeffs[end]*zero(x)
     _horner!(suma, a, x, zero(suma))
     return suma
 end

@@ -1489,53 +1489,80 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 # @inline
 function div!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    zero!(c, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds c_coeffs[kk] = zero(c_coeffs[kk])
     iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
     ordfact, cdivfact = divfactorization(a, b)
     if k == 0
-        @inbounds c[0] = cdivfact
+        @inbounds c_coeffs[1] = cdivfact
         return nothing
     end
     b_order = order(b)
     imin = max(0, k+ordfact-b_order)
-    @inbounds c[k] = c[imin] * b[k+ordfact-imin]
+    @inbounds acc = c_coeffs[imin+1] * b_coeffs[k+ordfact-imin+1]
     @inbounds for i = imin+1:k-1
-        c[k] += c[i] * b[k+ordfact-i]
+        acc += c_coeffs[i+1] * b_coeffs[k+ordfact-i+1]
     end
     if k+ordfact ≤ b_order
-        @inbounds c[k] = a[k+ordfact] - c[k]
+        @inbounds acc = a_coeffs[k+ordfact+1] - acc
     else
-        @inbounds c[k] = - c[k]
+        acc = -acc
     end
-    c[k] = c[k] / b[ordfact]
+    @inbounds c_coeffs[kk] = acc / b_coeffs[ordfact+1]
     return nothing
 end
 
 # @inline
 function div!(v::Taylor1{T}, a::Taylor1{T}, b::NumberNotSeries,
         k::Int) where {T<:Number}
-    @inbounds v[k] = a[k] / b
+    @inbounds v.coeffs[k+1] = a.coeffs[k+1] / b
+    return nothing
+end
+
+function div!(v::Taylor1{T}, a::Taylor1{S}, b::NumberNotSeries) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    @inbounds for i in eachindex(v_coeffs)
+        v_coeffs[i] = a_coeffs[i] / b
+    end
+    return nothing
+end
+
+function div!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::NumberNotSeries) where {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    @inbounds for i in eachindex(v_coeffs)
+        div!(v_coeffs[i], a_coeffs[i], b)
+    end
     return nothing
 end
 
 # @inline
 function div!(c::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    zero!(c, k)
+    c_coeffs = c.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds c_coeffs[kk] = zero(c_coeffs[kk])
     iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
     # ordfact, cdivfact = 0, a/b[0]
     if k == 0
-        @inbounds c[0] = a / b[0]
+        @inbounds c_coeffs[1] = a / b_coeffs[1]
         return nothing
     end
-    @inbounds c[k] = c[0] * b[k]
+    @inbounds acc = c_coeffs[1] * b_coeffs[kk]
     @inbounds for i = 1:k-1
-        c[k] += c[i] * b[k-i]
+        acc += c_coeffs[i+1] * b_coeffs[k-i+1]
     end
-    @inbounds c[k] = -c[k] / b[0]
+    @inbounds c_coeffs[kk] = -acc / b_coeffs[1]
     return nothing
 end
 
@@ -1723,18 +1750,20 @@ end
 
 @inline function div_scalar!(c::Taylor1{T}, scalar::NumberNotSeries,
         a::Taylor1{T}, k::Int) where {T <: NumberNotSeries}
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
     if k==0
-        @inbounds c[0] = scalar*constant_term(c) / constant_term(a)
+        @inbounds c_coeffs[1] = scalar*c_coeffs[1] / a_coeffs[1]
         return nothing
     end
 
-    aux = c[k] = scalar * c[k]
-    @inbounds zero!(c, k)
+    kk = k+1
+    @inbounds aux = scalar * c_coeffs[kk]
+    @inbounds acc = zero(c_coeffs[kk])
     @inbounds for i = 0:k-1
-        c[k] -= c[i] * a[k-i]
+        acc -= c_coeffs[i+1] * a_coeffs[k-i+1]
     end
-    c[k] += aux
-    @inbounds c[k] = c[k] / constant_term(a)
+    @inbounds c_coeffs[kk] = (acc + aux) / a_coeffs[1]
     return nothing
 end
 

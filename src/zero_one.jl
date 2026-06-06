@@ -55,13 +55,21 @@ ones(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
 
 # Recursive functions (homogeneous coefficients)
 function zero!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    a[k] = zero(a[k])
+    @inbounds a.coeffs[k+1] = zero(a.coeffs[k+1])
     return nothing
 end
 
 function zero!(a::Taylor1{T}, k::Int) where {T<:Number}
     for l in eachindex(a[k])
         zero!(a[k], l)
+    end
+    return nothing
+end
+
+function zero!(a::Taylor1{T}) where {T<:NumberNotSeries}
+    a_coeffs = a.coeffs
+    @inbounds for i in eachindex(a_coeffs)
+        a_coeffs[i] = zero(a_coeffs[i])
     end
     return nothing
 end
@@ -116,7 +124,8 @@ end
 
 #
 function one!(a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    a[k] = k == 0 ? one(a[0]) : zero(a[k])
+    a_coeffs = a.coeffs
+    @inbounds a_coeffs[k+1] = k == 0 ? one(a_coeffs[1]) : zero(a_coeffs[k+1])
     return nothing
 end
 
@@ -126,6 +135,15 @@ function one!(a::Taylor1{T}, k::Int) where {T<:Number}
         one!(a[k], j)
     end
     # one!(a[k])
+    return nothing
+end
+
+function one!(a::Taylor1{T}) where {T<:NumberNotSeries}
+    a_coeffs = a.coeffs
+    @inbounds for i in eachindex(a_coeffs)
+        a_coeffs[i] = zero(a_coeffs[i])
+    end
+    @inbounds a_coeffs[1] = one(a_coeffs[1])
     return nothing
 end
 
@@ -147,8 +165,10 @@ end
 
 # Taylor1 (including nested Taylor1s)
 function one!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    zero!(c, k)
-    (k == 0) && (@inbounds c[0] = one(constant_term(a)))
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    @inbounds c_coeffs[k+1] = zero(c_coeffs[k+1])
+    (k == 0) && (@inbounds c_coeffs[1] = one(a_coeffs[1]))
     return nothing
 end
 function one!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:Number}
