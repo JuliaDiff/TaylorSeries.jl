@@ -1824,13 +1824,14 @@ function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN)
     return nothing
 end
 
-# # c[k] <- a[k]/b, where b is a scalar
-# function div!(c::TaylorN, a::TaylorN, b::NumberNotSeries)
-#     @inbounds for k in eachindex(c)
-#         div!(c[k], a[k], b)
-#     end
-#     return nothing
-# end
+# c[k] <- a[k]/b, where b is a scalar
+function div!(c::TaylorN{T}, a::TaylorN{T}, b::NumberNotSeries) where {T<:Number}
+    _check_same_space(c, a)
+    @inbounds for k in eachindex(c)
+        div!(c[k], a[k], b)
+    end
+    return nothing
+end
 
 # NOTE: Here `div!` *accumulates* the result of a / b in res[k] (k > 0)
 @inline function div!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},

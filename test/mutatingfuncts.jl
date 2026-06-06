@@ -125,4 +125,36 @@ using Test
     TS.mul!(ninplace, nt2)
     @test ninplace ≈ nt1 * nt2
 
+    ct1 = 1 + t1 + t1^2
+    ct1_tail = collect(ct1[1:order(ct1)])
+    @test constant_term!(ct1, 3.5) === ct1
+    @test constant_term(ct1) == 3.5
+    @test collect(ct1[1:order(ct1)]) == ct1_tail
+
+    nct1 = deepcopy(nt1)
+    nct1_tail = [nct1[k] for k in 1:order(nct1)]
+    new_inner_constant = Taylor1([2.0, -1.0, 0.25], 2)
+    @test constant_term!(nct1, new_inner_constant) === nct1
+    @test constant_term(nct1) == new_inner_constant
+    @test all(nct1[k] == nct1_tail[k] for k in 1:order(nct1))
+
+    space = JetSpace(order=3, variables=[:x, :y])
+    x, y = variables(space)
+    tn = 1.0 + x + 2y + 3x*y
+    tn_tail = [tn[k] for k in 1:order(tn)]
+    @test constant_term!(tn, 7.5) === tn
+    @test constant_term(tn) == 7.5
+    @test all(tn[k] == tn_tail[k] for k in 1:order(tn))
+
+    hp0 = HomogeneousPolynomial(space, 1.0, 0)
+    @test constant_term!(hp0, 4.0) === hp0
+    @test hp0[1] == 4.0
+    hp1 = HomogeneousPolynomial(space, [1.0, 0.0], 1)
+    @test_throws ArgumentError constant_term!(hp1, 2.0)
+
+    tn_div = 2.0 + x + 4y + 6x*y
+    tn_res = zero(tn_div)
+    @test isnothing(TS.div!(tn_res, tn_div, 2.0))
+    @test tn_res == tn_div / 2.0
+
 end
