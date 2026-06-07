@@ -232,6 +232,18 @@ for T in (:Taylor1, :TaylorN)
     end
 end
 
+function log1p(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    aux = log1p(constant_term(a))
+    aa = convert(Taylor1{typeof(aux)}, a)
+    c = _constant_series_like(a, aux, order(a))
+    denom = _constant_series_like(aux, zero(aux[0][1]), order(aux))
+    _log1p_denominator!(denom, aa.coeffs[1])
+    for k in eachindex(a)
+        log1p!(c, aa, k, denom)
+    end
+    return c
+end
+
 # Taylor1 mutating functions
 function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
@@ -1366,72 +1378,103 @@ end
 
 function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
+    res_coeffs = res.coeffs
+    a_coeffs = a.coeffs
+    res_k = res_coeffs[k+1]
+    a0 = a_coeffs[1]
     if k == 0
-        @inbounds for ordQ in eachindex(a[0])
+        @inbounds for ordQ in eachindex(a0)
             # zero!(res[k], a[0], ordQ)
-            log!(res[k], a[0], ordQ)
+            log!(res_k, a0, ordQ)
         end
         return nothing
     elseif k == 1
-        @inbounds for ordQ in eachindex(a[0])
-            zero!(res[k][ordQ])
-            div!(res[k], a[1], a[0], ordQ)
+        a1 = a_coeffs[2]
+        @inbounds for ordQ in eachindex(a0)
+            zero!(res_k[ordQ])
+            div!(res_k, a1, a0, ordQ)
         end
         return nothing
     end
     # The recursion formula
-    tmp = _constant_series_like(a[k], zero(a[k][0][1]), order(a[0]))
-    zero!(res[k])
+    zero!(res_k)
     for i = 1:k-1
-        @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, a[i], ordQ)
+        res_ki = res_coeffs[k-i+1]
+        a_i = a_coeffs[i+1]
+        @inbounds for ordQ in eachindex(a0)
+            mul_scalar!(res_k, k-i, res_ki, a_i, ordQ)
         end
     end
     div!(res, res, k, k)
-    @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, a[0], ordQ)
+    a_k = a_coeffs[k+1]
+    @inbounds for ordQ in eachindex(a0)
+        subst!(res_k, a_k, res_k, ordQ)
+        div!(res_k, a0, ordQ)
     end
     return nothing
 end
 
 function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
+    res_coeffs = res.coeffs
+    a_coeffs = a.coeffs
+    res_k = res_coeffs[k+1]
+    a0 = a_coeffs[1]
     if k == 0
-        @inbounds for ordQ in eachindex(a[0])
+        @inbounds for ordQ in eachindex(a0)
             # zero!(res[k], a[0], ordQ)
-            log1p!(res[k], a[0], ordQ)
+            log1p!(res_k, a0, ordQ)
         end
         return nothing
     end
-    tmp1 = _constant_series_like(a[k], zero(a[k][0][1]), order(a[0]))
-    zero!(res[k])
-    @inbounds for ordQ in eachindex(a[0])
-        # zero!(res[k], a[0], ordQ)
-        one!(tmp1, a[0], ordQ)
-        add!(tmp1, tmp1, a[0], ordQ)
+    tmp1 = _constant_series_like(a_coeffs[k+1], zero(a_coeffs[k+1][0][1]), order(a0))
+    _log1p_denominator!(tmp1, a0)
+    log1p!(res, a, k, tmp1)
+    return nothing
+end
+
+function _log1p_denominator!(tmp::TaylorN{T}, a0::TaylorN{T}) where {T<:Number}
+    zero!(tmp)
+    @inbounds for ordQ in eachindex(a0)
+        one!(tmp, a0, ordQ)
+        add!(tmp, tmp, a0, ordQ)
     end
+    return tmp
+end
+
+function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        k::Int, tmp1::TaylorN{T}) where {T<:NumberNotSeries}
+    res_coeffs = res.coeffs
+    a_coeffs = a.coeffs
+    res_k = res_coeffs[k+1]
+    a0 = a_coeffs[1]
+    if k == 0
+        @inbounds for ordQ in eachindex(a0)
+            log1p!(res_k, a0, ordQ)
+        end
+        return nothing
+    end
+    zero!(res_k)
     if k == 1
-        @inbounds for ordQ in eachindex(a[0])
-            div!(res[k], a[1], tmp1, ordQ)
+        a1 = a_coeffs[2]
+        @inbounds for ordQ in eachindex(a0)
+            div!(res_k, a1, tmp1, ordQ)
         end
         return nothing
     end
     # The recursion formula
-    tmp = _constant_series_like(a[k], zero(a[k][0][1]), order(a[0]))
     for i = 1:k-1
-        @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[k-i][ordQ]
-            mul!(res[k], tmp, a[i], ordQ)
+        res_ki = res_coeffs[k-i+1]
+        a_i = a_coeffs[i+1]
+        @inbounds for ordQ in eachindex(a0)
+            mul_scalar!(res_k, k-i, res_ki, a_i, ordQ)
         end
     end
     div!(res, res, k, k)
-    @inbounds for ordQ in eachindex(a[0])
-        subst!(tmp, a[k], res[k], ordQ)
-        zero!(res[k][ordQ])
-        div!(res[k], tmp, tmp1, ordQ)
+    a_k = a_coeffs[k+1]
+    @inbounds for ordQ in eachindex(a0)
+        subst!(res_k, a_k, res_k, ordQ)
+        div!(res_k, tmp1, ordQ)
     end
     return nothing
 end

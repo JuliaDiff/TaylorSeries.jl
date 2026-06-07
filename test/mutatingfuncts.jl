@@ -157,4 +157,50 @@ using Test
     @test isnothing(TS.div!(tn_res, tn_div, 2.0))
     @test tn_res == tn_div / 2.0
 
+    t1tn1 = Taylor1([
+        (2.0 + 0.1i) + (0.2 + 0.01i)*x + (0.1 - 0.02i)*y +
+            (0.03 + 0.01i)*x*y for i in 0:4], 4)
+    t1tn2 = Taylor1([
+        (1.0 - 0.05i) + (0.3 - 0.02i)*x - (0.04 + 0.01i)*y +
+            (0.02 - 0.005i)*x^2 for i in 0:4], 4)
+    t1tn_res = zero(t1tn1)
+    TS.add!(t1tn_res, t1tn1, t1tn2)
+    @test t1tn_res == t1tn1 + t1tn2
+    TS.subst!(t1tn_res, t1tn1, t1tn2)
+    @test t1tn_res == t1tn1 - t1tn2
+    for k in eachindex(t1tn_res)
+        TS.mul!(t1tn_res, 2.5, t1tn1, k)
+    end
+    @test t1tn_res == 2.5 * t1tn1
+    for k in eachindex(t1tn_res)
+        TS.div!(t1tn_res, t1tn1, 2.5, k)
+    end
+    t1tn_div_expected = zero(t1tn1)
+    for k in eachindex(t1tn_div_expected)
+        TS.mul!(t1tn_div_expected, 0.4, t1tn1, k)
+    end
+    @test t1tn_res ≈ t1tn_div_expected
+    d_t1tn = Taylor1(zero(t1tn1[0]), order(t1tn1)-1)
+    TS.differentiate!(d_t1tn, t1tn1)
+    @test d_t1tn == differentiate(t1tn1)
+    log_t1tn = zero(t1tn1)
+    for k in eachindex(log_t1tn)
+        TS.log!(log_t1tn, t1tn1, k)
+    end
+    @test exp(log_t1tn) ≈ t1tn1
+    small_t1tn = zero(t1tn1)
+    for k in eachindex(small_t1tn)
+        TS.div!(small_t1tn, t1tn1, 20.0, k)
+    end
+    log1p_t1tn = zero(small_t1tn)
+    for k in eachindex(log1p_t1tn)
+        TS.log1p!(log1p_t1tn, small_t1tn, k)
+    end
+    one_plus_small = zero(small_t1tn)
+    for k in eachindex(one_plus_small)
+        TS.add!(one_plus_small, 1.0, small_t1tn, k)
+    end
+    @test exp(log1p_t1tn) ≈ one_plus_small
+    @test log1p(small_t1tn) ≈ log1p_t1tn
+
 end

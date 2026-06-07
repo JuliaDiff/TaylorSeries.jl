@@ -361,6 +361,50 @@ function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     return nothing
 end
 
+function add!(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    _check_same_space(v_coeffs[1], a_coeffs[1], b_coeffs[1])
+    @inbounds for i in eachindex(v_coeffs)
+        v_hps = v_coeffs[i].coeffs
+        a_hps = a_coeffs[i].coeffs
+        b_hps = b_coeffs[i].coeffs
+        for j in eachindex(v_hps)
+            v_hp = v_hps[j].coeffs
+            a_hp = a_hps[j].coeffs
+            b_hp = b_hps[j].coeffs
+            for k in eachindex(v_hp)
+                v_hp[k] = a_hp[k] + b_hp[k]
+            end
+        end
+    end
+    return nothing
+end
+
+function subst!(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+        b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    _check_same_space(v_coeffs[1], a_coeffs[1], b_coeffs[1])
+    @inbounds for i in eachindex(v_coeffs)
+        v_hps = v_coeffs[i].coeffs
+        a_hps = a_coeffs[i].coeffs
+        b_hps = b_coeffs[i].coeffs
+        for j in eachindex(v_hps)
+            v_hp = v_hps[j].coeffs
+            a_hp = a_hps[j].coeffs
+            b_hp = b_hps[j].coeffs
+            for k in eachindex(v_hp)
+                v_hp[k] = a_hp[k] - b_hp[k]
+            end
+        end
+    end
+    return nothing
+end
+
 function +(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
     if order(a) != order(b)
         a, b = fixorder(a, b)
@@ -409,45 +453,70 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 a, b = fixorder(a, b)
             end
             c = zero(a)
-            for k in eachindex(a)
-                ($fc)(c, a, b, k)
-            end
+            ($fc)(c, a, b)
             return c
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-            @inbounds for i in eachindex(v[k])
-                for j in eachindex(v[k][i])
-                    v[k][i][j] = ($f)(a[k][i][j], b[k][i][j])
+            v_k = v.coeffs[k+1]
+            a_k = a.coeffs[k+1]
+            b_k = b.coeffs[k+1]
+            v_hps = v_k.coeffs
+            a_hps = a_k.coeffs
+            b_hps = b_k.coeffs
+            @inbounds for i in eachindex(v_hps)
+                v_hp = v_hps[i].coeffs
+                a_hp = a_hps[i].coeffs
+                b_hp = b_hps[i].coeffs
+                for j in eachindex(v_hp)
+                    v_hp[j] = ($f)(a_hp[j], b_hp[j])
                 end
             end
             return nothing
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::NumberNotSeries,
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-            @inbounds for i in eachindex(v[k])
-                aaa = ifelse(k == 0 && i == 0, a, zero(a))
-                for j in eachindex(v[k][i])
-                    v[k][i][j] = ($f)(aaa, b[k][i][j])
+            v_k = v.coeffs[k+1]
+            b_k = b.coeffs[k+1]
+            v_hps = v_k.coeffs
+            b_hps = b_k.coeffs
+            @inbounds for i in eachindex(v_hps)
+                aaa = ifelse(k == 0 && i == 1, a, zero(a))
+                v_hp = v_hps[i].coeffs
+                b_hp = b_hps[i].coeffs
+                for j in eachindex(v_hp)
+                    v_hp[j] = ($f)(aaa, b_hp[j])
                 end
             end
             return nothing
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
                 a::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
-            @inbounds for i in eachindex(v[k])
-                aaa = ifelse(k == 0 && i == 0, a, zero(a))
-                for j in eachindex(v[k][i])
-                    v[k][i][j] = ($f)(b[k][i][j], aaa)
+            v_k = v.coeffs[k+1]
+            b_k = b.coeffs[k+1]
+            v_hps = v_k.coeffs
+            b_hps = b_k.coeffs
+            @inbounds for i in eachindex(v_hps)
+                aaa = ifelse(k == 0 && i == 1, a, zero(a))
+                v_hp = v_hps[i].coeffs
+                b_hp = b_hps[i].coeffs
+                for j in eachindex(v_hp)
+                    v_hp[j] = ($f)(b_hp[j], aaa)
                 end
             end
             return nothing
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                 k::Int) where {T<:NumberNotSeries}
-            @inbounds for l in eachindex(v[k])
-                for m in eachindex(v[k][l])
-                    v[k][l][m] = ($f)(a[k][l][m])
+            v_k = v.coeffs[k+1]
+            a_k = a.coeffs[k+1]
+            v_hps = v_k.coeffs
+            a_hps = a_k.coeffs
+            @inbounds for l in eachindex(v_hps)
+                v_hp = v_hps[l].coeffs
+                a_hp = a_hps[l].coeffs
+                for m in eachindex(v_hp)
+                    v_hp[m] = ($f)(a_hp[m])
                 end
             end
             return nothing
@@ -1010,9 +1079,15 @@ end
 
 function mul!(res::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    for l in eachindex(b[k])
-        for m in eachindex(b[k][l])
-            res[k][l][m] = a*b[k][l][m]
+    res_k = res.coeffs[k+1]
+    b_k = b.coeffs[k+1]
+    res_hps = res_k.coeffs
+    b_hps = b_k.coeffs
+    @inbounds for l in eachindex(res_hps)
+        res_hp = res_hps[l].coeffs
+        b_hp = b_hps[l].coeffs
+        for m in eachindex(res_hp)
+            res_hp[m] = a*b_hp[m]
         end
     end
     return nothing
@@ -1878,9 +1953,15 @@ end
 
 @inline function div!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
-    for l in eachindex(a[k])
-        for m in eachindex(a[k][l])
-            res[k][l][m] = a[k][l][m]/b
+    res_k = res.coeffs[k+1]
+    a_k = a.coeffs[k+1]
+    res_hps = res_k.coeffs
+    a_hps = a_k.coeffs
+    @inbounds for l in eachindex(res_hps)
+        res_hp = res_hps[l].coeffs
+        a_hp = a_hps[l].coeffs
+        for m in eachindex(res_hp)
+            res_hp[m] = a_hp[m]/b
         end
     end
     return nothing

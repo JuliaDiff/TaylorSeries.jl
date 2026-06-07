@@ -73,9 +73,11 @@ end
 function differentiate!(p::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, k::Int) where
         {T<:NumberNotSeries}
     k >= order(a) && return nothing
-    @inbounds for ord in eachindex(p[k])
-        zero!(p[k], ord)
-        mul!(p[k], a[k+1], k+1, ord)
+    p_k = p.coeffs[k+1]
+    a_next = a.coeffs[k+2]
+    @inbounds for ord in eachindex(p_k)
+        zero!(p_k, ord)
+        mul!(p_k, a_next, k+1, ord)
     end
     return nothing
 end
