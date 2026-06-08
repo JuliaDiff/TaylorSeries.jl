@@ -471,6 +471,8 @@ Base.iszero(::SymbNumber) = false
     @test evaluate!(v, 0.0, view(vv, 1:2)) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv
+    evaluate!(v, 0.2, vv)
+    @test (@allocated evaluate!(v, 0.2, vv)) == 0
     @test isapprox(evaluate(v, complex(0.0,0.2)),
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))], atol=eps(), rtol=0.0)
     m = [sin(t) exp(-t); cos(t) exp(t)]
