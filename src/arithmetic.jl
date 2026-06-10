@@ -445,6 +445,27 @@ end
 
 for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     @eval begin
+        function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
+                b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+            v_coeffs = v.coeffs
+            a_coeffs = a.coeffs
+            b_coeffs = b.coeffs
+            _check_same_space(v_coeffs[1], a_coeffs[1], b_coeffs[1])
+            @inbounds for i in eachindex(v_coeffs)
+                v_hps = v_coeffs[i].coeffs
+                a_hps = a_coeffs[i].coeffs
+                b_hps = b_coeffs[i].coeffs
+                for j in eachindex(v_hps)
+                    v_hp = v_hps[j].coeffs
+                    a_hp = a_hps[j].coeffs
+                    b_hp = b_hps[j].coeffs
+                    for k in eachindex(v_hp)
+                        v_hp[k] = ($f)(a_hp[k], b_hp[k])
+                    end
+                end
+            end
+            return nothing
+        end
         function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries}
             _check_same_space(a[0], b[0])
