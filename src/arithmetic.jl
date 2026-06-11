@@ -361,6 +361,18 @@ function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     return nothing
 end
 
+function add!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    @inbounds add!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
+    return nothing
+end
+
+function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
+    @inbounds subst!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
+    return nothing
+end
+
 function +(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
     if order(a) != order(b)
         a, b = fixorder(a, b)
@@ -793,18 +805,6 @@ function mul_scalar!(c::TaylorN{T}, scalar::NumberNotSeries, a::TaylorN{T},
 end
 
 # Nested Taylor1s
-function add!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
-        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
-    @inbounds add!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
-    return nothing
-end
-
-function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
-        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
-    @inbounds subst!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
-    return nothing
-end
-
 function mul!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}},
         k::Int) where {T<:NumberNotSeries}
     c_coeffs = c.coeffs
