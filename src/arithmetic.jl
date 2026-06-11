@@ -69,8 +69,12 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     return nothing
                 end
 
-                function ($fc)(v::$T, a::$T, b::$T, k::Int)
-                    @inbounds v[k] = ($f)(a[k], b[k])
+                @inline function ($fc)(v::$T, a::$T, b::$T, k::Int)
+                    v_coeffs = v.coeffs
+                    a_coeffs = a.coeffs
+                    b_coeffs = b.coeffs
+                    kk = k + 1
+                    @inbounds v_coeffs[kk] = ($f)(a_coeffs[kk], b_coeffs[kk])
                     return nothing
                 end
 
@@ -315,26 +319,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
 
     end
-end
-
-@inline function add!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T},
-        k::Int) where {T<:NumberNotSeries}
-    v_coeffs = v.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    kk = k + 1
-    @inbounds v_coeffs[kk] = a_coeffs[kk] + b_coeffs[kk]
-    return nothing
-end
-
-@inline function subst!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T},
-        k::Int) where {T<:NumberNotSeries}
-    v_coeffs = v.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    kk = k + 1
-    @inbounds v_coeffs[kk] = a_coeffs[kk] - b_coeffs[kk]
-    return nothing
 end
 
 function add!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
