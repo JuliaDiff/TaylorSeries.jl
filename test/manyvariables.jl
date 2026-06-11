@@ -52,6 +52,23 @@ using Test
     @test sp.index_table[2][1] == 7
     @test TS.in_base(order(), [2,1]) == 15
     @test sp.pos_table[4][15] == 2
+
+    default_space_warning = r"Updating TaylorSeries.default_space\[\]"
+    @test_logs (:warn, default_space_warning) variables!("w", order=2,
+        numvars=2)
+    @test_logs (:warn, default_space_warning) variables!(:w, order=2,
+        numvars=2)
+    @test_logs (:warn, default_space_warning) variables!(["w", "z"],
+        order=2)
+    @test_logs (:warn, default_space_warning) variables!([:w, :z], order=2)
+    @test_logs (:warn, default_space_warning) variables!(Int, "w", order=2,
+        numvars=2)
+    @test_logs (:warn, default_space_warning) variables!(Int, :w, order=2,
+        numvars=2)
+    @test_logs (:warn, default_space_warning) variables!(BigInt, ["w", "z"],
+        order=2)
+    @test_logs (:warn, default_space_warning) variables!(BigInt, [:w, :z],
+        order=2)
 end
 
 @testset "Explicit JetSpaces" begin
