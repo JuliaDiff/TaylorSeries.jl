@@ -147,6 +147,50 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     return nothing
                 end
 
+                function ($fc)(v::$T{T}, a::$T{T}, b::$T{T}) where
+                        {T<:NumberNotSeries}
+                    for k in eachindex(v)
+                        ($fc)(v, a, b, k)
+                    end
+                    return nothing
+                end
+
+                function ($fc)(v::$T{$T{T}}, a::$T{$T{T}},
+                        b::$T{$T{T}}) where {T<:NumberNotSeries}
+                    v_coeffs = v.coeffs
+                    a_coeffs = a.coeffs
+                    b_coeffs = b.coeffs
+                    @inbounds for i in eachindex(v_coeffs)
+                        ($fc)(v_coeffs[i], a_coeffs[i], b_coeffs[i])
+                    end
+                    return nothing
+                end
+
+                function ($fc)(v::$T{$T{T}}, a::$T{$T{T}},
+                        b::$T{$T{T}}, k::Int) where {T<:NumberNotSeries}
+                    @inbounds ($fc)(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
+                    return nothing
+                end
+
+                function ($f)(a::$T{T}, b::$T{T}) where {T<:NumberNotSeries}
+                    if order(a) != order(b)
+                        a, b = fixorder(a, b)
+                    end
+                    c = zero(a)
+                    ($fc)(c, a, b)
+                    return c
+                end
+
+                function ($f)(a::$T{$T{T}}, b::$T{$T{T}}) where
+                        {T<:NumberNotSeries}
+                    if order(a) != order(b)
+                        a, b = fixorder(a, b)
+                    end
+                    c = zero(a)
+                    ($fc)(c, a, b)
+                    return c
+                end
+
             end
         else
             @eval begin
@@ -319,94 +363,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
 
     end
-end
-
-function add!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
-        {T<:NumberNotSeries}
-    for k in eachindex(v)
-        add!(v, a, b, k)
-    end
-    return nothing
-end
-
-function subst!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
-        {T<:NumberNotSeries}
-    for k in eachindex(v)
-        subst!(v, a, b, k)
-    end
-    return nothing
-end
-
-function add!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
-        b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
-    v_coeffs = v.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    @inbounds for i in eachindex(v_coeffs)
-        add!(v_coeffs[i], a_coeffs[i], b_coeffs[i])
-    end
-    return nothing
-end
-
-function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
-        b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeries}
-    v_coeffs = v.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    @inbounds for i in eachindex(v_coeffs)
-        subst!(v_coeffs[i], a_coeffs[i], b_coeffs[i])
-    end
-    return nothing
-end
-
-function add!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
-        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
-    @inbounds add!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
-    return nothing
-end
-
-function subst!(v::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
-        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeries}
-    @inbounds subst!(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
-    return nothing
-end
-
-function +(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
-    if order(a) != order(b)
-        a, b = fixorder(a, b)
-    end
-    c = zero(a)
-    add!(c, a, b)
-    return c
-end
-
-function -(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
-    if order(a) != order(b)
-        a, b = fixorder(a, b)
-    end
-    c = zero(a)
-    subst!(c, a, b)
-    return c
-end
-
-function +(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
-        {T<:NumberNotSeries}
-    if order(a) != order(b)
-        a, b = fixorder(a, b)
-    end
-    c = zero(a)
-    add!(c, a, b)
-    return c
-end
-
-function -(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
-        {T<:NumberNotSeries}
-    if order(a) != order(b)
-        a, b = fixorder(a, b)
-    end
-    c = zero(a)
-    subst!(c, a, b)
-    return c
 end
 
 for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
