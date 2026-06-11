@@ -317,24 +317,38 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     end
 end
 
-function add!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
-        {T<:NumberNotSeries}
+@inline function add!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T},
+        k::Int) where {T<:NumberNotSeries}
     v_coeffs = v.coeffs
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
-    @inbounds for i in eachindex(v_coeffs)
-        v_coeffs[i] = a_coeffs[i] + b_coeffs[i]
+    kk = k + 1
+    @inbounds v_coeffs[kk] = a_coeffs[kk] + b_coeffs[kk]
+    return nothing
+end
+
+@inline function subst!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T},
+        k::Int) where {T<:NumberNotSeries}
+    v_coeffs = v.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k + 1
+    @inbounds v_coeffs[kk] = a_coeffs[kk] - b_coeffs[kk]
+    return nothing
+end
+
+function add!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
+        {T<:NumberNotSeries}
+    for k in eachindex(v)
+        add!(v, a, b, k)
     end
     return nothing
 end
 
 function subst!(v::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
         {T<:NumberNotSeries}
-    v_coeffs = v.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    @inbounds for i in eachindex(v_coeffs)
-        v_coeffs[i] = a_coeffs[i] - b_coeffs[i]
+    for k in eachindex(v)
+        subst!(v, a, b, k)
     end
     return nothing
 end
