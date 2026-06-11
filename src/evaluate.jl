@@ -65,14 +65,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:NumberNotSeries}
     end
     suma = zero(x)
     aux = zero(x)
-    suma_coeffs = suma.coeffs
-    aux_coeffs = aux.coeffs
-    a_coeffs = a.coeffs
-    @inbounds for k in reverse(eachindex(a_coeffs))
-        mul!(aux, suma, x)
-        copyto!(suma_coeffs, aux_coeffs)
-        suma_coeffs[1] += a_coeffs[k]
-    end
+    _horner!(suma, a, x, aux)
     return suma
 end
 
