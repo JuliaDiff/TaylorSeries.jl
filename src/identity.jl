@@ -17,7 +17,7 @@ for T in (:Taylor1, :TaylorN)
         identity!(c[k], a[k])
 end
 
-function identity!(c::Taylor1{T}, a::Taylor1{T}) where {T<:NumberNotSeries}
+@inline function identity!(c::Taylor1{T}, a::Taylor1{T}) where {T<:NumberNotSeries}
     copyto!(c.coeffs, a.coeffs)
     return nothing
 end

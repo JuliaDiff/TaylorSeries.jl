@@ -407,7 +407,7 @@ function pow!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         add!(c_k, c_k, aux_k)
     end
     # c[k] = c[k] / (kprime * a[l0])
-    @inbounds copyto!(aux_k.coeffs, c_k.coeffs)
+    identity!(aux_k, c_k)
     @inbounds for j in eachindex(a_l0)
         div!(c_k, aux_k, a_l0, j)
     end
