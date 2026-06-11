@@ -1836,6 +1836,16 @@ end
     return nothing
 end
 
+# c[k] <- a[k]/b, where b is a scalar
+@inline function div!(c::TaylorN{T}, a::TaylorN{T}, b::NumberNotSeries,
+        k::Int) where {T<:Number}
+    _check_same_space(c, a)
+    @inbounds for i in eachindex(c[k])
+        c[k][i] = a[k][i] / b
+    end
+    return nothing
+end
+
 # in-place division c <- c/a (assumes equal order among TaylorNs)
 function div!(c::TaylorN, a::TaylorN)
     @inbounds for k in eachindex(c)
@@ -1878,9 +1888,8 @@ end
 
 # c[k] <- a[k]/b, where b is a scalar
 function div!(c::TaylorN{T}, a::TaylorN{T}, b::NumberNotSeries) where {T<:Number}
-    _check_same_space(c, a)
     @inbounds for k in eachindex(c)
-        div!(c[k], a[k], b)
+        div!(c, a, b, k)
     end
     return nothing
 end

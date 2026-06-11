@@ -156,6 +156,11 @@ using Test
     tn_res = zero(tn_div)
     @test isnothing(TS.div!(tn_res, tn_div, 2.0))
     @test tn_res == tn_div / 2.0
+    tn_res_k = zero(tn_div)
+    for k in eachindex(tn_res_k)
+        @test isnothing(TS.div!(tn_res_k, tn_div, 2.0, k))
+    end
+    @test tn_res_k == tn_div / 2.0
 
     t1tn1 = Taylor1([
         (2.0 + 0.1i) + (0.2 + 0.01i)*x + (0.1 - 0.02i)*y +
