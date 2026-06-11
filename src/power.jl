@@ -93,7 +93,7 @@ function _pow(a::Taylor1{T}, r::S) where {T<:NumberNotSeries, S<:Real}
     order_a = order(a)
     lastnz = isinteger(r) && r > 0 ? findlast(a) : order_a
     for k in eachindex(c)
-        _pow_taylor1_cached!(c, a, r, k, l0, lnull, lastnz, order_a)
+        _pow_cached!(c, a, r, k, l0, lnull, lastnz, order_a)
     end
     return c
 end
@@ -231,7 +231,7 @@ exploits `k_0`, the order of the first non-zero coefficient of `a`.
 
 """ pow!
 
-@inline function _pow_taylor1_cached!(c::Taylor1{T}, a::Taylor1{T},
+@inline function _pow_cached!(c::Taylor1{T}, a::Taylor1{T},
         r::S, k::Int, l0::Int, lnull::Int, lastnz::Int,
         order_a::Int) where {T<:NumberNotSeries, S<:Real}
     zero!(c, k)
@@ -279,7 +279,7 @@ function pow!(c::Taylor1{T}, a::Taylor1{T}, aux::Taylor1{T},
     lnull = trunc(Int, r*l0)
     order_a = order(a)
     lastnz = isinteger(r) && r > 0 ? findlast(a) : order_a
-    return _pow_taylor1_cached!(c, a, r, k, l0, lnull, lastnz, order_a)
+    return _pow_cached!(c, a, r, k, l0, lnull, lastnz, order_a)
 end
 
 function pow!(c::TaylorN{T}, a::TaylorN{T}, aux::TaylorN{T},
