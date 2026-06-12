@@ -149,7 +149,7 @@ function integrate!(res::Taylor1{T}, a::Taylor1{T}, x::T) where {T<:Number}
     @inbounds for i = 1:order
         res_coeffs[i+1] = a_coeffs[i] / i
     end
-    @inbounds res_coeffs[1] = x
+    constant_term!(res, x)
     return nothing
 end
 integrate!(res::Taylor1{T}, a::Taylor1{T}) where {T<:Number} =
@@ -163,7 +163,7 @@ function integrate!(res::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     @inbounds for i = 1:order
         div!(res_coeffs[i+1], a_coeffs[i], i)
     end
-    @inbounds res_coeffs[1] = x
+    constant_term!(res, x)
     return nothing
 end
 

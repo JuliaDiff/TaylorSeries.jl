@@ -37,13 +37,13 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
             function ($f)(a::$T{T}, b::T) where {T<:Number}
                 c = $T(a.coeffs[:])
-                c[0] = $f(a[0], b)
+                constant_term!(c, $f(constant_term(a), b))
                 return c
             end
 
             function ($f)(b::T, a::$T{T}) where {T<:Number}
                 c = $T($f(a.coeffs[:]))
-                c[0] = $f(b, a[0])
+                constant_term!(c, $f(b, constant_term(a)))
                 return c
             end
 
@@ -199,7 +199,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     aa = convert(TaylorN{R}, a)
                     bb = convert(R, b)
                     c = TaylorN(aa.coeffs[:], order(aa))
-                    c[0][1] = ($f)(aa[0][1], bb)
+                    constant_term!(c, ($f)(constant_term(aa), bb))
                     return c
                 end
 
@@ -208,7 +208,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     aa = convert(TaylorN{R}, a)
                     bb = convert(R, b)
                     c = TaylorN(($f)(aa.coeffs[:]), order(aa))
-                    c[0][1] = ($f)(bb, aa[0][1])
+                    constant_term!(c, ($f)(bb, constant_term(aa)))
                     return c
                 end
 
@@ -285,8 +285,9 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, order(a)+1)
             coeffs .= a.coeffs
-            @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, order(a))
+            c = TaylorN(coeffs, order(a))
+            constant_term!(c, aux)
+            return c
         end
 
         function ($f)(b::S, a::TaylorN{Taylor1{T}}) where
@@ -296,8 +297,9 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, order(a)+1)
             coeffs .= $f.(a.coeffs)
-            @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, order(a))
+            c = TaylorN(coeffs, order(a))
+            constant_term!(c, aux)
+            return c
         end
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::Taylor1{S}) where
@@ -306,8 +308,9 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             R = TS.numtype(aux)
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, order(a)+1)
             coeffs .= a.coeffs
-            @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, order(a))
+            c = TaylorN(coeffs, order(a))
+            constant_term!(c, aux)
+            return c
         end
 
         function ($f)(b::Taylor1{S}, a::TaylorN{Taylor1{T}}) where
@@ -316,8 +319,9 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             R = TS.numtype(aux)
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, order(a)+1)
             coeffs .= $f.(a.coeffs)
-            @inbounds coeffs[1] = aux
-            return TaylorN(coeffs, order(a))
+            c = TaylorN(coeffs, order(a))
+            constant_term!(c, aux)
+            return c
         end
 
         function ($f)(a::Taylor1{TaylorN{T}}, b::S) where

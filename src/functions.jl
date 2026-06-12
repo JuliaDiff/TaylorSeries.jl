@@ -148,7 +148,7 @@ for T in (:Taylor1, :TaylorN)
 
         function atan(a::$T, b::$T)
             c = atan(a/b)
-            c[0] = atan(constant_term(a), constant_term(b))
+            constant_term!(c, atan(constant_term(a), constant_term(b)))
             return c
         end
 

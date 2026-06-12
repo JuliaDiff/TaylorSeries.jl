@@ -29,9 +29,9 @@ for op in (:mod, :rem)
     for T in (:Taylor1, :TaylorN)
         @eval begin
             function ($op)(a::$T{T}, x::T) where {T<:Real}
-                coeffs = copy(a.coeffs)
-                @inbounds coeffs[1] = ($op)(constant_term(a), x)
-                return $T(coeffs, order(a))
+                c = $T(copy(a.coeffs), order(a))
+                constant_term!(c, ($op)(constant_term(a), x))
+                return c
             end
 
             function ($op)(a::$T{T}, x::S) where {T<:Real,S<:Real}
@@ -44,9 +44,9 @@ for op in (:mod, :rem)
 
     @eval begin
         function ($op)(a::TaylorN{Taylor1{T}}, x::T) where {T<:Real}
-            coeffs = copy(a.coeffs)
-            @inbounds coeffs[1] = ($op)(constant_term(a), x)
-            return TaylorN( coeffs, order(a) )
+            c = TaylorN(copy(a.coeffs), order(a))
+            constant_term!(c, ($op)(constant_term(a), x))
+            return c
         end
 
         function ($op)(a::TaylorN{Taylor1{T}}, x::S) where {T<:Real,S<:Real}
@@ -56,9 +56,9 @@ for op in (:mod, :rem)
         end
 
         function ($op)(a::Taylor1{TaylorN{T}}, x::T) where {T<:Real}
-            coeffs = copy(a.coeffs)
-            @inbounds coeffs[1] = ($op)(constant_term(a), x)
-            return Taylor1( coeffs, order(a) )
+            c = Taylor1(copy(a.coeffs), order(a))
+            constant_term!(c, ($op)(constant_term(a), x))
+            return c
         end
 
         @inbounds function ($op)(a::Taylor1{TaylorN{T}}, x::S) where {T<:Real,S<:Real}
@@ -74,9 +74,9 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function mod2pi(a::$T{T}) where {T<:Real}
-            coeffs = copy(a.coeffs)
-            @inbounds coeffs[1] = mod2pi( constant_term(a) )
-            return $T(coeffs, order(a))
+            c = $T(copy(a.coeffs), order(a))
+            constant_term!(c, mod2pi(constant_term(a)))
+            return c
         end
 
         function abs(a::$T{T}) where {T<:Real}
@@ -98,15 +98,15 @@ for T in (:Taylor1, :TaylorN)
 end
 
 function mod2pi(a::TaylorN{Taylor1{T}}) where {T<:Real}
-    coeffs = copy(a.coeffs)
-    @inbounds coeffs[1] = mod2pi( constant_term(a) )
-    return TaylorN( coeffs, order(a) )
+    c = TaylorN(copy(a.coeffs), order(a))
+    constant_term!(c, mod2pi(constant_term(a)))
+    return c
 end
 
 function mod2pi(a::Taylor1{TaylorN{T}}) where {T<:Real}
-    coeffs = copy(a.coeffs)
-    @inbounds coeffs[1] = mod2pi( constant_term(a) )
-    return Taylor1( coeffs, order(a) )
+    c = Taylor1(copy(a.coeffs), order(a))
+    constant_term!(c, mod2pi(constant_term(a)))
+    return c
 end
 
 function abs(a::TaylorN{Taylor1{T}}) where {T<:Real}
