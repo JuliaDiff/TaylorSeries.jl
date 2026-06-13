@@ -22,7 +22,7 @@ setdisplay(:full)
     p5(x, a) = x^5 + ifive*a*x^4 + iten*a^2*x^3 + iten*a^3*x^2 + ifive*a^4*x + a^5
 
     ti = Taylor1(Interval{Float64}, 10)
-    x, y = variables!(Interval{Float64}, "x y", order=6)
+    x, y = variables!(Interval{Float64}, "x y", order=6, nowarn=true)
 
     @test eltype(ti) == Taylor1{Interval{Float64}}
     @test eltype(x) == TaylorN{Interval{Float64}}
@@ -217,7 +217,7 @@ setdisplay(:full)
     # Iss 405 (TM iss 158)
     for TT in (:Float32, :Float64, :BigFloat)
         @eval begin
-            x₁, x₂, x₃ = variables!($TT, ["x₁", "x₂", "x₃"]; order=5)
+            x₁, x₂, x₃ = variables!($TT, ["x₁", "x₂", "x₃"]; order=5, nowarn=true)
             Dx₁ = interval(($TT)(1.0), ($TT)(3.0))
             Dx₂ = interval(($TT)(-1.0), ($TT)(1.0))
             Dx₃ = interval(($TT)(-1.0), ($TT)(0.0))

@@ -515,6 +515,29 @@ constant_term(a::Vector{T}) where {T<:Number} = constant_term.(a)
 constant_term(a::Number) = a
 
 """
+    constant_term!(a, c)
+
+Update the constant term (zero order coefficient) of `a` to `c`,
+leaving higher order coefficients unchanged.
+"""
+function constant_term!(a::Taylor1{T}, c::T) where {T<:Number}
+    a[0] = c
+    return a
+end
+
+function constant_term!(a::TaylorN{T}, c::T) where {T<:Number}
+    a[0][1] = c
+    return a
+end
+
+function constant_term!(a::HomogeneousPolynomial{T}, c::T) where {T<:Number}
+    iszero(order(a)) ||
+        throw(ArgumentError("only zero-order HomogeneousPolynomial has a constant term"))
+    a[1] = c
+    return a
+end
+
+"""
     linear_polynomial(a)
 
 Returns the linear part of `a` as a polynomial (`Taylor1` or `TaylorN`),

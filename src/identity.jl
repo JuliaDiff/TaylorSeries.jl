@@ -17,13 +17,21 @@ for T in (:Taylor1, :TaylorN)
         identity!(c[k], a[k])
 end
 
-identity!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:NumberNotSeries} =
-    c[k] = a[k]
+@inline function identity!(c::Taylor1{T}, a::Taylor1{T}) where {T<:NumberNotSeries}
+    copyto!(c.coeffs, a.coeffs)
+    return nothing
+end
+
+function identity!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
+        {T<:NumberNotSeries}
+    @inbounds c.coeffs[k+1] = a.coeffs[k+1]
+    return nothing
+end
 
 @inline function identity!(c::Taylor1{T}, a::T, k::Int) where {T<:NumberNotSeries}
-    zero!(c[k])
+    @inbounds c.coeffs[k+1] = zero(c.coeffs[k+1])
     k != 0 && return nothing
-    c[0] = a
+    @inbounds c.coeffs[1] = a
     return nothing
 end
 function identity!(c::Taylor1{T}, a::T, k::Int) where {T<:Number}

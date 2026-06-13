@@ -5,7 +5,7 @@ using TaylorSeries
 using Test
 
 @testset "Test inspired by Fateman (takes a few seconds)" begin
-    x, y, z, w = variables!(Int128, "x", numvars=4, order=40)
+    x, y, z, w = variables!(Int128, "x", numvars=4, order=40, nowarn=true)
 
     function fateman2(degree::Int)
         T = Int128

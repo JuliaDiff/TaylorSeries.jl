@@ -11,7 +11,7 @@ using Test
     @test TS.NumberNotSeries == Union{Real,Complex}
     @test TS.NumberNotSeriesN == Union{Real,Complex,Taylor1}
 
-    variables!("x", numvars=2, order=6)
+    variables!("x", numvars=2, order=6, nowarn=true)
     xH = HomogeneousPolynomial(Int, 1)
     yH = HomogeneousPolynomial(Int, 2)
     tN = Taylor1(TaylorN{Float64}, 3)
@@ -231,7 +231,7 @@ using Test
     @test q1N(-xN^2) == 1.0 - xN^2*yN
 
     # See #92 and #94
-    δx, δy = variables!("δx δy")
+    δx, δy = variables!("δx δy", nowarn=true)
     xx = 1+Taylor1(δx, 5)
     yy = 1+Taylor1(δy, 5)
     tt = Taylor1([zero(δx), one(δx)], order(xx))
@@ -348,7 +348,7 @@ using Test
     p = cos(t)
     q = sin(t)
     a = [p,q]
-    dx = variables!("x", numvars=4, order=10)
+    dx = variables!("x", numvars=4, order=10, nowarn=true)
     P = sin.(dx)
     v = [1.0,2,3,4]
     F(x) = [sin(sin(x[4]+x[3])), sin(cos(x[3]-x[2])), cos(sin(x[1]^2+x[2]^2)), cos(cos(x[2]*x[3]))]
@@ -404,7 +404,7 @@ using Test
     diff_a11b11 = a11(t)-b11
     @test norm(diff_a11b11.coeffs, Inf) < 1E-19
 
-    X, Y = variables!(Taylor1{Float64}, "x y")
+    X, Y = variables!(Taylor1{Float64}, "x y", nowarn=true)
     @test typeof( norm(X) ) == Float64
     @test norm(X) > 0
     @test norm(X+Y) == sqrt(2)
@@ -455,7 +455,7 @@ using Test
     @test !isapprox(Q, P, atol=eps(), rtol=0)
     @test P ≉ Q^2
 
-    X, Y = variables!(BigFloat, "x y", numvars=2, order=6)
+    X, Y = variables!(BigFloat, "x y", numvars=2, order=6, nowarn=true)
     p1N = Taylor1([X^2,X*Y,Y+X,Y^2])
     q1N = Taylor1([X^2,(1.0+sqrt(eps(BigFloat)))*X*Y,Y+X,Y^2])
     @test p1N ≈ p1N

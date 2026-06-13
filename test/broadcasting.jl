@@ -60,7 +60,7 @@ using Test
 end
 
 @testset "Broadcasting with HomogeneousPolynomial and TaylorN" begin
-    x, y = variables!("x y", order=3)
+    x, y = variables!("x y", order=3, nowarn=true)
     xH = x[1]
     yH = y[1]
 
@@ -106,7 +106,7 @@ end
 end
 
 @testset "Broadcasting with mixtures Taylor1{TaylorN{T}}" begin
-    x, y = variables!("x", numvars=2, order=6)
+    x, y = variables!("x", numvars=2, order=6, nowarn=true)
     tN = Taylor1(TaylorN{Float64}, 3)
 
     @test tN .== tN
@@ -133,7 +133,7 @@ end
 end
 
 @testset "Broadcasting with mixtures TaylorN{Taylor1{T}}" begin
-    variables!("x", numvars=2, order=6)
+    variables!("x", numvars=2, order=6, nowarn=true)
     t = Taylor1(3)
     xHt = HomogeneousPolynomial([one(t), zero(t)])
     yHt = HomogeneousPolynomial([zero(t), t])

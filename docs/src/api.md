@@ -106,6 +106,7 @@ asinh!
 acosh!
 atanh!
 differentiate!
+constant_term!
 _isthinzero
 _internalmutfunc_call
 _dict_unary_ops
