@@ -21,7 +21,7 @@ function ==(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
 end
 
 function ==(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
-    space(a) === space(b) || return false
+    space(a) == space(b) || return false
     if order(a) != order(b)
         a, b = fixorder(a, b)
     end
@@ -35,7 +35,7 @@ end
 ==(b::TaylorN{Taylor1{S}}, a::Taylor1{TaylorN{T}}) where {T, S} = a == b
 
 function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-    space(a) === space(b) || return false
+    space(a) == space(b) || return false
     order(a) == order(b) && return a.coeffs == b.coeffs
     return iszero(a.coeffs) && iszero(b.coeffs)
 end

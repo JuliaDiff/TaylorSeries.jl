@@ -243,12 +243,16 @@ such as `variables!` replace `default_space[]` with `space`. Existing `TaylorN`
 and `HomogeneousPolynomial` objects keep their original spaces, while future
 default-space constructors use the new default algebra.
 
+If `space` is structurally equal to the current default space, the existing
+default space object is kept and returned.
+
 Use `nowarn=true` to suppress the warning emitted when replacing the default
 space.
 """
 function set_default_space!(space::JetSpace; nowarn::Bool=false)
     old_space = default_space[]
     old_space === space && return space
+    old_space == space && return old_space
 
     msg = "Updating TaylorSeries.default_space[]; existing TaylorN and " *
         "HomogeneousPolynomial objects keep their original JetSpace, while " *

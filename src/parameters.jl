@@ -196,6 +196,38 @@ order(space::JetSpace) = space.order
 get_numvars(space::JetSpace) = space.num_vars
 get_variable_names(space::JetSpace) = space.variable_names
 get_variable_symbols(space::JetSpace) = space.variable_symbols
+
+function Base.:(==)(a::JetSpace, b::JetSpace)
+    a === b && return true
+    return order(a) == order(b) &&
+        get_numvars(a) == get_numvars(b) &&
+        get_variable_names(a) == get_variable_names(b) &&
+        get_variable_symbols(a) == get_variable_symbols(b)
+end
+
+function Base.hash(space::JetSpace, h::UInt)
+    return hash((JetSpace, order(space), get_numvars(space),
+        Tuple(get_variable_names(space)), Tuple(get_variable_symbols(space))), h)
+end
+
+function _space_spec_matches(space::JetSpace, order::Int,
+        variable_names::Vector{String})
+    TS.order(space) == order || return false
+    get_numvars(space) == length(variable_names) || return false
+    @inbounds for i in eachindex(variable_names)
+        space.variable_names[i] == variable_names[i] || return false
+        space.variable_symbols[i] == Symbol(variable_names[i]) || return false
+    end
+    return true
+end
+
+function _default_space_for(order::Int, variable_names::Vector{String};
+        nowarn::Bool=false)
+    space = default_space[]
+    _space_spec_matches(space, order, variable_names) && return space
+    return set_default_space!(JetSpace(order, variable_names), nowarn=nowarn)
+end
+
 function lookupvar(s::Symbol)
     ind = findfirst(x -> x==s, get_variable_symbols())
     isa(ind, Nothing) && return 0
@@ -237,8 +269,10 @@ independent variable. `names` defines the output for each variable
 (separated by a space). The default type `T` is `Float64`,
 and the default for `order` is the current default-space order.
 
-This function updates the compatibility default `JetSpace`. Set `nowarn=true`
-to suppress the warning emitted when the default space changes.
+This function updates the compatibility default `JetSpace`. If the requested
+space has the same order and variables as the current default, the existing
+default space is reused. Set `nowarn=true` to suppress the warning emitted when
+the default space changes.
 
 If `numvars` is not specified, it is inferred from `names`. If only
 one variable name is defined and `numvars>1`, it uses this name with
@@ -266,7 +300,7 @@ function variables!(::Type{R}, names::Vector{T}; order=TS.order(),
         nowarn::Bool=false) where
         {R, T<:AbstractString}
 
-    space = set_default_space!(JetSpace(order, _variable_names_from(names));
+    space = _default_space_for(order, _variable_names_from(names),
         nowarn=nowarn)
 
     # return a list of the new variables
