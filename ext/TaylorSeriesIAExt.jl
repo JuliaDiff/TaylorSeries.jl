@@ -1045,7 +1045,7 @@ function TS._evaluate(a::HomogeneousPolynomial{T},
     @inbounds suma = a[1]*interval(zero(T))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds tmp = prod(dx .^ ct[i])
+        @inbounds tmp = prod(Base.literal_pow.(^, dx, Val.(ct[i])))
         suma += a_coeff * tmp
     end
     return suma
@@ -1112,7 +1112,7 @@ function TS._evaluate(a::HomogeneousPolynomial{T},
     suma = zero(a[1])*vals[1]
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds tmp = prod( vals .^ ct[i] )
+        @inbounds tmp = prod( Base.literal_pow.(^, vals, Val.(ct[i])) )
         suma += a_coeff * tmp
     end
     return suma
