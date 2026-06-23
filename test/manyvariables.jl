@@ -54,33 +54,61 @@ using Test
     @test sp.pos_table[4][15] == 2
 
     default_space_warning = r"Updating TaylorSeries.default_space\[\]"
-    @test_logs (:warn, default_space_warning) variables!("w", order=2,
+    vars_w = @test_logs (:warn, default_space_warning) variables!("w", order=2,
         numvars=2)
-    @test_logs (:warn, default_space_warning) variables!(:w, order=2,
+    sp_w = TS.default_space[]
+    vars_w_same = @test_logs min_level=Base.CoreLogging.Warn variables!(:w, order=2,
         numvars=2)
-    @test_logs (:warn, default_space_warning) variables!(["w", "z"],
+    @test TS.default_space[] === sp_w
+    @test all(var -> var.space === sp_w, vars_w)
+    @test all(var -> var.space === sp_w, vars_w_same)
+
+    vars_wz = @test_logs (:warn, default_space_warning) variables!(["w", "z"],
         order=2)
-    @test_logs (:warn, default_space_warning) variables!([:w, :z], order=2)
-    @test_logs (:warn, default_space_warning) variables!(Int, "w", order=2,
+    sp_wz = TS.default_space[]
+    vars_wz_same = @test_logs min_level=Base.CoreLogging.Warn variables!([:w, :z], order=2)
+    @test TS.default_space[] === sp_wz
+    @test all(var -> var.space === sp_wz, vars_wz)
+    @test all(var -> var.space === sp_wz, vars_wz_same)
+
+    vars_q = @test_logs (:warn, default_space_warning) variables!(Int, "q", order=2,
         numvars=2)
-    @test_logs (:warn, default_space_warning) variables!(Int, :w, order=2,
+    sp_q = TS.default_space[]
+    vars_q_same = @test_logs min_level=Base.CoreLogging.Warn variables!(Int, :q, order=2,
         numvars=2)
-    @test_logs (:warn, default_space_warning) variables!(BigInt, ["w", "z"],
+    @test TS.default_space[] === sp_q
+    @test all(var -> var.space === sp_q, vars_q)
+    @test all(var -> var.space === sp_q, vars_q_same)
+
+    vars_wz_big = @test_logs (:warn, default_space_warning) variables!(BigInt, ["w", "z"],
         order=2)
-    @test_logs (:warn, default_space_warning) variables!(BigInt, [:w, :z],
+    sp_wz_big = TS.default_space[]
+    vars_wz_big_same = @test_logs min_level=Base.CoreLogging.Warn variables!(BigInt, [:w, :z],
         order=2)
+    @test TS.default_space[] === sp_wz_big
+    @test all(var -> var.space === sp_wz_big, vars_wz_big)
+    @test all(var -> var.space === sp_wz_big, vars_wz_big_same)
 end
 
 @testset "Explicit JetSpaces" begin
     sx = JetSpace(order=5, variables=[:x, :y, :z])
     sa = JetSpace(order=3, variables=[:a, :b])
+    sx_equiv = JetSpace(order=5, variables=[:x, :y, :z])
 
     x, y, z = variables(sx)
     a, b = variables(sa)
+    x_equiv, y_equiv, z_equiv = variables(sx_equiv)
 
     @test x.space === y.space === z.space === sx
     @test a.space === b.space === sa
     @test x.space !== a.space
+    @test sx == sx_equiv
+    @test hash(sx) == hash(sx_equiv)
+    @test sx !== sx_equiv
+    @test sx != sa
+    @test x == x_equiv
+    @test x[1] == x_equiv[1]
+    @test_throws ArgumentError x + x_equiv
     @test order(x) == order(sx)
     x_low_order = variables(sx, order=2)[1]
     @test order(x_low_order) == 2
