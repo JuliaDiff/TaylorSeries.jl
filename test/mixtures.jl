@@ -160,8 +160,15 @@ using Test
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     @test string((t1N^(2//1))(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = TaylorN.(zeros(Float64, 2), 2)
-    @test isnothing(evaluate!([t1N, t1N^2], 0.0, v))
+    vt1N = [t1N, t1N^2]
+    @test isnothing(evaluate!(vt1N, 0.0, v))
     @test v == [TaylorN(1), TaylorN(1)^2]
+    evaluate!(vt1N, 0.5, v)
+    @test (@allocated evaluate!(vt1N, 0.5, v)) == 0
+    δtN = 0.5 + t1N[0]
+    evaluate!(vt1N, δtN, v)
+    @test isapprox(v, evaluate(vt1N, δtN))
+    @test (@allocated evaluate!(vt1N, δtN, v)) == 0
     @test tN1() == t
     @test evaluate(tN1, :x₁ => 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
     @test evaluate(tN1, 1, 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
@@ -553,6 +560,15 @@ end
     titii = ti * tii
     @test string(titii) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
     @test titii == Taylor1([zero(ti), ti], 9)
+    vtii = [tii, titii]
+    vtii_dest = [zero(ti), zero(ti)]
+    evaluate!(vtii, 0.5, vtii_dest)
+    @test vtii_dest == evaluate(vtii, 0.5)
+    @test (@allocated evaluate!(vtii, 0.5, vtii_dest)) == 0
+    δt1 = 0.5 + ti
+    evaluate!(vtii, δt1, vtii_dest)
+    @test isapprox(vtii_dest, evaluate(vtii, δt1))
+    @test (@allocated evaluate!(vtii, δt1, vtii_dest)) == 0
     @test titii / tii == ti
     @test order(titii/tii) == order(tii)-1
     @test titii / ti == tii

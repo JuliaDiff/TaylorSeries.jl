@@ -44,6 +44,33 @@ representing the dependent variables of an ODE, at *time* δt. Note that the
 syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
 is equivalent to `evaluate(x)`.
 """
+function evaluate(x::AbstractArray{Taylor1{T}}, δt::S) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    dest = similar(x, promote_type(T, S))
+    evaluate!(x, δt, dest)
+    return dest
+end
+
+function evaluate(x::AbstractArray{Taylor1{Taylor1{T}}}, δt::S) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    dest = similar(x, Taylor1{T})
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = zero(x[i][0])
+    end
+    evaluate!(x, δt, dest)
+    return dest
+end
+
+function evaluate(x::AbstractArray{Taylor1{TaylorN{T}}}, δt::S) where
+        {T<:Number, S<:NumberNotSeries}
+    dest = similar(x, TaylorN{T})
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = zero(x[i][0])
+    end
+    evaluate!(x, δt, dest)
+    return dest
+end
+
 evaluate(x::AbstractArray{Taylor1{T}}, δt::S) where
     {T<:Number, S<:Number} = evaluate.(x, δt)
 
@@ -511,17 +538,140 @@ of an ODE at *time* `δt`. It updates the vector `dest` with the
 computed values.
 """
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
-        dest::AbstractArray{T}) where {T<:NumberNotSeriesN, S<:Number}
-    dest .= evaluate.( x, δt )
+        dest::AbstractArray{R}) where
+        {T<:NumberNotSeries, S<:NumberNotSeries, R<:NumberNotSeries}
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = evaluate(x[i], δt)
+    end
+    return nothing
+end
+
+function evaluate!(a::Taylor1{Taylor1{T}}, δt::S,
+        dest::Taylor1{T}) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    zero!(dest)
+    @inbounds for k in reverse(eachindex(a))
+        mul!(dest, dest, δt)
+        add!(dest, dest, a[k])
+    end
+    return nothing
+end
+
+function _muladd_taylor1_evaluate!(dest::Taylor1{T}, δt::Taylor1{T},
+        coeff::Taylor1{T}) where {T<:NumberNotSeries}
+    @inbounds for ord in reverse(eachindex(dest))
+        acc = zero(dest[ord])
+        for i in 0:ord
+            acc += dest[i] * δt[ord-i]
+        end
+        dest[ord] = acc + coeff[ord]
+    end
+    return nothing
+end
+
+function evaluate!(a::Taylor1{Taylor1{T}}, δt::Taylor1{T},
+        dest::Taylor1{T}) where {T<:NumberNotSeries}
+    zero!(dest)
+    @inbounds for k in reverse(eachindex(a))
+        _muladd_taylor1_evaluate!(dest, δt, a[k])
+    end
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{Taylor1{T}}}, δt::S,
+        dest::AbstractArray{Taylor1{T}}) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    @inbounds for i in eachindex(x, dest)
+        evaluate!(x[i], δt, dest[i])
+    end
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{Taylor1{T}}}, δt::Taylor1{T},
+        dest::AbstractArray{Taylor1{T}}) where {T<:NumberNotSeries}
+    @inbounds for i in eachindex(x, dest)
+        evaluate!(x[i], δt, dest[i])
+    end
+    return nothing
+end
+
+function evaluate!(a::Taylor1{TaylorN{T}}, δt::S,
+        dest::TaylorN{T}) where {T<:Number, S<:NumberNotSeries}
+    _check_same_space(dest, a[0])
+    zero!(dest)
+    @inbounds for k in reverse(eachindex(a))
+        for ordQ in eachindex(dest)
+            dest_hp = dest[ordQ].coeffs
+            a_hp = a[k][ordQ].coeffs
+            for j in eachindex(dest_hp)
+                dest_hp[j] = dest_hp[j] * δt + a_hp[j]
+            end
+        end
+    end
+    return nothing
+end
+
+@inline function _taylorN_product_coeff(dest::TaylorN{T}, δt::TaylorN{T},
+        ordQ::Int, pos::Int) where {T<:Number}
+    acc = zero(dest[ordQ][pos])
+    @inbounds for i in 0:ordQ
+        dest_hp = dest[i]
+        δt_hp = δt[ordQ-i]
+        if i == 0
+            acc += dest_hp[1] * δt_hp[pos]
+        elseif i == ordQ
+            acc += δt_hp[1] * dest_hp[pos]
+        else
+            table = _init_output_major_product_table!(dest_hp.space, i, ordQ-i)
+            offsets = table.output_offsets
+            output_pairs = table.output_pairs
+            num_right = table.num_right
+            dest_coeffs = dest_hp.coeffs
+            δt_coeffs = δt_hp.coeffs
+            for csr_pos in offsets[pos]:(offsets[pos+1]-1)
+                pair = Int(output_pairs[csr_pos]) - 1
+                na = pair ÷ num_right + 1
+                nb = pair - (na-1) * num_right + 1
+                acc += dest_coeffs[na] * δt_coeffs[nb]
+            end
+        end
+    end
+    return acc
+end
+
+function _muladd_taylorN_evaluate!(dest::TaylorN{T}, δt::TaylorN{T},
+        coeff::TaylorN{T}) where {T<:Number}
+    _check_same_space(dest, δt, coeff)
+    @inbounds for ordQ in reverse(eachindex(dest))
+        dest_hp = dest[ordQ]
+        coeff_hp = coeff[ordQ]
+        for pos in eachindex(dest_hp)
+            dest_hp[pos] = _taylorN_product_coeff(dest, δt, ordQ, pos) + coeff_hp[pos]
+        end
+    end
+    return nothing
+end
+
+function evaluate!(a::Taylor1{TaylorN{T}}, δt::TaylorN{T},
+        dest::TaylorN{T}) where {T<:Number}
+    _check_same_space(dest, δt, a[0])
+    zero!(dest)
+    @inbounds for k in reverse(eachindex(a))
+        _muladd_taylorN_evaluate!(dest, δt, a[k])
+    end
     return nothing
 end
 
 function evaluate!(x::AbstractArray{Taylor1{TaylorN{T}}}, δt::S,
-        dest::AbstractArray{TaylorN{T}}) where {T<:Number, S<:Number}
-    @inbounds for i in eachindex(x)
-        zero!(dest[i])
-        aux = zero(dest[i])
-        _horner!(dest[i], x[i], δt, aux)
+        dest::AbstractArray{TaylorN{T}}) where {T<:Number, S<:NumberNotSeries}
+    @inbounds for i in eachindex(x, dest)
+        evaluate!(x[i], δt, dest[i])
+    end
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{TaylorN{T}}}, δt::TaylorN{T},
+        dest::AbstractArray{TaylorN{T}}) where {T<:Number}
+    @inbounds for i in eachindex(x, dest)
+        evaluate!(x[i], δt, dest[i])
     end
     return nothing
 end
