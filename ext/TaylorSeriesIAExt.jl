@@ -318,15 +318,16 @@ function TS.sqrt!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
     @inbounds for i = imin+1:imax
         c[k] += c[i] * c[k+k0-i]
     end
+    intvl2 = interval(T(2))
     if k+k0 ≤ a_order
-        @inbounds aux = a[k+k0] - interval(T(2)) * c[k]
+        @inbounds aux = a[k+k0] - intvl2 * c[k]
     else
-        @inbounds aux = - interval(T(2)) * c[k]
+        @inbounds aux = - intvl2 * c[k]
     end
     if kodd == 0
         @inbounds aux = aux - c[kend+k0+1]^2
     end
-    @inbounds c[k] = aux / (interval(T(2)) * c[k0])
+    @inbounds c[k] = aux / (intvl2 * c[k0])
     return nothing
 end
 
@@ -347,12 +348,13 @@ function TS.sqrt!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         # @inbounds c[k] <- c[k] - (c[kend+1])^2
         @inbounds TS.mul_scalar!(c[k], -interval(T(1)), c[kend+1], c[kend+1])
     end
+    intvl2 = interval(T(2))
     @inbounds for i = 1:kend
         # c[k] <- c[k] - 2*c[i]*c[k-i]
-        TS.mul_scalar!(c[k], -interval(T(2)), c[i], c[k-i])
+        TS.mul_scalar!(c[k], -intvl2, c[i], c[k-i])
     end
     # @inbounds c[k] <- c[k] / (2*c[0])
-    TS.div!(c[k], c[k], interval(T(2))*constant_term(c))
+    TS.div!(c[k], c[k], intvl2*constant_term(c))
 
     return nothing
 end
@@ -469,11 +471,12 @@ function TS.exp!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}}, k::Int) where
         @inbounds c[0] = exp(constant_term(a))
         return nothing
     end
-    @inbounds c[k] = interval(T(k)) * a[k] * c[0]
+    intvlk = interval(T(k))
+    @inbounds c[k] = intvlk * a[k] * c[0]
     @inbounds for i = 1:k-1
         c[k] += interval(T(k-i)) * a[k-i] * c[i]
     end
-    @inbounds c[k] = c[k] / interval(T(k))
+    @inbounds c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -482,11 +485,12 @@ function TS.exp!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}}, k::Int) where
         @inbounds c[0] = exp(constant_term(a))
         return nothing
     end
-    @inbounds TS.mul!(c[k], interval(T(k)) * a[k], c[0])
+    intvlk = interval(T(k))
+    @inbounds TS.mul!(c[k], intvlk * a[k], c[0])
     @inbounds for i = 1:k-1
         TS.mul!(c[k], interval(T(k-i)) * a[k-i], c[i])
     end
-    @inbounds c[k] = c[k] / interval(T(k))
+    @inbounds c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -496,11 +500,12 @@ function TS.expm1!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}}, k::Int) whe
         return nothing
     end
     c0 = c[0]+one(c[0])
-    @inbounds c[k] = interval(T(k)) * a[k] * c0
+    intvlk = interval(T(k))
+    @inbounds c[k] = intvlk * a[k] * c0
     @inbounds for i = 1:k-1
         c[k] += interval(T(k-i)) * a[k-i] * c[i]
     end
-    @inbounds c[k] = c[k] / interval(T(k))
+    @inbounds c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -510,11 +515,12 @@ function TS.expm1!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}}, k::Int) whe
         return nothing
     end
     c0 = c[0]+one(c[0])
-    @inbounds TS.mul!(c[k], interval(T(k)) * a[k], c0)
+    intvlk = interval(T(k))
+    @inbounds TS.mul!(c[k], intvlk * a[k], c0)
     @inbounds for i = 1:k-1
         TS.mul!(c[k], interval(T(k-i)) * a[k-i], c[i])
     end
-    @inbounds c[k] = c[k] / interval(T(k))
+    @inbounds c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -601,8 +607,9 @@ function TS.sincos!(s::Taylor1{Interval{T}}, c::Taylor1{Interval{T}},
         s[k] += x * c[k-i]
         c[k] -= x * s[k-i]
     end
-    @inbounds s[k] = s[k] / interval(T(k))
-    @inbounds c[k] = c[k] / interval(T(k))
+    intvlk = interval(T(k))
+    @inbounds s[k] = s[k] / intvlk
+    @inbounds c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -621,8 +628,9 @@ function TS.sincos!(s::TaylorN{Interval{T}}, c::TaylorN{Interval{T}},
         TS.mul!(s[k], x, c[k-i])
         TS.mul!(c[k], -x, s[k-i])
     end
-    @inbounds s[k] = s[k] / interval(T(k))
-    @inbounds c[k] = c[k] / interval(T(k))
+    intvlk = interval(T(k))
+    @inbounds s[k] = s[k] / intvlk
+    @inbounds c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -634,11 +642,12 @@ function TS.tan!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
         @inbounds c2[0] = aux^2
         return nothing
     end
-    @inbounds c[k] = interval(T(k)) * a[k] * c2[0]
+    intvlk = interval(T(k))
+    @inbounds c[k] = intvlk * a[k] * c2[0]
     @inbounds for i = 1:k-1
         c[k] += interval(T(k-i)) * a[k-i] * c2[i]
     end
-    @inbounds c[k] = a[k] + c[k]/interval(T(k))
+    @inbounds c[k] = a[k] + c[k]/intvlk
     TS.sqr!(c2, c, zero(c[0]), k)
     return nothing
 end
@@ -651,11 +660,12 @@ function TS.tan!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds c2[0] = aux^2
         return nothing
     end
-    @inbounds TS.mul!(c[k], interval(T(k)) * a[k], c2[0])
+    intvlk = interval(T(k))
+    @inbounds TS.mul!(c[k], intvlk * a[k], c2[0])
     @inbounds for i = 1:k-1
         TS.mul!(c[k], interval(T(k-i)) * a[k-i], c2[i])
     end
-    @inbounds c[k] = a[k] + c[k]/interval(T(k))
+    @inbounds c[k] = a[k] + c[k]/intvlk
     TS.sqr!(c2, c, zero(c[0][1]), k)
     return nothing
 end
@@ -777,8 +787,9 @@ function TS.sinhcosh!(s::Taylor1{Interval{T}}, c::Taylor1{Interval{T}},
         s[k] += x * c[k-i]
         c[k] += x * s[k-i]
     end
-    s[k] = s[k] / interval(T(k))
-    c[k] = c[k] / interval(T(k))
+    intvlk = interval(T(k))
+    s[k] = s[k] / intvlk
+    c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -797,8 +808,9 @@ function TS.sinhcosh!(s::TaylorN{Interval{T}}, c::TaylorN{Interval{T}},
         TS.mul!(s[k], x, c[k-i])
         TS.mul!(c[k], x, s[k-i])
     end
-    s[k] = s[k] / interval(T(k))
-    c[k] = c[k] / interval(T(k))
+    intvlk = interval(T(k))
+    s[k] = s[k] / intvlk
+    c[k] = c[k] / intvlk
     return nothing
 end
 
@@ -1045,7 +1057,7 @@ function TS._evaluate(a::HomogeneousPolynomial{T},
     @inbounds suma = a[1]*interval(zero(T))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds tmp = prod(dx .^ ct[i])
+        @inbounds tmp = prod(Base.literal_pow.(^, dx, Val.(ct[i])))
         suma += a_coeff * tmp
     end
     return suma
@@ -1112,7 +1124,7 @@ function TS._evaluate(a::HomogeneousPolynomial{T},
     suma = zero(a[1])*vals[1]
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds tmp = prod( vals .^ ct[i] )
+        @inbounds tmp = prod( Base.literal_pow.(^, vals, Val.(ct[i])) )
         suma += a_coeff * tmp
     end
     return suma

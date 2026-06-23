@@ -197,10 +197,10 @@ function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple) where {T}
     order(a) == 0 && return a[1]*one(vals[1])
     ct = a.space.coeff_table[order(a)+1]
     suma = zero(a[1])*vals[1]
-    vv = vals .^ ct[1]
+    vv = Base.literal_pow.(^, vals, Val.(ct[1]))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds vv .= vals .^ ct[i]
+        @inbounds vv .= Base.literal_pow.(^, vals, Val.(ct[i]))
         tmp = prod( vv )
         suma += a_coeff * tmp
     end
@@ -414,7 +414,7 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
         suma[0][1] = a[1]*one(val)
         return nothing
     end
-    vv = val .^ (0:order)
+    vv = Base.literal_pow.(^, val, Val.(0:order))
     vct = zero(a.space.coeff_table[order+1][1])
     zct = zero(a.space.coeff_table[order+1][1])
     for (i, a_coeff) in enumerate(a.coeffs)
