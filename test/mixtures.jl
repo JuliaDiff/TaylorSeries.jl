@@ -126,6 +126,8 @@ using Test
         @test -2*tN1 < -tN1^2 ≤ 0
     end
 
+    @test round(Int, tN1+1) === round(Int, t1N+1) === round(Int, 1)
+    @test round(Float64, tN1+1) === round(Float64, t1N+1) === round(Float64, 1)
     @test mod(tN1+1,1.0) == 0+tN1
     @test mod(tN1-1.125,2) == 0.875+tN1
     @test (rem(tN1+1.125,1.0))[0][1] == 0.125 + t

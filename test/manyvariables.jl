@@ -364,6 +364,8 @@ end
     @test (1/(1-xT))[3] == HomogeneousPolynomial([1.0],3)
     @test xH^20 == HomogeneousPolynomial([0], order())
     @test (yT/(1-xT))[4] == xH^3 * yH
+    @test round(Int, 1+xT) === round(Int, 1+yT) === round(Int, 1)
+    @test round(Float64, 1+xT) === round(Float64, 1+yT) === round(Float64, 1)
     @test mod(1+xT,1) == +xT
     @test (rem(1+xT,1))[0] == 0
     @test mod(1+xT,1.0) == +xT
