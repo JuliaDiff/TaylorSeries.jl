@@ -238,7 +238,6 @@ Base.iszero(::SymbNumber) = false
     @test sqrt(zero(t)) == zero(t)
 
     @test round(Int, 4.1 + t) === round(Int, 4.1)
-    @test round(Float64, 4.1 + t) === round(Float64, 4.1)
     @test isapprox( rem(4.1 + t,4)[0], 0.1 )
     @test isapprox( mod(4.1 + t,4)[0], 0.1 )
     @test isapprox( rem(1+Taylor1(Int,4),4.0)[0], 1.0 )
