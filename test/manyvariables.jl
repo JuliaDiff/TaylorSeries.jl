@@ -172,7 +172,7 @@ end
     @test get_variable_symbols() == [:x, :y]
     @test get_variable_symbols() == [:x, :y]
     @test TS.lookupvar(:x) == 1
-    @test TS.lookupvar(:α) == 0
+    @test TS.lookupvar(TS.default_space[], :α) == 0
     @test TS.get_variable_names() == ["x", "y"]
     @test x == HomogeneousPolynomial(Float64, 1)
     @test x == HomogeneousPolynomial(1)
