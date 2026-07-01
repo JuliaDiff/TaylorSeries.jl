@@ -23,6 +23,11 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval isnan(a::$T) = any(isnan, a.coeffs)
 end
 
+# Rounding
+round(::Type{T}, x::AbstractSeries; kwargs...) where {T <: NumberNotSeries} =
+    round(T, x, RoundNearest; kwargs...)
+round(::Type{T}, x::AbstractSeries, r::RoundingMode; kwargs...) where {T <: NumberNotSeries} =
+    round(T, constant_term(x), r; kwargs...)
 
 ## Division functions: rem and mod ##
 for op in (:mod, :rem)
