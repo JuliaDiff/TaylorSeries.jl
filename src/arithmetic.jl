@@ -12,9 +12,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
     for T in (:Taylor1, :TaylorN)
         @eval begin
-            ($f)(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number} =
-                ($f)(promote(a, b)...)
-
             function ($f)(a::$T{T}, b::$T{T}) where {T<:Number}
                 _check_same_space(a, b)
                 if order(a) != order(b)
@@ -57,11 +54,31 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         if T == :Taylor1
             @eval begin
                 function ($f)(a::$T{T}, b::S) where {T<:Number, S<:NumberNotSeries}
-                    return ($f)(promote(a, b)...)
+                    z = zero(a.coeffs[1] + b)
+                    c = $T(z, order(a))
+                    for k in eachindex(a)
+                        ($fc)(c, a, b, k)
+                    end
+                    return c
                 end
 
                 function ($f)(b::S, a::$T{T}) where {T<:Number, S<:NumberNotSeries}
-                    return ($f)(promote(b, a)...)
+                    z = zero(b + a.coeffs[1])
+                    c = $T(z, order(a))
+                    for k in eachindex(a)
+                        ($fc)(c, b, a, k)
+                    end
+                    return c
+                end
+
+                function ($f)(a::$T{T}, b::$T{S}) where {T<:NumberNotSeries, S<:NumberNotSeries}
+                    a, b = fixorder(a, b)
+                    z = zero(a.coeffs[1] + b.coeffs[1])
+                    c = $T(z, order(a))
+                    for k in eachindex(a)
+                        ($fc)(c, a, b, k)
+                    end
+                    return c
                 end
 
                 function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
@@ -198,7 +215,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     R = promote_type(T, S)
                     aa = convert(TaylorN{R}, a)
                     bb = convert(R, b)
-                    c = TaylorN(aa.coeffs[:], order(aa))
+                    c = TaylorN(space(a), aa.coeffs[:], order(aa))
                     constant_term!(c, ($f)(constant_term(aa), bb))
                     return c
                 end
@@ -207,9 +224,16 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     R = promote_type(T, S)
                     aa = convert(TaylorN{R}, a)
                     bb = convert(R, b)
-                    c = TaylorN(($f)(aa.coeffs[:]), order(aa))
+                    c = TaylorN(space(a), ($f)(aa.coeffs[:]), order(aa))
                     constant_term!(c, ($f)(bb, constant_term(aa)))
                     return c
+                end
+
+                function ($f)(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number}
+                    _check_same_space(a, b)
+                    R = promote_type(T, S)
+                    return ($f)(convert($T{R}, a), convert($T{R}, b))
+                    # return ($f)(promote(a, b)...)
                 end
 
                 function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
@@ -285,7 +309,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, order(a)+1)
             coeffs .= a.coeffs
-            c = TaylorN(coeffs, order(a))
+            c = TaylorN(space(a), coeffs, order(a))
             constant_term!(c, aux)
             return c
         end
@@ -297,7 +321,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, order(a)+1)
             coeffs .= $f.(a.coeffs)
-            c = TaylorN(coeffs, order(a))
+            c = TaylorN(space(a), coeffs, order(a))
             constant_term!(c, aux)
             return c
         end
@@ -308,7 +332,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             R = TS.numtype(aux)
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, order(a)+1)
             coeffs .= a.coeffs
-            c = TaylorN(coeffs, order(a))
+            c = TaylorN(space(a), coeffs, order(a))
             constant_term!(c, aux)
             return c
         end
@@ -319,7 +343,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             R = TS.numtype(aux)
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, order(a)+1)
             coeffs .= $f.(a.coeffs)
-            c = TaylorN(coeffs, order(a))
+            c = TaylorN(space(a), coeffs, order(a))
             constant_term!(c, aux)
             return c
         end
@@ -327,7 +351,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($f)(a::Taylor1{TaylorN{T}}, b::S) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = ($f)(a[0][0][1], b)
-            c = Taylor1( TaylorN(a[0].space, zero(aux), order(a[0])), order(a))
+            c = Taylor1( TaylorN(space(a[0]), zero(aux), order(a[0])), order(a))
             for k in eachindex(a)
                 ($fc)(c, a, b, k)
             end
@@ -337,7 +361,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($f)(b::S, a::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
             @inbounds aux = ($f)(b, a[0][0][1])
-            c = Taylor1( TaylorN(a[0].space, zero(aux), order(a[0])), order(a))
+            c = Taylor1( TaylorN(space(a[0]), zero(aux), order(a[0])), order(a))
             for k in eachindex(a)
                 ($fc)(c, b, a, k)
             end
@@ -1305,6 +1329,15 @@ function /(a::Taylor1{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
     return Taylor1(v, order(a))
 end
 
+function /(b::Taylor1{T}, a::S) where {T<:Number, S<:NumberNotSeries}
+    @inbounds aux = b[0] / a
+    v = Taylor1(zero(aux), order(b))
+    @inbounds for k in eachindex(b)
+        v[k] = b[k] / a
+    end
+    return v
+end
+
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function /(a::$T{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = a.coeffs[1] / b
@@ -1383,7 +1416,7 @@ end
 
 function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
     _check_same_space(a, b)
-    @assert !iszero(constant_term(b))
+    @assert !_isthinzero(constant_term(b))
 
     if order(a) != order(b)
         a, b = fixorder(a, b)
@@ -1391,7 +1424,7 @@ function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
 
     # first coefficient
     @inbounds cdivfact = a[0] / constant_term(b)
-    c = TaylorN(cdivfact, order(a))
+    c = TaylorN(space(a), cdivfact, order(a))
     for ord in eachindex(c)
         div!(c, a, b, ord) # updates c[ord]
     end
@@ -1400,10 +1433,10 @@ function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
 end
 
 function /(a::S, b::TaylorN{T}) where {S<:NumberNotSeriesN, T<:NumberNotSeriesN}
-    @assert !iszero(constant_term(b))
+    @assert !_isthinzero(constant_term(b))
     R = typeof(a / constant_term(b))
     bb = convert(TaylorN{R}, b)
-    res = TaylorN(b.space, zero(R), order(b))
+    res = TaylorN(space(b), zero(R), order(b))
     iszero(a) && !iszero(b) && return res
     aa = convert(R, a)
     for ord in eachindex(res)
@@ -1865,7 +1898,7 @@ end
     ordfact = min(anz, bnz)
 
     # Is the polynomial factorizable?
-    iszero(b[ordfact]) && throw( ArgumentError(
+    _isthinzero(b[ordfact]) && throw( ArgumentError(
         """Division does not define a Taylor1 polynomial;
         order k=$(ordfact) => coeff[$(ordfact)]=$(cdivfact).""") )
 
