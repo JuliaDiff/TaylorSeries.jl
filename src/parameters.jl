@@ -101,8 +101,9 @@ strictly necessary.
 """
 mutable struct HomogeneousProductTable
     input_positions :: Vector{Int}
+    packed_pairs    :: Vector{UInt64}
     output_offsets  :: Vector{Int}
-    output_pairs    :: Vector{UInt32}
+    output_pairs    :: Vector{UInt64}
     num_right       :: Int
 end
 

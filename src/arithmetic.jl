@@ -1186,16 +1186,19 @@ end
     table = _init_output_major_product_table!(c.space, degree_a, degree_b)
     offsets = table.output_offsets
     output_pairs = table.output_pairs
-    num_right = table.num_right
+    # num_right = table.num_right
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
     @inbounds for pos in 1:length(offsets)-1
         acc = c_coeffs[pos]
         for csr_pos in offsets[pos]:(offsets[pos+1]-1)
-            pair = Int(output_pairs[csr_pos]) - 1
-            na = pair ÷ num_right + 1
-            nb = pair - (na-1) * num_right + 1
+            # pair = Int(output_pairs[csr_pos]) - 1
+            # na = pair ÷ num_right + 1
+            # nb = pair - (na-1) * num_right + 1
+            packed = output_pairs[csr_pos]
+            na = (packed >> 32) + 1
+            nb = (packed & 0xFFFFFFFF) + 1
             acc += a_coeffs[na] * b_coeffs[nb]
         end
         c_coeffs[pos] = acc
@@ -1216,16 +1219,19 @@ end
 
     offsets = table.output_offsets
     output_pairs = table.output_pairs
-    num_right = table.num_right
+    # num_right = table.num_right
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
     @inbounds for pos in 1:length(offsets)-1
         acc = c_coeffs[pos]
         for csr_pos in offsets[pos]:(offsets[pos+1]-1)
-            pair = Int(output_pairs[csr_pos]) - 1
-            na = pair ÷ num_right + 1
-            nb = pair - (na-1) * num_right + 1
+            # pair = Int(output_pairs[csr_pos]) - 1
+            # na = pair ÷ num_right + 1
+            # nb = pair - (na-1) * num_right + 1
+            packed = output_pairs[csr_pos]
+            na = (packed >> 32) + 1
+            nb = (packed & 0xFFFFFFFF) + 1
             acc += scalar * a_coeffs[na] * b_coeffs[nb]
         end
         c_coeffs[pos] = acc

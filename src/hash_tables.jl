@@ -59,22 +59,25 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
     num_coeffs_a = length(indTa)
     num_coeffs_b = length(indTb)
     num_pairs = num_coeffs_a * num_coeffs_b
-    num_pairs ≤ typemax(UInt32) ||
-        error("Product table is too large for UInt32 pair indices")
+    max(num_coeffs_a, num_coeffs_b) ≤ (Int64(1) << 32) ||
+        error("Product table is too large for 32-bit packed pair indices")
 
     input_positions = Vector{Int}(undef, num_pairs)
+    packed_pairs = Vector{UInt64}(undef, num_pairs)
 
     pair = 1
     @inbounds for na in eachindex(indTa)
         inda = indTa[na]
+        na_bits = UInt64(na - 1) << 32
         for nb in eachindex(indTb)
             pos = posTc[inda + indTb[nb]]
             input_positions[pair] = pos
+            packed_pairs[pair] = na_bits | UInt64(nb - 1)
             pair += 1
         end
     end
 
-    return HomogeneousProductTable(input_positions, Int[], UInt32[], num_coeffs_b)
+    return HomogeneousProductTable(input_positions, packed_pairs, Int[], UInt64[], num_coeffs_b)
 end
 
 """Initialize and return the output-major product schedule for two positive degrees."""
@@ -99,13 +102,13 @@ function _init_output_major_product_table!(space::JetSpace, degree_a::Int,
             output_offsets[pos+1] = output_offsets[pos] + counts[pos]
         end
 
-        output_pairs = Vector{UInt32}(undef, num_pairs)
+        output_pairs = Vector{UInt64}(undef, num_pairs)
         cursors = copy(output_offsets)
 
         @inbounds for pair in 1:num_pairs
             pos = table.input_positions[pair]
             cursor = cursors[pos]
-            output_pairs[cursor] = UInt32(pair)
+            output_pairs[cursor] = table.packed_pairs[pair]
             cursors[pos] = cursor + 1
         end
         table.output_offsets = output_offsets
@@ -118,7 +121,7 @@ end
 
 """Return empty valid positive-degree product-table placeholders for lazy initialization."""
 function generate_multiplication_tables(order::Int)
-    empty_table = HomogeneousProductTable(Int[], Int[], UInt32[], 0)
+    empty_table = HomogeneousProductTable(Int[], UInt64[], Int[], UInt64[], 0)
     return [[empty_table for _ in 1:(order - degree_a)] for degree_a in 1:(order - 1)]
 end
 
