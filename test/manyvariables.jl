@@ -1019,7 +1019,7 @@ end
 
     df2 = diffs2(f);
     @test ctab == sp.coeff_table
-    @test df1 == df_exact
+    @test df2 == df_exact
 
     function integ1(f)
         f1 = integrate(f, 1)
