@@ -1203,7 +1203,7 @@ end
     return nothing
 end
 
-@inline function _mul_scalar_unchecked!(c::HomogeneousPolynomial,
+@inline function _mul_scalar_output_major_unchecked!(c::HomogeneousPolynomial,
         scalar::NumberNotSeries, a::HomogeneousPolynomial,
         b::HomogeneousPolynomial)
     (_isthinzero(scalar) || _isthinzero(b) || _isthinzero(a)) && return nothing
@@ -1212,31 +1212,30 @@ end
     degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a[1], b)
     degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b[1], a)
 
-    sp = c.space
-    order_a = degree_a+1
-    order_b = degree_b+1
-    @inbounds num_coeffs_a = sp.size_table[order_a]
-    @inbounds num_coeffs_b = sp.size_table[order_b]
-    input_positions = _product_table(sp, degree_a, degree_b).input_positions
-    pair = 1
-    @inbounds for na in 1:num_coeffs_a
-        ca = a[na]
-        if _isthinzero(ca)
-            pair += num_coeffs_b
-            continue
+    table = _init_output_major_product_table!(c.space, degree_a, degree_b)
+
+    offsets = table.output_offsets
+    output_pairs = table.output_pairs
+    num_right = table.num_right
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for pos in 1:length(offsets)-1
+        acc = c_coeffs[pos]
+        for csr_pos in offsets[pos]:(offsets[pos+1]-1)
+            pair = Int(output_pairs[csr_pos]) - 1
+            na = pair ÷ num_right + 1
+            nb = pair - (na-1) * num_right + 1
+            acc += scalar * a_coeffs[na] * b_coeffs[nb]
         end
-        sca = scalar * ca
-        @inbounds for nb in 1:num_coeffs_b
-            cb = b[nb]
-            if !_isthinzero(cb)
-                pos = input_positions[pair]
-                c[pos] += sca * cb
-            end
-            pair += 1
-        end
+        c_coeffs[pos] = acc
     end
     return nothing
 end
+
+@inline _mul_scalar_unchecked!(c::HomogeneousPolynomial, scalar::NumberNotSeries,
+    a::HomogeneousPolynomial, b::HomogeneousPolynomial) =
+        _mul_scalar_output_major_unchecked!(c, scalar, a, b)
 
 @inline function _muladd_unchecked!(c::TaylorN{T}, a::TaylorN{T},
         b::TaylorN{T}, k::Int) where {T<:Number}
@@ -1284,7 +1283,7 @@ c, a and b are `HomogeneousPolynomial`; `scalar` is a NumberNotSeries.
         b::HomogeneousPolynomial)
     _check_same_space(c, a, b)
     _check_homogeneous_product_order(c, a, b)
-    _mul_scalar_unchecked!(c, scalar, a, b)
+    _mul_scalar_output_major_unchecked!(c, scalar, a, b)
     return nothing
 end
 
