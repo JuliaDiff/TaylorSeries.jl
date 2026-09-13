@@ -24,6 +24,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 # Rounding
+round(x::AbstractSeries, r::RoundingMode; kwargs...) = round(constant_term(x), r; kwargs...)
 round(::Type{T}, x::AbstractSeries; kwargs...) where {T <: NumberNotSeries} =
     round(T, x, RoundNearest; kwargs...)
 round(::Type{T}, x::AbstractSeries, r::RoundingMode; kwargs...) where {T <: NumberNotSeries} =
