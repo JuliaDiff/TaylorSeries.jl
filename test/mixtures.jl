@@ -128,6 +128,10 @@ using Test
 
     @test round(tN1 + 1.0, RoundDown) === round(t1N + 1.0, RoundDown) === round(1.0, RoundDown)
     @test round(Int, tN1 + 1.0) === round(Int, t1N + 1.0) === round(Int, 1.0)
+    @test ceil(tN1 + 1.0) === ceil(t1N + 1.0) === ceil(1.0)
+    @test ceil(Int, tN1 + 1.0) === ceil(Int, t1N + 1.0) === ceil(Int, 1.0)
+    @test floor(tN1 + 1.0) === floor(t1N + 1.0) === floor(1.0)
+    @test floor(Int, tN1 + 1.0) === floor(Int, t1N + 1.0) === floor(Int, 1.0)
     @test mod(tN1+1,1.0) == 0+tN1
     @test mod(tN1-1.125,2) == 0.875+tN1
     @test (rem(tN1+1.125,1.0))[0][1] == 0.125 + t
