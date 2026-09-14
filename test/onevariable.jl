@@ -237,7 +237,12 @@ Base.iszero(::SymbNumber) = false
     @test trational^3/complex(7,1) == Taylor1([0,0,0,complex(7//50,-1//50)],15)
     @test sqrt(zero(t)) == zero(t)
 
+    @test round(4.1 + t, RoundUp) === round(4.1, RoundUp)
     @test round(Int, 4.1 + t) === round(Int, 4.1)
+    @test ceil(4.1 + t) === ceil(4.1)
+    @test ceil(Int, 4.1 + t) === ceil(Int, 4.1)
+    @test floor(4.1 + t) === floor(4.1)
+    @test floor(Int, 4.1 + t) === floor(Int, 4.1)
     @test isapprox( rem(4.1 + t,4)[0], 0.1 )
     @test isapprox( mod(4.1 + t,4)[0], 0.1 )
     @test isapprox( rem(1+Taylor1(Int,4),4.0)[0], 1.0 )
