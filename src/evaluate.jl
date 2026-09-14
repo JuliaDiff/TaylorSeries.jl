@@ -868,37 +868,26 @@ happen before the destination is mutated.
 function _check_taylorN_evaluation(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
         dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
         aux::TaylorN{T}) where {N,T<:Number}
-    # Validate dimensions, common series space, and truncation order first.
-    get_numvars(a) == N || throw(DimensionMismatch(
-        "number of evaluation values must match the number of variables"))
+    _check_taylorN_auxiliaries(vals, valscache, aux)
+    _check_taylorN_destination(a, vals, dest, valscache, aux)
+    return nothing
+end
+
+# These checks depend only on the values and pre-allocated auxiliaries, so
+# an array evaluation can perform them once for all its polynomials.
+function _check_taylorN_auxiliaries(vals::NTuple{N,TaylorN{T}},
+        valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
     length(valscache) == N || throw(DimensionMismatch(
         "evaluation cache length must match the number of evaluation values"))
-    _check_same_space(a, dest, aux)
-    order(dest) == order(aux) || throw(DimensionMismatch(
-        "destination and scratch value must have the same order"))
-    # Destination and auxiliary storage are mutated and may not alias each
-    # other or the source polynomial.
-    a === dest && throw(ArgumentError(
-        "destination must not alias the polynomial being evaluated"))
-    a === aux && throw(ArgumentError(
-        "scratch value must not alias the polynomial being evaluated"))
-    dest === aux && throw(ArgumentError("destination and scratch value must not alias"))
     for i in eachindex(vals)
-        _check_same_space(dest, vals[i], valscache[i])
-        order(vals[i]) == order(dest) == order(valscache[i]) ||
+        _check_same_space(aux, vals[i], valscache[i])
+        order(vals[i]) == order(aux) == order(valscache[i]) ||
             throw(DimensionMismatch(
-                "evaluation values, destination and cache must have the same order"))
-        vals[i] === dest && throw(ArgumentError(
-            "destination must not alias an evaluation value"))
+                "evaluation values and pre-allocated auxiliaries must have the same order"))
         vals[i] === aux && throw(ArgumentError(
-            "scratch value must not alias an evaluation value"))
-        valscache[i] === dest && throw(ArgumentError(
-            "destination must not alias the evaluation cache"))
+            "auxiliary must not alias an evaluation value"))
         valscache[i] === aux && throw(ArgumentError(
-            "scratch value must not alias the evaluation cache"))
-        valscache[i] === a && throw(ArgumentError(
-            "evaluation cache must not alias the polynomial being evaluated"))
-        # Each cache entry is repeatedly overwritten with powers of one input.
+            "auxiliary must not alias the evaluation cache"))
         for val in vals
             valscache[i] === val && throw(ArgumentError(
                 "evaluation cache must not alias an evaluation value"))
@@ -911,17 +900,44 @@ function _check_taylorN_evaluation(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
     return nothing
 end
 
+# Check the source and destination against the already checked shared values
+# and pre-allocated auxiliaries. The source may have a different order.
+function _check_taylorN_destination(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}) where {N,T<:Number}
+    get_numvars(a) == N || throw(DimensionMismatch(
+        "number of evaluation values must match the number of variables"))
+    _check_same_space(a, dest, aux)
+    order(dest) == order(aux) || throw(DimensionMismatch(
+        "destination and auxiliary must have the same order"))
+    a === dest && throw(ArgumentError(
+        "destination must not alias the polynomial being evaluated"))
+    a === aux && throw(ArgumentError(
+        "auxiliary must not alias the polynomial being evaluated"))
+    dest === aux && throw(ArgumentError("destination and auxiliary must not alias"))
+    for i in eachindex(vals)
+        vals[i] === dest && throw(ArgumentError(
+            "destination must not alias an evaluation value"))
+        valscache[i] === dest && throw(ArgumentError(
+            "destination must not alias the evaluation cache"))
+        valscache[i] === a && throw(ArgumentError(
+            "evaluation cache must not alias the polynomial being evaluated"))
+    end
+    return nothing
+end
+
 """
     evaluate!(a, vals, dest, valscache, aux; sorting=false)
     evaluate!(a_array, vals, dest_array, valscache, aux; sorting=false)
 
 Evaluate a `TaylorN` polynomial, or an array of them, at series-valued `vals`
-and write into `dest`. `valscache` provides one destructive scratch series per
-evaluation value and `aux` provides shared arithmetic scratch. Every evaluation
-value `valscache` and auxiliary `aux` must have the same `JetSpace` and order
-as `dest`; the source polynomial must share that `JetSpace` but may have a
-different order. Auxiliaries `valscache`, `aux` must not alias inputs, outputs,
-or other cache entries.
+and write into `dest`. `valscache` provides one pre-allocated auxiliary per
+evaluation value, and `aux` is another pre-allocated auxiliary used for the
+arithmetic. Both are overwritten during evaluation. Every evaluation value
+and auxiliary must have the same `JetSpace` and order as `dest`; the source
+polynomial must share that `JetSpace` but may have a different order.
+Auxiliaries `valscache`, `aux` must not alias inputs, outputs, or other cache
+entries.
 
 With `sorting=false`, these overloads reuse the supplied `valscache` and
 `aux`. `sorting=true` preserves magnitude-sorted scalar evaluation and may
@@ -961,13 +977,21 @@ end
 Array form of `TaylorN` evaluation with explicit pre-allocated auxiliary `aux`
 and cache `valscache`. The cache and auxiliary series are reused sequentially
 for every element of `a`; their requirements and sorting behavior are the same
-    as for the scalar method above.
+as for the scalar method above. The shared values and pre-allocated auxiliaries
+are checked once per call. Each source and destination is then checked before
+any evaluation begins.
 """
 function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
         dest::AbstractArray{TaylorN{T}}, valscache::Vector{TaylorN{T}},
         aux::TaylorN{T}; sorting::Bool=false) where {N,T<:Number}
-    for i in eachindex(a, dest)
-        evaluate!(a[i], vals, dest[i], valscache, aux; sorting)
+    indices = eachindex(a, dest)
+    isempty(indices) && return nothing
+    _check_taylorN_auxiliaries(vals, valscache, aux)
+    for i in indices
+        _check_taylorN_destination(a[i], vals, dest[i], valscache, aux)
+    end
+    for i in indices
+        _evaluate!(a[i], vals, dest[i], valscache, aux, Val(sorting))
     end
     return nothing
 end

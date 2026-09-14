@@ -1004,6 +1004,53 @@ end
 
 end
 
+@testset "Shared pre-allocated evaluation auxiliaries" begin
+    sp = JetSpace(order=2, variables=[:u, :v])
+    u, v = variables(sp)
+    src = [u + v^2, 2u - v]
+    vals = (1 + u, 2 + v)
+    valscache = [zero(u), zero(v)]
+    aux = zero(u)
+    dest = [one(u), one(v)]
+
+    for sorting in (false, true)
+        @test isnothing(evaluate!(src, vals, dest, valscache, aux; sorting))
+        @test dest == evaluate.(src, Ref(vals); sorting)
+        # Repeated calls and array views reuse the same auxiliaries.
+        @test isnothing(evaluate!(view(src, :), vals, view(dest, :),
+            valscache, aux; sorting))
+        @test dest == evaluate.(src, Ref(vals); sorting)
+        before = deepcopy(dest)
+        @test_throws DimensionMismatch evaluate!(src, vals, dest,
+            valscache[1:1], aux; sorting)
+        @test_throws ArgumentError evaluate!(src, vals, dest,
+            [valscache[1], valscache[1]], aux; sorting)
+        @test_throws ArgumentError evaluate!(src, vals, dest,
+            [vals[2], valscache[2]], aux; sorting)
+        @test_throws ArgumentError evaluate!(src, vals, dest,
+            valscache, vals[1]; sorting)
+        @test_throws DimensionMismatch evaluate!(src, vals, dest,
+            valscache, TaylorN(sp, 0.0, 1); sorting)
+        @test dest == before
+
+        # An invalid later element must be detected before the first is changed.
+        bad_dest = [one(u), TaylorN(sp, 1.0, 1)]
+        @test_throws DimensionMismatch evaluate!(src, vals, bad_dest,
+            valscache, aux; sorting)
+        @test bad_dest[1] == one(u)
+        bad_dest = [one(u), vals[1]]
+        @test_throws ArgumentError evaluate!(src, vals, bad_dest,
+            valscache, aux; sorting)
+        @test bad_dest[1] == one(u)
+        bad_src = [src[1], valscache[1]]
+        @test_throws ArgumentError evaluate!(bad_src, vals, dest,
+            valscache, aux; sorting)
+        @test dest == before
+    end
+    @test isnothing(evaluate!(TaylorN{Float64}[], vals, TaylorN{Float64}[],
+        valscache, aux))
+end
+
 @testset "Integrate for several variables" begin
 
     t, x, y = variables!("t x y", nowarn=true)
