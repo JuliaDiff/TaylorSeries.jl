@@ -8,21 +8,31 @@
 
 ## Evaluating ##
 """
+    _evaluate(a::Taylor1, dx::NumberNotSeries)
+
+Evaluate `a` at the ordinary numeric scalar `dx` using Horner's rule without
+creating intermediate containers. This is the scalar kernel shared by
+`evaluate` and the corresponding array `evaluate!` method.
+"""
+@inline function _evaluate(a::Taylor1{T}, dx::S) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    a_coeffs = a.coeffs
+    @inbounds suma = zero(a_coeffs[end])*dx
+    @inbounds for k in reverse(eachindex(a_coeffs))
+        suma = suma * dx + a_coeffs[k]
+    end
+    return suma
+end
+
+"""
     evaluate(a, [dx])
 
 Evaluate a `Taylor1` polynomial using Horner's rule (hand coded). If `dx` is
 omitted, its value is considered as zero. Note that the syntax `a(dx)` is
 equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
-function evaluate(a::Taylor1{T}, dx::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
-    a_coeffs = a.coeffs
-    @inbounds suma = zero(a_coeffs[end])
-    # suma = evalpoly(dx, view(a.coeffs,:) )
-    @inbounds for k in reverse(eachindex(a_coeffs))
-        suma = suma * dx + a_coeffs[k]
-    end
-    return suma
-end
+evaluate(a::Taylor1{T}, dx::S) where
+    {T<:NumberNotSeries, S<:NumberNotSeries} = _evaluate(a, dx)
 
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     a_coeffs = a.coeffs
@@ -79,7 +89,7 @@ function evaluate(a::Taylor1{T}, x::Taylor1{T}) where {T<:Number}
 end
 
 function evaluate(a::Taylor1{Taylor1{T}}, x::Taylor1{T}) where {T<:NumberNotSeriesN}
-    @inbounds suma = a[end]*zero(x)
+    suma = Taylor1(zero(x[0]), _evaluation_order(a, x))
     _horner!(suma, a, x, zero(suma))
     return suma
 end
@@ -191,18 +201,50 @@ function evaluate(a::HomogeneousPolynomial{T}) where {T}
     return zero(a[1])
 end
 
-# Internal method that avoids checking that the length of `vals` is the appropriate
-function _evaluate(a::HomogeneousPolynomial{T}, vals::NTuple) where {T}
-    # @assert length(vals) == get_numvars()
+"""
+    _evaluate(a::HomogeneousPolynomial, vals)
+
+Evaluate one homogeneous polynomial directly at `vals` without constructing
+vectors of powers or monomial terms. The caller must supply a nonempty
+collection with one value per variable and, for series values, compatible
+series spaces.
+"""
+function _evaluate(a::HomogeneousPolynomial{T},
+        vals) where {T}
     order(a) == 0 && return a[1]*one(vals[1])
     ct = a.space.coeff_table[order(a)+1]
-    suma = zero(a[1])*vals[1]
-    vv = Base.literal_pow.(^, vals, Val.(ct[1]))
+    suma = zero(a[1]*vals[1])
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds vv .= Base.literal_pow.(^, vals, Val.(ct[i]))
-        tmp = prod( vv )
-        suma += a_coeff * tmp
+        term = a_coeff * one(vals[1])
+        @inbounds for j in eachindex(vals)
+            exponent = ct[i][j]
+            exponent == 0 && continue
+            term *= Base.literal_pow(^, vals[j], Val(exponent))
+        end
+        suma += term
+    end
+    return suma
+end
+
+# Ordinary scalar vectors can use type-level promotion. The generic method
+# above derives zeros and ones from instances to retain series-space metadata.
+function _evaluate(a::HomogeneousPolynomial{T},
+        vals::AbstractVector{S}) where
+        {T<:NumberNotSeries,S<:NumberNotSeries}
+    R = promote_type(T, S)
+    order(a) == 0 && return convert(R, a[1])
+    ct = a.space.coeff_table[order(a)+1]
+    suma = zero(R)
+    for (i, a_coeff) in enumerate(a.coeffs)
+        TS._isthinzero(a_coeff) && continue
+        term = convert(R, a_coeff)
+        @inbounds for j in eachindex(vals)
+            exponent = ct[i][j]
+            exponent == 0 && continue
+            term *= vals[j]^exponent
+        end
+        suma += term
     end
     return suma
 end
@@ -333,8 +375,27 @@ evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} =
 
 evaluate(a::TaylorN{T}) where {T<:Number} = constant_term(a)
 
+# TODO: avoid allocating a new array every time we evaluate with `sorting=true`.
+# This could be achieved by passing a reusable buffer for the evaluated contributions,
+# as an additional input argument. This buffer would be filled and sorted on each call,
+# then summed.
+"""
+    _evaluate(a::TaylorN, vals::Tuple, ::Val{true})
+    _evaluate(a::TaylorN, vals::Tuple, ::Val{false})
 
-# _evaluate
+Evaluate `a` at `vals` and return the sum of its contributions.
+`Val(true)` sorts the contributions from smallest to largest magnitude before
+adding them, to reduce rounding error. `Val(false)` skips this sorting step.
+
+The third argument is needed because `_evaluate(a::TaylorN, vals::Tuple)`
+returns an array with one contribution per polynomial degree, rather than
+their sum. The sorted method needs those separate values so it can reorder
+them before adding them. Using `Val(true)` or `Val(false)` selects the method
+for the requested summation without changing the two-argument method's result.
+
+Sorting currently allocates temporary storage. Reusing a caller-provided
+buffer could avoid that allocation while keeping the same sorting behavior.
+"""
 _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where
     {T<:NumberNotSeries} = sum( sort!(_evaluate(a, vals), by=abs2) )
 
@@ -355,11 +416,39 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where
     return res
 end
 
+"""
+    _evaluate(a::TaylorN, vals::Tuple)
+
+Return an array containing the evaluated contribution from each polynomial
+degree of `a`, starting with its constant term. The entries have not been
+added together. For the complete result, use the three-argument form with
+`Val(true)` to sort before adding, or `Val(false)` to add without sorting.
+"""
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:Number}) where {N,T<:Number}
     R = promote_type(T, typeof(vals[1]))
     suma = zeros(R, length(a))
     @inbounds for homPol in eachindex(a)
         suma[homPol+1] = _evaluate(a[homPol], vals)
+    end
+    return suma
+end
+
+"""
+    _evaluate(a::TaylorN, vals::AbstractVector, ::Val{false})
+
+Evaluate `a` at `vals` and add the contributions in increasing polynomial
+degree, without sorting by their values. This vector method adds each
+contribution directly, without allocating an array to hold them first.
+
+The third argument distinguishes this complete result from the two-argument
+`_evaluate(a::TaylorN, vals::Tuple)`, which returns the separate contributions.
+"""
+function _evaluate(a::TaylorN{T},
+        vals::AbstractVector{S}, ::Val{false}) where {T<:Number, S<:Number}
+    @assert length(vals) == get_numvars(a)
+    suma = zero(a[0][1] * one(vals[1]))
+    @inbounds for homPol in eachindex(a)
+        suma += _evaluate(a[homPol], vals)
     end
     return suma
 end
@@ -475,17 +564,23 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
 end
 
 
-#High-dim array evaluation
-function evaluate(A::AbstractArray{TaylorN{T},N}, δx::Vector{S}) where
-        {T<:Number, S<:Number, N}
-    R = promote_type(T,S)
-    return evaluate(convert(Array{TaylorN{R},N},A), convert(Vector{R},δx))
+# High-dimensional array evaluation. Keep this allocating interface as a
+# broadcast of scalar evaluations so it retains scalar promotion, sorting,
+# shape, and StaticArray container behavior while accepting views as inputs.
+# TODO: Preserve concrete result element types for empty arrays once this can
+# be done without duplicating the scalar promotion rules.
+function evaluate(A::AbstractArray{TaylorN{T}}, vals::AbstractVector{S};
+        sorting::Bool=!(T <: AbstractSeries || S <: AbstractSeries)) where
+        {T<:Number,S<:Number}
+    return evaluate.(A, Ref(vals); sorting)
 end
-function evaluate(A::Array{TaylorN{T}}, δx::Vector{T}) where {T<:Number}
-    Anew = Array{T}(undef, size(A)...)
-    evaluate!(A, δx, Anew)
-    return Anew
+
+function evaluate(A::AbstractArray{TaylorN{T}}, vals::Tuple{S,Vararg{S}};
+        sorting::Bool=!(T <: AbstractSeries || S <: AbstractSeries)) where
+        {T<:Number,S<:Number}
+    return evaluate.(A, Ref(vals); sorting)
 end
+
 evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 
 #function-like behavior for TaylorN
@@ -504,38 +599,229 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 
 """
     evaluate!(x, δt, dest)
+    evaluate!(x, vals, dest; sorting=...)
 
-Evaluates each element of `x::AbstractArray{Taylor1{T}}`,
-representing the Taylor expansion for the dependent variables
-of an ODE at *time* `δt`. It updates the vector `dest` with the
-computed values.
+Evaluate a polynomial or each polynomial in `x` and write the results into
+`dest`. For ordinary numeric `Taylor1` inputs, evaluation uses a direct Horner
+kernel. For `TaylorN` arrays, `sorting=false` sums homogeneous components in
+stored order without a temporary component vector; `sorting=true` preserves
+magnitude-sorted scalar evaluation and may allocate. Sorting defaults to true
+for ordinary scalar types and false when the coefficient or evaluation-value
+type is a series.
+
+For series-valued substitutions (i.e., when the evaluation argument is
+a Taylor series variable), the `evaluate!` methods that accept scratch buffers
+should be used, so that buffers are allocated only once and are reused across
+calls.
 """
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
-        dest::AbstractArray{T}) where {T<:NumberNotSeriesN, S<:Number}
-    dest .= evaluate.( x, δt )
-    return nothing
-end
-
-function evaluate!(x::AbstractArray{Taylor1{TaylorN{T}}}, δt::S,
-        dest::AbstractArray{TaylorN{T}}) where {T<:Number, S<:Number}
-    @inbounds for i in eachindex(x)
-        zero!(dest[i])
-        aux = zero(dest[i])
-        _horner!(dest[i], x[i], δt, aux)
+        dest::AbstractArray{R}) where
+        {T<:NumberNotSeries, S<:NumberNotSeries, R<:NumberNotSeries}
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = _evaluate(x[i], δt)
     end
     return nothing
 end
 
-## In place evaluation of multivariable arrays
-function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{T,1},
-        dest::AbstractArray{T}) where {T<:Number}
-    dest .= evaluate.( x, Ref(δx) )
+function evaluate!(a::Taylor1{Taylor1{T}}, δt::S,
+        dest::Taylor1{R}) where
+        {T<:NumberNotSeries,S<:NumberNotSeries,R<:NumberNotSeries}
+    # A scalar evaluation value lets every inner coefficient be updated in
+    # place, without a second series-valued Horner buffer.
+    for coeff in a.coeffs
+        # Order-zero series are exact constants and may be zero-extended.
+        (iszero(order(coeff)) || order(dest) <= order(coeff)) || throw(DimensionMismatch(
+            "destination order exceeds a Taylor1 coefficient order"))
+    end
+    zero!(dest)
+    @inbounds for k in reverse(eachindex(a))
+        coeff = a[k]
+        for ord in eachindex(dest)
+            dest[ord] *= δt
+            ord <= order(coeff) && (dest[ord] += coeff[ord])
+        end
+    end
     return nothing
 end
 
-function evaluate!(x::AbstractArray{TaylorN{T}}, δx::Array{TaylorN{T},1},
-        dest::AbstractArray{TaylorN{T}}; sorting::Bool=true) where {T<:NumberNotSeriesN}
-    dest .= evaluate.( x, Ref(δx), sorting = sorting)
+function evaluate!(x::AbstractArray{Taylor1{Taylor1{T}}}, δt::S,
+        dest::AbstractArray{Taylor1{R}}) where
+        {T<:NumberNotSeries,S<:NumberNotSeries,R<:NumberNotSeries}
+    @inbounds for i in eachindex(x, dest)
+        evaluate!(x[i], δt, dest[i])
+    end
+    return nothing
+end
+
+function evaluate!(a::Taylor1{TaylorN{T}}, δt::S,
+        dest::TaylorN{T}) where {T<:Number, S<:NumberNotSeries}
+    # As above, scalar multiplication can update each homogeneous component
+    # directly, so this path needs no separate outer TaylorN scratch buffer.
+    for coeff in a.coeffs
+        _check_same_space(dest, coeff)
+        # Order-zero series are exact constants and may be zero-extended.
+        (iszero(order(coeff)) || order(dest) <= order(coeff)) ||
+            throw(DimensionMismatch(
+                "destination order exceeds a TaylorN coefficient order"))
+    end
+    zero!(dest)
+    @inbounds for k in reverse(eachindex(a))
+        a_coeff = a[k]
+        for ordQ in eachindex(dest)
+            dest_hp = dest[ordQ].coeffs
+            if ordQ <= order(a_coeff)
+                a_hp = a_coeff[ordQ].coeffs
+                for j in eachindex(dest_hp)
+                    dest_hp[j] = dest_hp[j] * δt + a_hp[j]
+                end
+            else
+                for j in eachindex(dest_hp)
+                    dest_hp[j] *= δt
+                end
+            end
+        end
+    end
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{TaylorN{T}}}, δt::S,
+        dest::AbstractArray{TaylorN{T}}) where {T<:Number, S<:NumberNotSeries}
+    @inbounds for i in eachindex(x, dest)
+        evaluate!(x[i], δt, dest[i])
+    end
+    return nothing
+end
+
+"""
+    _check_series_evaluation(a, δt, dest, aux)
+
+Validate the series-space, order, and non-aliasing requirements of
+series-valued `Taylor1` evaluation with explicit pre-allocated auxiliary
+`aux`. All checks happen before the destination is mutated.
+"""
+function _check_series_evaluation(a::Taylor1{T}, δt::T, dest::T,
+        aux::T) where {T<:Union{Taylor1,TaylorN}}
+    # Horner multiplication requires independent input, output, and scratch
+    # storage from compatible series families (and the same TaylorN JetSpace).
+    dest === δt && throw(ArgumentError("destination must not alias the evaluation value"))
+    dest === aux && throw(ArgumentError("destination and scratch value must not alias"))
+    δt === aux && throw(ArgumentError("evaluation and scratch values must not alias"))
+    _check_same_space(dest, δt, aux)
+    order(dest) == order(aux) || throw(DimensionMismatch(
+        "destination and scratch value must have the same order"))
+    order(dest) <= order(δt) || throw(DimensionMismatch(
+        "destination order exceeds the evaluation value order"))
+    for coeff in a.coeffs
+        _check_same_space(dest, coeff)
+        # Coefficients are read throughout Horner evaluation and must not be
+        # overwritten through either mutable work buffer.
+        coeff === dest && throw(ArgumentError(
+            "destination must not alias a polynomial coefficient"))
+        coeff === aux && throw(ArgumentError(
+            "scratch value must not alias a polynomial coefficient"))
+        # Order-zero coefficients are exact constants; only positive orders
+        # constrain the amount of information available in the destination.
+        (iszero(order(coeff)) || order(dest) <= order(coeff)) ||
+            throw(DimensionMismatch(
+                "destination order exceeds a nonconstant coefficient order"))
+    end
+    return nothing
+end
+
+"""
+    evaluate!(a, δt, dest, aux)
+    evaluate!(x, δt, dest, aux)
+
+Evaluate a `Taylor1` polynomial, or an array of them, at a series-valued
+`δt`. The result is written into `dest`, while `aux` is reusable scratch
+storage. These overloads work with an explicitly pre-allocated auxiliary `aux`,
+provided by the caller, in order to avoid allocations within the method body.
+The destination, evaluation value and scratch value must have the same
+concrete series type and, for `TaylorN`, the same `JetSpace`. They must not
+alias one another; neither `dest` nor `aux` may alias a mutable coefficient.
+`dest` and `aux` must have the same order, no greater than the order of `δt`.
+Nonconstant coefficient orders must also be at least the destination order.
+"""
+function evaluate!(a::Taylor1{T}, δt::T, dest::T,
+        aux::T) where {T<:Union{Taylor1,TaylorN}}
+    _check_series_evaluation(a, δt, dest, aux)
+    zero!(dest)
+    _horner!(dest, a, δt, aux)
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{T}}, δt::T,
+        dest::AbstractArray{T}, aux::T) where {T<:Union{Taylor1,TaylorN}}
+    @inbounds for i in eachindex(x, dest)
+        evaluate!(x[i], δt, dest[i], aux)
+    end
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{T}}, δt::T,
+        dest::AbstractArray{T}) where {T<:Union{Taylor1,TaylorN}}
+    if isempty(dest)
+        isempty(x) && return nothing
+        throw(DimensionMismatch("source and destination arrays must have matching indices"))
+    end
+    # Compatibility method: the four-argument `evaluate!(x, δt, dest, aux)`
+    # method does not allocate `aux`; this form creates one auxiliary variable
+    # `aux` series which is allocated only once and reused throughout.
+    # TODO: Detect heterogeneous destination orders and create correctly sized
+    # per-element scratch only for that fallback.
+    aux = zero(dest[firstindex(dest)])
+    evaluate!(x, δt, dest, aux)
+    return nothing
+end
+
+## In place evaluation of multivariable arrays
+"""
+    _evaluate!(x, vals, dest, ::Val{sorting})
+
+Evaluate each polynomial in `x` at `vals` and write its result into `dest`.
+`Val(false)` adds contributions directly without a temporary result array.
+`Val(true)` sorts each polynomial's contributions by magnitude before adding
+them, and may allocate temporary storage for that sorting.
+"""
+function _evaluate!(x::AbstractArray{TaylorN{T}},
+        δx::AbstractVector{S}, dest::AbstractArray{R},
+        ::Val{false}) where
+        {T<:Number,S<:Number,R<:Number}
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = _evaluate(x[i], δx, Val(false))
+    end
+    return nothing
+end
+
+function _evaluate!(x::AbstractArray{TaylorN{T}},
+        δx::AbstractVector{S}, dest::AbstractArray{R},
+        ::Val{true}) where
+        {T<:Number,S<:Number,R<:Number}
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = evaluate(x[i], δx; sorting=true)
+    end
+    return nothing
+end
+
+@inline function evaluate!(x::AbstractArray{TaylorN{T}}, δx::AbstractVector{S},
+        dest::AbstractArray{R};
+        sorting::Bool=!(T <: AbstractSeries || S <: AbstractSeries)) where
+        {T<:Number,S<:Number,R<:Number}
+    _evaluate!(x, δx, dest, Val(sorting))
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{TaylorN{T}}, δx::AbstractVector{TaylorN{T}},
+        dest::AbstractArray{TaylorN{T}}; sorting::Bool=false) where {T<:NumberNotSeriesN}
+    if sorting
+        # Sorted evaluation intentionally follows the scalar allocating path
+        # to preserve its summation order and numerical behavior.
+        @inbounds for i in eachindex(x, dest)
+            dest[i] = evaluate(x[i], δx; sorting=true)
+        end
+    else
+        evaluate!(x, (δx...,), dest; sorting=false)
+    end
     return nothing
 end
 
@@ -547,21 +833,162 @@ function _evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}}, dest::TaylorN{T},
     return nothing
 end
 
-function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
-        dest::AbstractArray{TaylorN{T}}) where {N,T<:Number}
-    # initialize evaluation cache
-    valscache = [zero(val) for val in vals]
-    aux = zero(dest[1])
-    # loop over elements of `a`
-    for i in eachindex(a)
-        (!iszero(dest[i])) && zero!(dest[i])
-        _evaluate!(a[i], vals, dest[i], valscache, aux)
+"""
+    _check_taylorN_evaluation(a, vals, dest, valscache, aux)
+
+Validate dimensions, `JetSpace` and order compatibility, and non-aliasing
+requirements for `TaylorN` evaluation with explicit auxiliary variables
+`valscache` and `aux`. Cache entries are modified in-place and must be
+distinct from every input and from one another to avoid aliasing. All checks
+happen before the destination is mutated.
+"""
+function _check_taylorN_evaluation(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}) where {N,T<:Number}
+    _check_taylorN_auxiliaries(vals, valscache, aux)
+    _check_taylorN_destination(a, vals, dest, valscache, aux)
+    return nothing
+end
+
+# These checks depend only on the values and pre-allocated auxiliaries, so
+# an array evaluation can perform them once for all its polynomials.
+function _check_taylorN_auxiliaries(vals::NTuple{N,TaylorN{T}},
+        valscache::Vector{TaylorN{T}}, aux::TaylorN{T}) where {N,T<:Number}
+    length(valscache) == N || throw(DimensionMismatch(
+        "evaluation cache length must match the number of evaluation values"))
+    for i in eachindex(vals)
+        _check_same_space(aux, vals[i], valscache[i])
+        order(vals[i]) == order(aux) == order(valscache[i]) ||
+            throw(DimensionMismatch(
+                "evaluation values and pre-allocated auxiliaries must have the same order"))
+        vals[i] === aux && throw(ArgumentError(
+            "auxiliary must not alias an evaluation value"))
+        valscache[i] === aux && throw(ArgumentError(
+            "auxiliary must not alias the evaluation cache"))
+        for val in vals
+            valscache[i] === val && throw(ArgumentError(
+                "evaluation cache must not alias an evaluation value"))
+        end
+        for j in firstindex(valscache):(i-1)
+            valscache[i] === valscache[j] && throw(ArgumentError(
+                "evaluation cache entries must not alias one another"))
+        end
     end
     return nothing
 end
 
-# In-place Horner methods, used when the result of an evaluation (substitution)
-# is Taylor1{}
+# Check the source and destination against the already checked shared values
+# and pre-allocated auxiliaries. The source may have a different order.
+function _check_taylorN_destination(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}) where {N,T<:Number}
+    get_numvars(a) == N || throw(DimensionMismatch(
+        "number of evaluation values must match the number of variables"))
+    _check_same_space(a, dest, aux)
+    order(dest) == order(aux) || throw(DimensionMismatch(
+        "destination and auxiliary must have the same order"))
+    a === dest && throw(ArgumentError(
+        "destination must not alias the polynomial being evaluated"))
+    a === aux && throw(ArgumentError(
+        "auxiliary must not alias the polynomial being evaluated"))
+    dest === aux && throw(ArgumentError("destination and auxiliary must not alias"))
+    for i in eachindex(vals)
+        vals[i] === dest && throw(ArgumentError(
+            "destination must not alias an evaluation value"))
+        valscache[i] === dest && throw(ArgumentError(
+            "destination must not alias the evaluation cache"))
+        valscache[i] === a && throw(ArgumentError(
+            "evaluation cache must not alias the polynomial being evaluated"))
+    end
+    return nothing
+end
+
+"""
+    evaluate!(a, vals, dest, valscache, aux; sorting=false)
+    evaluate!(a_array, vals, dest_array, valscache, aux; sorting=false)
+
+Evaluate a `TaylorN` polynomial, or an array of them, at series-valued `vals`
+and write into `dest`. `valscache` provides one pre-allocated auxiliary per
+evaluation value, and `aux` is another pre-allocated auxiliary used for the
+arithmetic. Both are overwritten during evaluation. Every evaluation value
+and auxiliary must have the same `JetSpace` and order as `dest`; the source
+polynomial must share that `JetSpace` but may have a different order.
+Auxiliaries `valscache`, `aux` must not alias inputs, outputs, or other cache
+entries.
+
+With `sorting=false`, these overloads reuse the supplied `valscache` and
+`aux`. `sorting=true` preserves magnitude-sorted scalar evaluation and may
+allocate an intermediate result.
+"""
+function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}; sorting::Bool=false) where {N,T<:Number}
+    _check_taylorN_evaluation(a, vals, dest, valscache, aux)
+    _evaluate!(a, vals, dest, valscache, aux, Val(sorting))
+    return nothing
+end
+
+# The public method checks the inputs before either method changes dest.
+function _evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}, ::Val{false}) where {N,T<:Number}
+    zero!(dest)
+    _evaluate!(a, vals, dest, valscache, aux)
+    return nothing
+end
+
+function _evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}, ::Val{true}) where {N,T<:Number}
+    result = evaluate(a, vals; sorting=true)
+    zero!(dest)
+    for ord in eachindex(dest)
+        identity!(dest, result, ord)
+    end
+    return nothing
+end
+
+"""
+    evaluate!(a, vals, dest, valscache, aux; sorting=false)
+
+Array form of `TaylorN` evaluation with explicit pre-allocated auxiliary `aux`
+and cache `valscache`. The cache and auxiliary series are reused sequentially
+for every element of `a`; their requirements and sorting behavior are the same
+as for the scalar method above. The shared values and pre-allocated auxiliaries
+are checked once per call. Each source and destination is then checked before
+any evaluation begins.
+"""
+function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
+        dest::AbstractArray{TaylorN{T}}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}; sorting::Bool=false) where {N,T<:Number}
+    indices = eachindex(a, dest)
+    isempty(indices) && return nothing
+    _check_taylorN_auxiliaries(vals, valscache, aux)
+    for i in indices
+        _check_taylorN_destination(a[i], vals, dest[i], valscache, aux)
+    end
+    for i in indices
+        _evaluate!(a[i], vals, dest[i], valscache, aux, Val(sorting))
+    end
+    return nothing
+end
+
+function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
+        dest::AbstractArray{TaylorN{T}}; sorting::Bool=false) where {N,T<:Number}
+    if isempty(dest)
+        isempty(a) && return nothing
+        throw(DimensionMismatch("source and destination arrays must have matching indices"))
+    end
+    # Compatibility method: construct one cache set and auxiliary series for
+    # this call. The method with explicit auxiliary (aux) and cache (valcache)
+    # `evaluate!(a, vals, dest, valscache, aux; sorting)` is the allocation-free method.
+    valscache = [zero(val) for val in vals]
+    aux = zero(dest[firstindex(dest)])
+    evaluate!(a, vals, dest, valscache, aux; sorting)
+    return nothing
+end
+
+# In-place Horner kernels for series-valued evaluation and composition.
 function _horner!(suma::Taylor1{T}, a::Taylor1{T}, x::Taylor1{T},
         aux::Taylor1{T}) where {T<:Number}
     @inbounds for k in reverse(eachindex(a))
@@ -582,7 +1009,13 @@ function _horner!(suma::Taylor1{T}, a::Taylor1{Taylor1{T}}, x::Taylor1{T},
             mul!(aux, suma, x, ord)
         end
         for ord in eachindex(suma)
-            add!(suma, aux, a[k], ord)
+            # An order-zero coefficient is exact; at higher result orders only
+            # the Horner product already stored in `aux` contributes.
+            if ord <= order(a[k])
+                add!(suma, aux, a[k], ord)
+            else
+                identity!(suma, aux, ord)
+            end
         end
     end
     return nothing
@@ -639,7 +1072,13 @@ function _horner!(suma::TaylorN{T}, a::Taylor1{TaylorN{T}}, dx::S,
             mul!(aux, suma, dx, ord)
         end
         for ord in eachindex(aux)
-            add!(suma, aux, a[k], ord)
+            # Order-zero coefficients are exact constants; at higher orders
+            # only the Horner product contributes.
+            if ord <= order(a[k])
+                add!(suma, aux, a[k], ord)
+            else
+                identity!(suma, aux, ord)
+            end
         end
     end
     return nothing
