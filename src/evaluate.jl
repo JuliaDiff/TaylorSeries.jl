@@ -398,6 +398,10 @@ evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} =
 
 evaluate(a::TaylorN{T}) where {T<:Number} = constant_term(a)
 
+# TODO: avoid allocating a new array every time we evaluate with `sorting=true`.
+# This could be achieved by passing a reusable buffer for the evaluated contributions,
+# as an additional input argument. This buffer would be filled and sorted on each call,
+# then summed.
 """
     _evaluate(a::TaylorN, vals::Tuple, ::Val{true})
     _evaluate(a::TaylorN, vals::Tuple, ::Val{false})
