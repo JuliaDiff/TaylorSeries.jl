@@ -236,7 +236,7 @@ function _evaluate(a::HomogeneousPolynomial{T},
         vals) where {T}
     order(a) == 0 && return a[1]*one(vals[1])
     ct = a.space.coeff_table[order(a)+1]
-    suma = zero(a[1]*one(vals[1]))
+    suma = zero(a[1]*vals[1])
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
         term = a_coeff * one(vals[1])
