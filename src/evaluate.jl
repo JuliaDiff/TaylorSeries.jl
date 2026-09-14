@@ -719,8 +719,8 @@ end
     _check_series_evaluation(a, δt, dest, aux)
 
 Validate the series-space, order, and non-aliasing requirements of
-series-valued `Taylor1` evaluation with explicit workspace. All checks happen
-before the destination is mutated.
+series-valued `Taylor1` evaluation with explicit pre-allocated auxiliary
+`aux`. All checks happen before the destination is mutated.
 """
 function _check_series_evaluation(a::Taylor1{T}, δt::T, dest::T,
         aux::T) where {T<:Union{Taylor1,TaylorN}}
@@ -757,7 +757,8 @@ end
 
 Evaluate a `Taylor1` polynomial, or an array of them, at a series-valued
 `δt`. The result is written into `dest`, while `aux` is reusable scratch
-storage. These explicit-workspace overloads do not create scratch storage.
+storage. These overloads work with an explicitly pre-allocated auxiliary `aux`,
+provided by the caller, in order to avoid allocations within the method body.
 The destination, evaluation value and scratch value must have the same
 concrete series type and, for `TaylorN`, the same `JetSpace`. They must not
 alias one another; neither `dest` nor `aux` may alias a mutable coefficient.
@@ -859,9 +860,10 @@ end
     _check_taylorN_evaluation(a, vals, dest, valscache, aux)
 
 Validate dimensions, `JetSpace` and order compatibility, and non-aliasing
-requirements for `TaylorN` evaluation with explicit workspace. Cache entries
-are destructive scratch and must be distinct from every input and from one
-another. All checks happen before the destination is mutated.
+requirements for `TaylorN` evaluation with explicit auxiliary variables
+`valscache` and `aux`. Cache entries are modified in-place and must be
+distinct from every input and from one another to avoid aliasing. All checks
+happen before the destination is mutated.
 """
 function _check_taylorN_evaluation(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
         dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
@@ -916,13 +918,14 @@ end
 Evaluate a `TaylorN` polynomial, or an array of them, at series-valued `vals`
 and write into `dest`. `valscache` provides one destructive scratch series per
 evaluation value and `aux` provides shared arithmetic scratch. Every evaluation
-value and workspace series must have the same `JetSpace` and order as `dest`;
-the source polynomial must share that `JetSpace` but may have a different
-order. Workspace must not alias inputs, outputs, or other cache entries.
+value `valscache` and auxiliary `aux` must have the same `JetSpace` and order
+as `dest`; the source polynomial must share that `JetSpace` but may have a
+different order. Auxiliaries `valscache`, `aux` must not alias inputs, outputs,
+or other cache entries.
 
-With `sorting=false`, these overloads reuse the supplied workspace without
-creating evaluation scratch. `sorting=true` preserves magnitude-sorted scalar
-evaluation and may allocate an intermediate result.
+With `sorting=false`, these overloads reuse the supplied `valscache` and
+`aux`. `sorting=true` preserves magnitude-sorted scalar evaluation and may
+allocate an intermediate result.
 """
 function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
         dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
@@ -955,9 +958,10 @@ end
 """
     evaluate!(a, vals, dest, valscache, aux; sorting=false)
 
-Array form of explicit-workspace `TaylorN` evaluation. The cache and auxiliary
-series are reused sequentially for every element of `a`; their requirements
-and sorting behavior are the same as for the scalar method above.
+Array form of `TaylorN` evaluation with explicit pre-allocated auxiliary `aux`
+and cache `valscache`. The cache and auxiliary series are reused sequentially
+for every element of `a`; their requirements and sorting behavior are the same
+    as for the scalar method above.
 """
 function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
         dest::AbstractArray{TaylorN{T}}, valscache::Vector{TaylorN{T}},
@@ -975,7 +979,7 @@ function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
         throw(DimensionMismatch("source and destination arrays must have matching indices"))
     end
     # Compatibility method: construct one cache set and auxiliary series for
-    # this call. The explicit-workspace method 
+    # this call. The method with explicit auxiliary (aux) and cache (valcache)
     # `evaluate!(a, vals, dest, valscache, aux; sorting)` is the allocation-free method.
     valscache = [zero(val) for val in vals]
     aux = zero(dest[firstindex(dest)])
