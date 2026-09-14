@@ -193,7 +193,7 @@ setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
 # setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} =
 #     setindex!(a.coeffs, deepcopy(x), n+1)
 setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(x.coeffs, order(x))
+    {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(space(x), x.coeffs, order(x))
 setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1{T}(x.coeffs[:])
 function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
@@ -548,7 +548,7 @@ linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]], order(a))
 linear_polynomial(a::HomogeneousPolynomial) =
     HomogeneousPolynomial(a.space, a[1], order(a))
 
-linear_polynomial(a::TaylorN) = TaylorN(a[1], order(a))
+linear_polynomial(a::TaylorN) = TaylorN(space(a), a[1], order(a))
 
 linear_polynomial(a::Vector{T}) where {T<:Number} = linear_polynomial.(a)
 

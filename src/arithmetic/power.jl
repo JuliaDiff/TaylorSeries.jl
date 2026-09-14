@@ -58,7 +58,7 @@ function ^(a::TaylorN{T}, r::S) where {T<:Number, S<:Real}
     r == 2 && return square(aa)
     isinteger(r) && r >= 0 && return power_by_squaring(a, Integer(r))
     r == 0.5 && return sqrt(aa)
-    if iszero(a0)
+    if _isthinzero(a0)
         throw(DomainError(a,
         """The 0-th order TaylorN coefficient must be non-zero
         in order to expand `^` around 0."""))
@@ -342,7 +342,7 @@ function pow!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
             power_by_squaring!(res[ordT], a[l0], aux[0], round(Integer, r))
             return nothing
         end
-        iszero(a0) && throw(DomainError(a[l0],
+        _isthinzero(a0) && throw(DomainError(a[l0],
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `^` around 0."""))
         # Recursion formula
