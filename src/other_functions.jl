@@ -30,6 +30,14 @@ round(::Type{T}, x::AbstractSeries; kwargs...) where {T <: NumberNotSeries} =
 round(::Type{T}, x::AbstractSeries, r::RoundingMode; kwargs...) where {T <: NumberNotSeries} =
     round(T, constant_term(x), r; kwargs...)
 
+ceil(x::AbstractSeries; kwargs...) = ceil(constant_term(x); kwargs...)
+ceil(::Type{T}, x::AbstractSeries; kwargs...) where {T <: NumberNotSeries} =
+    ceil(T, constant_term(x); kwargs...)
+
+floor(x::AbstractSeries; kwargs...) = floor(constant_term(x); kwargs...)
+floor(::Type{T}, x::AbstractSeries; kwargs...) where {T <: NumberNotSeries} =
+    floor(T, constant_term(x); kwargs...)
+
 ## Division functions: rem and mod ##
 for op in (:mod, :rem)
     for T in (:Taylor1, :TaylorN)
