@@ -46,9 +46,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
     #     end
     #     return c
     # end
-end
 
-for T in (:HomogeneousPolynomial, :TaylorN)
     @eval function /(b::$T{Taylor1{S}}, a::Taylor1{T}) where
             {T<:NumberNotSeries, S<:NumberNotSeries}
         @inbounds aux = b.coeffs[1] / a
@@ -182,14 +180,20 @@ function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     return res
 end
 
-# @inline
-function divfactorization(a1::Taylor1, b1::Taylor1)
-    # order of first factorized term; a1 and b1 assumed to be of the same order
+## divfactorization ##
+
+# Get order of first factorized term; a1 and b1 assumed to be of the same order
+function _orderfactorizedterm(a1::Taylor1, b1::Taylor1)
     a1nz = findfirst(a1)
     b1nz = findfirst(b1)
     a1nz = a1nz ≥ 0 ? a1nz : order(a1)
     b1nz = b1nz ≥ 0 ? b1nz : order(a1)
-    ordfact = min(a1nz, b1nz)
+    return min(a1nz, b1nz)
+end
+
+@inline function divfactorization(a1::Taylor1, b1::Taylor1)
+    # order of first factorized term; a1 and b1 assumed to be of the same order
+    ordfact = _orderfactorizedterm(a1, b1)
     cdivfact = a1[ordfact] / b1[ordfact]
 
     # Is the polynomial factorizable?
@@ -200,11 +204,25 @@ function divfactorization(a1::Taylor1, b1::Taylor1)
     return ordfact, cdivfact
 end
 
+# Similar to divfactorization, but writes the first order coefficient into `aux`
+@inline function divfactorization!(aux::Taylor1{T}, a1::Taylor1{Taylor1{T}}, b1::Taylor1{Taylor1{T}},
+        ordfact::Int) where {T<:NumberNotSeriesN}
+    # Is the polynomial factorizable?
+    TS._isthinzero(b1[ordfact]) && throw( ArgumentError(
+        """Division does not define a Taylor1 polynomial;
+        order k=$(ordfact) => leading coefficient of the
+        denominator is zero.""") )
+    for k in eachindex(aux)
+        zero!(aux, k)
+        div!(aux, a1[ordfact], b1[ordfact], k)
+    end
+    return nothing
+end
+
+
 
 ## TODO: Implement factorization (divfactorization) for TaylorN polynomials
 
-
-# Homogeneous coefficient for the division
 @doc doc"""
     div!(c, a, b, k::Int)
 
@@ -231,9 +249,9 @@ function div!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
     @inbounds c_coeffs[kk] = zero(c_coeffs[kk])
     iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
-    ordfact, cdivfact = divfactorization(a, b)
+    ordfact = _orderfactorizedterm(a, b)
     if k == 0
-        @inbounds c_coeffs[1] = cdivfact
+        @inbounds c_coeffs[1] = a_coeffs[ordfact+1] / b_coeffs[ordfact+1]
         return nothing
     end
     b_order = order(b)
@@ -336,9 +354,9 @@ function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     zero!(c, k)
     iszero(a) && !iszero(b) && return nothing
     # order and coefficient of first factorized term
-    ordfact, aux = divfactorization(a, b)
+    ordfact = _orderfactorizedterm(a, b)
     if k == 0
-        identity!(c, aux, k)
+        divfactorization!(c[k], a, b, ordfact)
         return nothing
     end
     b_order = order(b)
@@ -351,7 +369,7 @@ function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
             muladd!(c[k], c[i], b[k+ordfact-i], ord)
         end
     end
-    zero!(aux)
+    aux = zero(c[k])
     if k+ordfact ≤ b_order
         # @inbounds aux <- a[k+ordfact] - c[k]
         for ord in eachindex(minlength(aux, a[k+ordfact]))
@@ -581,18 +599,14 @@ end
 @inline function div!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeriesN}
 
-    # order and coefficient of first factorized term
-    # ordfact, cdivfact = divfactorization(a, b)
-    anz = findfirst(a)
-    bnz = findfirst(b)
-    anz = anz ≥ 0 ? anz : order(a)
-    bnz = bnz ≥ 0 ? bnz : order(a)
-    ordfact = min(anz, bnz)
+    # order of first factorized term
+    ordfact = _orderfactorizedterm(a, b)
 
     # Is the polynomial factorizable?
     _isthinzero(b[ordfact]) && throw( ArgumentError(
         """Division does not define a Taylor1 polynomial;
-        order k=$(ordfact) => coeff[$(ordfact)]=$(cdivfact).""") )
+        order k=$(ordfact) => leading coefficient of the
+        denominator is zero.""") )
 
     zero!(c, k)
 
