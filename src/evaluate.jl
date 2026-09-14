@@ -928,15 +928,26 @@ function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
         dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
         aux::TaylorN{T}; sorting::Bool=false) where {N,T<:Number}
     _check_taylorN_evaluation(a, vals, dest, valscache, aux)
-    if sorting
-        result = evaluate(a, vals; sorting=true)
-        zero!(dest)
-        for ord in eachindex(dest)
-            identity!(dest, result, ord)
-        end
-    else
-        zero!(dest)
-        _evaluate!(a, vals, dest, valscache, aux)
+    _evaluate!(a, vals, dest, valscache, aux, Val(sorting))
+    return nothing
+end
+
+# The public method checks the inputs before either method changes dest.
+function _evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}, ::Val{false}) where {N,T<:Number}
+    zero!(dest)
+    _evaluate!(a, vals, dest, valscache, aux)
+    return nothing
+end
+
+function _evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
+        dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
+        aux::TaylorN{T}, ::Val{true}) where {N,T<:Number}
+    result = evaluate(a, vals; sorting=true)
+    zero!(dest)
+    for ord in eachindex(dest)
+        identity!(dest, result, ord)
     end
     return nothing
 end
