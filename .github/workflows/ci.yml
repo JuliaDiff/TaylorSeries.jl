@@ -76,7 +76,9 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
         continue-on-error: ${{ matrix.julia-version == 'nightly' }}
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: coverallsapp/github-action@master
+        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1'
+      - uses: coverallsapp/github-action@v2
+        if: matrix.os == 'ubuntu-latest' && matrix.julia-version == '1'
         with:
           path-to-lcov: lcov.info
           github-token: ${{ secrets.GITHUB_TOKEN }}
