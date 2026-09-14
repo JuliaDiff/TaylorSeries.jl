@@ -54,8 +54,6 @@ representing the dependent variables of an ODE, at *time* δt. Note that the
 syntax `x(δt)` is equivalent to `evaluate(x, δt)`, and `x()`
 is equivalent to `evaluate(x)`.
 """
-# TODO: Preserve a concrete promoted element type for empty arrays without
-# changing the container semantics of static arrays.
 evaluate(x::AbstractArray{Taylor1{T}}, δt::S) where
     {T<:Number, S<:Number} = evaluate.(x, δt)
 
