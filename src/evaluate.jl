@@ -8,13 +8,13 @@
 
 ## Evaluating ##
 """
-    _evaluate_taylor1_scalar(a, dx)
+    _evaluate(a::Taylor1, dx::NumberNotSeries)
 
 Evaluate `a` at the ordinary numeric scalar `dx` using Horner's rule without
 creating intermediate containers. This is the scalar kernel shared by
 `evaluate` and the corresponding array `evaluate!` method.
 """
-@inline function _evaluate_taylor1_scalar(a::Taylor1{T}, dx::S) where
+@inline function _evaluate(a::Taylor1{T}, dx::S) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
     a_coeffs = a.coeffs
     @inbounds suma = zero(a_coeffs[end])*dx
@@ -32,7 +32,7 @@ omitted, its value is considered as zero. Note that the syntax `a(dx)` is
 equivalent to `evaluate(a,dx)`, and `a()` is equivalent to `evaluate(a)`.
 """
 evaluate(a::Taylor1{T}, dx::S) where
-    {T<:NumberNotSeries, S<:NumberNotSeries} = _evaluate_taylor1_scalar(a, dx)
+    {T<:NumberNotSeries, S<:NumberNotSeries} = _evaluate(a, dx)
 
 function evaluate(a::Taylor1{T}, dx::S) where {T<:Number, S<:Number}
     a_coeffs = a.coeffs
@@ -225,14 +225,14 @@ function evaluate(a::HomogeneousPolynomial{T}) where {T}
 end
 
 """
-    _evaluate_homogeneous_scalar(a, vals)
+    _evaluate(a::HomogeneousPolynomial, vals)
 
 Evaluate one homogeneous polynomial directly at `vals` without constructing
 vectors of powers or monomial terms. The caller must supply a nonempty
 collection with one value per variable and, for series values, compatible
 series spaces.
 """
-function _evaluate_homogeneous_scalar(a::HomogeneousPolynomial{T},
+function _evaluate(a::HomogeneousPolynomial{T},
         vals) where {T}
     order(a) == 0 && return a[1]*one(vals[1])
     ct = a.space.coeff_table[order(a)+1]
@@ -252,7 +252,7 @@ end
 
 # Ordinary scalar vectors can use type-level promotion. The generic method
 # above derives zeros and ones from instances to retain series-space metadata.
-function _evaluate_homogeneous_scalar(a::HomogeneousPolynomial{T},
+function _evaluate(a::HomogeneousPolynomial{T},
         vals::AbstractVector{S}) where
         {T<:NumberNotSeries,S<:NumberNotSeries}
     R = promote_type(T, S)
@@ -271,11 +271,6 @@ function _evaluate_homogeneous_scalar(a::HomogeneousPolynomial{T},
     end
     return suma
 end
-
-# Preserve the existing tuple-based internal dispatch while sharing the direct
-# scalar kernel above.
-_evaluate(a::HomogeneousPolynomial{T}, vals::NTuple) where {T} =
-    _evaluate_homogeneous_scalar(a, vals)
 
 function _evaluate!(res::TaylorN{T}, a::HomogeneousPolynomial{T},
         vals::NTuple{N,<:TaylorN{T}}, valscache::Vector{TaylorN{T}},
@@ -403,8 +398,23 @@ evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} =
 
 evaluate(a::TaylorN{T}) where {T<:Number} = constant_term(a)
 
-# TODO: Avoid the component-vector and sorting allocations produced by
-# `sorting=true`, likely by accepting caller-provided workspace.
+"""
+    _evaluate(a::TaylorN, vals::Tuple, ::Val{true})
+    _evaluate(a::TaylorN, vals::Tuple, ::Val{false})
+
+Evaluate `a` at `vals` and return the sum of its contributions.
+`Val(true)` sorts the contributions from smallest to largest magnitude before
+adding them, to reduce rounding error. `Val(false)` skips this sorting step.
+
+The third argument is needed because `_evaluate(a::TaylorN, vals::Tuple)`
+returns an array with one contribution per polynomial degree, rather than
+their sum. The sorted method needs those separate values so it can reorder
+them before adding them. Using `Val(true)` or `Val(false)` selects the method
+for the requested summation without changing the two-argument method's result.
+
+Sorting currently allocates temporary storage. Reusing a caller-provided
+buffer could avoid that allocation while keeping the same sorting behavior.
+"""
 _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where
     {T<:NumberNotSeries} = sum( sort!(_evaluate(a, vals), by=abs2) )
 
@@ -425,28 +435,39 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where
     return res
 end
 
+"""
+    _evaluate(a::TaylorN, vals::Tuple)
+
+Return an array containing the evaluated contribution from each polynomial
+degree of `a`, starting with its constant term. The entries have not been
+added together. For the complete result, use the three-argument form with
+`Val(true)` to sort before adding, or `Val(false)` to add without sorting.
+"""
 function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:Number}) where {N,T<:Number}
     R = promote_type(T, typeof(vals[1]))
     suma = zeros(R, length(a))
     @inbounds for homPol in eachindex(a)
-        suma[homPol+1] = _evaluate_homogeneous_scalar(a[homPol], vals)
+        suma[homPol+1] = _evaluate(a[homPol], vals)
     end
     return suma
 end
 
 """
-    _evaluate_taylorN_scalar(a, vals)
+    _evaluate(a::TaylorN, vals::AbstractVector, ::Val{false})
 
-Evaluate `a` by summing its homogeneous components in stored order. This is
-the direct unsorted scalar kernel and avoids the temporary component vector
-used by magnitude-sorted evaluation.
+Evaluate `a` at `vals` and add the contributions in increasing polynomial
+degree, without sorting by their values. This vector method adds each
+contribution directly, without allocating an array to hold them first.
+
+The third argument distinguishes this complete result from the two-argument
+`_evaluate(a::TaylorN, vals::Tuple)`, which returns the separate contributions.
 """
-function _evaluate_taylorN_scalar(a::TaylorN{T},
-        vals::AbstractVector{S}) where {T<:Number, S<:Number}
+function _evaluate(a::TaylorN{T},
+        vals::AbstractVector{S}, ::Val{false}) where {T<:Number, S<:Number}
     @assert length(vals) == get_numvars(a)
     suma = zero(a[0][1] * one(vals[1]))
     @inbounds for homPol in eachindex(a)
-        suma += _evaluate_homogeneous_scalar(a[homPol], vals)
+        suma += _evaluate(a[homPol], vals)
     end
     return suma
 end
@@ -616,7 +637,7 @@ function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
         dest::AbstractArray{R}) where
         {T<:NumberNotSeries, S<:NumberNotSeries, R<:NumberNotSeries}
     @inbounds for i in eachindex(x, dest)
-        dest[i] = _evaluate_taylor1_scalar(x[i], δt)
+        dest[i] = _evaluate(x[i], δt)
     end
     return nothing
 end
@@ -773,24 +794,24 @@ end
 
 ## In place evaluation of multivariable arrays
 """
-    _evaluate_taylorN_array!(x, vals, dest, ::Val{sorting})
+    _evaluate!(x, vals, dest, ::Val{sorting})
 
-Internal array-evaluation kernel selected by a `Val` sorting flag. The false
-branch uses direct unsorted scalar evaluation without materializing the vector
-of homogeneous-component results. The true branch preserves magnitude-sorted
-scalar evaluation and may allocate its sorting workspace.
+Evaluate each polynomial in `x` at `vals` and write its result into `dest`.
+`Val(false)` adds contributions directly without a temporary result array.
+`Val(true)` sorts each polynomial's contributions by magnitude before adding
+them, and may allocate temporary storage for that sorting.
 """
-function _evaluate_taylorN_array!(x::AbstractArray{TaylorN{T}},
+function _evaluate!(x::AbstractArray{TaylorN{T}},
         δx::AbstractVector{S}, dest::AbstractArray{R},
         ::Val{false}) where
         {T<:Number,S<:Number,R<:Number}
     @inbounds for i in eachindex(x, dest)
-        dest[i] = _evaluate_taylorN_scalar(x[i], δx)
+        dest[i] = _evaluate(x[i], δx, Val(false))
     end
     return nothing
 end
 
-function _evaluate_taylorN_array!(x::AbstractArray{TaylorN{T}},
+function _evaluate!(x::AbstractArray{TaylorN{T}},
         δx::AbstractVector{S}, dest::AbstractArray{R},
         ::Val{true}) where
         {T<:Number,S<:Number,R<:Number}
@@ -804,7 +825,7 @@ end
         dest::AbstractArray{R};
         sorting::Bool=!(T <: AbstractSeries || S <: AbstractSeries)) where
         {T<:Number,S<:Number,R<:Number}
-    _evaluate_taylorN_array!(x, δx, dest, Val(sorting))
+    _evaluate!(x, δx, dest, Val(sorting))
     return nothing
 end
 

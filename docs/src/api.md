@@ -114,11 +114,9 @@ _dict_binary_calls
 _dict_unary_calls
 _dict_binary_ops
 _populate_dicts!
-_evaluate_taylor1_scalar
+_evaluate
 _evaluation_order
-_evaluate_homogeneous_scalar
-_evaluate_taylorN_scalar
-_evaluate_taylorN_array!
+_evaluate!
 _check_series_evaluation
 _check_taylorN_evaluation
 @isonethread
