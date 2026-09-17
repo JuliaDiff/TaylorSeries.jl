@@ -9,7 +9,10 @@
 include("add_subst.jl")
 include("multiplication.jl")
 include("division.jl")
+include("sqr.jl")
+include("sqrt.jl")
 include("power.jl")
+
 
 """
     mul!(Y, A, B)
