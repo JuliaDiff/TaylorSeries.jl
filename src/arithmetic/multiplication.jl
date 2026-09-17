@@ -10,7 +10,7 @@
 for T in (:Taylor1, :TaylorN)
     @eval begin
         function *(a::T, b::$T{S}) where {T<:NumberNotSeries, S<:NumberNotSeries}
-            v = $T( a * b[0], order(b))
+            v = $T( a * b.coeffs[1], order(b))
             @inbounds for k in eachindex(v)
                 mul!(v, b, a, k)
             end
@@ -18,7 +18,7 @@ for T in (:Taylor1, :TaylorN)
         end
         *(b::$T{S}, a::T) where {T<:NumberNotSeries, S<:NumberNotSeries} = a * b
         function *(a::T, b::$T{T}) where {T<:NumberNotSeries}
-            v = $T( a * b[0], order(b))
+            v = $T( a * b.coeffs[1], order(b))
             @inbounds for k in eachindex(v)
                 mul!(v, b, a, k)
             end
@@ -29,11 +29,11 @@ for T in (:Taylor1, :TaylorN)
 end
 
 *(a::T, b::HomogeneousPolynomial{S}) where {T<:NumberNotSeries,
-    S<:NumberNotSeries} = HomogeneousPolynomial(b.space, a * b.coeffs, order(b))
+    S<:NumberNotSeries} = HomogeneousPolynomial(b.space, a .* b.coeffs, order(b))
 *(b::HomogeneousPolynomial{S}, a::T) where {T<:NumberNotSeries,
     S<:NumberNotSeries} = a * b
 *(a::T, b::HomogeneousPolynomial{T}) where {T<:NumberNotSeries} =
-    HomogeneousPolynomial(b.space, a * b.coeffs, order(b))
+    HomogeneousPolynomial(b.space, a .* b.coeffs, order(b))
 *(b::HomogeneousPolynomial{T}, a::T) where {T<:NumberNotSeries} = a * b
 
 for T in (:HomogeneousPolynomial, :TaylorN)
@@ -81,7 +81,7 @@ function *(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
 end
 
 function *(a::T, b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
-    v = Taylor1( a * b[0], order(b))
+    v = Taylor1( a * b.coeffs[1], order(b))
     @inbounds for k in eachindex(v)
         mul!(v, b, a, k)
     end
@@ -90,7 +90,7 @@ end
 *(b::Taylor1{Taylor1{T}}, a::T) where {T<:NumberNotSeriesN} = a * b
 
 function *(a::Taylor1{T}, b::Taylor1{Taylor1{T}}) where {T<:NumberNotSeriesN}
-    v = Taylor1( a * b[0], order(b))
+    v = Taylor1( a * b.coeffs[1], order(b))
     @inbounds for k in eachindex(v)
         mul!(v, b, a, k)
     end
@@ -105,22 +105,24 @@ end
 function *(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where
         {T<:NumberNotSeriesN}
     _check_same_space(a, b)
-    order = TS.order(a) + TS.order(b)
-    # NOTE: the following returns order 0, but could be TS.order(), or TS.order(a)
-    order > TS.order(a.space) && return HomogeneousPolynomial(a.space, zero(a[1]), TS.order(a))
-    res = HomogeneousPolynomial(a.space, zero(a[1]), order)
+    oorder = TS.order(a) + TS.order(b)
+    # NOTE: the following returns order TS.order(a), but could be TS.order(), or zero
+    oorder > TS.order(a.space) &&
+        return HomogeneousPolynomial(a.space, zero(a.coeffs[1]), TS.order(a))
+    res = HomogeneousPolynomial(a.space, zero(a.coeffs[1]), oorder)
     mul!(res, a, b)
     return res
 end
 
 function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{S}}) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
+    return *(promote(a, b)...)
     R = promote_type(T,S)
     return *(convert(Taylor1{TaylorN{R}}, a), convert(Taylor1{TaylorN{R}}, b))
 end
 
 function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    _check_same_space(a[0], b[0])
+    _check_same_space(a.coeffs[1], b.coeffs[1])
     if (order(a) != order(b)) || any(order.(a.coeffs) .!= order.(b.coeffs))
         a, b = fixorder(a, b)
     end
@@ -146,12 +148,12 @@ function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
     @inbounds c_coeffs[kk] = acc
     return nothing
 end
-function mul!(v::Taylor1{T}, a::Taylor1{S}, b::NumberNotSeries, k::Int) where
+@inline function mul!(v::Taylor1{T}, a::Taylor1{S}, b::NumberNotSeries, k::Int) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
     @inbounds v.coeffs[k+1] = a.coeffs[k+1] * b
     return nothing
 end
-mul!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{S}, k::Int) where
+@inline mul!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{S}, k::Int) where
         {T<:NumberNotSeries, S<:NumberNotSeries} = mul!(v, b, a, k)
 
 function mul!(v::Taylor1{T}, a::Taylor1{S}, b::NumberNotSeries) where
@@ -168,72 +170,38 @@ mul!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{S}) where
 #
 function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
-    c_coeffs = c.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    kk = k+1
-    @inbounds acc = c_coeffs[kk]
-    @inbounds for i = 1:kk
-        acc += a_coeffs[i] * b_coeffs[kk-i+1]
-    end
-    @inbounds c_coeffs[kk] = acc
+    @inbounds acc = c.coeffs[k+1]
+    mul!(c, a, b, k)
+    c.coeffs[k+1] += acc
     return nothing
 end
 
 function muladd!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}) where
         {T<:NumberNotSeries}
-    c_coeffs = c.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    @inbounds for kk in eachindex(c_coeffs)
-        acc = c_coeffs[kk]
-        for i = 1:kk
-            acc += a_coeffs[i] * b_coeffs[kk-i+1]
-        end
-        c_coeffs[kk] = acc
+    for k in eachindex(c)
+        muladd!(c, a, b, k)
     end
     return nothing
 end
 
-@inline function _muladd_unchecked!(c::Taylor1{T}, a::Taylor1{T},
+function _muladd_unchecked!(c::Taylor1{T}, a::Taylor1{T},
         b::Taylor1{T}, k::Int) where {T<:Number}
     mul!(c, a, b, k)
     return nothing
 end
 
-# function muladd!(v::Taylor1{T}, a::Taylor1{T}, b::NumberNotSeries, k::Int) where
-#         {T<:NumberNotSeries}
-#     @inbounds v[k] += a[k] * b
-#     return nothing
-# end
-# muladd!(v::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
-#         {T<:NumberNotSeries} = muladd!(v, b, a, k)
 # Implements c[k] = scalar \sum_i a[i] b[k-i]
 function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
         b::Taylor1{T}, k::Int) where {T<:NumberNotSeries}
-    c_coeffs = c.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    kk = k+1
-    @inbounds acc = zero(c_coeffs[kk])
-    @inbounds for i = 1:kk
-        acc += a_coeffs[i] * b_coeffs[kk-i+1]
-    end
-    @inbounds c_coeffs[kk] = scalar * acc
+    mul!(c, a, b, k)
+    @inbounds c.coeffs[k+1] *= scalar
     return nothing
 end
 
 function mul_scalar!(c::Taylor1{T}, scalar::NumberNotSeries, a::Taylor1{T},
         b::Taylor1{T}) where {T<:NumberNotSeries}
-    c_coeffs = c.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    @inbounds for kk in eachindex(c_coeffs)
-        acc = zero(c_coeffs[kk])
-        for i = 1:kk
-            acc += a_coeffs[i] * b_coeffs[kk-i+1]
-        end
-        c_coeffs[kk] = scalar * acc
+    for k in eachindex(c)
+        mul_scalar!(c, scalar, a, b, k)
     end
     return nothing
 end
@@ -243,8 +211,10 @@ mul!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T}, k::Int) where
         {T<:Number} = muladd!(c, a, b, k)
 function mul!(v::TaylorN, a::TaylorN, b::NumberNotSeries, k::Int)
     _check_same_space(v, a)
-    @inbounds for i in eachindex(v[k])
-        v[k][i] = a[k][i] * b
+    v_hps = v.coeffs[k+1].coeffs
+    a_hps = a.coeffs[k+1].coeffs
+    @inbounds for i in eachindex(v_hps)
+        v_hps[i] = a_hps[i] * b
     end
     return nothing
 end
@@ -259,8 +229,10 @@ function muladd!(c::TaylorN{T}, a::TaylorN{T}, b::TaylorN{T},
 end
 function muladd!(v::TaylorN, a::TaylorN, b::NumberNotSeries, k::Int)
     _check_same_space(v, a)
-    @inbounds for i in eachindex(v[k])
-        v[k][i] += a[k][i] * b
+    v_hps = v.coeffs[k+1].coeffs
+    a_hps = a.coeffs[k+1].coeffs
+    @inbounds for i in eachindex(v_hps)
+        v_hps[i] += a_hps[i] * b
     end
     return nothing
 end
@@ -271,6 +243,7 @@ function mul_scalar!(c::TaylorN{T}, scalar::NumberNotSeries, a::TaylorN{T},
     _mul_scalar_unchecked!(c, scalar, a, b, k)
     return nothing
 end
+
 
 # Nested Taylor1s
 function mul!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}},
@@ -289,10 +262,14 @@ end
 
 function mul!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}},
         k::Int) where {T<:NumberNotSeriesN}
-    @inbounds for j in eachindex(c[k])
-        zero!(c[k], j)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds for j in eachindex(c_coeffs[kk])
+        zero!(c_coeffs[kk], j)
         for i = 0:k
-            muladd!(c[k], a[i], b[k-i], j)
+            muladd!(c_coeffs[kk], a_coeffs[i+1], b_coeffs[kk-i], j)
         end
     end
     return nothing
@@ -342,18 +319,21 @@ function muladd!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
     kk = k+1
-    @inbounds c_k = c_coeffs[kk]
     @inbounds for i = 1:kk
-        muladd!(c_k, a_coeffs[i], b_coeffs[kk-i+1])
+        muladd!(c_coeffs[kk], a_coeffs[i], b_coeffs[kk-i+1])
     end
     return nothing
 end
 
 function muladd!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
-    @inbounds for j in eachindex(c[k])
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k+1
+    @inbounds for j in eachindex(c_coeffs[kk])
         for i = 0:k
-            muladd!(c[k], a[i], b[k-i], j)
+            muladd!(c_coeffs[kk], a_coeffs[i+1], b_coeffs[kk-i], j)
         end
     end
     return nothing
@@ -400,8 +380,10 @@ function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
         a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}, k::Int) where {T<:Number}
     mul!(c, a, b, k)
     # c[k] <- scalar * c[k]
-    for ord in eachindex(c[k])
-        mul!(c[k], c[k], scalar, ord)
+    c_coeffs = c.coeffs
+    kk = k+1
+    for ord in eachindex(c[kk])
+        mul!(c_coeffs[kk], c_coeffs[kk], scalar, ord)
     end
     return nothing
 end
@@ -409,44 +391,21 @@ end
 function mul_scalar!(c::Taylor1{Taylor1{T}}, scalar::NumberNotSeries,
         a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
         {T<:NumberNotSeries}
-    c_coeffs = c.coeffs
-    a_coeffs = a.coeffs
-    b_coeffs = b.coeffs
-    @inbounds for kk in eachindex(c_coeffs)
-        c_k = c_coeffs[kk]
-        zero!(c_k)
-        for i = 1:kk
-            muladd!(c_k, a_coeffs[i], b_coeffs[kk-i+1])
-        end
-        c_k_coeffs = c_k.coeffs
-        for i in eachindex(c_k_coeffs)
-            c_k_coeffs[i] *= scalar
-        end
+    for k in eachindex(c)
+        mul_scalar!(c, a, b, k)
     end
     return nothing
 end
 
-
-# for T in (:Taylor1, :TaylorN)
-#     @eval begin
-#         function mul!(v::$T{T}, a::$T{T}, b::NumberNotSeries) where {T<:Number}
-#             for k in eachindex(v)
-#                 mul!(v, a, b, k)
-#             end
-#             return nothing
-#         end
-#         mul!(v::$T{T}, a::NumberNotSeries, b::$T{T}) where {T<:Number} = mul!(v, b, a)
-#     end
-# end
 
 # in-place product: `a` <- `a*b`
 # this method computes the product `a*b` and saves it back into `a`
 # assumes `a` and `b` are of same order
 function mul!(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
     @inbounds for k in reverse(eachindex(a))
-        mul!(a, a, b[0][1], k)
+        mul!(a, a, b.coeffs[1].coeffs[1], k)
         for l in 1:k
-            mul!(a[k], a[k-l], b[l])
+            mul!(a.coeffs[k+1], a.coeffs[k-l+1], b.coeffs[l+1])
         end
     end
     return nothing
@@ -454,10 +413,10 @@ end
 function mul!(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
     @inbounds for k in reverse(eachindex(a))
         # a[k] <- a[k]*b[0]
-        mul!(a, a, b[0], k)
+        mul!(a, a, b.coeffs[1], k)
         for l in 1:k
             # a[k] <- a[k] + a[k-l] * b[l]
-            a[k] += a[k-l] * b[l]
+            a.coeffs[k+1] += a.coeffs[k-l+1] * b.coeffs[l+1]
         end
     end
     return nothing
@@ -469,7 +428,7 @@ function mul!(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
         for l in 1:k
             # a[k] += a[k-l] * b[l]
             for m in eachindex(a[k])
-                mul!(a[k], a[k-l], b[l], m)
+                mul!(a.coeffs[k+1], a.coeffs[k-l+1], b.coeffs[l+1], m)
             end
         end
     end
@@ -493,11 +452,11 @@ function mul!(a::Taylor1{Taylor1{T}}, b::Taylor1{Taylor1{T}}) where
         {T<:NumberNotSeriesN}
     @inbounds for k in reverse(eachindex(a))
         # a[k] <- a[k]*b[0]
-        mul!(a, a, b[0], k)
+        mul!(a, a, b.coeffs[1], k)
         for l in 1:k
             # a[k] <- a[k] + a[k-l] * b[l]
-            for m in eachindex(a[k])
-                muladd!(a[k], a[k-l], b[l], m)
+            for m in eachindex(a.coeffs[k+1])
+                muladd!(a.coeffs[k+1], a.coeffs[k-l+1], b.coeffs[l+1], m)
             end
         end
     end
@@ -508,8 +467,8 @@ function _mul_unchecked!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeries}
     zero!(res, ordT)
     for k in 0:ordT
-        @inbounds for ordQ in eachindex(a[ordT])
-            _muladd_unchecked!(res[ordT], a[k], b[ordT-k], ordQ)
+        @inbounds for ordQ in eachindex(a.coeffs[ordT+1])
+            _muladd_unchecked!(res.coeffs[ordT+1], a.coeffs[k+1], b.coeffs[ordT-k+1], ordQ)
         end
     end
     return nothing
@@ -517,7 +476,7 @@ end
 
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeries}
-    _check_same_space(res[0], a[0], b[0])
+    _check_same_space(res.coeffs[1], a.coeffs[1], b.coeffs[1])
     _mul_unchecked!(res, a, b, ordT)
     return nothing
 end
@@ -582,7 +541,7 @@ end
 
 function mul!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    _check_same_space(c[0], a[0], b[0])
+    _check_same_space(c.coeffs[1], a.coeffs[1], b.coeffs[1])
     for k in eachindex(c)
         _mul_unchecked!(c, a, b, k)
     end
@@ -644,10 +603,12 @@ end
 @inline function _muladd_scalar_unchecked!(c::HomogeneousPolynomial, scalar,
         a::HomogeneousPolynomial)
     _isthinzero(scalar) && return nothing
-    @inbounds for i in eachindex(c)
-        ai = a[i]
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    @inbounds for i in eachindex(c_coeffs)
+        ai = a_coeffs[i]
         _isthinzero(ai) && continue
-        c[i] += scalar * ai
+        c_coeffs[i] += scalar * ai
     end
     return nothing
 end
@@ -657,8 +618,8 @@ end
     (_isthinzero(b) || _isthinzero(a)) && return nothing
     degree_a = order(a)
     degree_b = order(b)
-    degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
-    degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, a.coeffs[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, b.coeffs[1], a)
 
     sp = c.space
     order_a = degree_a+1
@@ -667,17 +628,20 @@ end
     @inbounds num_coeffs_b = sp.size_table[order_b]
     input_positions = _product_table(sp, degree_a, degree_b).input_positions
     pair = 1
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
     @inbounds for na in 1:num_coeffs_a
-        ca = a[na]
+        ca = a_coeffs[na]
         if _isthinzero(ca)
             pair += num_coeffs_b
             continue
         end
         @inbounds for nb in 1:num_coeffs_b
-            cb = b[nb]
+            cb = b_coeffs[nb]
             if !_isthinzero(cb)
                 pos = input_positions[pair]
-                c[pos] += ca * cb
+                c_coeffs[pos] += ca * cb
             end
             pair += 1
         end
@@ -690,8 +654,8 @@ end
     (_isthinzero(b) || _isthinzero(a)) && return nothing
     degree_a = order(a)
     degree_b = order(b)
-    degree_a == 0 && return _muladd_scalar_unchecked!(c, a[1], b)
-    degree_b == 0 && return _muladd_scalar_unchecked!(c, b[1], a)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, a.coeffs[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, b.coeffs[1], a)
 
     table = _init_output_major_product_table!(c.space, degree_a, degree_b)
     offsets = table.output_offsets
@@ -719,8 +683,8 @@ end
     (_isthinzero(scalar) || _isthinzero(b) || _isthinzero(a)) && return nothing
     degree_a = order(a)
     degree_b = order(b)
-    degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a[1], b)
-    degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b[1], a)
+    degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a.coeffs[1], b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b.coeffs[1], a)
 
     sp = c.space
     order_a = degree_a+1
@@ -729,18 +693,21 @@ end
     @inbounds num_coeffs_b = sp.size_table[order_b]
     input_positions = _product_table(sp, degree_a, degree_b).input_positions
     pair = 1
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
     @inbounds for na in 1:num_coeffs_a
-        ca = a[na]
+        ca = a_coeffs[na]
         if _isthinzero(ca)
             pair += num_coeffs_b
             continue
         end
         sca = scalar * ca
         @inbounds for nb in 1:num_coeffs_b
-            cb = b[nb]
+            cb = b_coeffs[nb]
             if !_isthinzero(cb)
                 pos = input_positions[pair]
-                c[pos] += sca * cb
+                c_coeffs[pos] += sca * cb
             end
             pair += 1
         end
@@ -750,18 +717,18 @@ end
 
 @inline function _muladd_unchecked!(c::TaylorN{T}, a::TaylorN{T},
         b::TaylorN{T}, k::Int) where {T<:Number}
-    @inbounds _mul_output_major_unchecked!(c[k], a[0], b[k])
-    @inbounds for i = 1:k
-        _mul_output_major_unchecked!(c[k], a[i], b[k-i])
+    kk = k + 1
+    @inbounds for i = 0:k
+        _mul_output_major_unchecked!(c.coeffs[kk], a.coeffs[i+1], b.coeffs[kk-i])
     end
     return nothing
 end
 
 @inline function _mul_scalar_unchecked!(c::TaylorN{T}, scalar::NumberNotSeries,
         a::TaylorN{T}, b::TaylorN{T}, k::Int) where {T<:Number}
-    @inbounds _mul_scalar_unchecked!(c[k], scalar, a[0], b[k])
-    @inbounds for i = 1:k
-        _mul_scalar_unchecked!(c[k], scalar, a[i], b[k-i])
+    kk = k + 1
+    @inbounds for i = 0:k
+        _mul_scalar_unchecked!(c.coeffs[kk], scalar, a.coeffs[i+1], b.coeffs[kk-i])
     end
     return nothing
 end
