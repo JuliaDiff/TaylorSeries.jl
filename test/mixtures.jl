@@ -590,6 +590,20 @@ end
     evaluate!(vtii, 0.5, vtii_dest)
     @test vtii_dest == evaluate(vtii, 0.5)
     @test (@allocated evaluate!(vtii, 0.5, vtii_dest)) == 0
+    @testset "Numeric evaluation with deeper Taylor1 nesting" begin
+        # Three and four Taylor1 layers use the general allocating fallback.
+        for inner in (tii, Taylor1([tii, one(tii)], 1))
+            src = [Taylor1([inner, 2inner], 1),
+                   Taylor1([one(inner), inner], 1)]
+            original = deepcopy(src)
+            dest = [zero(inner), zero(inner)]
+            @test isnothing(evaluate!(src, 0.5, dest))
+            @test dest == [2inner, one(inner) + 0.5inner]
+            @test isnothing(evaluate!(src, 2.0, view(dest, :)))
+            @test dest == [5inner, one(inner) + 2inner]
+            @test src == original
+        end
+    end
     δt1 = 0.5 + ti
     aux1 = zero(vtii_dest[1])
     evaluate!(vtii, δt1, vtii_dest)

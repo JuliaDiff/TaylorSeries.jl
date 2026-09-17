@@ -609,10 +609,12 @@ magnitude-sorted scalar evaluation and may allocate. Sorting defaults to true
 for ordinary scalar types and false when the coefficient or evaluation-value
 type is a series.
 
+For numeric evaluation of more deeply nested `Taylor1` arrays, a general
+fallback uses `evaluate` for each element and may allocate intermediate series.
+
 For series-valued substitutions (i.e., when the evaluation argument is
-a Taylor series variable), the `evaluate!` methods that accept scratch buffers
-should be used, so that buffers are allocated only once and are reused across
-calls.
+a Taylor series variable), use the `evaluate!` methods that accept
+pre-allocated auxiliaries, so those auxiliaries can be reused across calls.
 """
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
         dest::AbstractArray{R}) where
@@ -620,6 +622,13 @@ function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
     @inbounds for i in eachindex(x, dest)
         dest[i] = _evaluate(x[i], δt)
     end
+    return nothing
+end
+
+function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
+        dest::AbstractArray{R}) where
+        {T<:Number, S<:NumberNotSeries, R<:Number}
+    dest .= evaluate.(x, δt)
     return nothing
 end
 
