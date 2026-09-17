@@ -657,7 +657,6 @@ julia> dest == (x + 1) + (y + 2)^2
 true
 ```
 """
-
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
         dest::AbstractArray{R}) where
         {T<:NumberNotSeries, S<:NumberNotSeries, R<:NumberNotSeries}
