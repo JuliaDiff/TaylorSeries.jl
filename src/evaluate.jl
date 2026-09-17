@@ -10,9 +10,9 @@
 """
     _evaluate(a::Taylor1, dx::NumberNotSeries)
 
-Evaluate `a` at the ordinary numeric scalar `dx` using Horner's rule without
-creating intermediate containers. This is the scalar kernel shared by
-`evaluate` and the corresponding array `evaluate!` method.
+Evaluate `a` at a number `dx` using Horner's rule. Neither the coefficients
+nor `dx` are Taylor series. Both `evaluate` and the array form of `evaluate!`
+use this method; it does not create temporary arrays.
 """
 @inline function _evaluate(a::Taylor1{T}, dx::S) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
@@ -204,10 +204,10 @@ end
 """
     _evaluate(a::HomogeneousPolynomial, vals)
 
-Evaluate one homogeneous polynomial directly at `vals` without constructing
-vectors of powers or monomial terms. The caller must supply a nonempty
-collection with one value per variable and, for series values, compatible
-series spaces.
+Evaluate one homogeneous polynomial at `vals`, computing each term directly
+without first collecting powers or terms in arrays. Supply one value per
+variable. If the values are `TaylorN` series, their `JetSpace`s must match
+the polynomial's.
 """
 function _evaluate(a::HomogeneousPolynomial{T},
         vals) where {T}
@@ -393,8 +393,8 @@ their sum. The sorted method needs those separate values so it can reorder
 them before adding them. Using `Val(true)` or `Val(false)` selects the method
 for the requested summation without changing the two-argument method's result.
 
-Sorting currently allocates temporary storage. Reusing a caller-provided
-buffer could avoid that allocation while keeping the same sorting behavior.
+The sorted method currently allocates an array to hold the contributions
+before sorting and adding them.
 """
 _evaluate(a::TaylorN{T}, vals::NTuple, ::Val{true}) where
     {T<:NumberNotSeries} = sum( sort!(_evaluate(a, vals), by=abs2) )
@@ -608,9 +608,10 @@ Evaluate a polynomial, or an array of polynomials, and write the result into
 
 For `TaylorN` evaluation, `sorting=true` sorts the contributions by magnitude
 before adding them, to reduce rounding error. `sorting=false` skips sorting.
-The default is `true` when the output type is `NumberNotSeries`, and `false`
-otherwise. Passing pre-allocated auxiliaries does not disable sorting;
-choose `sorting=false` to avoid the temporary result used by sorted evaluation.
+The default is `true` when both the coefficients and evaluation values are
+numbers other than Taylor series, and `false` otherwise. Passing pre-allocated
+auxiliaries does not disable sorting; choose `sorting=false` to avoid the
+temporary result used by sorted evaluation.
 
 The methods for a single polynomial are also used by the corresponding array
 methods. The allocating `evaluate` methods do not all call `evaluate!`; some
@@ -745,9 +746,10 @@ end
 """
     _check_series_evaluation(a, δt, dest, aux)
 
-Validate the series-space, order, and non-aliasing requirements of
-series-valued `Taylor1` evaluation with explicit pre-allocated auxiliary
-`aux`. All checks happen before the destination is mutated.
+Check that the evaluation value, destination, and pre-allocated auxiliary
+`aux` have compatible orders and, for `TaylorN`, the same `JetSpace`.
+Also check that updating the destination or auxiliary will not overwrite
+an input or the other output. These checks run before changing `dest`.
 """
 function _check_series_evaluation(a::Taylor1{T}, δt::T, dest::T,
         aux::T) where {T<:Union{Taylor1,TaylorN}}
@@ -782,16 +784,17 @@ end
     evaluate!(a, δt, dest, aux)
     evaluate!(x, δt, dest, aux)
 
-Evaluate a `Taylor1` polynomial, or an array of them, at a series-valued
-`δt`. The result is written into `dest`, while `aux` is a pre-allocated
-auxiliary variable for reusable storage, in order to avoid allocations within
-the method body.
+Evaluate a `Taylor1` polynomial, or an array of them, at a Taylor series `δt`.
+Write the result into `dest` and reuse the pre-allocated auxiliary `aux` for
+the calculations. The method does not create `aux` on each call.
 
-The destination, evaluation value and scratch value must have the same
-concrete series type and, for `TaylorN`, the same `JetSpace`. They must not
-alias one another; neither `dest` nor `aux` may alias a mutable coefficient.
+The coefficients of `a`, `δt`, `dest`, and `aux` must have the same series
+type, including their coefficient type, and the same `JetSpace` for `TaylorN`.
+Keep `δt`, `dest`, and `aux` separate from one another. Neither `dest` nor
+`aux` may share coefficient storage with a coefficient of `a`.
 `dest` and `aux` must have the same order, no greater than the order of `δt`.
-Nonconstant coefficient orders must also be at least the destination order.
+Each coefficient of `a` must have at least that order, except that order-zero
+coefficients are treated as exact constants.
 """
 function evaluate!(a::Taylor1{T}, δt::T, dest::T,
         aux::T) where {T<:Union{Taylor1,TaylorN}}
@@ -887,11 +890,11 @@ end
 """
     _check_taylorN_evaluation(a, vals, dest, valscache, aux)
 
-Validate dimensions, `JetSpace` and order compatibility, and non-aliasing
-requirements for `TaylorN` evaluation with explicit auxiliary variables
-`valscache` and `aux`. Cache entries are modified in-place and must be
-distinct from every input and from one another to avoid aliasing. All checks
-happen before the destination is mutated.
+Check the number of evaluation values and the orders and `JetSpace`s of
+the polynomial, destination, values, and pre-allocated auxiliaries.
+Also check that the destination and auxiliaries are separate from the inputs
+and from one another, since evaluation overwrites them. These checks run
+before changing `dest`.
 """
 function _check_taylorN_evaluation(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
         dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
@@ -958,18 +961,19 @@ end
     evaluate!(a, vals, dest, valscache, aux; sorting=false)
     evaluate!(a_array, vals, dest_array, valscache, aux; sorting=false)
 
-Evaluate a `TaylorN` polynomial, or an array of them, at series-valued `vals`
-and write into `dest`. `valscache` provides one pre-allocated auxiliary per
+Evaluate a `TaylorN` polynomial, or an array of them, at the Taylor series in
+`vals` and write into `dest`. `valscache` provides one pre-allocated auxiliary per
 evaluation value, and `aux` is another pre-allocated auxiliary used for the
 arithmetic. Both are overwritten during evaluation. Every evaluation value
 and auxiliary must have the same `JetSpace` and order as `dest`; the source
 polynomial must share that `JetSpace` but may have a different order.
-Auxiliaries `valscache`, `aux` must not alias inputs, outputs, or other cache
-entries.
+Keep each entry of `valscache` and `aux` separate from the inputs, destination,
+and other auxiliaries. The destination must also be separate from the inputs.
 
-With `sorting=false`, these overloads reuse the supplied `valscache` and
-`aux`. `sorting=true` preserves magnitude-sorted scalar evaluation and may
-allocate an intermediate result.
+With `sorting=false`, these methods reuse the supplied `valscache` and `aux`.
+With `sorting=true`, each polynomial is evaluated with its contributions
+sorted by magnitude before addition, and the result is copied into `dest`.
+This sorted evaluation may allocate an intermediate result.
 """
 function evaluate!(a::TaylorN{T}, vals::NTuple{N,TaylorN{T}},
         dest::TaylorN{T}, valscache::Vector{TaylorN{T}},
@@ -1002,12 +1006,13 @@ end
 """
     evaluate!(a, vals, dest, valscache, aux; sorting=false)
 
-Array form of `TaylorN` evaluation with explicit pre-allocated auxiliary `aux`
-and cache `valscache`. The cache and auxiliary series are reused sequentially
-for every element of `a`; their requirements and sorting behavior are the same
-as for the scalar method above. The shared values and pre-allocated auxiliaries
-are checked once per call. Each source and destination is then checked before
-any evaluation begins.
+Evaluate each `TaylorN` polynomial in `a`, writing the results into `dest`.
+Reuse the same pre-allocated auxiliaries `valscache` and `aux` for each
+polynomial in turn. Their requirements and the sorting behavior are the same
+as for evaluating a single polynomial.
+
+Check the shared evaluation values and pre-allocated auxiliaries once per call.
+Then check every source polynomial and destination before evaluating any of them.
 """
 function evaluate!(a::AbstractArray{TaylorN{T}}, vals::NTuple{N,TaylorN{T}},
         dest::AbstractArray{TaylorN{T}}, valscache::Vector{TaylorN{T}},

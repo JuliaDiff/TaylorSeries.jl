@@ -176,9 +176,9 @@ maxorderH(v::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
 """
     _evaluation_order(a, x)
 
-Return the minimum positive order represented by `x` and the coefficients of
-`a`, or zero if they all have order zero. Order-zero series represent exact
-constants, so they do not truncate a positive-order composition.
+Return the smallest positive order among `x` and the coefficients of `a`.
+Return zero if all those orders are zero. Order-zero series are treated as
+exact constants, so they do not limit the order of the evaluated result.
 """
 function _evaluation_order(a::Taylor1{<:AbstractSeries}, x::AbstractSeries)
     ord = order(x)
