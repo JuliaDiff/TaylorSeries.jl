@@ -31,18 +31,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 return c
             end
 
-            function ($f)(a::$T{T}, b::T) where {T<:Number}
-                c = $T(a.coeffs[:])
-                constant_term!(c, $f(constant_term(a), b))
-                return c
-            end
-
-            function ($f)(b::T, a::$T{T}) where {T<:Number}
-                c = $T($f(a.coeffs[:]))
-                constant_term!(c, $f(b, constant_term(a)))
-                return c
-            end
-
             ## add! and subst! ##
             function ($fc)(v::$T{T}, a::T, k::Int) where {T<:Number}
                 @inbounds v[k] = k==0 ? ($f)(a) : zero(a)
@@ -53,8 +41,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         if T == :Taylor1
             @eval begin
                 function ($f)(a::$T{T}, b::S) where {T<:Number, S<:NumberNotSeries}
-                    z = zero(a.coeffs[1] + b)
-                    c = $T(z, order(a))
+                    c = $T(($f)(a.coeffs[1], b), order(a))
                     for k in eachindex(a)
                         ($fc)(c, a, b, k)
                     end
@@ -62,8 +49,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($f)(b::S, a::$T{T}) where {T<:Number, S<:NumberNotSeries}
-                    z = zero(b + a.coeffs[1])
-                    c = $T(z, order(a))
+                    c = $T(($f)(b, a.coeffs[1]), order(a))
                     for k in eachindex(a)
                         ($fc)(c, b, a, k)
                     end
@@ -71,7 +57,9 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($f)(a::$T{T}, b::$T{S}) where {T<:NumberNotSeries, S<:NumberNotSeries}
-                    a, b = fixorder(a, b)
+                    if order(a) != order(b)
+                        a, b = fixorder(a, b)
+                    end
                     z = zero(a.coeffs[1] + b.coeffs[1])
                     c = $T(z, order(a))
                     for k in eachindex(a)
@@ -81,7 +69,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-                    @inbounds v[k] = ($f)(a[k])
+                    @inbounds v.coeffs[k+1] = ($f)(a.coeffs[k+1])
                     return nothing
                 end
 
@@ -95,52 +83,59 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($fc)(v::$T, a::$T, b::Number, k::Int)
-                    if k == 0
-                        v[k] = ($f)(a[k], b)
-                    else
-                        v[k] = ($f)(a[k], zero(b))
-                    end
+                    bb = k==0 ? b : zero(b)
+                    v.coeffs[k+1] = ($f)(a.coeffs[k+1], bb)
                     return nothing
                 end
 
                 function ($fc)(v::$T, a::Number, b::$T, k::Int)
-                    if k == 0
-                        v[k] = ($f)(a, b[k])
-                    else
-                        v[k] = ($f)(zero(a), b[k])
-                    end
+                    aa = k==0 ? a : zero(a)
+                    v.coeffs[k+1] = ($f)(aa, b.coeffs[k+1])
                     return nothing
                 end
 
                 # Nested Taylor1s
                 function ($fc)(v::$T{$T{T}}, a::$T{$T{T}}, k::Int) where
                         {T<:NumberNotSeriesN}
-                    @inbounds for i in eachindex(v[k])
-                        v[k][i] = ($f)(a[k][i])
+                    v_coeffs = v.coeffs
+                    a_coeffs = a.coeffs
+                    kk = k + 1
+                    @inbounds for i in eachindex(v_coeffs[kk])
+                        ($fc)(v_coeffs[kk], a_coeffs[kk], i)
                     end
                     return nothing
                 end
 
                 function ($fc)(v::$T{$T{T}}, a::$T{$T{T}}, b::$T{$T{T}}, k::Int) where
                         {T<:NumberNotSeriesN}
-                    @inbounds for i in eachindex(v[k])
-                        ($fc)(v[k], a[k], b[k], i)
+                    v_coeffs = v.coeffs
+                    a_coeffs = a.coeffs
+                    b_coeffs = b.coeffs
+                    kk = k + 1
+                    @inbounds for i in eachindex(v_coeffs[kk])
+                        ($fc)(v_coeffs[kk], a_coeffs[kk], b_coeffs[kk], i)
                     end
                     return nothing
                 end
 
                 function ($fc)(v::$T{$T{T}}, a::$T{$T{T}}, b::$T{T}, k::Int) where
                         {T<:NumberNotSeriesN}
-                    @inbounds for i in eachindex(v[k])
-                        ($fc)(v[k], a[k], b, i)
+                    v_coeffs = v.coeffs
+                    a_coeffs = a.coeffs
+                    kk = k + 1
+                    @inbounds for i in eachindex(v_coeffs[kk])
+                        ($fc)(v_coeffs[kk], a_coeffs[kk], b, i)
                     end
                     return nothing
                 end
 
                 function ($fc)(v::$T{$T{T}}, a::$T{T}, b::$T{$T{T}}, k::Int) where
                         {T<:NumberNotSeriesN}
-                    @inbounds for i in eachindex(v[k])
-                        ($fc)(v[k], a, b[k], i)
+                    v_coeffs = v.coeffs
+                    b_coeffs = b.coeffs
+                    kk = k + 1
+                    @inbounds for i in eachindex(v_coeffs[kk])
+                        ($fc)(v_coeffs[kk], a, b_coeffs[kk], i)
                     end
                     return nothing
                 end
@@ -148,8 +143,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 function ($fc)(v::$T{$T{T}}, a::$T{$T{T}}, b::T, k::Int) where
                         {T<:NumberNotSeriesN}
                     bb = k == 0 ? b : zero(b)
-                    @inbounds for i in eachindex(v[k])
-                        ($fc)(v[k], a[k], bb, i)
+                    v_coeffs = v.coeffs
+                    a_coeffs = a.coeffs
+                    kk = k + 1
+                    @inbounds for i in eachindex(v_coeffs[kk])
+                        ($fc)(v_coeffs[kk], a_coeffs[kk], bb, i)
                     end
                     return nothing
                 end
@@ -157,8 +155,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 function ($fc)(v::$T{$T{T}}, a::T, b::$T{$T{T}}, k::Int) where
                         {T<:NumberNotSeriesN}
                     aa = k == 0 ? a : zero(a)
-                    @inbounds for i in eachindex(v[k])
-                        ($fc)(v[k], aa, b[k], i)
+                    v_coeffs = v.coeffs
+                    b_coeffs = b.coeffs
+                    kk = k + 1
+                    @inbounds for i in eachindex(v_coeffs[kk])
+                        ($fc)(v_coeffs[kk], aa, b_coeffs[kk], i)
                     end
                     return nothing
                 end
@@ -172,7 +173,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($fc)(v::$T{$T{T}}, a::$T{$T{T}},
-                        b::$T{$T{T}}) where {T<:NumberNotSeries}
+                        b::$T{$T{T}}) where {T<:NumberNotSeriesN}
                     v_coeffs = v.coeffs
                     a_coeffs = a.coeffs
                     b_coeffs = b.coeffs
@@ -184,7 +185,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
                 function ($fc)(v::$T{$T{T}}, a::$T{$T{T}},
                         b::$T{$T{T}}, k::Int) where {T<:NumberNotSeries}
-                    @inbounds ($fc)(v.coeffs[k+1], a.coeffs[k+1], b.coeffs[k+1])
+                    v_coeffs = v.coeffs
+                    a_coeffs = a.coeffs
+                    b_coeffs = b.coeffs
+                    kk = k + 1
+                    @inbounds ($fc)(v_coeffs[kk], a_coeffs[kk], b_coeffs[kk])
                     return nothing
                 end
 
@@ -208,61 +213,67 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
             end
-        else
+        else # TaylorN
             @eval begin
                 function ($f)(a::$T{T}, b::S) where {T<:Number, S<:NumberNotSeries}
-                    R = promote_type(T, S)
-                    aa = convert(TaylorN{R}, a)
-                    bb = convert(R, b)
-                    c = TaylorN(space(a), aa.coeffs[:], order(aa))
-                    constant_term!(c, ($f)(constant_term(aa), bb))
+                    c = $T(space(a), ($f)(constant_term(a), b), order(a))
+                    for k in eachindex(c)
+                        ($fc)(c, a, b, k)
+                    end
                     return c
                 end
 
                 function ($f)(b::S, a::$T{T}) where {T<:Number, S<:NumberNotSeries}
-                    R = promote_type(T, S)
-                    aa = convert(TaylorN{R}, a)
-                    bb = convert(R, b)
-                    c = TaylorN(space(a), ($f)(aa.coeffs[:]), order(aa))
-                    constant_term!(c, ($f)(bb, constant_term(aa)))
+                    c = $T(space(a), ($f)(b, constant_term(a)), order(a))
+                    for k in eachindex(c)
+                        ($fc)(c, b, a, k)
+                    end
                     return c
                 end
 
                 function ($f)(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number}
                     _check_same_space(a, b)
-                    R = promote_type(T, S)
-                    return ($f)(convert($T{R}, a), convert($T{R}, b))
-                    # return ($f)(promote(a, b)...)
+                    z = zero(a.coeffs[1] + b.coeffs[1])
+                    c = $T(z, order(a))
+                    for k in eachindex(a)
+                        ($fc)(c, a, b, k)
+                    end
+                    return c
                 end
 
                 function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
-                    @inbounds for l in eachindex(v[k])
-                        v[k][l] = ($f)(a[k][l])
+                    v_coeffs = v.coeffs[k+1].coeffs
+                    a_coeffs = a.coeffs[k+1].coeffs
+                    @inbounds for l in eachindex(v_coeffs)
+                        v_coeffs[l] = ($f)(a_coeffs[l])
                     end
                     return nothing
                 end
 
                 function ($fc)(v::$T, a::$T, b::$T, k::Int)
-                    _check_same_space(v, a, b)
-                    @inbounds for i in eachindex(v[k])
-                        v[k][i] = ($f)(a[k][i], b[k][i])
+                    kk = k + 1
+                    v_coeffs = v.coeffs[kk].coeffs
+                    a_coeffs = a.coeffs[kk].coeffs
+                    b_coeffs = b.coeffs[kk].coeffs
+                    @inbounds for i in eachindex(v_coeffs)
+                        v_coeffs[i] = ($f)(a_coeffs[i], b_coeffs[i])
                     end
                     return nothing
                 end
 
                 function ($fc)(v::$T, a::$T, b::Number, k::Int)
-                    bb = k == 0 ? b : zero(b)
-                    for i in eachindex(v[k])
-                        v[k][i] = ($f)(a[k][i], bb)
-                    end
+                    v_coeffs = v.coeffs[k+1].coeffs
+                    a_coeffs = a.coeffs[k+1].coeffs
+                    copyto!(v_coeffs, a_coeffs)
+                    constant_term!(v, ($f)(constant_term(a), b))
                     return nothing
                 end
 
                 function ($fc)(v::$T, a::Number, b::$T, k::Int)
-                    aa = k == 0 ? a : zero(a)
-                    for i in eachindex(v[k])
-                        v[k][i] = ($f)(aa, b[k][i])
-                    end
+                    v_coeffs = v.coeffs[k+1].coeffs
+                    b_coeffs = b.coeffs[k+1].coeffs
+                    copyto!(v_coeffs, ($f)(b_coeffs))
+                    constant_term!(v, ($f)(a, constant_term(b)))
                     return nothing
                 end
 
@@ -294,16 +305,16 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($fc)(res::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T},
                 b::HomogeneousPolynomial{T}, k::Int) where {T<:NumberNotSeriesN}
             _check_same_space(res, a, b)
-            res[k] += ($f)(a[k], b[k])
+            res.coeffs[k] += ($f)(a.coeffs[k], b.coeffs[k])
             return nothing
         end
 
         ($f)(a::HomogeneousPolynomial) =
-            HomogeneousPolynomial(a.space, ($f)(a.coeffs), order(a))
+            HomogeneousPolynomial(a.space, ($f).(a.coeffs), order(a))
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::S) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            @inbounds aux = $f(a[0][1], b)
+            @inbounds aux = $f(a.coeffs[1].coeffs[1], b)
             R = TS.numtype(aux)
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, order(a)+1)
@@ -315,11 +326,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(b::S, a::TaylorN{Taylor1{T}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            @inbounds aux = $f(b, a[0][1])
+            @inbounds aux = $f(b, a.coeffs[1].coeffs[1])
             R = TS.numtype(aux)
             coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
                     undef, order(a)+1)
-            coeffs .= $f.(a.coeffs)
+            coeffs .= ($f)(a.coeffs)
             c = TaylorN(space(a), coeffs, order(a))
             constant_term!(c, aux)
             return c
@@ -327,9 +338,10 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(a::TaylorN{Taylor1{T}}, b::Taylor1{S}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            @inbounds aux = $f(a[0][1], b)
+            @inbounds aux = $f(a.coeffs[1].coeffs[1], b)
             R = TS.numtype(aux)
-            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, order(a)+1)
+            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
+                    undef, order(a)+1)
             coeffs .= a.coeffs
             c = TaylorN(space(a), coeffs, order(a))
             constant_term!(c, aux)
@@ -338,10 +350,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(b::Taylor1{S}, a::TaylorN{Taylor1{T}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            @inbounds aux = $f(b, a[0][1])
+            @inbounds aux = $f(b, a.coeffs[1].coeffs[1])
             R = TS.numtype(aux)
-            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(undef, order(a)+1)
-            coeffs .= $f.(a.coeffs)
+            coeffs = FixedSizeVectorDefault{HomogeneousPolynomial{Taylor1{R}}}(
+                    undef, order(a)+1)
+            coeffs .= ($f)(a.coeffs)
             c = TaylorN(space(a), coeffs, order(a))
             constant_term!(c, aux)
             return c
@@ -349,8 +362,9 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(a::Taylor1{TaylorN{T}}, b::S) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            @inbounds aux = ($f)(a[0][0][1], b)
-            c = Taylor1( TaylorN(space(a[0]), zero(aux), order(a[0])), order(a))
+            @inbounds aux = ($f)(a.coeffs[1].coeffs[1].coeffs[1], b)
+            c = Taylor1(
+                TaylorN(space(a.coeffs[1]), zero(aux), order(a.coeffs[1])), order(a))
             for k in eachindex(a)
                 ($fc)(c, a, b, k)
             end
@@ -359,8 +373,9 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(b::S, a::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            @inbounds aux = ($f)(b, a[0][0][1])
-            c = Taylor1( TaylorN(space(a[0]), zero(aux), order(a[0])), order(a))
+            @inbounds aux = ($f)(b, a.coeffs[1].coeffs[1].coeffs[1])
+            c = Taylor1(
+                TaylorN(space(a.coeffs[1]), zero(aux), order(a.coeffs[1])), order(a))
             for k in eachindex(a)
                 ($fc)(c, b, a, k)
             end
@@ -369,8 +384,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(a::Taylor1{TaylorN{T}}, b::TaylorN{S}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            _check_same_space(a[0], b)
-            @inbounds aux = $f(a[0], b)
+            _check_same_space(a.coeffs[1], b)
+            @inbounds aux = $f(a.coeffs[1], b)
             c = Taylor1( zero(aux), order(a))
             for k in eachindex(a)
                 ($fc)(c, a, b, k)
@@ -380,8 +395,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(b::TaylorN{S}, a::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries,S<:NumberNotSeries}
-            _check_same_space(b, a[0])
-            @inbounds aux = $f(b, a[0])
+            _check_same_space(b, a.coeffs[1])
+            @inbounds aux = $f(b, a.coeffs[1])
             c = Taylor1( zero(aux), order(a))
             for k in eachindex(a)
                 ($fc)(c, a, b, k)
@@ -389,9 +404,6 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             return c
         end
 
-    end
-
-    @eval begin
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                 b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
             v_coeffs = v.coeffs
@@ -426,12 +438,10 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-            v_k = v.coeffs[k+1]
-            a_k = a.coeffs[k+1]
-            b_k = b.coeffs[k+1]
-            v_hps = v_k.coeffs
-            a_hps = a_k.coeffs
-            b_hps = b_k.coeffs
+            kk = k+1
+            v_hps = v.coeffs[kk].coeffs
+            a_hps = a.coeffs[kk].coeffs
+            b_hps = b.coeffs[kk].coeffs
             @inbounds for i in eachindex(v_hps)
                 v_hp = v_hps[i].coeffs
                 a_hp = a_hps[i].coeffs
@@ -444,12 +454,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::NumberNotSeries,
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-            v_k = v.coeffs[k+1]
-            b_k = b.coeffs[k+1]
-            v_hps = v_k.coeffs
-            b_hps = b_k.coeffs
+            v_hps = v.coeffs[k+1].coeffs
+            b_hps = b.coeffs[k+1].coeffs
+            za = zero(a)
             @inbounds for i in eachindex(v_hps)
-                aaa = ifelse(k == 0 && i == 1, a, zero(a))
+                aaa = ifelse(k == 0 && i == 1, a, za)
                 v_hp = v_hps[i].coeffs
                 b_hp = b_hps[i].coeffs
                 for j in eachindex(v_hp)
@@ -460,12 +469,11 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
                 a::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
-            v_k = v.coeffs[k+1]
-            b_k = b.coeffs[k+1]
-            v_hps = v_k.coeffs
-            b_hps = b_k.coeffs
+            v_hps = v.coeffs[k+1].coeffs
+            b_hps = b.coeffs[k+1].coeffs
+            za = zero(a)
             @inbounds for i in eachindex(v_hps)
-                aaa = ifelse(k == 0 && i == 1, a, zero(a))
+                aaa = ifelse(k == 0 && i == 1, a, za)
                 v_hp = v_hps[i].coeffs
                 b_hp = b_hps[i].coeffs
                 for j in eachindex(v_hp)
@@ -476,10 +484,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                 k::Int) where {T<:NumberNotSeries}
-            v_k = v.coeffs[k+1]
-            a_k = a.coeffs[k+1]
-            v_hps = v_k.coeffs
-            a_hps = a_k.coeffs
+            v_hps = v.coeffs[k+1].coeffs
+            a_hps = a.coeffs[k+1].coeffs
             @inbounds for l in eachindex(v_hps)
                 v_hp = v_hps[l].coeffs
                 a_hp = a_hps[l].coeffs
