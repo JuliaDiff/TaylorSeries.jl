@@ -120,6 +120,8 @@ end
     explicit_space_dest = [zero(vals64[1])]
     evaluate!(explicit_space_src, vals64, explicit_space_dest; sorting=false)
     @test explicit_space_dest[1] == vals64[1] + vals64[2]^2
+    @test evaluate(explicit_space_src, vals64; sorting=false) == explicit_space_dest
+    @test evaluate(explicit_space_src[1], vals64; sorting=false) == explicit_space_dest[1]
 
     old_default_space = TS.default_space[]
     dx, dy = variables()
@@ -990,11 +992,13 @@ end
         # call twice to make sure `r` is reset on second call
         evaluate!(v, x1_tuple, r)
         @test (@allocated evaluate!(v, x1_tuple, r, valscache, aux)) == 0
-        r2 = evaluate.(v, Ref(x1))
+        r2 = evaluate(v, x1)
+        @test r2 == evaluate.(v, Ref(x1))
+        @test r2 == evaluate(v, x1_tuple)
         @test r == r2
         @test iszero(norm(r-r2, Inf))
         evaluate!(v, x1_tuple, r, valscache, aux; sorting=true)
-        @test r == evaluate.(v, Ref(x1); sorting=true)
+        @test r == evaluate(v, x1; sorting=true)
         @test_throws DimensionMismatch evaluate!(v[1], (x1[1],), r[1],
             valscache, aux)
         @test_throws DimensionMismatch evaluate!(v, x1_tuple, TaylorN{Float64}[])
@@ -1020,11 +1024,11 @@ end
 
     for sorting in (false, true)
         @test isnothing(evaluate!(src, vals, dest, valscache, aux; sorting))
-        @test dest == evaluate.(src, Ref(vals); sorting)
+        @test dest == evaluate(src, vals; sorting)
         # Repeated calls and array views reuse the same auxiliaries.
         @test isnothing(evaluate!(view(src, :), vals, view(dest, :),
             valscache, aux; sorting))
-        @test dest == evaluate.(src, Ref(vals); sorting)
+        @test dest == evaluate(view(src, :), vals; sorting)
         before = deepcopy(dest)
         @test_throws DimensionMismatch evaluate!(src, vals, dest,
             valscache[1:1], aux; sorting)

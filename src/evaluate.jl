@@ -406,6 +406,7 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where
         {N,T<:Number}
     R = promote_type(T, TS.numtype(vals[1]))
     _check_same_space(a, vals[1])
+    a = convert(TaylorN{R}, a)
     res = TaylorN(vals[1].space, zero(R), order(vals[1]))
     vvals = ntuple(i -> convert(TaylorN{R}, vals[i]), length(vals))
     valscache = [zero(val) for val in vvals]

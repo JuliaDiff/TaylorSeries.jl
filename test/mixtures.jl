@@ -171,12 +171,14 @@ using Test
     @test isnothing(evaluate!(vt1N, 0.0, v))
     @test v == [TaylorN(1), TaylorN(1)^2]
     evaluate!(vt1N, 0.5, v)
+    @test v == evaluate(vt1N, 0.5)
     @test (@allocated evaluate!(vt1N, 0.5, v)) == 0
     δtN = 0.5 + t1N[0]
     auxN = zero(v[1])
     evaluate!(vt1N, δtN, v)
-    @test isapprox(v, evaluate(vt1N, δtN))
+    @test v == evaluate(vt1N, δtN)
     evaluate!(vt1N, δtN, v, auxN)
+    @test v == evaluate(vt1N, δtN)
     @test (@allocated evaluate!(vt1N, δtN, v, auxN)) == 0
     mixedN_constant = TaylorN(t1N[0].space, 1.0, 0)
     mixedN = Taylor1([mixedN_constant, t1N[0]], 1)
@@ -607,8 +609,9 @@ end
     δt1 = 0.5 + ti
     aux1 = zero(vtii_dest[1])
     evaluate!(vtii, δt1, vtii_dest)
-    @test isapprox(vtii_dest, evaluate(vtii, δt1))
+    @test vtii_dest == evaluate(vtii, δt1)
     evaluate!(vtii, δt1, vtii_dest, aux1)
+    @test vtii_dest == evaluate(vtii, δt1)
     @test (@allocated evaluate!(vtii, δt1, vtii_dest, aux1)) == 0
     @test_throws DimensionMismatch evaluate!(vtii, δt1, Taylor1{Float64}[])
     mixed_inner_orders = Taylor1([Taylor1(1.0, 0), ti], 1)
