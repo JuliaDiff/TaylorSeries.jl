@@ -600,22 +600,64 @@ evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
 """
     evaluate!(x, δt, dest)
     evaluate!(x, vals, dest; sorting=...)
+    evaluate!(x, δt, dest, aux)
+    evaluate!(x, vals, dest, valscache, aux; sorting=false)
 
-Evaluate a polynomial or each polynomial in `x` and write the results into
-`dest`. For ordinary numeric `Taylor1` inputs, evaluation uses a direct Horner
-kernel. For `TaylorN` arrays, `sorting=false` sums homogeneous components in
-stored order without a temporary component vector; `sorting=true` preserves
-magnitude-sorted scalar evaluation and may allocate. Sorting defaults to true
-for ordinary scalar types and false when the coefficient or evaluation-value
-type is a series.
+Evaluate a polynomial, or an array of polynomials, and write the result into
+`dest`, a pre-allocated destination. All these methods return `nothing`.
 
-For numeric evaluation of more deeply nested `Taylor1` arrays, a general
-fallback uses `evaluate` for each element and may allocate intermediate series.
+For `TaylorN` evaluation, `sorting=true` sorts the contributions by magnitude
+before adding them, to reduce rounding error. `sorting=false` skips sorting.
+The default is `true` when the output type is `NumberNotSeries`, and `false`
+otherwise. Passing pre-allocated auxiliaries does not disable sorting;
+choose `sorting=false` to avoid the temporary result used by sorted evaluation.
 
-For series-valued substitutions (i.e., when the evaluation argument is
-a Taylor series variable), use the `evaluate!` methods that accept
-pre-allocated auxiliaries, so those auxiliaries can be reused across calls.
+The methods for a single polynomial are also used by the corresponding array
+methods. The allocating `evaluate` methods do not all call `evaluate!`; some
+call `evaluate` separately for each array element.
+
+# Examples
+
+Evaluate two polynomials at a number:
+
+```jldoctest
+julia> using TaylorSeries
+
+julia> t = Taylor1(3);
+
+julia> polys = [1 + 2t, 3 + 4t];
+
+julia> dest = zeros(2);
+
+julia> evaluate!(polys, 0.5, dest);
+
+julia> dest == [2.0, 5.0]
+true
+```
+
+Evaluate a multivariable polynomial at Taylor series. Allocate the destination
+and auxiliaries once; they can be reused in subsequent calls. The docstrings
+below explain which orders and `JetSpace`s are allowed, and which objects
+must be kept separate.
+
+```jldoctest
+julia> using TaylorSeries
+
+julia> space = JetSpace(order=2, variables=[:x, :y]);
+
+julia> x, y = variables(space);
+
+julia> vals = (x + 1, y + 2);
+
+julia> dest = zero(x); valscache = [zero(x), zero(y)]; aux = zero(x);
+
+julia> evaluate!(x + y^2, vals, dest, valscache, aux);
+
+julia> dest == (x + 1) + (y + 2)^2
+true
+```
 """
+
 function evaluate!(x::AbstractArray{Taylor1{T}}, δt::S,
         dest::AbstractArray{R}) where
         {T<:NumberNotSeries, S<:NumberNotSeries, R<:NumberNotSeries}
@@ -665,7 +707,7 @@ end
 function evaluate!(a::Taylor1{TaylorN{T}}, δt::S,
         dest::TaylorN{T}) where {T<:Number, S<:NumberNotSeries}
     # As above, scalar multiplication can update each homogeneous component
-    # directly, so this path needs no separate outer TaylorN scratch buffer.
+    # directly, so this path needs no separate outer TaylorN buffer.
     for coeff in a.coeffs
         _check_same_space(dest, coeff)
         # Order-zero series are exact constants and may be zero-extended.
@@ -742,9 +784,10 @@ end
     evaluate!(x, δt, dest, aux)
 
 Evaluate a `Taylor1` polynomial, or an array of them, at a series-valued
-`δt`. The result is written into `dest`, while `aux` is reusable scratch
-storage. These overloads work with an explicitly pre-allocated auxiliary `aux`,
-provided by the caller, in order to avoid allocations within the method body.
+`δt`. The result is written into `dest`, while `aux` is a pre-allocated
+auxiliary variable for reusable storage, in order to avoid allocations within
+the method body.
+
 The destination, evaluation value and scratch value must have the same
 concrete series type and, for `TaylorN`, the same `JetSpace`. They must not
 alias one another; neither `dest` nor `aux` may alias a mutable coefficient.
