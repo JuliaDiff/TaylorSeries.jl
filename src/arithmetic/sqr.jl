@@ -16,7 +16,7 @@ Return `a^2`; see [`TaylorSeries.sqr!`](@ref).
 
 function square(a::Taylor1{T}) where {T}
     c = zero(a)
-    aux = zero(a[0])
+    aux = zero(a.coeffs[1])
     for k in eachindex(a)
         sqr!(c, a, aux, k)
     end
@@ -24,7 +24,7 @@ function square(a::Taylor1{T}) where {T}
 end
 function square(a::TaylorN{T}) where {T}
     c = zero(a)
-    aux = zero(a[0][1])
+    aux = zero(a.coeffs[1].coeffs[1])
     for k in eachindex(a)
         sqr!(c, a, aux, k)
     end
@@ -34,53 +34,52 @@ end
 function square(a::HomogeneousPolynomial)
     order = 2*TS.order(a)
     # NOTE: the following returns order 0, but could be TS.order(), or TS.order(a)
-    order > TS.order(a.space) && return HomogeneousPolynomial(a.space, zero(a[1]), 0)
-    res = HomogeneousPolynomial(a.space, zero(a[1]), order)
+    order > TS.order(a.space) &&
+        return HomogeneousPolynomial(a.space, zero(a.coeffs[1]), 0)
+    res = HomogeneousPolynomial(a.space, zero(a.coeffs[1]), order)
     accsqr!(res, a)
     return res
 end
 
 #auxiliary function to avoid allocations
 function sqr_orderzero!(c::Taylor1{T}, a::Taylor1{T}) where {T<:NumberNotSeries}
-    @inbounds c[0] = a[0]^2
+    @inbounds c.coeffs[1] = a.coeffs[1]^2
     return nothing
 end
 function sqr_orderzero!(c::TaylorN{T}, a::TaylorN{T}) where {T<:NumberNotSeries}
-    @inbounds c[0][1] = a[0][1]^2
+    @inbounds c.coeffs[1].coeffs[1] = a.coeffs[1].coeffs[1]^2
     return nothing
 end
 function sqr_orderzero!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}) where
         {T<:NumberNotSeries}
-    aux = zero(a[0])
-    @inbounds for ord in eachindex(c[0])
-        sqr!(c[0], a[0], aux, ord)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    aux = zero(a_coeffs[1])
+    @inbounds for ord in eachindex(c_coeffs[1])
+        sqr!(c_coeffs[1], a_coeffs[1], aux, ord)
     end
     return nothing
 end
 function sqr_orderzero!(c::TaylorN{Taylor1{T}}, a::TaylorN{Taylor1{T}}) where
         {T<:NumberNotSeries}
-    aux = zero(a[0][1][0])
-    @inbounds for ord in eachindex(c[0][1])
-        sqr!(c[0][1], a[0][1], aux, ord)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    aux = zero(a_coeffs[1].coeffs[1].coeffs[1])
+    @inbounds for ord in eachindex(c_coeffs[1].coeffs[1])
+        sqr!(c_coeffs[1].coeffs[1], a_coeffs[1].coeffs[1], aux, ord)
     end
     return nothing
 end
 function sqr_orderzero!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}) where
         {T<:Number}
-    aux = zero(a[0][0])
-    @inbounds for ord in eachindex(c[0])
-        sqr!(c[0], a[0], aux, ord)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    aux = zero(a_coeffs[1].coeffs[1])
+    @inbounds for ord in eachindex(c_coeffs[1])
+        sqr!(c_coeffs[1], a_coeffs[1], aux, ord)
     end
     return nothing
 end
-# function sqr_orderzero!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}) where
-#         {T<:NumberNotSeries}
-#     aux = zero(a[0][0])
-#     @inbounds for ord in eachindex(c[0])
-#         sqr!(c[0], a[0], aux, ord)
-#     end
-#     return nothing
-# end
 
 # Homogeneous coefficients for square
 @doc doc"""
@@ -133,15 +132,18 @@ function sqr!(c::TaylorN{T}, a::TaylorN{T}, ::T, k::Int) where {T<:Number}
     end
     # Sanity
     zero!(c, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k + 1
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
     @inbounds for i = 0:kend
-        mul!(c[k], a[i], a[k-i])
+        mul!(c_coeffs[kk], a_coeffs[i+1], a_coeffs[kk-i])
     end
     @inbounds mul!(c, 2, c, k)
     kodd == 1 && return nothing
-    accsqr!(c[k], a[k >> 1])
+    accsqr!(c_coeffs[kk], a_coeffs[(k >> 1)+1])
     return nothing
 end
 
@@ -172,46 +174,51 @@ function sqr!(c::TaylorN{T}, k::Int) where {T<:NumberNotSeries}
         sqr_orderzero!(c, c)
         return nothing
     end
+    c_coeffs = c.coeffs
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
-    (kend >= 0) && ( @inbounds mul!(c, c[0][1], c, k) )
+    kk = k + 1
+    (kend >= 0) && ( @inbounds mul!(c, c_coeffs[1].coeffs[1], c, k) )
     @inbounds for i = 1:kend
-        mul!(c[k], c[i], c[k-i])
+        mul!(c_coeffs[kk], c_coeffs[i+1], c_coeffs[kk-i])
     end
     @inbounds mul!(c, 2, c, k)
     if kodd == 0
-        accsqr!(c[k], c[k >> 1])
+        accsqr!(c_coeffs[kk], c_coeffs[(k >> 1)+1])
     end
     return nothing
 end
 
 function sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::TaylorN{T},
-        ordT::Int) where {T<:NumberNotSeries}
+        k::Int) where {T<:NumberNotSeries}
     # Sanity
-    zero!(res, ordT)
-    if ordT == 0
-        @inbounds for ordQ in eachindex(a[0])
-            @inbounds sqr!(res[0], a[0], aux[0][1], ordQ)
+    zero!(res, k)
+    if k == 0
+        @inbounds for ordQ in eachindex(a.coeffs[1])
+            @inbounds sqr!(res.coeffs[1], a.coeffs[1], aux.coeffs[1].coeffs[1], ordQ)
         end
         return nothing
     end
     # Recursion formula
-    kodd = ordT%2
-    kend = (ordT - 2 + kodd) >> 1
+    kodd = k%2
+    kend = (k - 2 + kodd) >> 1
     zero!(aux)
-    (kodd == 0) && @inbounds for ordQ in eachindex(a[0])
-        sqr!(res[ordT], a[ordT >> 1], aux[0][1], ordQ)
-        mul!(res[ordT], 0.5, res[ordT], ordQ)
+    res_coeffs = res.coeffs
+    a_coeffs = a.coeffs
+    kk = k + 1
+    (kodd == 0) && @inbounds for ordQ in eachindex(a_coeffs[1])
+        sqr!(res_coeffs[kk], a_coeffs[(k >> 1)+1], aux.coeffs[1].coeffs[1], ordQ)
+        mul!(res_coeffs[kk], 0.5, res_coeffs[kk], ordQ)
     end
     for i = 0:kend
-        @inbounds for ordQ in eachindex(a[ordT])
-            # mul! accumulates the result in res[ordT]
-            mul!(res[ordT], a[i], a[ordT-i], ordQ)
+        @inbounds for ordQ in eachindex(a_coeffs[kk])
+            # mul! accumulates the result in res[kk]
+            mul!(res_coeffs[kk], a_coeffs[i+1], a_coeffs[kk-i], ordQ)
         end
     end
-    @inbounds for ordQ in eachindex(a[ordT])
-        mul!(res[ordT], 2, res[ordT], ordQ)
+    @inbounds for ordQ in eachindex(a_coeffs[kk])
+        mul!(res_coeffs[kk], 2, res_coeffs[kk], ordQ)
     end
     return nothing
 end
@@ -252,26 +259,29 @@ function sqr!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{T},
         sqr_orderzero!(c, a)
         return nothing
     end
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k+1
     # Sanity
-    zero!(c[k])
+    zero!(c_coeffs[kk])
     zero!(aux)
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
     @inbounds for i = 0:kend
-        for j in eachindex(a[k])
+        for j in eachindex(a_coeffs[kk])
             # c[k] += 2 * a[i] * a[k-i]
-            mul_scalar!(aux, 2, a[i], a[k-i], j)
-            add!(c[k], c[k], aux, j)
+            mul_scalar!(aux, 2, a_coeffs[i+1], a_coeffs[kk-i], j)
+            add!(c_coeffs[kk], c_coeffs[kk], aux, j)
         end
     end
     kodd == 1 && return nothing
     # @inbounds c[k] += a[k >> 1]^2
-    aaux = zero(aux[0])
-    for j in eachindex(a[k])
+    aaux = zero(aux[1])
+    for j in eachindex(a_coeffs[kk])
         zero!(aux, j)
-        sqr!(aux, a[k >> 1], aaux, j)
-        add!(c[k], c[k], aux, j)
+        sqr!(aux, a_coeffs[(k >> 1)+1], aaux, j)
+        add!(c_coeffs[kk], c_coeffs[kk], aux, j)
     end
     return nothing
 end
