@@ -227,8 +227,8 @@ function _evaluate(a::HomogeneousPolynomial{T},
     return suma
 end
 
-# Ordinary scalar vectors can use type-level promotion. The generic method
-# above derives zeros and ones from instances to retain series-space metadata.
+# For ordinary numbers, the coefficient and value types determine the result type.
+# For series, the method above uses the values themselves to preserve their JetSpace.
 function _evaluate(a::HomogeneousPolynomial{T},
         vals::AbstractVector{S}) where
         {T<:NumberNotSeries,S<:NumberNotSeries}
