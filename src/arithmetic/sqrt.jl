@@ -52,7 +52,7 @@ function sqrt(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     l0nz = findfirst(a)
     aux = zero(a)
     if l0nz < 0
-        return Taylor1( aux[0], order(a) )
+        return Taylor1( aux.coeffs[1], order(a) )
     elseif isodd(l0nz) # l0nz must be pair
         throw(DomainError(a,
             """First non-vanishing Taylor1 coefficient must correspond
@@ -61,8 +61,8 @@ function sqrt(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     # The last l0nz coefficients are dropped.
     lnull = l0nz >> 1 # integer division by 2
     c_order = l0nz == 0 ? order(a) : order(a) >> 1
-    c = Taylor1( aux[0], c_order )
-    aa = convert(Taylor1{eltype(aux[0])}, a)
+    c = Taylor1( aux.coeffs[1], c_order )
+    aa = convert(Taylor1{eltype(aux.coeffs[1])}, a)
     for k in eachindex(c)
         sqrt!(c, aa, aux, k, lnull)
     end
@@ -93,8 +93,8 @@ coefficient, which must be even.
 
 """ sqrt!
 
-function sqrt!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, k::Int, k0::Int=0) where
-        {T<:NumberNotSeries}
+function sqrt!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, k::Int,
+        k0::Int=0) where {T<:NumberNotSeries}
     k < k0 && return nothing
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
@@ -111,14 +111,14 @@ function sqrt!(c::Taylor1{T}, a::Taylor1{T}, ::Taylor1{T}, k::Int, k0::Int=0) wh
     kk = k+1
     @inbounds acc = zero(c_coeffs[kk])
     if k+k0 ≤ order(a)
-        @inbounds acc = a_coeffs[k+k0+1]
+        @inbounds acc = a_coeffs[kk+k0]
     end
     if kodd == 0
         @inbounds acc -= (c_coeffs[kend+k0+2])^2
     end
-    imin ≤ imax && ( @inbounds acc -= 2 * c_coeffs[imin+1] * c_coeffs[k+k0-imin+1] )
+    imin ≤ imax && ( @inbounds acc -= 2 * c_coeffs[imin+1] * c_coeffs[kk+k0-imin] )
     @inbounds for i = imin+1:imax
-        acc -= 2 * c_coeffs[i+1] * c_coeffs[k+k0-i+1]
+        acc -= 2 * c_coeffs[i+1] * c_coeffs[kk+k0-i]
     end
     @inbounds c_coeffs[kk] = acc / (2*c_coeffs[k0+1])
     return nothing
@@ -127,26 +127,29 @@ end
 function sqrt!(c::TaylorN{T}, a::TaylorN{T}, ::TaylorN{T}, k::Int) where
         {T<:NumberNotSeriesN}
     if k == 0
-        @inbounds c[0][1] = sqrt( constant_term(a) )
+        @inbounds c.coeffs[1].coeffs[1] = sqrt( constant_term(a) )
         return nothing
     end
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k + 1
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
     # c[k] <- a[k]
-    @inbounds for i in eachindex(c[k])
-        c[k][i] = a[k][i]
+    @inbounds for i in eachindex(c_coeffs[kk])
+        c_coeffs[kk].coeffs[i] = a_coeffs[kk].coeffs[i]
     end
     if kodd == 0
         # @inbounds c[k] <- c[k] - (c[kend+1])^2
-        @inbounds mul_scalar!(c[k], -1, c[kend+1], c[kend+1])
+        @inbounds mul_scalar!(c_coeffs[kk], -1, c_coeffs[kend+2], c_coeffs[kend+2])
     end
     @inbounds for i = 1:kend
         # c[k] <- c[k] - 2*c[i]*c[k-i]
-        mul_scalar!(c[k], -2, c[i], c[k-i])
+        mul_scalar!(c_coeffs[kk], -2, c_coeffs[i+1], c_coeffs[kk-i])
     end
     # @inbounds c[k] <- c[k] / (2*c[0])
-    div!(c[k], c[k], 2*constant_term(c))
+    div!(c_coeffs[kk], c_coeffs[kk], 2*constant_term(c))
     return nothing
 end
 
@@ -154,12 +157,14 @@ function sqrt!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux0::Taylor1{Tay
         k::Int, k0::Int=0) where {T<:NumberNotSeries}
     k < k0 && return nothing
     if k == k0
-        @inbounds for l in eachindex(c[k])
-            sqrt!(c[k], a[2*k0], aux0[k], l)
+        @inbounds for l in eachindex(c.coeffs[k+1])
+            sqrt!(c.coeffs[k+1], a.coeffs[2*k0+1], aux0.coeffs[k+1], l)
         end
         return nothing
     end
-
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k + 1
     # Recursion formula
     kodd = (k - k0)%2
     # kend = div(k - k0 - 2 + kodd, 2)
@@ -171,19 +176,19 @@ function sqrt!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux0::Taylor1{Tay
         ### TODO: add in-place add! method for Taylor1, TaylorN and mixtures: c[k] += a[k] -> add!(c, a, k)
         ###       and/or add identity! method such that each coeff is copied individually,
         ###       otherwise memory-mixing issues happen
-        identity!(c[k], a[k+k0])
+        identity!(c_coeffs[kk], a_coeffs[kk+k0])
     end
     if kodd == 0
         # c[k] <- c[k] - c[kend+1]^2
         # TODO: use accsqr! here?
-        @inbounds mul_scalar!(c[k], -1, c[kend+k0+1], c[kend+k0+1])
+        @inbounds mul_scalar!(c_coeffs[kk], -1, c_coeffs[kend+k0+2], c_coeffs[kend+k0+2])
     end
     @inbounds for i = imin:imax
         # c[k] <- c[k] - 2 * c[i] * c[k+k0-i]
-        mul_scalar!(c[k], -2, c[i], c[k+k0-i])
+        mul_scalar!(c_coeffs[kk], -2, c_coeffs[i+1], c_coeffs[kk+k0-i])
     end
     # @inbounds c[k] <- c[k] / (2*c[k0])
-    @inbounds div_scalar!(c[k], 0.5, c[k0])
+    @inbounds div_scalar!(c_coeffs[kk], 0.5, c_coeffs[k0+1])
 
     return nothing
 end
@@ -191,8 +196,27 @@ end
 function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Taylor1{T}},
         k::Int, k0::Int=0) where {T<:Number}
     k < k0 && return nothing
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
     if k == k0
-        @inbounds c[k] = sqrt(a[2*k0])
+        # Compute sqrt(a[2*k0])
+        # First non-zero coefficient
+        dosk01 = 2*k0 + 1
+        l0nz = findfirst(a_coeffs[dosk01])
+        _aaux = zero(sqrt( constant_term(a_coeffs[dosk01]) ))
+        if l0nz < 0
+            return Taylor1(_aaux, order(a_coeffs[dosk01]))
+        elseif isodd(l0nz) # l0nz must be pair
+            throw(DomainError(a_coeffs[dosk01],
+                """First non-vanishing Taylor1 coefficient must correspond
+                to an **even power** in order to expand `sqrt` around 0."""))
+        end
+        # The last l0nz coefficients are dropped.
+        lnull = l0nz >> 1 # integer division by 2
+        _aux = zero(a_coeffs[dosk01])
+        for k in eachindex(c_coeffs[k+1])
+            sqrt!(c_coeffs[k+1], a_coeffs[dosk01], _aux, k, lnull)
+        end
         return nothing
     end
     # Recursion formula
@@ -200,39 +224,41 @@ function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Tayl
     kend = (k - k0 - 2 + kodd) >> 1
     imax = min(k0+kend, order(a))
     imin = max(k0+1, k+k0-order(a))
+    kk = k + 1
     if k+k0 ≤ order(a)
         # @inbounds c[k] = a[k+k0]
-        for j in eachindex(c[k])
-            @inbounds identity!(c[k], a[k+k0], j)
+        for j in eachindex(c_coeffs[kk])
+            @inbounds identity!(c_coeffs[kk], a_coeffs[kk+k0], j)
         end
     end
+    aux_coeffs = aux.coeffs
     zero!(aux)
     if kodd == 0
-        aaux = zero(aux[0][0])
+        aaux = zero(aux_coeffs[1].coeffs[1])
         # @inbounds c[k] -= (c[kend+k0+1])^2
-        @inbounds for j in eachindex(c[k])
-            sqr!(aux[k], c[kend+k0+1], aaux, j)
-            subst!(c[k], c[k], aux[k], j)
+        @inbounds for j in eachindex(c_coeffs[kk])
+            sqr!(aux_coeffs[kk], c_coeffs[kend+k0+2], aaux, j)
+            subst!(c_coeffs[kk], c_coeffs[kk], aux_coeffs[kk], j)
             # zero!(aaux)
         end
     end
     @inbounds for i = imin:imax
         # c[k] -= 2 * c[i] * c[k+k0-i]
-        for j in eachindex(c[k])
-            zero!(aux[k], j)
-            mul_scalar!(aux[k], 2, c[i], c[k+k0-i], j)
-            subst!(c[k], c[k], aux[k], j)
+        for j in eachindex(c_coeffs[kk])
+            zero!(aux_coeffs[kk], j)
+            mul_scalar!(aux_coeffs[kk], 2, c_coeffs[i+1], c_coeffs[kk+k0-i], j)
+            subst!(c_coeffs[kk], c_coeffs[kk], aux_coeffs[kk], j)
         end
     end
     # @inbounds c[k] = c[k] / (2*c[k0])
-    @inbounds for j in eachindex(c[k])
-        identity!(aux[k], c[k], j)
+    @inbounds for j in eachindex(c_coeffs[kk])
+        identity!(aux_coeffs[kk], c_coeffs[kk], j)
     end
     @inbounds for j in eachindex(c[k0])
-        div!(c[k], aux[k], c[k0], j)
+        div!(c_coeffs[kk], aux_coeffs[kk], c_coeffs[k0+1], j)
     end
     @inbounds for j in eachindex(c[k0])
-        div!(c[k], c[k], 2, j)
+        div!(c_coeffs[kk], c_coeffs[kk], 2, j)
     end
     return nothing
 end
