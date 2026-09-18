@@ -144,7 +144,7 @@ function _pow(a::TaylorN{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `^` around 0."""))
     end
-    c = TaylorN(zero(aux), a_order)
+    c = TaylorN(space(a), zero(aux), a_order)
     aux0 = zero(c)
     for k in eachindex(c)
         TS.pow!(c, a, aux0, r, k)
@@ -296,7 +296,7 @@ function sqrt(a::TaylorN{Interval{T}}) where {T<:NumTypes}
     aa = convert(TaylorN{typeof(aux)}, a)
     aa[0] = one(aux)*a0
     order = TS.order(a)
-    c = TaylorN( zero(aux), order)
+    c = TaylorN(space(a), zero(aux), order)
     for k in eachindex(aa)
         TS.sqrt!(c, aa, zero(a0), k)
     end
@@ -1168,7 +1168,8 @@ for bb in (:true, :false)
         x = Vector{TaylorN{S}}(undef, length(I))
         @inbounds for ind in eachindex(x)
             # x[ind] = mid(I[ind]) + TaylorN(ind, order=order)*radius(I[ind])
-            x[ind] = aff_normalize(TaylorN(S, ind, order=order), I[ind], Val($bb))
+            x[ind] = aff_normalize(
+                    TaylorN(space(a), S, ind, order=order), I[ind], Val($bb))
         end
         aa = convert(TaylorN{S}, a)
         return evaluate(aa, x)
