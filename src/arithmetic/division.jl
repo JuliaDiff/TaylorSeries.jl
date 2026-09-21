@@ -8,15 +8,17 @@
 
 ## Division ##
 function /(a::Taylor1{Rational{T}}, b::S) where {T<:Integer, S<:NumberNotSeries}
-    R = typeof( a[0] // b)
+    R = typeof( a.coeffs[1] // b)
     v = FixedSizeVectorDefault{R}(undef, order(a)+1)
     v .= a.coeffs .// b
-    return Taylor1(v, order(a))
+    return Taylor1(v)
 end
 
-function /(b::Taylor1{T}, a::S) where {T<:Number, S<:NumberNotSeries}
-    @inbounds v = b.coeffs ./ a
-    return Taylor1(v, order(b))
+function /(a::Taylor1{T}, b::S) where {T<:Number, S<:NumberNotSeries}
+    R = typeof( a.coeffs[1] / b)
+    v = FixedSizeVectorDefault{R}(undef, order(a)+1)
+    v .= a.coeffs ./ b
+    return Taylor1(v)
 end
 
 for T in (:HomogeneousPolynomial, :TaylorN)
@@ -78,6 +80,35 @@ function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
     end
     return c
 end
+
+function /(a::Taylor1{Taylor1{T}}, b::Taylor1{S}) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    iszero(a) && !iszero(b) && return zero(a)
+    cdivfact = constant_term(a) / b
+    R = typeof(cdivfact)
+    aa = R == T ? a : convert(Taylor1{R}, a)
+    bb = R == S ? b : convert(R, b)
+    c = Taylor1(cdivfact, order(a))
+    for ord in eachindex(c)
+        div!(c, aa, bb, ord) # updates c[ord]
+    end
+    return c
+end
+
+function /(a::Taylor1{T}, b::Taylor1{Taylor1{S}}) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    iszero(a) && !iszero(b) && return zero(a)
+    cdivfact = a / constant_term(b)
+    R = typeof(cdivfact)
+    aa = R == T ? a : convert(R, a)
+    bb = R == S ? b : convert(Taylor1{R}, b)
+    c = Taylor1(cdivfact, order(b))
+    for ord in eachindex(c)
+        div!(c, aa, bb, ord) # updates c[ord]
+    end
+    return c
+end
+
 
 /(a::TaylorN{T}, b::TaylorN{S}) where
     {T<:NumberNotSeriesN, S<:NumberNotSeriesN} = /(promote(a,b)...)
@@ -156,7 +187,7 @@ end
 ## divfactorization ##
 
 # Get order of first factorized term; a1 and b1 assumed to be of the same order
-function _orderfactorizedterm(a1::Taylor1, b1::Taylor1)
+function _orderfactorizedterm(a1::Taylor1{T}, b1::Taylor1{T}) where {T}
     a1nz = findfirst(a1)
     b1nz = findfirst(b1)
     a1nz = a1nz ≥ 0 ? a1nz : order(a1)
@@ -164,7 +195,7 @@ function _orderfactorizedterm(a1::Taylor1, b1::Taylor1)
     return min(a1nz, b1nz)
 end
 
-@inline function divfactorization(a1::Taylor1, b1::Taylor1)
+@inline function divfactorization(a1::Taylor1{T}, b1::Taylor1{T}) where {T}
     # order of first factorized term; a1 and b1 assumed to be of the same order
     ordfact = _orderfactorizedterm(a1, b1)
     cdivfact = a1.coeffs[ordfact+1] / b1.coeffs[ordfact+1]
@@ -177,8 +208,8 @@ end
 end
 
 # Similar to divfactorization, but writes the first order coefficient into `aux`
-@inline function divfactorization!(aux::Taylor1{T}, a1::Taylor1{Taylor1{T}}, b1::Taylor1{Taylor1{T}},
-        ordfact::Int) where {T<:NumberNotSeriesN}
+@inline function divfactorization!(aux::Taylor1{T}, a1::Taylor1{Taylor1{T}},
+        b1::Taylor1{Taylor1{T}}, ordfact::Int) where {T<:NumberNotSeriesN}
     # Is the polynomial factorizable?
     TS._isthinzero(b1.coeffs[ordfact+1]) && throw( ArgumentError(
         """Division does not define a Taylor1 polynomial;
@@ -276,9 +307,6 @@ function div!(c::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
     kk = k+1
     @inbounds c_coeffs[kk] = zero(c_coeffs[kk])
     iszero(a) && !iszero(b) && return nothing
-    # order and coefficient of first factorized term
-    # In this case, since a[k]=0 for k>0, we can simplify to:
-    # ordfact, cdivfact = 0, a/b[0]
     if k == 0
         @inbounds c_coeffs[1] = a / b_coeffs[1]
         return nothing
@@ -302,9 +330,6 @@ end
         b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
     zero!(c, k)
     iszero(a) && !iszero(b) && return nothing
-    # order and coefficient of first factorized term
-    # In this case, since a[k]=0 for k>0, we can simplify to:
-    # ordfact, cdivfact = 0, a/b[0]
     c_coeffs = c.coeffs
     b_coeffs = b.coeffs
     if k == 0
@@ -364,6 +389,45 @@ function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
     # c[k] <- aux / b[ordfact]
     for ord in eachindex(c_coeffs[kk])
         div!(c_coeffs[kk], aux, b_coeffs[ordfact+1], ord)
+    end
+    return nothing
+end
+
+function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        b::Taylor1{T}, k::Int) where {T<:NumberNotSeriesN}
+    zero!(c, k)
+    iszero(a) && !iszero(b) && return nothing
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    kk = k + 1
+    for j in eachindex(c_coeffs[kk])
+        zero!(c_coeffs[kk], j)
+        div!(c_coeffs[kk], a_coeffs[kk], b, j)
+    end
+    return nothing
+end
+
+function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{T},
+        b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
+    zero!(c.coeffs[k+1])
+    iszero(a) && !iszero(b) && return nothing
+    c_coeffs = c.coeffs
+    b_coeffs = b.coeffs
+    kk = k + 1
+    # order and coefficient of first factorized term
+    ordfact = _orderfactorizedterm(a, b_coeffs[kk])
+    if k == 0
+        c_coeffs[1] = a / b_coeffs[1]
+        # divfactorization!(c_coeffs[kk], a, b_coeffs[kk], ordfact)
+        return nothing
+    end
+    acc = zero(a)
+    @inbounds for i = 0:k-1
+        muladd!(acc, c_coeffs[i+1], b_coeffs[kk-i])
+    end
+    for j in eachindex(c_coeffs[1])
+        subst!(acc, acc, j)
+        div!(c_coeffs[kk], acc, b_coeffs[1], j)
     end
     return nothing
 end
