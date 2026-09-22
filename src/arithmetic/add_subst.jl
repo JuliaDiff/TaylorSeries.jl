@@ -140,8 +140,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     return nothing
                 end
 
-                function ($fc)(v::$T{$T{T}}, a::$T{$T{T}}, b::T, k::Int) where
-                        {T<:NumberNotSeriesN}
+                function ($fc)(v::$T{$T{T}}, a::$T{$T{T}}, b::NumberNotSeries,
+                        k::Int) where {T<:NumberNotSeriesN}
                     bb = k == 0 ? b : zero(b)
                     v_coeffs = v.coeffs
                     a_coeffs = a.coeffs
@@ -152,8 +152,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     return nothing
                 end
 
-                function ($fc)(v::$T{$T{T}}, a::T, b::$T{$T{T}}, k::Int) where
-                        {T<:NumberNotSeriesN}
+                function ($fc)(v::$T{$T{T}}, a::NumberNotSeries, b::$T{$T{T}},
+                        k::Int) where {T<:NumberNotSeriesN}
                     aa = k == 0 ? a : zero(a)
                     v_coeffs = v.coeffs
                     b_coeffs = b.coeffs
