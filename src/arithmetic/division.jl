@@ -60,7 +60,7 @@ end
 /(a::Taylor1{T}, b::Taylor1{S}) where {T<:Number, S<:Number} = /(promote(a,b)...)
 
 function /(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
-    iszero(a) && !iszero(b) && return zero(a)
+    _isthinzero(a) && !_isthinzero(b) && return zero(a)
     if order(a) != order(b)
         a, b = fixorder(a, b)
     end
@@ -83,7 +83,7 @@ end
 
 function /(a::Taylor1{Taylor1{T}}, b::Taylor1{S}) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
-    iszero(a) && !iszero(b) && return zero(a)
+    _isthinzero(a) && !_isthinzero(b) && return zero(a)
     cdivfact = constant_term(a) / b
     R = typeof(cdivfact)
     aa = R == T ? a : convert(Taylor1{R}, a)
@@ -97,7 +97,7 @@ end
 
 function /(a::Taylor1{T}, b::Taylor1{Taylor1{S}}) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
-    iszero(a) && !iszero(b) && return zero(a)
+    _isthinzero(a) && !_isthinzero(b) && return zero(a)
     cdivfact = a / constant_term(b)
     R = typeof(cdivfact)
     aa = R == T ? a : convert(R, a)
@@ -120,8 +120,16 @@ function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
         a, b = fixorder(a, b)
     end
     # first coefficient
-    @inbounds cdivfact = a[0] / constant_term(b)
-    c = TaylorN(space(a), cdivfact, order(a))
+    @inbounds cdivfact = constant_term(a) / constant_term(b)
+    R = typeof(cdivfact)
+    if R == T
+        aa = a
+        bb = b
+    else
+        aa = convert(TaylorN{R}, a)
+        bb = convert(TaylorN{R}, b)
+    end
+    c = TaylorN(space(a), zero(cdivfact), order(a))
     for ord in eachindex(c)
         div!(c, a, b, ord) # updates c[ord]
     end
@@ -130,11 +138,12 @@ end
 
 function /(a::S, b::TaylorN{T}) where {S<:NumberNotSeriesN, T<:NumberNotSeriesN}
     @assert !_isthinzero(constant_term(b))
-    R = typeof(a / constant_term(b))
-    bb = convert(TaylorN{R}, b)
-    res = TaylorN(space(b), zero(R), order(b))
-    iszero(a) && !iszero(b) && return res
-    aa = convert(R, a)
+    aux = a / constant_term(b)
+    R = typeof(aux)
+    aa = R == S ? a : convert(R, a)
+    bb = R == T ? b : convert(TaylorN{R}, b)
+    res = TaylorN(space(b), aux, order(b))
+    _isthinzero(a) && !_isthinzero(b) && return res
     for ord in eachindex(res)
         div!(res, aa, bb, ord)
     end
@@ -143,7 +152,7 @@ end
 
 function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     _check_same_space(a[0], b[0])
-    iszero(a) && !iszero(b) && return zero(a)
+    _isthinzero(a) && !_isthinzero(b) && return zero(a)
     if (order(a) != order(b)) || any(order.(a.coeffs) .!= order.(b.coeffs))
         a, b = fixorder(a, b)
     end
@@ -167,7 +176,7 @@ end
 function /(a::S, b::Taylor1{TaylorN{T}}) where {S<:NumberNotSeries, T<:NumberNotSeries}
     R = promote_type(TaylorN{S}, TaylorN{T})
     res = convert(Taylor1{R}, zero(b))
-    iszero(a) && !iszero(b) && return res
+    _isthinzero(a) && !_isthinzero(b) && return res
     for ordT in eachindex(res)
         div!(res, a, b, ordT)
     end
@@ -175,9 +184,16 @@ function /(a::S, b::Taylor1{TaylorN{T}}) where {S<:NumberNotSeries, T<:NumberNot
 end
 
 function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    res = zero(b)
-    iszero(a) && !iszero(b) && return res
-    aa = Taylor1(a, order(b))
+    R = typeof(constant_term(a)/constant_term(b[0]))
+    if R == T
+        aa = Taylor1(a, order(b))
+        bb = b
+    else
+        aa = Taylor1(convert(TaylorN{R}, a), order(b))
+        bb = convert(Taylor1{TaylorN{R}}, b)
+    end
+    res = Taylor1(zero(aa[0]), order(a))
+    _isthinzero(a) && !_isthinzero(b) && return res
     for ordT in eachindex(res)
         div!(res, aa, b, ordT)
     end
@@ -208,7 +224,7 @@ end
 end
 
 # Similar to divfactorization, but writes the first order coefficient into `aux`
-@inline function divfactorization!(aux::Taylor1{T}, a1::Taylor1{Taylor1{T}},
+function divfactorization!(aux::Taylor1{T}, a1::Taylor1{Taylor1{T}},
         b1::Taylor1{Taylor1{T}}, ordfact::Int) where {T<:NumberNotSeriesN}
     # Is the polynomial factorizable?
     TS._isthinzero(b1.coeffs[ordfact+1]) && throw( ArgumentError(
@@ -242,7 +258,6 @@ For `Taylor1` polynomials, a similar formula is implemented which
 exploits `k_0`, the order of the first non-zero coefficient of `a`.
 """ div!
 
-# @inline
 function div!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     c_coeffs = c.coeffs
@@ -250,7 +265,7 @@ function div!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
     b_coeffs = b.coeffs
     kk = k+1
     @inbounds c_coeffs[kk] = zero(c_coeffs[kk])
-    iszero(a) && !iszero(b) && return nothing
+    _isthinzero(a) && !_isthinzero(b) && return nothing
     # order and coefficient of first factorized term
     ordfact = _orderfactorizedterm(a, b)
     if k == 0
@@ -272,7 +287,6 @@ function div!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
     return nothing
 end
 
-# @inline
 function div!(v::Taylor1{T}, a::Taylor1{T}, b::NumberNotSeries,
         k::Int) where {T<:Number}
     @inbounds v.coeffs[k+1] = a.coeffs[k+1] / b
@@ -306,7 +320,7 @@ function div!(c::Taylor1{T}, a::NumberNotSeries, b::Taylor1{T}, k::Int) where
     b_coeffs = b.coeffs
     kk = k+1
     @inbounds c_coeffs[kk] = zero(c_coeffs[kk])
-    iszero(a) && !iszero(b) && return nothing
+    _isthinzero(a) && !_isthinzero(b) && return nothing
     if k == 0
         @inbounds c_coeffs[1] = a / b_coeffs[1]
         return nothing
@@ -329,7 +343,7 @@ end
 @inline function div!(c::Taylor1{Taylor1{T}}, a::NumberNotSeries,
         b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
     zero!(c, k)
-    iszero(a) && !iszero(b) && return nothing
+    _isthinzero(a) && !_isthinzero(b) && return nothing
     c_coeffs = c.coeffs
     b_coeffs = b.coeffs
     if k == 0
@@ -348,11 +362,10 @@ end
 end
 
 #
-# @inline
 function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
     zero!(c, k)
-    iszero(a) && !iszero(b) && return nothing
+    _isthinzero(a) && !_isthinzero(b) && return nothing
     # order and coefficient of first factorized term
     ordfact = _orderfactorizedterm(a, b)
     if k == 0
@@ -396,7 +409,7 @@ end
 function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
         b::Taylor1{T}, k::Int) where {T<:NumberNotSeriesN}
     zero!(c, k)
-    iszero(a) && !iszero(b) && return nothing
+    _isthinzero(a) && !_isthinzero(b) && return nothing
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     kk = k + 1
@@ -410,15 +423,16 @@ end
 function div!(c::Taylor1{Taylor1{T}}, a::Taylor1{T},
         b::Taylor1{Taylor1{T}}, k::Int) where {T<:NumberNotSeriesN}
     zero!(c.coeffs[k+1])
-    iszero(a) && !iszero(b) && return nothing
+    _isthinzero(a) && !_isthinzero(b) && return nothing
     c_coeffs = c.coeffs
     b_coeffs = b.coeffs
     kk = k + 1
     # order and coefficient of first factorized term
-    ordfact = _orderfactorizedterm(a, b_coeffs[kk])
     if k == 0
-        c_coeffs[1] = a / b_coeffs[1]
-        # divfactorization!(c_coeffs[kk], a, b_coeffs[kk], ordfact)
+        # c_coeffs[1] = a / b_coeffs[1]
+        for j in eachindex(c_coeffs[1])
+            div!(c_coeffs[1], a, b_coeffs[1], j)
+        end
         return nothing
     end
     acc = zero(a)
@@ -441,10 +455,10 @@ end
 #     return nothing
 # end
 
-@inline function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
+function div!(c::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     zero!(c, k)
-    iszero(a) && !iszero(b) && return nothing
+    _isthinzero(a) && !_isthinzero(b) && return nothing
     # order and coefficient of first factorized term
     # In this case, since a[k]=0 for k>0, we can simplify to:
     # ordfact, cdivfact = 0, a/b[0]
@@ -476,7 +490,7 @@ end
 end
 
 # NOTE: Due to the use of `zero!`, this `div!` method does *not* accumulate the result of a / b in c[k] (k > 0)
-@inline function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
+function div!(c::TaylorN, a::TaylorN, b::TaylorN, k::Int)
     _check_same_space(c, a, b)
     if k==0
         @inbounds c.coeffs[1].coeffs[1] = constant_term(a) / constant_term(b)
@@ -508,7 +522,7 @@ end
 # k = 2: c[2] <- c[2] - c[0]*a[2] - c[1]*a[1]
 #        c[2] <- c[2]/a[0]
 # etc.
-@inline function div!(c::TaylorN, a::TaylorN, k::Int)
+function div!(c::TaylorN, a::TaylorN, k::Int)
     _check_same_space(c, a)
     if k==0
         @inbounds c.coeffs[1].coeffs[1] = constant_term(c) / constant_term(a)
@@ -537,7 +551,7 @@ end
 # k = 2: c[2] <- scalar*c[2] - c[0]*a[2] - c[1]*a[1]
 #        c[2] <- c[2]/a[0]
 # etc.
-@inline function div_scalar!(c::TaylorN, scalar::NumberNotSeries,
+function div_scalar!(c::TaylorN, scalar::NumberNotSeries,
         a::TaylorN, k::Int)
     _check_same_space(c, a)
     if k==0
@@ -558,7 +572,7 @@ end
     return nothing
 end
 
-@inline function div_scalar!(c::Taylor1{T}, scalar::NumberNotSeries,
+function div_scalar!(c::Taylor1{T}, scalar::NumberNotSeries,
         a::Taylor1{T}, k::Int) where {T <: NumberNotSeries}
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
@@ -577,7 +591,7 @@ end
 end
 
 # NOTE: Here `div!` *accumulates* the result of a[k] / b[k] in c[k] (k > 0)
-@inline function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int)
+function div!(c::TaylorN, a::NumberNotSeries, b::TaylorN, k::Int)
     _check_same_space(c, b)
     if k==0
         @inbounds c.coeffs[1].coeffs[1] = a / constant_term(b)
@@ -680,7 +694,7 @@ end
     @inbounds for i = imin+1:k-1
         mul!(c_coeffs[kk], c_coeffs[i+1], b_coeffs[kk+ordfact-i])
     end
-        if k+ordfact ≤ b_order
+    if k+ordfact ≤ b_order
         # @inbounds c[k] = (a[k+ordfact]-c[k]) / b[ordfact]
         @inbounds for l in eachindex(c_coeffs[kk])
             subst!(c_coeffs[kk], a_coeffs[kk+ordfact], c_coeffs[kk], l)
