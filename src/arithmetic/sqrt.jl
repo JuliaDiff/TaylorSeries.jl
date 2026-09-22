@@ -213,7 +213,8 @@ function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Tayl
         end
         # The last l0nz coefficients are dropped.
         lnull = l0nz >> 1 # integer division by 2
-        aux.coeffs[1] = zero(a_coeffs[dosk01])
+        # aux.coeffs[1] = zero(a_coeffs[dosk01])
+        zero!(aux.coeffs[1], 0)
         for j in eachindex(c_coeffs[k+1])
             sqrt!(c_coeffs[k+1], a_coeffs[dosk01], aux.coeffs[1], j, lnull)
         end
