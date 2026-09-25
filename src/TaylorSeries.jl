@@ -52,7 +52,7 @@ export getcoeff, derivative, integrate, differentiate,
     evaluate, evaluate!, inverse, inverse_map, set_taylor1_varname,
     show_params_TaylorN, show_monomials, displayBigO, use_show_default,
     order, get_numvars,
-    variables!, variables,
+    variables!, variables, space,
     get_variable_names, get_variable_symbols,
     # jacobian, hessian, jacobian!, hessian!,
     ∇, taylor_expand, update!,
@@ -68,8 +68,7 @@ include("conversion.jl")
 include("auxiliary.jl")
 include("zero_one.jl")
 include("total_order.jl")
-include("arithmetic.jl")
-include("power.jl")
+include("arithmetic/arithmetic.jl")
 include("identity.jl")
 include("functions.jl")
 include("other_functions.jl")
