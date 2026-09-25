@@ -114,6 +114,11 @@ _dict_binary_calls
 _dict_unary_calls
 _dict_binary_ops
 _populate_dicts!
+_evaluate
+_evaluation_order
+_evaluate!
+_check_series_evaluation
+_check_taylorN_evaluation
 @isonethread
 ```
 
