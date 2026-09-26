@@ -6,24 +6,17 @@
 # MIT Expat license
 #
 
+
+"""
+    _defaultsorting(T, S)
+
+Function to set defaults for sorting, useful for evaluating with `Interval`s
+"""
+_defaultsorting(::Type{T}, ::Type{S}) where {T,S} =
+    !(T <: AbstractSeries || S <: AbstractSeries)
+
+
 ## Evaluating ##
-"""
-    _evaluate(a::Taylor1, dx::NumberNotSeries)
-
-Evaluate `a` at a number `dx` using Horner's rule. Neither the coefficients
-nor `dx` are Taylor series. Both `evaluate` and the array form of `evaluate!`
-use this method; it does not create temporary arrays.
-"""
-@inline function _evaluate(a::Taylor1{T}, dx::S) where
-        {T<:NumberNotSeries, S<:NumberNotSeries}
-    a_coeffs = a.coeffs
-    @inbounds suma = zero(a_coeffs[end])*dx
-    @inbounds for k in reverse(eachindex(a_coeffs))
-        suma = suma * dx + a_coeffs[k]
-    end
-    return suma
-end
-
 """
     evaluate(a, [dx])
 
@@ -201,6 +194,130 @@ function evaluate(a::HomogeneousPolynomial{T}) where {T}
     return zero(a[1])
 end
 
+
+#function-like behavior for HomogeneousPolynomial
+(p::HomogeneousPolynomial)(x) = evaluate(p, x)
+(p::HomogeneousPolynomial)(x, v::Vararg{Number,N}) where {N} =
+    evaluate(p, promote(x, v...,))
+(p::HomogeneousPolynomial)() = evaluate(p)
+
+
+"""
+    evaluate(a, [vals]; sorting::Bool=true)
+
+Evaluate the `TaylorN` polynomial `a` at `vals`.
+If `vals` is omitted, it's evaluated at zero. The
+keyword parameter `sorting` can be used to avoid
+sorting (in increasing order by `abs2`) the
+terms that are added.
+
+Note that the syntax `a(vals)` is equivalent to
+`evaluate(a, vals)`; and `a()` is equivalent to
+`evaluate(a)`; use a(b::Bool, x) corresponds to
+evaluate(a, x, sorting=b).
+"""
+function evaluate(a::TaylorN{T}, vals::Tuple{S,Vararg{S}};
+        sorting::Bool=_defaultsorting(T,S)) where {T<:Number,S<:Number}
+    @assert get_numvars(a) == length(vals)
+    return _evaluate(a, vals, Val(sorting))
+end
+
+function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
+        sorting::Bool=false) where {N}
+    @assert get_numvars(a) == N
+    return _evaluate(a, vals, Val(sorting))
+end
+
+evaluate(a::TaylorN{T}, vals::AbstractVector{S}; sorting::Bool=_defaultsorting(T,S)) where
+    {T<:NumberNotSeries, S<:Number} = evaluate(a, (vals...,); sorting)
+
+evaluate(a::TaylorN{T}, vals::AbstractVector{<:AbstractSeries}; sorting::Bool=false) where
+    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting)
+
+evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{S};
+    sorting::Bool=false) where {T, S} = evaluate(a, (vals...,); sorting)
+
+function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
+        {T<:Number, S<:NumberNotSeriesN}
+    ind = lookupvar(a.space, s)
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Symbol is not a TaylorN variable; see `get_variable_names()`"
+    return evaluate(a, ind, val)
+end
+
+function evaluate(a::TaylorN{T}, ind::Int, val::S) where {T<:Number,
+        S<:NumberNotSeriesN}
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    R = promote_type(T,S)
+    return _evaluate(convert(TaylorN{R}, a), ind, convert(R, val))
+end
+
+function evaluate(a::TaylorN{T}, s::Symbol, val::TaylorN) where {T<:Number}
+    ind = lookupvar(a.space, s)
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Symbol is not a TaylorN variable; see `get_variable_names()`"
+    return evaluate(a, ind, val)
+end
+
+function evaluate(a::TaylorN{T}, ind::Int, val::TaylorN) where {T<:Number}
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    _check_same_space(a, val)
+    a, val = fixorder(a, val)
+    a, val = promote(a, val)
+    return _evaluate(a, ind, val)
+end
+
+evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} =
+    evaluate(a, first(x), last(x))
+
+evaluate(a::TaylorN{T}) where {T<:Number} = constant_term(a)
+
+# High-dimensional array evaluation. Keep this allocating interface as a
+# broadcast of scalar evaluations so it retains scalar promotion, sorting,
+# shape, and StaticArray container behavior while accepting views as inputs.
+# TODO: Preserve concrete result element types for empty arrays once this can
+# be done without duplicating the scalar promotion rules.
+function evaluate(A::AbstractArray{TaylorN{T}}, vals::AbstractVector{S};
+        sorting::Bool=_defaultsorting(T,S)) where {T<:Number,S<:Number}
+    return evaluate.(A, Ref(vals); sorting)
+end
+
+function evaluate(A::AbstractArray{TaylorN{T}}, vals::Tuple{S,Vararg{S}};
+        sorting::Bool=_defaultsorting(T,S)) where {T<:Number,S<:Number}
+    return evaluate.(A, Ref(vals); sorting)
+end
+
+evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
+
+#function-like behavior for TaylorN
+(p::TaylorN)(x) = evaluate(p, x)
+(p::TaylorN)() = evaluate(p)
+(p::TaylorN)(s::S, x) where {S<:Union{Symbol, Int}} = evaluate(p, s, x)
+(p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
+(p::TaylorN)(x, v::Vararg{T}) where {T} = evaluate(p, (x, v...,))
+(p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
+(p::TaylorN)(b::Bool, x, v::Vararg{T}) where {T} = evaluate(p, (x, v...,), sorting=b)
+
+#function-like behavior for AbstractArray{TaylorN{T}}
+(p::AbstractArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
+(p::AbstractArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
+
+
+"""
+    _evaluate(a::Taylor1, dx::NumberNotSeries)
+
+Evaluate `a` at a number `dx` using Horner's rule. Neither the coefficients
+nor `dx` are Taylor series. Both `evaluate` and the array form of `evaluate!`
+use this method; it does not create temporary arrays.
+"""
+@inline function _evaluate(a::Taylor1{T}, dx::S) where
+        {T<:NumberNotSeries, S<:NumberNotSeries}
+    a_coeffs = a.coeffs
+    @inbounds suma = zero(a_coeffs[end])*dx
+    @inbounds for k in reverse(eachindex(a_coeffs))
+        suma = suma * dx + a_coeffs[k]
+    end
+    return suma
+end
+
 """
     _evaluate(a::HomogeneousPolynomial, vals)
 
@@ -300,94 +417,19 @@ function _evaluate(a::HomogeneousPolynomial{T}, ind::Int, val::T) where
 end
 
 
-#function-like behavior for HomogeneousPolynomial
-(p::HomogeneousPolynomial)(x) = evaluate(p, x)
-(p::HomogeneousPolynomial)(x, v::Vararg{Number,N}) where {N} =
-    evaluate(p, promote(x, v...,))
-(p::HomogeneousPolynomial)() = evaluate(p)
-
-
-"""
-    evaluate(a, [vals]; sorting::Bool=true)
-
-Evaluate the `TaylorN` polynomial `a` at `vals`.
-If `vals` is omitted, it's evaluated at zero. The
-keyword parameter `sorting` can be used to avoid
-sorting (in increasing order by `abs2`) the
-terms that are added.
-
-Note that the syntax `a(vals)` is equivalent to
-`evaluate(a, vals)`; and `a()` is equivalent to
-`evaluate(a)`; use a(b::Bool, x) corresponds to
-evaluate(a, x, sorting=b).
-"""
-function evaluate(a::TaylorN, vals::NTuple{N,<:Number};
-        sorting::Bool=true) where {N}
-    @assert get_numvars(a) == N
-    return _evaluate(a, vals, Val(sorting))
-end
-
-function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
-        sorting::Bool=false) where {N}
-    @assert get_numvars(a) == N
-    return _evaluate(a, vals, Val(sorting))
-end
-
-evaluate(a::TaylorN{T}, vals::AbstractVector{<:Number}; sorting::Bool=true) where
-    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting)
-
-evaluate(a::TaylorN{T}, vals::AbstractVector{<:AbstractSeries}; sorting::Bool=false) where
-    {T<:NumberNotSeries} = evaluate(a, (vals...,); sorting)
-
-evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{S};
-    sorting::Bool=false) where {T, S} = evaluate(a, (vals...,); sorting)
-
-function evaluate(a::TaylorN{T}, s::Symbol, val::S) where
-        {T<:Number, S<:NumberNotSeriesN}
-    ind = lookupvar(a.space, s)
-    @assert (1 ≤ ind ≤ get_numvars(a)) "Symbol is not a TaylorN variable; see `get_variable_names()`"
-    return evaluate(a, ind, val)
-end
-
-function evaluate(a::TaylorN{T}, ind::Int, val::S) where {T<:Number,
-        S<:NumberNotSeriesN}
-    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
-    R = promote_type(T,S)
-    return _evaluate(convert(TaylorN{R}, a), ind, convert(R, val))
-end
-
-function evaluate(a::TaylorN{T}, s::Symbol, val::TaylorN) where {T<:Number}
-    ind = lookupvar(a.space, s)
-    @assert (1 ≤ ind ≤ get_numvars(a)) "Symbol is not a TaylorN variable; see `get_variable_names()`"
-    return evaluate(a, ind, val)
-end
-
-function evaluate(a::TaylorN{T}, ind::Int, val::TaylorN) where {T<:Number}
-    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
-    _check_same_space(a, val)
-    a, val = fixorder(a, val)
-    a, val = promote(a, val)
-    return _evaluate(a, ind, val)
-end
-
-evaluate(a::TaylorN{T}, x::Pair{Symbol,S}) where {T, S} =
-    evaluate(a, first(x), last(x))
-
-evaluate(a::TaylorN{T}) where {T<:Number} = constant_term(a)
-
 # TODO: avoid allocating a new array every time we evaluate with `sorting=true`.
 # This could be achieved by passing a reusable buffer for the evaluated contributions,
 # as an additional input argument. This buffer would be filled and sorted on each call,
 # then summed.
 """
-    _evaluate(a::TaylorN, vals::Tuple, ::Val{true})
-    _evaluate(a::TaylorN, vals::Tuple, ::Val{false})
+    _evaluate(a::TaylorN, vals::NTuple, ::Val{true})
+    _evaluate(a::TaylorN, vals::NTuple, ::Val{false})
 
 Evaluate `a` at `vals` and return the sum of its contributions.
 `Val(true)` sorts the contributions from smallest to largest magnitude before
 adding them, to reduce rounding error. `Val(false)` skips this sorting step.
 
-The third argument is needed because `_evaluate(a::TaylorN, vals::Tuple)`
+The third argument is needed because `_evaluate(a::TaylorN, vals::NTuple)`
 returns an array with one contribution per polynomial degree, rather than
 their sum. The sorted method needs those separate values so it can reorder
 them before adding them. Using `Val(true)` or `Val(false)` selects the method
@@ -418,7 +460,7 @@ function _evaluate(a::TaylorN{T}, vals::NTuple{N,<:TaylorN}, ::Val{false}) where
 end
 
 """
-    _evaluate(a::TaylorN, vals::Tuple)
+    _evaluate(a::TaylorN, vals::NTuple)
 
 Return an array containing the evaluated contribution from each polynomial
 degree of `a`, starting with its constant term. The entries have not been
@@ -442,7 +484,7 @@ degree, without sorting by their values. This vector method adds each
 contribution directly, without allocating an array to hold them first.
 
 The third argument distinguishes this complete result from the two-argument
-`_evaluate(a::TaylorN, vals::Tuple)`, which returns the separate contributions.
+`_evaluate(a::TaylorN, vals::NTuple)`, which returns the separate contributions.
 """
 function _evaluate(a::TaylorN{T},
         vals::AbstractVector{S}, ::Val{false}) where {T<:Number, S<:Number}
@@ -565,39 +607,6 @@ function _evaluate!(suma::TaylorN{T}, a::HomogeneousPolynomial{T}, ind::Int,
 end
 
 
-# High-dimensional array evaluation. Keep this allocating interface as a
-# broadcast of scalar evaluations so it retains scalar promotion, sorting,
-# shape, and StaticArray container behavior while accepting views as inputs.
-# TODO: Preserve concrete result element types for empty arrays once this can
-# be done without duplicating the scalar promotion rules.
-function evaluate(A::AbstractArray{TaylorN{T}}, vals::AbstractVector{S};
-        sorting::Bool=!(T <: AbstractSeries || S <: AbstractSeries)) where
-        {T<:Number,S<:Number}
-    return evaluate.(A, Ref(vals); sorting)
-end
-
-function evaluate(A::AbstractArray{TaylorN{T}}, vals::Tuple{S,Vararg{S}};
-        sorting::Bool=!(T <: AbstractSeries || S <: AbstractSeries)) where
-        {T<:Number,S<:Number}
-    return evaluate.(A, Ref(vals); sorting)
-end
-
-evaluate(A::AbstractArray{TaylorN{T}}) where {T<:Number} = evaluate.(A)
-
-#function-like behavior for TaylorN
-(p::TaylorN)(x) = evaluate(p, x)
-(p::TaylorN)() = evaluate(p)
-(p::TaylorN)(s::S, x) where {S<:Union{Symbol, Int}} = evaluate(p, s, x)
-(p::TaylorN)(x::Pair) = evaluate(p, first(x), last(x))
-(p::TaylorN)(x, v::Vararg{T}) where {T} = evaluate(p, (x, v...,))
-(p::TaylorN)(b::Bool, x) = evaluate(p, x, sorting=b)
-(p::TaylorN)(b::Bool, x, v::Vararg{T}) where {T} = evaluate(p, (x, v...,), sorting=b)
-
-#function-like behavior for AbstractArray{TaylorN{T}}
-(p::AbstractArray{TaylorN{T}})(x) where {T<:Number} = evaluate(p, x)
-(p::AbstractArray{TaylorN{T}})() where {T<:Number} = evaluate(p)
-
-
 """
     evaluate!(x, δt, dest)
     evaluate!(x, vals, dest; sorting=...)
@@ -609,10 +618,11 @@ Evaluate a polynomial, or an array of polynomials, and write the result into
 
 For `TaylorN` evaluation, `sorting=true` sorts the contributions by magnitude
 before adding them, to reduce rounding error. `sorting=false` skips sorting.
-The default is `true` when both the coefficients and evaluation values are
-numbers other than Taylor series, and `false` otherwise. Passing pre-allocated
-auxiliaries does not disable sorting; choose `sorting=false` to avoid the
-temporary result used by sorted evaluation.
+The default, given by `_defaultsorting`, is `true` when both the coefficients
+and evaluation values are usual numbers (other than Taylor series or intervals),
+and `false` otherwise. Passing pre-allocated auxiliaries does not disable
+sorting; choose `sorting=false` to avoid the temporary result used by sorted
+evaluation.
 
 The methods for a single polynomial are also used by the corresponding array
 methods. The allocating `evaluate` methods do not all call `evaluate!`; some
@@ -860,14 +870,15 @@ end
 
 @inline function evaluate!(x::AbstractArray{TaylorN{T}}, δx::AbstractVector{S},
         dest::AbstractArray{R};
-        sorting::Bool=!(T <: AbstractSeries || S <: AbstractSeries)) where
+        sorting::Bool=_defaultsorting(T,S)) where
         {T<:Number,S<:Number,R<:Number}
     _evaluate!(x, δx, dest, Val(sorting))
     return nothing
 end
 
 function evaluate!(x::AbstractArray{TaylorN{T}}, δx::AbstractVector{TaylorN{T}},
-        dest::AbstractArray{TaylorN{T}}; sorting::Bool=false) where {T<:NumberNotSeriesN}
+        dest::AbstractArray{TaylorN{T}};
+        sorting::Bool=_defaultsorting(T,S)) where {T<:NumberNotSeriesN}
     if sorting
         # Sorted evaluation intentionally follows the scalar allocating path
         # to preserve its summation order and numerical behavior.
