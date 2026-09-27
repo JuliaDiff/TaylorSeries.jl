@@ -119,6 +119,7 @@ _evaluation_order
 _evaluate!
 _check_series_evaluation
 _check_taylorN_evaluation
+_defaultsorting
 @isonethread
 ```
 
