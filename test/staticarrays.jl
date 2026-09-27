@@ -14,6 +14,9 @@ using Test
     v = @SVector [-1.1, 3.4, 7.62345e-1]
     mtv = mt * v
     @test mtv isa SVector{3, Taylor1{TaylorN{Float64}}}
+    @test evaluate(mtv, 0.25) isa SVector{3, TaylorN{Float64}}
     mmt = m * mt
     @test mmt isa SMatrix{3, 3, Taylor1{TaylorN{Float64}}, 9}
+    @test evaluate(mmt, 0.25) isa SMatrix{3, 3, TaylorN{Float64}, 9}
+    @test evaluate(SVector(q...), [0.5, -0.5]) isa SVector{2, Float64}
 end

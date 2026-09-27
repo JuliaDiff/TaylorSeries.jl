@@ -173,6 +173,28 @@ maxorderH(v::AbstractArray{HomogeneousPolynomial{T},1}) where {T<:Number} =
     isempty(v) ? 0 : maximum(order.(v))
 
 
+"""
+    _evaluation_order(a, x)
+
+Return the smallest positive order among `x` and the coefficients of `a`.
+Return zero if all those orders are zero. Order-zero series are treated as
+exact constants, so they do not limit the order of the evaluated result.
+"""
+function _evaluation_order(a::Taylor1{<:AbstractSeries}, x::AbstractSeries)
+    ord = order(x)
+    for coeff in a.coeffs
+        coeff_order = order(coeff)
+        # Only positive orders limit the information available in the result.
+        if ord == 0
+            ord = coeff_order
+        elseif coeff_order > 0
+            ord = min(ord, coeff_order)
+        end
+    end
+    return ord
+end
+
+
 ## getcoeff ##
 """
     getcoeff(a, n)

@@ -1,6 +1,7 @@
 using Test
 using TaylorSeries
 using Aqua
+using IntervalArithmetic, StaticArrays, JLD2, RecursiveArrayTools
 
 @testset "Aqua tests (performance)" begin
     # This tests that we don't accidentally run into
@@ -8,6 +9,7 @@ using Aqua
     # Aqua.test_unbound_args(TaylorSeries)
     ua = Aqua.detect_unbound_args_recursively(TaylorSeries)
     @test length(ua) == 0
+    length(ua) != 0 && @show(ua)
 
     # See: https://github.com/SciML/OrdinaryDiffEq.jl/issues/1750
     # Test that we're not introducing method ambiguities across deps

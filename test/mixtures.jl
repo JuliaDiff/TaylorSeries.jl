@@ -166,8 +166,28 @@ using Test
     @test string(evaluate(t1N^2, 1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     @test string((t1N^(2//1))(1.0)) == " 1.0 + 2.0 x₁ + 1.0 x₁² + 2.0 x₂² + 𝒪(‖x‖³)"
     v = TaylorN.(zeros(Float64, 2), 2)
-    @test isnothing(evaluate!([t1N, t1N^2], 0.0, v))
+    vt1N = [t1N, t1N^2]
+    @test eltype(evaluate(vt1N, 0.5im)) == TaylorN{ComplexF64}
+    @test isnothing(evaluate!(vt1N, 0.0, v))
     @test v == [TaylorN(1), TaylorN(1)^2]
+    evaluate!(vt1N, 0.5, v)
+    @test v == evaluate(vt1N, 0.5)
+    @test (@allocated evaluate!(vt1N, 0.5, v)) == 0
+    δtN = 0.5 + t1N[0]
+    auxN = zero(v[1])
+    evaluate!(vt1N, δtN, v)
+    @test v == evaluate(vt1N, δtN)
+    evaluate!(vt1N, δtN, v, auxN)
+    @test v == evaluate(vt1N, δtN)
+    @test (@allocated evaluate!(vt1N, δtN, v, auxN)) == 0
+    mixedN_constant = TaylorN(t1N[0].space, 1.0, 0)
+    mixedN = Taylor1([mixedN_constant, t1N[0]], 1)
+    evaluate!(mixedN, 1 + t1N[0], v[1], auxN)
+    @test v[1] == evaluate(mixedN, 1 + t1N[0])
+    limitedN_coeff = TaylorN(t1N[0].space, 1.0, 1)
+    limitedN = Taylor1([limitedN_coeff, t1N[0]], 1)
+    @test_throws DimensionMismatch evaluate!(limitedN, 0.5, v[1])
+    @test_throws DimensionMismatch evaluate!(limitedN, 1 + t1N[0], v[1], auxN)
     @test tN1() == t
     @test evaluate(tN1, :x₁ => 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
     @test evaluate(tN1, 1, 1.0) == TaylorN([HomogeneousPolynomial([1.0+t]), zero(xHt), yHt^2])
@@ -396,6 +416,13 @@ using Test
     @test x(δx) == eval_x_δx
     evaluate!(x,δx,x0)
     @test x0 == eval_x_δx
+    δx_num = rand(4)
+    eval_x_δx_num = evaluate.(x, Ref(δx_num))
+    @test evaluate(x, δx_num) == eval_x_δx_num
+    @test evaluate(x, (δx_num...,)) == eval_x_δx_num
+    x0_num = similar(eval_x_δx_num)
+    evaluate!(x, δx_num, x0_num)
+    @test x0_num == eval_x_δx_num
     @test typeof(evaluate(x[1],δx)) == Taylor1{Float64}
     @test x() == map(y->y[0][1], x)
     for i in eachindex(x)
@@ -559,6 +586,52 @@ end
     titii = ti * tii
     @test string(titii) == " ( 1.0 t + 𝒪(t⁴)) s + 𝒪(s¹⁰)"
     @test titii == Taylor1([zero(ti), ti], 9)
+    vtii = [tii, titii]
+    @test eltype(evaluate(vtii, 0.5im)) == Taylor1{ComplexF64}
+    vtii_dest = [zero(ti), zero(ti)]
+    evaluate!(vtii, 0.5, vtii_dest)
+    @test vtii_dest == evaluate(vtii, 0.5)
+    @test (@allocated evaluate!(vtii, 0.5, vtii_dest)) == 0
+    @testset "Numeric evaluation with deeper Taylor1 nesting" begin
+        # Three and four Taylor1 layers use the general allocating fallback.
+        for inner in (tii, Taylor1([tii, one(tii)], 1))
+            src = [Taylor1([inner, 2inner], 1),
+                   Taylor1([one(inner), inner], 1)]
+            original = deepcopy(src)
+            dest = [zero(inner), zero(inner)]
+            @test isnothing(evaluate!(src, 0.5, dest))
+            @test dest == [2inner, one(inner) + 0.5inner]
+            @test isnothing(evaluate!(src, 2.0, view(dest, :)))
+            @test dest == [5inner, one(inner) + 2inner]
+            @test src == original
+        end
+    end
+    δt1 = 0.5 + ti
+    aux1 = zero(vtii_dest[1])
+    evaluate!(vtii, δt1, vtii_dest)
+    @test vtii_dest == evaluate(vtii, δt1)
+    evaluate!(vtii, δt1, vtii_dest, aux1)
+    @test vtii_dest == evaluate(vtii, δt1)
+    @test (@allocated evaluate!(vtii, δt1, vtii_dest, aux1)) == 0
+    @test_throws DimensionMismatch evaluate!(vtii, δt1, Taylor1{Float64}[])
+    mixed_inner_orders = Taylor1([Taylor1(1.0, 0), ti], 1)
+    evaluate!(mixed_inner_orders, 1 + ti, vtii_dest[1], aux1)
+    @test vtii_dest[1] == evaluate(mixed_inner_orders, 1 + ti)
+    constant_inner_coeffs = Taylor1([Taylor1(1.0, 0), Taylor1(2.0, 0)], 1)
+    inner_variable = Taylor1(4)
+    @test evaluate(constant_inner_coeffs, 1 + inner_variable) ==
+        3 + 2inner_variable
+    limited_inner_order = Taylor1([Taylor1([1.0, 1.0], 1), ti], 1)
+    @test_throws DimensionMismatch evaluate!(limited_inner_order, 1 + ti,
+        vtii_dest[1], aux1)
+    aliased_aux = 1 + ti
+    aliased_source = Taylor1([one(ti), aliased_aux], 1)
+    @test_throws ArgumentError evaluate!(aliased_source, 1 + ti,
+        zero(ti), aliased_aux)
+    mixed_dest = Taylor1(0.0, 0)
+    mixed_aux = zero(mixed_dest)
+    evaluate!(mixed_inner_orders, 1 + ti, mixed_dest, mixed_aux)
+    @test mixed_dest[0] == evaluate(mixed_inner_orders, 1 + ti)[0]
     @test titii / tii == ti
     @test order(titii/tii) == order(tii)-1
     @test titii / ti == tii

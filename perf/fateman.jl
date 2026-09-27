@@ -42,7 +42,8 @@ function run_fateman(N)
     results = Any[]
     nn = 5
     for f in (fateman1, fateman2, fateman3, fateman4)
-        f(0)
+        # Initialize the multiplication tables and compile at the benchmark degree.
+        f(N)
         println("Running $f")
         @time result = f(N)
         # push!(results, result) # This may take a lot of memory

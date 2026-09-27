@@ -114,6 +114,15 @@ end
     @test_throws ArgumentError x + a
     @test_throws ArgumentError x * a
 
+    x32, y32, _ = variables(Float32, sx)
+    vals64 = variables(Float64, sx) .+ [0.1, 0.2, 0.3]
+    explicit_space_src = [x32 + y32^2]
+    explicit_space_dest = [zero(vals64[1])]
+    evaluate!(explicit_space_src, vals64, explicit_space_dest; sorting=false)
+    @test explicit_space_dest[1] == vals64[1] + vals64[2]^2
+    @test evaluate(explicit_space_src, vals64; sorting=false) == explicit_space_dest
+    @test evaluate(explicit_space_src[1], vals64; sorting=false) == explicit_space_dest[1]
+
     old_default_space = TS.default_space[]
     dx, dy = variables()
     new_default_space = JetSpace(order=4, variables=[:δx, :δy, :δz])
@@ -598,12 +607,23 @@ end
     @test evaluate(ptxy, :x₁, xT) == ptxy
     @test evaluate(ptxy, 1, 1-yT) ≈ 4/3 + zero(yT)
     v = zeros(Int, 2)
-    @test isnothing(evaluate!([xT, yT], ones(Int, 2), v))
+    xyT = [xT, yT]
+    ones_int = ones(Int, 2)
+    @test isnothing(evaluate!(xyT, ones_int, v))
     @test v == ones(2)
-    @test isnothing(evaluate!([xT, yT][1:2], ones(Int, 2), v))
+    @test isnothing(evaluate!(xyT, ones_int, v; sorting=false))
+    eval_allocs(x, vals, dest) = @allocated evaluate!(x, vals, dest; sorting=false)
+    @test eval_allocs(xyT, ones_int, v) == 0
+    @test isnothing(evaluate!(xyT[1:2], ones_int, v))
     @test v == ones(2)
     A_TN = [xT 2xT 3xT; yT 2yT 3yT]
     @test evaluate(A_TN, ones(2)) == [1.0 2.0 3.0; 1.0 2.0 3.0]
+    @test evaluate(A_TN, (1.0, 2.0)) == [1.0 2.0 3.0; 2.0 4.0 6.0]
+    A_TN_dest = zeros(2, 3)
+    @test isnothing(evaluate!(A_TN, ones(2), A_TN_dest))
+    @test A_TN_dest == evaluate(A_TN, ones(2))
+    @test isnothing(evaluate!(A_TN, ones(2), A_TN_dest; sorting=false))
+    @test A_TN_dest == evaluate(A_TN, ones(2); sorting=false)
     @test evaluate(A_TN) == [0.0 0.0 0.0; 0.0 0.0 0.0]
     @test A_TN() == [0.0  0.0  0.0; 0.0  0.0  0.0]
     @test (view(A_TN,:,:))() == [0.0 0.0 0.0; 0.0 0.0 0.0]
@@ -963,16 +983,81 @@ end
         r = [zero(x[1]) for _ in 1:n] # output vector
         radntn!.(v)
         x1 = randn(4) .+ x
+        x1_tuple = (x1...,)
+        valscache = [zero(val) for val in x1_tuple]
+        aux = zero(r[1])
         # warmup
-        evaluate!(v, (x1...,), r)
+        evaluate!(v, x1_tuple, r)
+        evaluate!(v, x1_tuple, r, valscache, aux)
         # call twice to make sure `r` is reset on second call
-        evaluate!(v, (x1...,), r)
-        r2 = evaluate.(v, Ref(x1))
+        evaluate!(v, x1_tuple, r)
+        @test (@allocated evaluate!(v, x1_tuple, r, valscache, aux)) == 0
+        r2 = evaluate(v, x1)
+        @test r2 == evaluate.(v, Ref(x1))
+        @test r2 == evaluate(v, x1_tuple)
         @test r == r2
         @test iszero(norm(r-r2, Inf))
+        evaluate!(v, x1_tuple, r, valscache, aux; sorting=true)
+        @test r == evaluate(v, x1; sorting=true)
+        @test_throws DimensionMismatch evaluate!(v[1], (x1[1],), r[1],
+            valscache, aux)
+        @test_throws DimensionMismatch evaluate!(v, x1_tuple, TaylorN{Float64}[])
+        aliased_cache = [zero(val) for val in x1_tuple]
+        aliased_cache[1] = x1_tuple[1]
+        @test_throws ArgumentError evaluate!(v[1], x1_tuple, r[1],
+            aliased_cache, aux)
+        @test_throws ArgumentError evaluate!(v[1], x1_tuple, v[1],
+            valscache, aux)
 
     end
 
+end
+
+@testset "Shared pre-allocated evaluation auxiliaries" begin
+    sp = JetSpace(order=2, variables=[:u, :v])
+    u, v = variables(sp)
+    src = [u + v^2, 2u - v]
+    vals = (1 + u, 2 + v)
+    valscache = [zero(u), zero(v)]
+    aux = zero(u)
+    dest = [one(u), one(v)]
+
+    for sorting in (false, true)
+        @test isnothing(evaluate!(src, vals, dest, valscache, aux; sorting))
+        @test dest == evaluate(src, vals; sorting)
+        # Repeated calls and array views reuse the same auxiliaries.
+        @test isnothing(evaluate!(view(src, :), vals, view(dest, :),
+            valscache, aux; sorting))
+        @test dest == evaluate(view(src, :), vals; sorting)
+        before = deepcopy(dest)
+        @test_throws DimensionMismatch evaluate!(src, vals, dest,
+            valscache[1:1], aux; sorting)
+        @test_throws ArgumentError evaluate!(src, vals, dest,
+            [valscache[1], valscache[1]], aux; sorting)
+        @test_throws ArgumentError evaluate!(src, vals, dest,
+            [vals[2], valscache[2]], aux; sorting)
+        @test_throws ArgumentError evaluate!(src, vals, dest,
+            valscache, vals[1]; sorting)
+        @test_throws DimensionMismatch evaluate!(src, vals, dest,
+            valscache, TaylorN(sp, 0.0, 1); sorting)
+        @test dest == before
+
+        # An invalid later element must be detected before the first is changed.
+        bad_dest = [one(u), TaylorN(sp, 1.0, 1)]
+        @test_throws DimensionMismatch evaluate!(src, vals, bad_dest,
+            valscache, aux; sorting)
+        @test bad_dest[1] == one(u)
+        bad_dest = [one(u), vals[1]]
+        @test_throws ArgumentError evaluate!(src, vals, bad_dest,
+            valscache, aux; sorting)
+        @test bad_dest[1] == one(u)
+        bad_src = [src[1], valscache[1]]
+        @test_throws ArgumentError evaluate!(bad_src, vals, dest,
+            valscache, aux; sorting)
+        @test dest == before
+    end
+    @test isnothing(evaluate!(TaylorN{Float64}[], vals, TaylorN{Float64}[],
+        valscache, aux))
 end
 
 @testset "Integrate for several variables" begin

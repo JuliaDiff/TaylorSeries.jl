@@ -293,6 +293,15 @@ Base.iszero(::SymbNumber) = false
     @test abs((tan(t))[13]- 21844/6081075) < tol1
     @test tan(1.3+t) ≈ sin(1.3+t)/cos(1.3+t)
     @test cot(1.3+t) ≈ 1/tan(1.3+t)
+    @testset "Scalar evaluation promotion and inference" begin
+        # The Horner accumulator must have the promoted type from the start.
+        @test (@inferred evaluate(Taylor1([1.0, 2.0, 3.0]), 1.0im)) ===
+            -2.0 + 2.0im
+        @test (@inferred evaluate(Taylor1([1, 2, 3]), 0.5)) === 2.75
+        @test (@inferred evaluate(Taylor1(Float32[1, 2, 3]), 0.5)) === 2.75
+        @test (@inferred evaluate(Taylor1(2.0, 0), 1.0im)) === 2.0 + 0.0im
+    end
+
     @test evaluate(exp(Taylor1([0,1],17)),1.0) == 1.0*eeuler
     @test evaluate(exp(Taylor1([0,1],1))) == 1.0
     @test evaluate(exp(t),t^2) == exp(t^2)
@@ -477,6 +486,8 @@ Base.iszero(::SymbNumber) = false
     @test evaluate!(v, 0.0, view(vv, 1:2)) == nothing
     @test vv == [0.0,1.0]
     @test evaluate(v) == vv
+    evaluate!(v, 0.2, vv)
+    @test (@allocated evaluate!(v, 0.2, vv)) == 0
     @test isapprox(evaluate(v, complex(0.0,0.2)),
         [complex(0.0,sinh(0.2)),complex(cos(0.2),sin(-0.2))], atol=eps(), rtol=0.0)
     m = [sin(t) exp(-t); cos(t) exp(t)]
