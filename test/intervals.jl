@@ -66,6 +66,9 @@ setdisplay(:full)
 
 
     # Tests `evaluate`
+    @test !TS._defaultsorting(Float64, Interval{Float64})
+    @test !TS._defaultsorting(Interval{Float64}, Float64)
+
     @test isequal_interval(evaluate(p3(x,y), [a, -b]), p3(a, -b))
     @test isequal_interval(evaluate(p4(x,y), [a, -b]), p4(a, -b))
     @test isequal_interval((p5(x,y))([a, b]), p5(a, b))
@@ -85,6 +88,11 @@ setdisplay(:full)
     @test isequal_interval(evaluate(x*y^3, [b, b]), b)
     @test isequal_interval(evaluate(x*y^2, [b, b]), b)
     @test isequal_interval(evaluate(x^2*y^2, [b, b]), c)
+
+    @test_throws IntervalArithmetic.InconclusiveBooleanOperation (x^2*y)(true, [a, -b])
+    @test_throws IntervalArithmetic.InconclusiveBooleanOperation (x^2*y)(true, (a, -b))
+    @test_throws IntervalArithmetic.InconclusiveBooleanOperation evaluate(p4(x,y), [a, -b]; sorting=true)
+    @test_throws IntervalArithmetic.InconclusiveBooleanOperation evaluate(p4(x,y), (a, -b); sorting=true)
 
     ii = b
     t = Taylor1(1)
