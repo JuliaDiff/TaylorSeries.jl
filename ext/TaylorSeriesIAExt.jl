@@ -12,6 +12,18 @@ using IntervalArithmetic
 
 const NumTypes = IntervalArithmetic.NumTypes
 
+
+# Internal; union type
+const _IntervalVals{S} =
+    Union{AbstractVector{Interval{S}}, Tuple{Interval{S}, Vararg{Interval{S}}}}
+
+
+# _defaultsorting -> false for Interval evaluations
+TS._defaultsorting(::Type{T}, ::Type{S}) where {T<:Interval, S} = false
+TS._defaultsorting(::Type{T}, ::Type{S}) where {T, S<:Interval} = false
+TS._defaultsorting(::Type{T}, ::Type{S}) where {T<:Interval, S<:Interval} = false
+
+
 """
     intersect_interval_nonstd(x, y)
 
@@ -996,24 +1008,6 @@ function TS.evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumType
     return sum_even + sum_odd*dx
 end
 
-function TS.evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{S}) where {T<:NumTypes, S<:NumTypes}
-    @assert length(dx) == get_numvars(a.space)
-    return evaluate(a, (dx...,); sorting=false)
-end
-
-function TS.evaluate(a::TaylorN{T}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
-    @assert length(dx) == get_numvars(a.space)
-    return evaluate(a, (dx...,); sorting=false)
-end
-
-function TS.evaluate(a::TaylorN{Interval{T}}, dx::AbstractVector{Interval{T}}) where {T<:NumTypes}
-    @assert length(dx) == get_numvars(a.space)
-    return evaluate(a, (dx...,); sorting=false)
-end
-
-TS.evaluate(a::TaylorN{T}, vals::AbstractVector{TaylorN{Interval{T}}}) where
-        {T<:NumTypes} = evaluate(a, (vals...,); sorting=false)
-
 function TS.evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Real}
     order = TS.order(a)
     uno = one(dx)
@@ -1035,62 +1029,76 @@ function TS.evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<
 end
 
 
-function TS.evaluate(a::HomogeneousPolynomial{T},
-        dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
-    @assert length(dx) == get_numvars(a.space)
-    all(isequal_interval.(dx, interval(-one(T), one(T)))) &&
-        return TS._evaluate(a, dx, Val(true))
-    all(isequal_interval.(dx, interval(zero(T), one(T)))) &&
-        return TS._evaluate(a, dx, Val(false))
-    return TS._evaluate(a, dx)
+TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}}) where
+    {T<:Real, S<:NumTypes} = _evaluate_hp_interval(a, dx)
+
+TS._evaluate(a::HomogeneousPolynomial{T}, dx::Tuple{Interval{S}, Vararg{Interval{S}}}) where
+    {T<:Real, S<:NumTypes} = _evaluate_hp_interval(a, dx)
+
+# Use the specialized methods when the box is `[-1,1]^n` or `[0,1]^n`
+function _evaluate_hp_interval(a::HomogeneousPolynomial, dx::_IntervalVals{S}) where
+        {S<:NumTypes}
+    Isym = interval(-one(S), one(S))
+    all(x -> isequal_interval(x, Isym), dx) && return TS._evaluate(a, dx, Val(true))
+    Ipos = interval(zero(S), one(S))
+    all(x -> isequal_interval(x, Ipos), dx) && return TS._evaluate(a, dx, Val(false))
+    return _evaluate_hp_generic(a, dx)
 end
 
-TS.evaluate(a::TaylorN{Taylor1{T}}, vals::AbstractVector{Interval{S}}) where
-    {T<:Real, S<:NumTypes} = TS._evaluate(a, (vals...,), Val(false))
-
-
-# _evaluate
-function TS._evaluate(a::HomogeneousPolynomial{T},
-        dx::AbstractVector{Interval{S}}) where {T<:Real, S<:NumTypes}
-    order(a) == 0 && return a[1] + interval(zero(T))
+function _evaluate_hp_generic(a::HomogeneousPolynomial, dx::_IntervalVals{S}) where
+        {S<:NumTypes}
+    order(a) == 0 && return a[1] + interval(zero(S))
     ct = a.space.coeff_table[order(a)+1]
-    @inbounds suma = a[1]*interval(zero(T))
+    suma = zero(a[1]) * interval(zero(S))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds tmp = prod(Base.literal_pow.(^, dx, Val.(ct[i])))
+        term = a_coeff * one(dx[1])
+        @inbounds for (j, x) in enumerate(dx)
+            exponent = ct[i][j]
+            exponent == 0 && continue
+            term *= Base.literal_pow(^, x, Val(exponent))
+        end
+        suma += term
+    end
+    return suma
+end
+
+# Case `[-1,1]^n`: If the total odd, each monomial ranges over `[-1,1]`;
+# if the order is even, its range is `[0,1]` when all exponents are
+# even, and `[-1,1]` otherwise.
+# Here `Val(true)`/`Val(false)` select the box, not sorting.
+function TS._evaluate(a::HomogeneousPolynomial{T}, dx::_IntervalVals{S},
+        ::Val{true}) where {T<:Real, S<:NumTypes}
+    order(a) == 0 && return a[1] + interval(zero(T))
+    ct = a.space.coeff_table[order(a)+1]
+    suma = a[1] * interval(zero(S))
+    Isym = dx[1]
+    Ieven = interval(zero(S), one(S))
+    odd_order = isodd(order(a))
+    for (i, a_coeff) in enumerate(a.coeffs)
+        TS._isthinzero(a_coeff) && continue
+        # if isodd(sum(ct[i]))
+        #     suma += sum(a_coeff) * dx[1]
+        #     continue
+        # end
+        # @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
+        # for n in 2:length(dx)
+        #     @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
+        #     tmp *= vv
+        # end
+        tmp = (odd_order || !all(iseven, ct[i])) ? Isym : Ieven
         suma += a_coeff * tmp
     end
     return suma
 end
 
-function TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}},
-        ::Val{true} ) where {T<:Real, S<:NumTypes}
-    order(a) == 0 && return a[1] + interval(zero(T))
-    ct = a.space.coeff_table[order(a)+1]
-    @inbounds suma = a[1]*interval(zero(T))
-    Ieven = interval(zero(T), one(T))
-    for (i, a_coeff) in enumerate(a.coeffs)
-        TS._isthinzero(a_coeff) && continue
-        if isodd(sum(ct[i]))
-            suma += sum(a_coeff) * dx[1]
-            continue
-        end
-        @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
-        for n in 2:length(dx)
-            @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
-            tmp *= vv
-        end
-        suma += a_coeff * tmp
-    end
-    return suma
-end
-
-function TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}},
-        ::Val{false} ) where {T<:Real, S<:NumTypes}
-    order(a) == 0 && return a[1] + interval(zero(T))
-    @inbounds suma = zero(a[1])*dx[1]
-    @inbounds for homPol in a.coeffs
-        suma += homPol*dx[1]
+# `[0,1]^n`: every monomial ranges over `[0,1]`
+function TS._evaluate(a::HomogeneousPolynomial{T}, dx::_IntervalVals{S},
+        ::Val{false}) where {T<:Real, S<:NumTypes}
+    order(a) == 0 && return a[1] + interval(zero(S))
+    suma = a[1] * dx[1]
+    @inbounds for a_coeff in a.coeffs
+        suma += a_coeff * dx[1]
     end
     return suma
 end
@@ -1107,11 +1115,11 @@ function TS._evaluate(a::TaylorN{T}, vals::NTuple{N,TaylorN{Interval{S}}}) where
     return suma
 end
 
-function TS._evaluate(a::TaylorN{Interval{T}}, vals::NTuple{N,TaylorN{Interval{T}}}) where
-        {N, T<:NumTypes}
+function TS._evaluate(a::TaylorN{Interval{T}},
+        vals::NTuple{N,TaylorN{Interval{T}}}) where {N, T<:NumTypes}
     @assert get_numvars(a.space) == N
     a_length = length(a)
-    suma = zeros(T, a_length)
+    suma = zeros(Interval{T}, a_length)
     @inbounds for homPol in 1:a_length
         suma[homPol] = TS._evaluate(a.coeffs[homPol], vals)
     end
@@ -1124,7 +1132,13 @@ function TS._evaluate(a::HomogeneousPolynomial{T},
     suma = zero(a[1])*vals[1]
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        @inbounds tmp = prod( Base.literal_pow.(^, vals, Val.(ct[i])) )
+        term = Base.literal_pow(^, vals[1], Val(0))
+        @inbounds for j in eachindex(vals)
+            exponent = ct[i][j]
+            exponent == 0 && continue
+            term *= Base.literal_pow(^, vals[j], Val(exponent))
+        end
+        # @inbounds tmp = prod( Base.literal_pow.(^, vals, Val.(ct[i])) )
         suma += a_coeff * tmp
     end
     return suma
