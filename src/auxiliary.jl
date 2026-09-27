@@ -204,21 +204,21 @@ term corresponds to n=0.
 """
 getcoeff(a::Taylor1, n::Int) = (@assert 0 ≤ n ≤ order(a); return a[n])
 
-getindex(a::Taylor1, n::Int) = a.coeffs[n+1]
+@inline getindex(a::Taylor1, n::Int) = a.coeffs[n+1]
 getindex(a::Taylor1, u::UnitRange{Int}) = view(a.coeffs, u .+ 1 )
 getindex(a::Taylor1, c::Colon) = view(a.coeffs, c)
 getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
     view(a.coeffs, u .+ 1)
 
-setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
+@inline setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:NumberNotSeries} =
     a.coeffs[n+1] = x
 # setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} =
 #     setindex!(a.coeffs, deepcopy(x), n+1)
-setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(x.coeffs, order(x))
-setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
+@inline setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
+    {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(space(x), x.coeffs, order(x))
+@inline setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1{T}(x.coeffs[:])
-function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
+@inline function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
         {T<:Taylor1{<:Number}}
     a.coeffs[n+1] = zero(x)
     for i in eachindex(x)
@@ -226,21 +226,21 @@ function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     end
     return a.coeffs[n+1]
 end
-setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
+@inline setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1(x.coeffs[:], order(x))
-setindex!(a::Taylor1{T}, x::T, u::UnitRange{Int}) where {T<:Number} =
+@inline setindex!(a::Taylor1{T}, x::T, u::UnitRange{Int}) where {T<:Number} =
     a.coeffs[u .+ 1] .= x
-function setindex!(a::Taylor1{T}, x::AbstractArray{T,1},
+@inline function setindex!(a::Taylor1{T}, x::AbstractArray{T,1},
         u::UnitRange{Int}) where {T<:Number}
     @assert length(u) == length(x)
     for ind in eachindex(x)
         a.coeffs[u[ind]+1] = x[ind]
     end
 end
-setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] .= x
-setindex!(a::Taylor1{T}, x::AbstractArray{T,1}, c::Colon) where {T<:Number} =
+@inline setindex!(a::Taylor1{T}, x::T, c::Colon) where {T<:Number} = a.coeffs[c] .= x
+@inline setindex!(a::Taylor1{T}, x::AbstractArray{T,1}, c::Colon) where {T<:Number} =
     a.coeffs[c] .= x
-setindex!(a::Taylor1{T}, x::T, u::StepRange{Int,Int}) where {T<:Number} =
+@inline setindex!(a::Taylor1{T}, x::T, u::StepRange{Int,Int}) where {T<:Number} =
     a.coeffs[u[:] .+ 1] .= x
 function setindex!(a::Taylor1{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T<:Number}
     @assert length(u) == length(x)
@@ -267,22 +267,22 @@ end
 getcoeff(a::HomogeneousPolynomial, v::AbstractArray{Int,1}) =
     getcoeff(a, (v...,))
 
-getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
+@inline getindex(a::HomogeneousPolynomial, n::Int) = a.coeffs[n]
 getindex(a::HomogeneousPolynomial, n::UnitRange{Int}) = view(a.coeffs, n)
 getindex(a::HomogeneousPolynomial, c::Colon) = view(a.coeffs, c)
 getindex(a::HomogeneousPolynomial, u::StepRange{Int,Int}) = view(a.coeffs, u[:])
 
-setindex!(a::HomogeneousPolynomial{T}, x::T, n::Int) where {T<:Number} =
+@inline setindex!(a::HomogeneousPolynomial{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n] = x
-setindex!(a::HomogeneousPolynomial{T}, x::T, n::UnitRange{Int}) where
+@inline setindex!(a::HomogeneousPolynomial{T}, x::T, n::UnitRange{Int}) where
     {T<:Number} = a.coeffs[n] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
+@inline setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
     n::UnitRange{Int}) where {T<:Number} = a.coeffs[n] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::T, c::Colon) where {T<:Number} =
+@inline setindex!(a::HomogeneousPolynomial{T}, x::T, c::Colon) where {T<:Number} =
     a.coeffs[c] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
+@inline setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
     c::Colon) where {T<:Number} = a.coeffs[c] .= x
-setindex!(a::HomogeneousPolynomial{T}, x::T,
+@inline setindex!(a::HomogeneousPolynomial{T}, x::T,
     u::StepRange{Int,Int}) where {T<:Number} = a.coeffs[u[:]] .= x
 setindex!(a::HomogeneousPolynomial{T}, x::AbstractArray{T,1},
     u::StepRange{Int,Int}) where {T<:Number} = a.coeffs[u[:]] .= x[:]
@@ -302,18 +302,18 @@ function getcoeff(a::TaylorN, v::NTuple{N,Int}) where {N}
 end
 getcoeff(a::TaylorN, v::AbstractArray{Int,1}) = getcoeff(a, (v...,))
 
-getindex(a::TaylorN, n::Int) = a.coeffs[n+1]
-getindex(a::TaylorN, u::UnitRange{Int}) = view(a.coeffs, u .+ 1)
-getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
-getindex(a::TaylorN, u::StepRange{Int,Int}) = view(a.coeffs, u[:] .+ 1)
+@inline getindex(a::TaylorN, n::Int) = a.coeffs[n+1]
+@inline getindex(a::TaylorN, u::UnitRange{Int}) = view(a.coeffs, u .+ 1)
+@inline getindex(a::TaylorN, c::Colon) = view(a.coeffs, c)
+@inline getindex(a::TaylorN, u::StepRange{Int,Int}) = view(a.coeffs, u[:] .+ 1)
 
-function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
+@inline function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
         {T<:Number}
     @assert order(x) == n
     _check_same_space(a, x)
     return a.coeffs[n+1] = x
 end
-setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
+@inline setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n+1] = HomogeneousPolynomial(a.space, x, n)
 function setindex!(a::TaylorN{T}, x::T, u::UnitRange{Int}) where {T<:Number}
     for ind in u
@@ -395,7 +395,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
         @inline axes(a::$T) = ()
     end
 end
-numtype(a) = eltype(a)
+@inline numtype(a) = eltype(a)
 
 @doc doc"""
     numtype(a::AbstractSeries)
@@ -476,30 +476,30 @@ _isthinzero(x) = iszero(x)
 ## findfirst, findlast
 # Finds the first non zero entry
 function Base.findfirst(a::HomogeneousPolynomial{T}) where {T<:Number}
-    first = findfirst(!_isthinzero, a.coeffs)
-    isnothing(first) && return -1
+    first = findfirst(!_isthinzero, view(a.coeffs, :))
+    first = isnothing(first) ? -1 : first
     return first
 end
 
 # Finds the last non-zero entry
 function Base.findlast(a::HomogeneousPolynomial{T}) where {T<:Number}
-    last = findlast(!_isthinzero, a.coeffs)
-    isnothing(last) && return -1
+    last = findlast(!_isthinzero, view(a.coeffs, :))
+    last = isnothing(last) ? -1 : last
     return last
 end
 
 for T in (:Taylor1, :TaylorN)
     # Finds the first non zero entry
     @eval function Base.findfirst(a::$T{T}) where {T<:Number}
-        first = findfirst(!_isthinzero, a.coeffs)
-        isnothing(first) && return -1
+        first = findfirst(!_isthinzero, view(a.coeffs, :))
+        first = isnothing(first) ? 0 : first
         return first-1
     end
 
     # Finds the last non-zero entry
     @eval function Base.findlast(a::$T{T}) where {T<:Number}
-        last = findlast(!_isthinzero, a.coeffs)
-        isnothing(last) && return -1
+        last = findlast(!_isthinzero, view(a.coeffs, :))
+        last = isnothing(last) ? 0 : last
         return last-1
     end
 end
@@ -528,13 +528,13 @@ Return the constant value (zero order coefficient) for `Taylor1`
 and `TaylorN`. The fallback behavior is to return `a` itself if
 `a::Number`, or `a[1]` when `a::Vector`.
 """
-constant_term(a::Taylor1) = a[0]
+@inline constant_term(a::Taylor1) = a.coeffs[1]
 
-constant_term(a::TaylorN) = a[0][1]
+@inline constant_term(a::TaylorN) = a.coeffs[1].coeffs[1]
 
 constant_term(a::Vector{T}) where {T<:Number} = constant_term.(a)
 
-constant_term(a::Number) = a
+@inline constant_term(a::Number) = a
 
 """
     constant_term!(a, c)
@@ -542,20 +542,20 @@ constant_term(a::Number) = a
 Update the constant term (zero order coefficient) of `a` to `c`,
 leaving higher order coefficients unchanged.
 """
-function constant_term!(a::Taylor1{T}, c::T) where {T<:Number}
-    a[0] = c
+@inline function constant_term!(a::Taylor1{T}, c::T) where {T<:Number}
+    a.coeffs[1] = c
     return a
 end
 
-function constant_term!(a::TaylorN{T}, c::T) where {T<:Number}
-    a[0][1] = c
+@inline function constant_term!(a::TaylorN{T}, c::T) where {T<:Number}
+    a.coeffs[1].coeffs[1] = c
     return a
 end
 
-function constant_term!(a::HomogeneousPolynomial{T}, c::T) where {T<:Number}
+@inline function constant_term!(a::HomogeneousPolynomial{T}, c::T) where {T<:Number}
     iszero(order(a)) ||
         throw(ArgumentError("only zero-order HomogeneousPolynomial has a constant term"))
-    a[1] = c
+    a.coeffs[1] = c
     return a
 end
 
@@ -570,7 +570,7 @@ linear_polynomial(a::Taylor1) = Taylor1([zero(a[1]), a[1]], order(a))
 linear_polynomial(a::HomogeneousPolynomial) =
     HomogeneousPolynomial(a.space, a[1], order(a))
 
-linear_polynomial(a::TaylorN) = TaylorN(a[1], order(a))
+linear_polynomial(a::TaylorN) = TaylorN(space(a), a[1], order(a))
 
 linear_polynomial(a::Vector{T}) where {T<:Number} = linear_polynomial.(a)
 
