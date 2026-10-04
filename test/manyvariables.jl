@@ -1156,3 +1156,130 @@ end
     @test ee1 == ee2
 
 end
+
+@testset "Tests with mixed JetSpaces" begin
+    ordN = 4
+    sp  = JetSpace(5, ["a", "b"])
+    sp2 = JetSpace(5, ["c", "d"])       # same shape as sp, different space
+    ξ = TaylorN(sp,  1, order=ordN)
+    η = TaylorN(sp2, 1, order=ordN)
+    ζ = TaylorN(sp2, 2, order=ordN)
+    x    = Taylor1([1+ξ, 2ξ, ξ^2], 2)
+    xmix = Taylor1([1+ξ, η, ξ], 2)      # accepted by Taylor1, but mixed
+
+    @testset "Promotion uses the space of the operands" begin
+        y  = Taylor1([TaylorN(sp, float(k), ordN) for k in 1:6])    # order 5
+        t  = Taylor1([1.0, 2.0, 3.0, 4.0])                          # order 3
+        ti = Taylor1([1, 2, 3, 4])
+        tl = Taylor1([TaylorN(sp, c, ordN) for c in t.coeffs])      # lifted by hand
+
+        a, b = promote(t, y)
+        @test a isa Taylor1{TaylorN{Float64}} && b isa Taylor1{TaylorN{Float64}}
+        @test all(space(a[k]) === sp for k in eachindex(a))
+        @test reverse(promote(y, t)) == (a, b)
+
+        tN = t + zero(y)
+        @test all(space(tN[k]) === sp for k in eachindex(tN))
+        @test tN == tl + zero(y)
+        for op in (+, -), u in (t, ti)
+            @test op(u, y) == op(tl, y)
+            @test op(y, u) == op(y, tl)
+            @test order(op(u, y)) == order(t)
+        end
+        @test t * y == tl * y
+        @test y / (1 + t) == y / (1 + tl)
+
+        # scalars
+        @test space(promote(ξ, 2.0)[2]) === sp
+        @test all(space(c) === sp for c in promote(x, 2.0)[2].coeffs)
+    end
+
+    @testset "convert keeps the space" begin
+        hp = HomogeneousPolynomial(sp, Int, 1)
+        @test space(convert(TaylorN{Float64}, hp))   === sp
+        @test space(convert(TaylorN{Int}, hp))       === sp
+        @test space(convert(TaylorN{Float64}, [hp])) === sp
+        @test space(convert(TaylorN{Int}, [hp]))     === sp
+        @test space(convert(TaylorN{Float64}, ξ))    === sp
+
+        r = convert(TaylorN{Taylor1{Float64}}, x)
+        @test space(r) === sp
+        @test convert(Taylor1{TaylorN{Float64}}, r) == x
+        @test_throws ArgumentError convert(TaylorN{Taylor1{Float64}}, xmix)
+    end
+
+    @testset "setindex! on Taylor1{TaylorN}" begin
+        y = deepcopy(x)
+        @test_throws ArgumentError (y[1] = η)
+        @test_throws ArgumentError (y[0:1] = η)
+        @test_throws ArgumentError (y[:] = [ξ, η, ξ])
+
+        # assigned coefficients are copies (no aliasing)
+        w = 1 + ξ
+        y[1] = w
+        w[0][1] = 5.0
+        @test y[1] == 1 + ξ
+        y[0:1] = w
+        @test y[0] !== y[1]
+    end
+
+    @testset "Addition and subtraction" begin
+        y = Taylor1([η, η, η], 2)
+        @test_throws ArgumentError x + xmix
+        @test_throws ArgumentError x - xmix
+        @test_throws ArgumentError TaylorSeries.add!(zero(x), x, y, 0)
+        @test_throws ArgumentError TaylorSeries.subst!(zero(x), x, y, 0)
+    end
+
+    @testset "Multiplication, division, powers" begin
+        # products with HomogeneousPolynomial{Taylor1} / TaylorN{Taylor1} keep the space
+        hpt = HomogeneousPolynomial(sp, [Taylor1(2), Taylor1(2)], 1)
+        ξt  = TaylorN(sp, [hpt], ordN)
+        @test space(2.0 * hpt) === sp
+        @test space(Taylor1(2) * hpt) === sp
+        @test space(2.0 * ξt) === sp
+        @test space(Taylor1(2) * ξt) === sp
+
+        @test_throws ArgumentError x * xmix
+        @test_throws ArgumentError x / xmix
+        @test_throws ArgumentError ξ / xmix
+        @test_throws ArgumentError TaylorSeries.mul!(zero(x), x, xmix, 1)
+        @test_throws ArgumentError TaylorSeries.mul!(zero(x), 2.0, xmix, 1)
+        @test_throws ArgumentError TaylorSeries.mul!(zero(x), x, xmix)
+        @test_throws ArgumentError TaylorSeries.div!(zero(x), xmix, 2.0, 1)
+        @test_throws ArgumentError TaylorSeries.sqr!(zero(ξ), η, 0.0, 1)
+        @test_throws ArgumentError TaylorSeries.sqrt!(zero(ξ), 1+η, zero(ξ), 1)
+    end
+
+    @testset "p == 1 powers: copies in the same space" begin
+        hp = HomogeneousPolynomial(sp, Float64, 1)
+        for u in (hp, 1 + ξ)
+            for v in (Base.power_by_squaring(u, 1), u^1)
+                @test space(v) === sp
+                @test v == u
+                @test v.coeffs !== u.coeffs
+            end
+        end
+        t = Taylor1(3)
+        v = Base.power_by_squaring(t, 1)
+        @test v == t && v.coeffs !== t.coeffs
+    end
+
+    @testset "Division regressions" begin
+        # TaylorN{Int} / TaylorN{Int} promotes to Float64
+        ξi = TaylorN(sp, Int, 1, order=ordN)
+        @test (1 + ξi) / (2 + ξi) == (1 + ξ) / (2 + ξ)
+        # TaylorN / Taylor1{TaylorN} has the Taylor1 order of the denominator
+        r = (1 + ξ) / x
+        @test order(r) == order(x)
+        @test r == Taylor1(1 + ξ, order(x)) / x
+    end
+
+    @testset "Evaluation and inverse_map" begin
+        @test_throws ArgumentError evaluate(ξ, (ξ, η))
+        @test_throws ArgumentError evaluate(xmix, 1, ξ)
+        @test_throws ArgumentError evaluate(Taylor1(2), xmix)
+        # non-singular Jacobian, so only the space check can make this throw
+        @test_throws ArgumentError TaylorSeries.inverse_map([ξ, ζ])
+    end
+end
