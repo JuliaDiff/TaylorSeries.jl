@@ -1282,4 +1282,22 @@ end
         # non-singular Jacobian, so only the space check can make this throw
         @test_throws ArgumentError TaylorSeries.inverse_map([ξ, ζ])
     end
+
+    @testset "identity! and one!" begin
+        @test_throws ArgumentError TaylorSeries.identity!(zero(ξ), η)
+        @test_throws ArgumentError TaylorSeries.identity!(zero(x), xmix)   # Taylor1{TaylorN}
+
+        # one! on nested series: only the constant coefficient is one
+        y = deepcopy(x)
+        TaylorSeries.one!(y)
+        @test y == one(y)
+        TaylorSeries.one!(y)
+        @test y == one(y)
+
+        # one!(c, a, 0) with c[0] of lower inner order than a[0]
+        a2 = Taylor1([Taylor1(3), Taylor1(3)], 1)
+        c2 = Taylor1([Taylor1(1), Taylor1(1)], 1)
+        TaylorSeries.one!(c2, a2, 0)
+        @test c2[0] == one(c2[0])
+    end
 end

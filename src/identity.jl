@@ -50,6 +50,7 @@ identity!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:NumberNotSeries} =
 
 function identity!(c::HomogeneousPolynomial{T}, a::HomogeneousPolynomial{T}) where
         {T<:Number}
+    _check_same_space(c, a)
     for k in eachindex(c)
         identity!(c, a, k)
     end
