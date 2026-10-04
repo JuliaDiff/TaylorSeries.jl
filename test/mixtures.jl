@@ -552,6 +552,34 @@ using Test
     @test x[1] == sin(dq[1]*dq[2])
     @test x[1] !== sin(dq[1]*dq[2])
 
+    @testset "Promotion of Taylor1 with Taylor1{TaylorN} in a non-default JetSpace" begin
+        sploc = JetSpace(4, ["x"])   # ADAPT: any space different from TS.default_space
+        ordN = 4
+        x  = Taylor1([TaylorN(sploc, float(k+1), ordN) for k in 0:4]) # order 5
+        t  = Taylor1([1.0, 2.0, 3.0, 4.0])                            # order 3
+        ti = Taylor1([1, 2, 3, 4])                                    # Int coeffs
+        tl = Taylor1([TaylorN(sploc, c, ordN) for c in t.coeffs])     # t lifted by hand
+        @test sploc != TS.default_space[]
+
+        # promote itself
+        a, b = promote(t, x)
+        @test a isa Taylor1{TaylorN{Float64}} && b isa Taylor1{TaylorN{Float64}}
+        @test all(space(a[k]) == sploc for k in eachindex(a))
+        @test reverse(promote(x, t)) == (a, b)
+
+        # the original bug
+        tN = t + zero(x)
+        @test all(space(tN[k]) == sploc for k in eachindex(tN))
+        @test tN == tl + zero(x)
+        for op in (+, -), u in (t, ti)
+            @test op(u, x) == op(tl, x)
+            @test op(x, u) == op(x, tl)
+            @test order(op(u, x)) == order(u)
+        end
+        @test t * x == tl * x
+        @test x / (1 + t) == x / (1 + tl)
+    end
+
     @testset "Test Base.float overloads for Taylor1 and TaylorN mixtures" begin
         q = variables(Int)
         x1N = Taylor1(q)

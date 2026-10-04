@@ -222,6 +222,36 @@ let
     end
 end
 
+# Promote S<:NumberNotSeries to TaylorN using the JetSpace and order of TaylorN
+function Base._promote(a::TaylorN{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    R = promote_type(T, S)
+    return convert(TaylorN{R}, a), TaylorN(space(a), convert(R, b), order(a))
+end
+Base._promote(b::S, a::TaylorN{T}) where
+    {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))
+#
+function Base._promote(a::Taylor1{TaylorN{T}}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    R = promote_type(T, S)
+    anew = convert(Taylor1{TaylorN{R}}, a)
+    bnew = zero(anew)
+    bnew[0] = TaylorN(space(anew[0]), convert(R, b), order(anew[0]))
+    return anew, bnew
+end
+Base._promote(b::S, a::Taylor1{TaylorN{T}}) where
+    {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))
+
+# Promote Taylor1{S} to Taylor1{TaylorN{T}} using the JetSpace and order of TaylorN
+function Base._promote(a::Taylor1{S}, b::Taylor1{TaylorN{T}}) where
+        {S<:NumberNotSeries, T<:NumberNotSeries}
+    R = promote_type(S, T)
+    sp = space(b[0])
+    ordN = order(b[0])
+    anew = Taylor1([TaylorN(sp, convert(R, c), ordN) for c in a.coeffs], order(a))
+    return anew, convert(Taylor1{TaylorN{R}}, b)  # TaylorN→TaylorN convert keeps the space
+end
+Base._promote(b::Taylor1{TaylorN{T}}, a::Taylor1{S}) where
+    {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))
+
 
 # float
 float(::Type{Taylor1{T}}) where T<:Number = Taylor1{float(T)}
