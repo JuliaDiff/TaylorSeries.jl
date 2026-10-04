@@ -126,6 +126,7 @@ function sqr!(c::Taylor1{T}, a::Taylor1{T}, ::T, k::Int) where {T<:Number}
 end
 
 function sqr!(c::TaylorN{T}, a::TaylorN{T}, ::T, k::Int) where {T<:Number}
+    _check_same_space(c, a)
     if k == 0
         sqr_orderzero!(c, a)
         return nothing

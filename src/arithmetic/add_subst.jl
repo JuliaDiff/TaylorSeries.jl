@@ -242,6 +242,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($fc)(v::$T{T}, a::$T{T}, k::Int) where {T<:Number}
+                    _check_same_space(v, a)
                     v_coeffs = v.coeffs[k+1].coeffs
                     a_coeffs = a.coeffs[k+1].coeffs
                     @inbounds for l in eachindex(v_coeffs)
@@ -251,6 +252,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($fc)(v::$T, a::$T, b::$T, k::Int)
+                    _check_same_space(v, a, b)
                     kk = k + 1
                     v_coeffs = v.coeffs[kk].coeffs
                     a_coeffs = a.coeffs[kk].coeffs
@@ -262,6 +264,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($fc)(v::$T, a::$T, b::Number, k::Int)
+                    _check_same_space(v, a)
                     v_coeffs = v.coeffs[k+1].coeffs
                     a_coeffs = a.coeffs[k+1].coeffs
                     copyto!(v_coeffs, a_coeffs)
@@ -270,6 +273,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($fc)(v::$T, a::Number, b::$T, k::Int)
+                    _check_same_space(v, b)
                     v_coeffs = v.coeffs[k+1].coeffs
                     b_coeffs = b.coeffs[k+1].coeffs
                     copyto!(v_coeffs, ($f)(b_coeffs))
@@ -409,7 +413,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             v_coeffs = v.coeffs
             a_coeffs = a.coeffs
             b_coeffs = b.coeffs
-            _check_same_space(v_coeffs[1], a_coeffs[1], b_coeffs[1])
+            _check_same_space(v, a, b)
             @inbounds for i in eachindex(v_coeffs)
                 v_hps = v_coeffs[i].coeffs
                 a_hps = a_coeffs[i].coeffs
@@ -427,7 +431,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries}
-            _check_same_space(a[0], b[0])
+            _check_same_space(a, b)
             if order(a) != order(b) ||
                     any(order.(a.coeffs) .!= order.(b.coeffs))
                 a, b = fixorder(a, b)
@@ -439,6 +443,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
             kk = k+1
+            _check_same_space(v.coeffs[kk], a.coeffs[kk], b.coeffs[kk])
             v_hps = v.coeffs[kk].coeffs
             a_hps = a.coeffs[kk].coeffs
             b_hps = b.coeffs[kk].coeffs
@@ -454,6 +459,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::NumberNotSeries,
                 b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
+            _check_same_space(v.coeffs[k+1], b.coeffs[k+1])
             v_hps = v.coeffs[k+1].coeffs
             b_hps = b.coeffs[k+1].coeffs
             za = zero(a)
@@ -469,6 +475,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}},
                 a::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
+            _check_same_space(v.coeffs[k+1], b.coeffs[k+1])
             v_hps = v.coeffs[k+1].coeffs
             b_hps = b.coeffs[k+1].coeffs
             za = zero(a)
@@ -484,6 +491,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($fc)(v::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
                 k::Int) where {T<:NumberNotSeries}
+            _check_same_space(v.coeffs[k+1], a.coeffs[k+1])
             v_hps = v.coeffs[k+1].coeffs
             a_hps = a.coeffs[k+1].coeffs
             @inbounds for l in eachindex(v_hps)

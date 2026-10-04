@@ -14,7 +14,7 @@ end
 
 function ^(a::HomogeneousPolynomial, n::Integer)
     n == 0 && return one(a)
-    n == 1 && return HomogeneousPolynomial(a.space, a.coeffs[:], order(a))
+    n == 1 && return _copy_series(a)
     n == 2 && return square(a)
     n < 0 && throw(DomainError())
     return power_by_squaring(a, n)
@@ -24,7 +24,7 @@ end
 for T in (:Taylor1, :TaylorN)
     @eval function ^(a::$T, n::Integer)
         n == 0 && return one(a)
-        n == 1 && return $T(a.coeffs, order(a))
+        n == 1 && return _copy_series(a)
         n == 2 && return square(a)
         return _pow(a, n)
     end
@@ -130,6 +130,7 @@ end
 # TODO: add power_by_squaring! method for HomogeneousPolynomial and mixtures
 for T in (:Taylor1, :TaylorN)
     @eval function power_by_squaring!(y::$T, x::$T, aux::$T, p::Integer)
+        _check_same_space(y, x, aux)
         if p == 0
             for k in eachindex(y)
                 one!(y, x, k)
@@ -175,7 +176,7 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
     @eval function Base.power_by_squaring(x::$T, p::Integer)
         @assert p ≥ 0
         (p == 0) && return one(x)
-        (p == 1) && return $T(x.coeffs[:], order(x))
+        (p == 1) && return _copy_series(x)
         (p == 2) && return square(x)
         (p == 3) && return x*square(x)
         t = trailing_zeros(p) + 1
@@ -202,7 +203,7 @@ for T in (:Taylor1, :TaylorN)
     @eval function Base.power_by_squaring(x::$T{T}, p::Integer) where {T<:NumberNotSeries}
         @assert p ≥ 0
         (p == 0) && return one(x)
-        (p == 1) && return $T(x.coeffs[:], order(x))
+        (p == 1) && return _copy_series(x)
         (p == 2) && return square(x)
         (p == 3) && return x*square(x)
         y = zero(x)

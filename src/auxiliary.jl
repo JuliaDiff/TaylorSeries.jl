@@ -110,6 +110,12 @@ end
 _constant_series_like(a::Taylor1, x, order::Int) = Taylor1(x, order)
 _constant_series_like(a::TaylorN, x, order::Int) = TaylorN(a.space, x, order)
 
+
+_copy_series(x::Taylor1) = Taylor1(x.coeffs, order(x))
+_copy_series(x::HomogeneousPolynomial) = HomogeneousPolynomial(x.space, x.coeffs[:], order(x))
+_copy_series(x::TaylorN) = TaylorN(x.coeffs, order(x))
+
+
 """
     _coeffsHP(x::T, order::Int) where {T<:Number}
     _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}
