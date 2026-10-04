@@ -239,4 +239,41 @@ setdisplay(:full)
         end
     end
 
+    @testset "JetSpace with Interval coefficients" begin
+        sp, sp2 = JetSpace(5, ["a","b"]), JetSpace(5, ["c","d"])
+        ξ  = TaylorN(sp, 1, order=4)
+        ξI = TaylorN(sp,  Interval{Float64}, 1, order=4)
+        ζI = TaylorN(sp,  Interval{Float64}, 2, order=4)
+        ηI = TaylorN(sp2, Interval{Float64}, 1, order=4)
+
+        for f in (log, asin, acos, atanh)
+            @test space(f(interval(0.5) + ξI)) === sp
+        end
+        @test space(acosh(interval(2.0) + ξI)) === sp
+        @test space((1 + ξI)^1) === sp
+
+        r = TaylorSeries._evaluate(1 + ξ, (ξI, ζI))     # used `tmp` before
+        @test all(c -> c isa TaylorN && space(c) === sp, r)
+        r = TaylorSeries._evaluate(1 + ξI, (ξI, ζI))    # stored TaylorN in Vector{Interval}
+        @test all(c -> c isa TaylorN && space(c) === sp, r)
+        @test_throws ArgumentError TaylorSeries._evaluate(1 + ξ, (ξI, ηI))
+
+        y = Taylor1([1 + ξ, ξ], 3)
+        ny = normalize_taylor(y, interval(0.0, 2.0))
+        @test all(space(c) === sp for c in ny.coeffs)
+
+        @test isequal_interval(evaluate(Taylor1(interval(1.0), 0), 2.1), interval(1.0))
+        @test isequal_interval(evaluate(Taylor1(1.0, 0), interval(2.1)), interval(1.0))
+        @test space(evaluate(Taylor1([1 + ξ], 0), interval(2.0))) === sp
+
+        # _pow must not change the argument callers
+        a = interval(-1.0, 2.0) + Taylor1(Interval{Float64}, 3)
+        TaylorSeries._pow(a, 1.5)
+        @test isequal_interval(constant_term(a), interval(-1.0, 2.0))
+        aN = interval(-1.0, 2.0) + ξI
+        TaylorSeries._pow(aN, 1.5)
+        @test isequal_interval(constant_term(aN), interval(-1.0, 2.0))
+
+    end
+
 end

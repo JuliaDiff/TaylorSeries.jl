@@ -78,7 +78,7 @@ for T in (:Taylor1, :TaylorN)
     @eval begin
         function ^(a::$T{Interval{T}}, n::S) where {T<:NumTypes, S<:Integer}
             n == 0 && return one(a)
-            n == 1 && return $T(a.coeffs[:])
+            n == 1 && return TS._copy_series(a)
             n == 2 && return TS.square(a)
             n < 0 && return a^float(n)
             return power_by_squaring(a, n)
@@ -124,12 +124,16 @@ function _pow(a::Taylor1{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
     a0 = _intersect_domain_nonstd(constant_term(a), interval(zero(T), T(Inf)))
     @assert !isempty_interval(a0)
     aux = one(a0^r)
-    a[0] = aux * a0
+    aa = TS._copy_series(a)
+    aa[0] = aux * a0
+    r == 0.5 && return sqrt(aa)
+    a_order = order(aa)
+    l0 = findfirst(aa)
     r == 0.5 && return sqrt(a)
     a_order = order(a)
     l0 = findfirst(a)
     # Index of first non-zero coefficient of the result; must be integer
-    !isinteger(r*l0) && throw(DomainError(a,
+    !isinteger(r*l0) && throw(DomainError(aa,
         """The 0-th order Taylor1 coefficient must be non-zero
         to raise the Taylor1 polynomial to a non-integer exponent."""))
     lnull = trunc(Int, r*l0 )
@@ -138,7 +142,7 @@ function _pow(a::Taylor1{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
     c = Taylor1(zero(aux), c_order)
     aux0 = zero(c)
     for k in eachindex(c)
-        TS.pow!(c, a, aux0, r, k)
+        TS.pow!(c, aa, aux0, r, k)
     end
     return c
 end
@@ -148,18 +152,20 @@ function _pow(a::TaylorN{Interval{T}}, r::S) where {T<:NumTypes, S<:Real}
     a0 = _intersect_domain_nonstd(constant_term(a), interval(zero(T), T(Inf)))
     @assert !isempty_interval(a0)
     aux = one(a0^r)
-    a[0] = aux * a0
-    r == 0.5 && return sqrt(a)
-    a_order = order(a)
+    # work on a copy, so the caller's series is not modified
+    aa = TS._copy_series(a)
+    aa[0] = aux * a0
+    r == 0.5 && return sqrt(aa)
+    a_order = order(aa)
     if TS._isthinzero(a0)
-        throw(DomainError(a,
+        throw(DomainError(aa,
             """The 0-th order TaylorN coefficient must be non-zero
             in order to expand `^` around 0."""))
     end
-    c = TaylorN(space(a), zero(aux), a_order)
+    c = TaylorN(space(aa), zero(aux), a_order)
     aux0 = zero(c)
     for k in eachindex(c)
-        TS.pow!(c, a, aux0, r, k)
+        TS.pow!(c, aa, aux0, r, k)
     end
     return c
 end
@@ -187,6 +193,7 @@ end
 
 function TS.sqr!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         ::Interval{T}, k::Int) where {T<:NumTypes}
+    TS._check_same_space(c, a)
     if k == 0
         TS.sqr_orderzero!(c, a)
         return nothing
@@ -345,6 +352,7 @@ end
 
 function TS.sqrt!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         ::Interval{T}, k::Int) where {T<:NumTypes}
+    TS._check_same_space(c, a)
     if k == 0
         @inbounds c[0][1] = sqrt( constant_term(a) )
         return nothing
@@ -384,7 +392,7 @@ for T in (:Taylor1, :TaylorN)
             # aa = one(aux) * a
             aa[0] = one(aux) * a0
             order = TS.order(a)
-            c = $T( aux, order )
+            c = TS._constant_series_like(a, aux, order)
             for k in eachindex(a)
                 TS.log!(c, aa, k)
             end
@@ -404,8 +412,8 @@ for T in (:Taylor1, :TaylorN)
             order = TS.order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
-            c = $T( aux, order )
-            r = $T( sqrt(uno - a0sqr), order )
+            c = TS._constant_series_like(a, aux, order)
+            r = TS._constant_series_like(a, sqrt(uno - a0sqr), order)
             for k in eachindex(a)
                 TS.asin!(c, aa, r, k)
             end
@@ -425,8 +433,8 @@ for T in (:Taylor1, :TaylorN)
             order = TS.order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
-            c = $T( aux, order )
-            r = $T( sqrt(uno - a0sqr), order )
+            c = TS._constant_series_like(a, aux, order)
+            r = TS._constant_series_like(a, sqrt(uno - a0sqr), order)
             for k in eachindex(a)
                 TS.acos!(c, aa, r, k)
             end
@@ -446,8 +454,8 @@ for T in (:Taylor1, :TaylorN)
             order = TS.order(a)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
-            c = $T( aux, order )
-            r = $T( sqrt(a0sqr - uno), order )
+            c = TS._constant_series_like(a, aux, order)
+            r = TS._constant_series_like(a, sqrt(a0sqr - uno), order)
             for k in eachindex(a)
                 TS.acosh!(c, aa, r, k)
             end
@@ -464,8 +472,8 @@ for T in (:Taylor1, :TaylorN)
             uno = one(a0)
             aa = convert($T{typeof(aux)}, a)
             aa[0] = uno * a0
-            c = $T( aux, order)
-            r = $T(uno - a0^2, order)
+            c = TS._constant_series_like(a, aux, order)
+            r = TS._constant_series_like(a, uno - a0^2, order)
             TS._isthinzero(constant_term(r)) && throw(DomainError(a,
                 """Series expansion of atanh(x) diverges at x = ±1."""))
             for k in eachindex(a)
@@ -970,6 +978,7 @@ end
 
 function TS.evaluate(a::Taylor1{T}, dx::Interval{T}) where {T<:NumTypes}
     order = TS.order(a)
+    order == 0 && return a[0] * one(dx)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -990,6 +999,7 @@ end
 
 function TS.evaluate(a::Taylor1{Interval{T}}, dx::Interval{T}) where {T<:NumTypes}
     order = TS.order(a)
+    order == 0 && return a[0] * one(dx)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -1010,6 +1020,7 @@ end
 
 function TS.evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<:Real}
     order = TS.order(a)
+    order == 0 && return a[0] * one(dx)
     uno = one(dx)
     dx2 = dx^2
     if iseven(order)
@@ -1106,9 +1117,10 @@ end
 function TS._evaluate(a::TaylorN{T}, vals::NTuple{N,TaylorN{Interval{S}}}) where
         {N, T<:Real, S<:NumTypes}
     @assert get_numvars(a.space) == N
+    TS._check_same_space_all(a, vals)
     R = promote_type(TS.numtype(a), typeof(vals[1]))
     a_length = length(a)
-    suma = zeros(R, a_length)
+    suma = Vector{R}(undef, a_length)
     @inbounds for homPol in 1:a_length
         suma[homPol] = TS._evaluate(a.coeffs[homPol], vals)
     end
@@ -1118,8 +1130,9 @@ end
 function TS._evaluate(a::TaylorN{Interval{T}},
         vals::NTuple{N,TaylorN{Interval{T}}}) where {N, T<:NumTypes}
     @assert get_numvars(a.space) == N
+    TS._check_same_space_all(a, vals)
     a_length = length(a)
-    suma = zeros(Interval{T}, a_length)
+    suma = Vector{TaylorN{Interval{T}}}(undef, a_length)
     @inbounds for homPol in 1:a_length
         suma[homPol] = TS._evaluate(a.coeffs[homPol], vals)
     end
@@ -1128,6 +1141,7 @@ end
 
 function TS._evaluate(a::HomogeneousPolynomial{T},
         vals::NTuple{N,TaylorN{Interval{S}}}) where {N, T<:Real, S<:NumTypes}
+    TS._check_same_space_all(a, vals)
     ct = a.space.coeff_table[order(a)+1]
     suma = zero(a[1])*vals[1]
     for (i, a_coeff) in enumerate(a.coeffs)
@@ -1138,8 +1152,7 @@ function TS._evaluate(a::HomogeneousPolynomial{T},
             exponent == 0 && continue
             term *= Base.literal_pow(^, vals[j], Val(exponent))
         end
-        # @inbounds tmp = prod( Base.literal_pow.(^, vals, Val.(ct[i])) )
-        suma += a_coeff * tmp
+        suma += a_coeff * term
     end
     return suma
 end
@@ -1171,7 +1184,8 @@ aff_normalize(x, I::Interval, ::Val{false}) = interval(inf(I)) + x * interval(di
 for bb in (:true, :false)
     @eval function _normalize(a::Taylor1, I::Interval{T}, ::Val{$bb}) where {T<:NumTypes}
         S = promote_type(TS.numtype(a), Interval{T})
-        t = Taylor1(S, order(a))
+        z = zero(convert(S, constant_term(a)))
+        t = Taylor1([z, one(z)], order(a))
         return a(aff_normalize(t, I, Val($bb)))
     end
 
