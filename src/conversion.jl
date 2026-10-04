@@ -86,7 +86,10 @@ convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     orderN = maximum(order.(s[:]))
-    sp = s[0].space
+    sp = space(s[0])
+    for k in eachindex(s)
+        _check_same_space(sp, space(s[k]))
+    end
     r = zeros(HomogeneousPolynomial(sp, Taylor1(zero(T), order(s)), 0), orderN)
 
     v = zeros(T, order(s)+1)

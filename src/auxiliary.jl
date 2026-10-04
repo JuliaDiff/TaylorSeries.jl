@@ -16,7 +16,7 @@ Return the `JetSpace` associated with the multivariate Taylor object `a`.
 @inline space(a::HomogeneousPolynomial) = a.space
 @inline space(a::TaylorN) = a.space
 
-function _space_mismatch_error(space_a::JetSpace, space_b::JetSpace)
+@noinline function _space_mismatch_error(space_a::JetSpace, space_b::JetSpace)
     throw(ArgumentError(
         "JetSpace mismatch: operands belong to different spaces. " *
         "Use an explicit projection or conversion before combining them."))
@@ -32,16 +32,40 @@ end
         b::Union{HomogeneousPolynomial,TaylorN},
         c::Union{HomogeneousPolynomial,TaylorN})
     _check_same_space(space::JetSpace, v::AbstractVector{<:HomogeneousPolynomial})
+    _check_same_space(a::Taylor1{<:TaylorN}[, b::Taylor1{<:TaylorN}[, c::Taylor1{<:TaylorN}]])
 
 Throw an `ArgumentError` unless all arguments belong to the same `JetSpace`
-by object identity.
+by object identity. For `Taylor1{<:TaylorN}` arguments, *every* coefficient
+is checked; for other `Taylor1`s the check is a no-op.
 """
 @inline function _check_same_space(space_a::JetSpace, space_b::JetSpace)
     space_a === space_b || _space_mismatch_error(space_a, space_b)
     return nothing
 end
-@inline _check_same_space(a::Taylor1, b::Taylor1) = nothing
-@inline _check_same_space(a::Taylor1, b::Taylor1, c::Taylor1) = nothing
+@inline _check_same_space(::Taylor1, ::Taylor1) = nothing
+@inline _check_same_space(::Taylor1, ::Taylor1, ::Taylor1) = nothing
+function _check_coeffs_space(sp::JetSpace, a::Taylor1{<:TaylorN},
+        inds=eachindex(a))
+    for k in inds
+        _check_same_space(sp, space(a[k]))
+    end
+    return nothing
+end
+_check_same_space(a::Taylor1{<:TaylorN}) = _check_coeffs_space(space(a[0]), a)
+function _check_same_space(a::Taylor1{<:TaylorN}, b::Taylor1{<:TaylorN})
+    sp = space(a[0])
+    _check_coeffs_space(sp, a)
+    _check_coeffs_space(sp, b)
+    return nothing
+end
+function _check_same_space(a::Taylor1{<:TaylorN}, b::Taylor1{<:TaylorN},
+        c::Taylor1{<:TaylorN})
+    sp = space(a[0])
+    _check_coeffs_space(sp, a)
+    _check_coeffs_space(sp, b)
+    _check_coeffs_space(sp, c)
+    return nothing
+end
 @inline _check_same_space(a::Union{HomogeneousPolynomial,TaylorN},
     b::Union{HomogeneousPolynomial,TaylorN}) =
         _check_same_space(space(a), space(b))
@@ -57,6 +81,20 @@ function _check_same_space(space::JetSpace,
         v::AbstractVector{<:HomogeneousPolynomial})
     for pol in v
         _check_same_space(space, pol.space)
+    end
+    return nothing
+end
+
+"""
+    _check_same_space_all(a, vals)
+
+Check that every element of `vals` (a tuple or vector of `HomogeneousPolynomial`
+or `TaylorN`) belongs to the same `JetSpace` as `a`.
+"""
+function _check_same_space_all(a::Union{HomogeneousPolynomial,TaylorN}, vals)
+    sp = space(a)
+    for v in vals
+        _check_same_space(sp, space(v))
     end
     return nothing
 end
@@ -214,8 +252,11 @@ getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
     a.coeffs[n+1] = x
 # setindex!(a::Taylor1{T}, x::T, n::Int) where {T<:AbstractSeries} =
 #     setindex!(a.coeffs, deepcopy(x), n+1)
-@inline setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = TaylorN(space(x), x.coeffs, order(x))
+@inline function setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
+        {T<:NumberNotSeries}
+    _check_same_space(a[0], x)
+    return a.coeffs[n+1] = TaylorN(space(x), x.coeffs, order(x))
+end
 @inline setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
     {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1{T}(x.coeffs[:])
 @inline function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
@@ -246,6 +287,32 @@ function setindex!(a::Taylor1{T}, x::Array{T,1}, u::StepRange{Int,Int}) where {T
     @assert length(u) == length(x)
     for ind in eachindex(x)
         a.coeffs[u[ind]+1] = x[ind]
+    end
+end
+# Range and colon assignment for Taylor1{TaylorN}: route through the scalar
+# method above, so each entry is space-checked and copied (no aliasing).
+# The value types match the generic methods to avoid ambiguities.
+_taylor1_indices(a::Taylor1, u::AbstractRange{Int}) = u
+_taylor1_indices(a::Taylor1, ::Colon) = eachindex(a)
+for I in (:(UnitRange{Int}), :(StepRange{Int,Int}), :Colon)
+    @eval function setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, u::$I) where
+            {T<:NumberNotSeries}
+        for k in _taylor1_indices(a, u)
+            a[k] = x
+        end
+        return x
+    end
+end
+for (I, V) in ((:(UnitRange{Int}), :AbstractArray), (:(StepRange{Int,Int}), :Array),
+        (:Colon, :AbstractArray))
+    @eval function setindex!(a::Taylor1{TaylorN{T}}, x::$V{TaylorN{T},1}, u::$I) where
+            {T<:NumberNotSeries}
+        idx = _taylor1_indices(a, u)
+        @assert length(idx) == length(x)
+        for (k, xk) in zip(idx, x)
+            a[k] = xk
+        end
+        return x
     end
 end
 
@@ -444,8 +511,8 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         for ind in eachindex(aa)
             order(aa[ind]) == order(bb[ind]) && continue
             minordQ = _minorder(aa[ind], bb[ind])
-            aa[ind] = $T(aa[ind].coeffs, minordQ)
-            bb[ind] = $T(bb[ind].coeffs, minordQ)
+            aa[ind] = $T(space(aa[ind]), aa[ind].coeffs, minordQ)
+            bb[ind] = $T(space(bb[ind]), bb[ind].coeffs, minordQ)
         end
         return aa, bb
     end
