@@ -39,7 +39,7 @@ end
 for T in (:HomogeneousPolynomial, :TaylorN)
     @eval begin
         *(a::T, b::$T{Taylor1{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = $T( a .* b.coeffs, order(b))
+            S<:NumberNotSeries} = $T(space(b), a .* b.coeffs, order(b))
         *(b::$T{Taylor1{S}}, a::T) where {T<:NumberNotSeries,
             S<:NumberNotSeries} = a * b
         *(a::T, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
@@ -47,7 +47,8 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         *(b::Taylor1{$T{S}}, a::T) where
             {T<:NumberNotSeries, S<:NumberNotSeries} = a * b
         *(a::Taylor1{T}, b::$T{Taylor1{S}}) where
-            {T<:NumberNotSeries, S<:NumberNotSeries} = $T(a .* b.coeffs, order(b))
+            {T<:NumberNotSeries, S<:NumberNotSeries} =
+                $T(space(b), a .* b.coeffs, order(b))
         *(b::$T{Taylor1{R}}, a::Taylor1{T}) where
             {T<:NumberNotSeries, R<:NumberNotSeries} = a * b
         *(a::$T{T}, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
@@ -116,13 +117,12 @@ end
 
 function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{S}}) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
-    return *(promote(a, b)...)
     R = promote_type(T,S)
     return *(convert(Taylor1{TaylorN{R}}, a), convert(Taylor1{TaylorN{R}}, b))
 end
 
 function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    _check_same_space(a.coeffs[1], b.coeffs[1])
+    _check_same_space(a, b)
     if (order(a) != order(b)) || any(order.(a.coeffs) .!= order.(b.coeffs))
         a, b = fixorder(a, b)
     end
@@ -423,6 +423,7 @@ function mul!(a::Taylor1{T}, b::Taylor1{T}) where {T<:NumberNotSeries}
 end
 function mul!(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
         {T<:NumberNotSeries}
+    _check_same_space(a, b)
     @inbounds for k in reverse(eachindex(a))
         mul!(a, a, b[0], k)
         for l in 1:k
@@ -476,7 +477,9 @@ end
 
 function mul!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}, ordT::Int) where {T<:NumberNotSeries}
-    _check_same_space(res.coeffs[1], a.coeffs[1], b.coeffs[1])
+    sp = space(res.coeffs[ordT+1])
+    _check_coeffs_space(sp, a, 0:ordT)
+    _check_coeffs_space(sp, b, 0:ordT)
     _mul_unchecked!(res, a, b, ordT)
     return nothing
 end
@@ -485,6 +488,7 @@ function mul!(res::Taylor1{TaylorN{T}}, a::NumberNotSeries,
         b::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
     res_k = res.coeffs[k+1]
     b_k = b.coeffs[k+1]
+    _check_same_space(res_k, b_k)
     res_hps = res_k.coeffs
     b_hps = b_k.coeffs
     @inbounds for l in eachindex(res_hps)
@@ -541,7 +545,7 @@ end
 
 function mul!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    _check_same_space(c.coeffs[1], a.coeffs[1], b.coeffs[1])
+    _check_same_space(c, a, b)
     for k in eachindex(c)
         _mul_unchecked!(c, a, b, k)
     end

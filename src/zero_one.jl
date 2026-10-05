@@ -40,10 +40,10 @@ one(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(a.space, one.(a.coeffs), order(a))
 
 function ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
-    order == 0 && return [HomogeneousPolynomial(a.space, [one(a[1])], 0)]
     v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
     for ord in eachindex(v)
-        v[ord] = HomogeneousPolynomial(a.space, ones(T, a.space.size_table[ord]), ord-1)
+        v[ord] = HomogeneousPolynomial(a.space,
+            [one(a[1]) for _ in 1:a.space.size_table[ord]], ord-1)
     end
     return v
 end
@@ -131,6 +131,7 @@ end
 
 function one!(a::Taylor1{T}, k::Int) where {T<:Number}
     zero!(a[k])
+    k != 0 && return nothing   # only the constant coefficient is one
     for j in eachindex(a[k])
         one!(a[k], j)
     end
@@ -174,7 +175,7 @@ end
 function one!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where {T<:Number}
     zero!(c, k)
     k != 0 && return nothing
-    for i in eachindex(a[0])
+    for i in eachindex(c[0])   # the indices written are those of c[0]
         one!(c[0], a[0], i)
     end
     return nothing

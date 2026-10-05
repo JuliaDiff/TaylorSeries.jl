@@ -131,7 +131,7 @@ function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
     end
     c = TaylorN(space(a), zero(cdivfact), order(a))
     for ord in eachindex(c)
-        div!(c, a, b, ord) # updates c[ord]
+        div!(c, aa, bb, ord) # updates c[ord]
     end
     return c
 end
@@ -151,7 +151,7 @@ function /(a::S, b::TaylorN{T}) where {S<:NumberNotSeriesN, T<:NumberNotSeriesN}
 end
 
 function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    _check_same_space(a[0], b[0])
+    _check_same_space(a, b)
     _isthinzero(a) && !_isthinzero(b) && return zero(a)
     if (order(a) != order(b)) || any(order.(a.coeffs) .!= order.(b.coeffs))
         a, b = fixorder(a, b)
@@ -184,6 +184,8 @@ function /(a::S, b::Taylor1{TaylorN{T}}) where {S<:NumberNotSeries, T<:NumberNot
 end
 
 function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    _check_same_space(b)
+    _check_same_space(a, b[0])
     R = typeof(constant_term(a)/constant_term(b[0]))
     if R == T
         aa = Taylor1(a, order(b))
@@ -192,7 +194,7 @@ function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
         aa = Taylor1(convert(TaylorN{R}, a), order(b))
         bb = convert(Taylor1{TaylorN{R}}, b)
     end
-    res = Taylor1(zero(aa[0]), order(a))
+    res = Taylor1(zero(aa[0]), order(b))
     _isthinzero(a) && !_isthinzero(b) && return res
     for ordT in eachindex(res)
         div!(res, aa, b, ordT)
@@ -711,6 +713,7 @@ end
         b::NumberNotSeries, k::Int) where {T<:NumberNotSeries}
     res_k = res.coeffs[k+1]
     a_k = a.coeffs[k+1]
+    _check_same_space(res_k, a_k)
     res_hps = res_k.coeffs
     a_hps = a_k.coeffs
     @inbounds for l in eachindex(res_hps)
@@ -722,4 +725,3 @@ end
     end
     return nothing
 end
-

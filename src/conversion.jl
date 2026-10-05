@@ -86,7 +86,10 @@ convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     orderN = maximum(order.(s[:]))
-    sp = s[0].space
+    sp = space(s[0])
+    for k in eachindex(s)
+        _check_same_space(sp, space(s[k]))
+    end
     r = zeros(HomogeneousPolynomial(sp, Taylor1(zero(T), order(s)), 0), orderN)
 
     v = zeros(T, order(s)+1)
@@ -221,6 +224,36 @@ let
         expr_elem = :(bnew[0])
     end
 end
+
+# Promote S<:NumberNotSeries to TaylorN using the JetSpace and order of TaylorN
+function Base._promote(a::TaylorN{T}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    R = promote_type(T, S)
+    return convert(TaylorN{R}, a), TaylorN(space(a), convert(R, b), order(a))
+end
+Base._promote(b::S, a::TaylorN{T}) where
+    {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))
+#
+function Base._promote(a::Taylor1{TaylorN{T}}, b::S) where {T<:NumberNotSeries, S<:NumberNotSeries}
+    R = promote_type(T, S)
+    anew = convert(Taylor1{TaylorN{R}}, a)
+    bnew = zero(anew)
+    bnew[0] = TaylorN(space(anew[0]), convert(R, b), order(anew[0]))
+    return anew, bnew
+end
+Base._promote(b::S, a::Taylor1{TaylorN{T}}) where
+    {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))
+
+# Promote Taylor1{S} to Taylor1{TaylorN{T}} using the JetSpace and order of TaylorN
+function Base._promote(a::Taylor1{S}, b::Taylor1{TaylorN{T}}) where
+        {S<:NumberNotSeries, T<:NumberNotSeries}
+    R = promote_type(S, T)
+    sp = space(b[0])
+    ordN = order(b[0])
+    anew = Taylor1([TaylorN(sp, convert(R, c), ordN) for c in a.coeffs], order(a))
+    return anew, convert(Taylor1{TaylorN{R}}, b)  # TaylorN→TaylorN convert keeps the space
+end
+Base._promote(b::Taylor1{TaylorN{T}}, a::Taylor1{S}) where
+    {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))
 
 
 # float

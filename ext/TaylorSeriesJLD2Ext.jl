@@ -58,8 +58,9 @@ end
 const _jld2_session_id = Ref{UInt}(0)
 const _write_space_cache = Dict{Tuple{UInt,UInt},JetSpace}()
 const _read_space_cache = Dict{Any,JetSpace}()
-const _read_space_cache_lock = ReentrantLock()
+const _space_cache_lock = ReentrantLock()   # protects all three caches above
 
+# Caller must hold `_space_cache_lock`
 function _serialization_session_id()
     session_id = _jld2_session_id[]
     iszero(session_id) || return session_id
@@ -70,9 +71,12 @@ function _serialization_session_id()
 end
 
 function _space_spec(space::JetSpace)
-    session_id = _serialization_session_id()
     space_id = objectid(space)
-    _write_space_cache[(session_id, space_id)] = space
+    session_id = lock(_space_cache_lock) do
+        sid = _serialization_session_id()
+        _write_space_cache[(sid, space_id)] = space
+        sid
+    end
     return JetSpaceSerialization(session_id, space_id,
         order(space), copy(TS.get_variable_names(space)),
         copy(TS.get_variable_symbols(space)))
@@ -94,17 +98,14 @@ function _reconstruct_space(spec::JetSpaceSerialization)
 end
 
 function _cached_space(spec::JetSpaceSerialization)
-    saved_space = get(_write_space_cache, (spec.session_id, spec.space_id), nothing)
-    saved_space === nothing || return saved_space
-
     key = _space_cache_key(spec)
-    lock(_read_space_cache_lock)
-    try
+    lock(_space_cache_lock) do
+        # Same session: return the very space that was saved (keeps `===`)
+        saved_space = get(_write_space_cache, (spec.session_id, spec.space_id), nothing)
+        saved_space === nothing || return saved_space
         return get!(_read_space_cache, key) do
             _reconstruct_space(spec)
         end
-    finally
-        unlock(_read_space_cache_lock)
     end
 end
 
@@ -114,8 +115,8 @@ writeas(::Type{TaylorN{T}}) where {T} = TaylorNSerializationV2{T}
 
 # Convert method to write .jld2 files
 function convert(::Type{TaylorNSerialization{T}}, eph::TaylorN{T}) where {T}
-    # Variables
-    vars = TS.get_variable_names()
+    # Variables (of the space of `eph`, not the default space)
+    vars = copy(TS.get_variable_names(space(eph)))
     # Number of variables
     n = length(vars)
     # TaylorN order
@@ -176,7 +177,7 @@ function convert(::Type{TaylorN{T}}, eph::TaylorNSerialization{T}) where {T}
     M = binomial(n + varorder, varorder)
 
     # Set variables
-    if TS.get_variable_names() != vars
+    if TS.get_variable_names() != vars || TS.order() < varorder
         TS.variables!(T, vars, order = varorder)
     end
 
@@ -216,5 +217,18 @@ function convert(::Type{TaylorN{T}}, eph::TaylorNSerializationV2{T}) where {T}
 
     return TaylorN(space, TaylorN_coeffs, varorder)
 end
+
+# Taylor1{TaylorN}: store coefficients as a Vector (JLD2 can't write a Memory
+# whose elements use custom serialization)
+struct Taylor1TaylorNSerialization{T}
+    coeffs::Vector{TaylorN{T}}
+end
+
+writeas(::Type{Taylor1{TaylorN{T}}}) where {T} = Taylor1TaylorNSerialization{T}
+
+convert(::Type{Taylor1TaylorNSerialization{T}}, a::Taylor1{TaylorN{T}}) where {T} =
+    Taylor1TaylorNSerialization{T}(collect(a.coeffs))
+convert(::Type{Taylor1{TaylorN{T}}}, s::Taylor1TaylorNSerialization{T}) where {T} =
+    Taylor1(s.coeffs)
 
 end

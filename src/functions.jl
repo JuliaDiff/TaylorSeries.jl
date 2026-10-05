@@ -1894,6 +1894,7 @@ function inverse_map(p::Vector{TaylorN{T}}) where {T<:NumberNotSeries}
         """))
     end
     @assert length(p) == get_numvars(p[1])
+    _check_same_space_all(p[1], p)
     inv_m_pol = inv(jacobian(p))
     n_pol = inv_m_pol * nonlinear_polynomial(p)
     scaled_ident = inv_m_pol * TaylorN.(Ref(p[1].space), 1:get_numvars(p[1]), order=order(p[1]))

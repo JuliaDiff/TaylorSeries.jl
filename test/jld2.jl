@@ -89,3 +89,28 @@ end
         @test_throws ArgumentError p3 + q3
     end
 end
+
+@testset "JetSpace and JLD2 with mixtures" begin
+    sp = JetSpace(3, ["p", "q", "r"])        # differs from the default space
+    ξ  = TaylorN(sp, 1, order=3)
+    ext = Base.get_extension(TaylorSeries, :TaylorSeriesJLD2Ext)
+
+    # legacy writer takes names from the series' space, not the default one
+    s = convert(ext.TaylorNSerialization{Float64}, 1 + ξ)
+    @test s.vars == ["p", "q", "r"]
+
+    # V2 round trip in the same session restores the very same space
+    path = tempname() * ".jld2"
+    jldsave(path; a = 1 + ξ, b = ξ^2)
+    a, b = load(path, "a", "b")
+    @test space(a) === sp && space(b) === sp
+    @test a == 1 + ξ && b == ξ^2
+
+    # Taylor1{TaylorN}: every coefficient comes back in the same space
+    x = Taylor1([1 + ξ, ξ^2], 1)
+    jldsave(path; x)
+    x2 = load(path, "x")
+    @test all(space(c) === sp for c in x2.coeffs)
+    @test x2 == x
+    rm(path)
+end
