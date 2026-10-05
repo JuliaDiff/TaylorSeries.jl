@@ -82,9 +82,6 @@ set_default_space!
 _coeffsHP
 _coeffsTN
 _check_same_space
-_check_same_space_all
-_has_space
-_jetspace
 numtype
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)
