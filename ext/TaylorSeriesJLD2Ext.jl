@@ -218,4 +218,17 @@ function convert(::Type{TaylorN{T}}, eph::TaylorNSerializationV2{T}) where {T}
     return TaylorN(space, TaylorN_coeffs, varorder)
 end
 
+# Taylor1{TaylorN}: store coefficients as a Vector (JLD2 can't write a Memory
+# whose elements use custom serialization)
+struct Taylor1TaylorNSerialization{T}
+    coeffs::Vector{TaylorN{T}}
+end
+
+writeas(::Type{Taylor1{TaylorN{T}}}) where {T} = Taylor1TaylorNSerialization{T}
+
+convert(::Type{Taylor1TaylorNSerialization{T}}, a::Taylor1{TaylorN{T}}) where {T} =
+    Taylor1TaylorNSerialization{T}(collect(a.coeffs))
+convert(::Type{Taylor1{TaylorN{T}}}, s::Taylor1TaylorNSerialization{T}) where {T} =
+    Taylor1(s.coeffs)
+
 end
