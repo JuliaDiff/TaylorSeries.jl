@@ -22,6 +22,17 @@ Return the `JetSpace` associated with the multivariate Taylor object `a`.
         "Use an explicit projection or conversion before combining them."))
 end
 
+
+# Does the element type carry a JetSpace? (compile-time)
+_has_space(::Type) = false
+_has_space(::Type{<:Union{HomogeneousPolynomial,TaylorN}}) = true
+_has_space(::Type{Taylor1{T}}) where {T} = _has_space(T)
+
+# The space of a series (recursive through nested Taylor1s)
+_jetspace(a::Union{HomogeneousPolynomial,TaylorN}) = space(a)
+_jetspace(a::Taylor1) = _jetspace(a.coeffs[1])
+
+
 """
     _check_same_space(space_a::JetSpace, space_b::JetSpace)
     _check_same_space(a::Taylor1, b::Taylor1)
@@ -33,6 +44,7 @@ end
         c::Union{HomogeneousPolynomial,TaylorN})
     _check_same_space(space::JetSpace, v::AbstractVector{<:HomogeneousPolynomial})
     _check_same_space(a::Taylor1{<:TaylorN}[, b::Taylor1{<:TaylorN}[, c::Taylor1{<:TaylorN}]])
+    _check_same_space(v::AbstractVector)
 
 Throw an `ArgumentError` unless all arguments belong to the same `JetSpace`
 by object identity. For `Taylor1{<:TaylorN}` arguments, *every* coefficient
@@ -51,7 +63,8 @@ function _check_coeffs_space(sp::JetSpace, a::Taylor1{<:TaylorN},
     end
     return nothing
 end
-_check_same_space(a::Taylor1{<:TaylorN}) = _check_coeffs_space(space(a[0]), a)
+_check_same_space(a::Taylor1{<:TaylorN}) = _check_same_space(a.coeffs)
+
 function _check_same_space(a::Taylor1{<:TaylorN}, b::Taylor1{<:TaylorN})
     sp = space(a[0])
     _check_coeffs_space(sp, a)
@@ -85,19 +98,43 @@ function _check_same_space(space::JetSpace,
     return nothing
 end
 
+_check_same_space(v::AbstractVector) =
+    _has_space(eltype(v)) ? _check_vector_space(v) : nothing
+
+
+function _check_vector_space(v::AbstractVector)
+    isempty(v) && return nothing
+    sp = _jetspace(first(v))
+    for x in v
+        _check_same_space(sp, _jetspace(x))
+    end
+    return nothing
+end
+
+
 """
     _check_same_space_all(a, vals)
 
 Check that every element of `vals` (a tuple or vector of `HomogeneousPolynomial`
 or `TaylorN`) belongs to the same `JetSpace` as `a`.
 """
-function _check_same_space_all(a::Union{HomogeneousPolynomial,TaylorN}, vals)
-    sp = space(a)
+function _check_same_space_all(a::AbstractSeries, vals)
+    sp = _jetspace(a)
     for v in vals
-        _check_same_space(sp, space(v))
+        _check_same_space(sp, _jetspace(v))
     end
     return nothing
 end
+
+_check_same_space_all(v::AbstractVector) = (_has_space(eltype(v)) &&
+    !isempty(v)) ? _check_same_space_all(first(v), v) : nothing
+# function _check_same_space_all(a::Union{HomogeneousPolynomial,TaylorN}, vals)
+#     sp = space(a)
+#     for v in vals
+#         _check_same_space(sp, space(v))
+#     end
+#     return nothing
+# end
 
 function _space_from_homogeneous_vector(v::AbstractVector{<:HomogeneousPolynomial},
         fallback::JetSpace)

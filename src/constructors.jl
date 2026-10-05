@@ -35,6 +35,7 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
         coeffs :: FixedSizeVectorDefault{T}
     ## Inner constructors ##
     function Taylor1{T}(coeffs::FixedSizeVectorDefault{T}) where {T<:Number}
+        _check_same_space_all(coeffs)
         return new{T}(coeffs)
     end
     function Taylor1{T}(coeffs::AbstractVector{T}, order::Int) where {T<:Number}
@@ -46,6 +47,7 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
         for ord in last(minrange)+1:order+1
             v[ord] = zero(coeffs[1])
         end
+        _check_same_space_all(coeffs)
         return new{T}(v)
     end
 end

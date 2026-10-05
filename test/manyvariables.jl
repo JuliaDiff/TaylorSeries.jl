@@ -1165,7 +1165,11 @@ end
     η = TaylorN(sp2, 1, order=ordN)
     ζ = TaylorN(sp2, 2, order=ordN)
     x    = Taylor1([1+ξ, 2ξ, ξ^2], 2)
-    xmix = Taylor1([1+ξ, η, ξ], 2)      # accepted by Taylor1, but mixed
+    # Not accepted by Taylor1 constructor, because mixed JetSpaces
+    @test_throws ArgumentError Taylor1([1+ξ, η, ξ], 2)
+    # Accepted by Taylor1, but mixed, due to setindex!
+    xmix = deepcopy(x)
+    xmix.coeffs[2] = η
 
     @testset "Promotion uses the space of the operands" begin
         y  = Taylor1([TaylorN(sp, float(k), ordN) for k in 1:6])    # order 5
