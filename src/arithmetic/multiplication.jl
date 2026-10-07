@@ -664,16 +664,17 @@ end
     table = _init_output_major_product_table!(c.space, degree_a, degree_b)
     offsets = table.output_offsets
     output_pairs = table.output_pairs
-    num_right = table.num_right
+    right_bits = UInt32(table.right_bits) & 0x1f
+    right_mask = (one(UInt32) << right_bits) - one(UInt32)
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
     @inbounds for pos in 1:length(offsets)-1
         acc = c_coeffs[pos]
         for csr_pos in offsets[pos]:(offsets[pos+1]-1)
-            pair = Int(output_pairs[csr_pos]) - 1
-            na = pair ÷ num_right + 1
-            nb = pair - (na-1) * num_right + 1
+            packed = output_pairs[csr_pos]
+            na = Int(packed >> right_bits)
+            nb = Int(packed & right_mask)
             acc += a_coeffs[na] * b_coeffs[nb]
         end
         c_coeffs[pos] = acc

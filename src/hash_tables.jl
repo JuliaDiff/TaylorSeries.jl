@@ -74,7 +74,8 @@ function _homogeneous_product_table(index_table, pos_table, order_a::Int,
         end
     end
 
-    return HomogeneousProductTable(input_positions, Int[], UInt32[], num_coeffs_b)
+    right_bits = ndigits(num_coeffs_b; base = 2)
+    return HomogeneousProductTable(input_positions, Int[], UInt32[], right_bits)
 end
 
 """Initialize and return the output-major product schedule for two positive degrees."""
@@ -82,8 +83,13 @@ function _init_output_major_product_table!(space::JetSpace, degree_a::Int,
         degree_b::Int)
     table = _product_table(space, degree_a, degree_b)
     !isempty(table.output_pairs) && return table
+    num_coeffs_a = space.size_table[degree_a + 1]
+    num_coeffs_b = space.size_table[degree_b + 1]
     num_coeffs_c = space.size_table[degree_a + degree_b + 1]
     num_pairs = length(table.input_positions)
+    right_bits = table.right_bits
+    ndigits(num_coeffs_a; base = 2) + right_bits ≤ 32 ||
+        error("Product table is too large to pack input index pairs into UInt32")
     lock(space.mul_table_lock)
     try
         table = _product_table(space, degree_a, degree_b)
@@ -102,11 +108,16 @@ function _init_output_major_product_table!(space::JetSpace, degree_a::Int,
         output_pairs = Vector{UInt32}(undef, num_pairs)
         cursors = copy(output_offsets)
 
-        @inbounds for pair in 1:num_pairs
-            pos = table.input_positions[pair]
-            cursor = cursors[pos]
-            output_pairs[cursor] = UInt32(pair)
-            cursors[pos] = cursor + 1
+        pair = 1
+        @inbounds for na in 1:num_coeffs_a
+            packed_a = UInt32(na) << right_bits
+            for nb in 1:num_coeffs_b
+                pos = table.input_positions[pair]
+                cursor = cursors[pos]
+                output_pairs[cursor] = packed_a | UInt32(nb)
+                cursors[pos] = cursor + 1
+                pair += 1
+            end
         end
         table.output_offsets = output_offsets
         table.output_pairs = output_pairs
