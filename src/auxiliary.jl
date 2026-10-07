@@ -534,11 +534,20 @@ getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
 #     setindex!(a.coeffs, deepcopy(x), n+1)
 @inline function setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
         {T<:NumberNotSeries}
-    _check_same_space(a[0], x)
-    return a.coeffs[n+1] = TaylorN(space(x), x.coeffs, order(x))
+    sp = _jetspace(a)
+    if _is_scalar_space(sp) && !_is_scalar_space(x)
+        sp = x.space           # `a` was made of constants: its coefficients adopt that space
+        for i in eachindex(a.coeffs)
+            a.coeffs[i] = _embed_scalar(a.coeffs[i], sp)
+        end
+    end
+    return a.coeffs[n+1] = _adopt(sp, x, order(a.coeffs[n+1]))
 end
+# Build the `HomogeneousPolynomial` explicitly in `a.space`: storing the `Taylor1` directly
+# would go through `convert(HomogeneousPolynomial{...}, ::Taylor1)`, which only sees the
+# target type (scalar space). `_coeffsHP` copies `x`.
 @inline setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1{T}(x.coeffs[:])
+    {T<:NumberNotSeries} = a.coeffs[n+1] = HomogeneousPolynomial(a.space, x, n)
 @inline function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
         {T<:Taylor1{<:Number}}
     a.coeffs[n+1] = zero(x)
@@ -657,8 +666,7 @@ getcoeff(a::TaylorN, v::AbstractArray{Int,1}) = getcoeff(a, (v...,))
 @inline function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
         {T<:Number}
     @assert order(x) == n
-    _check_same_space(a, x)
-    return a.coeffs[n+1] = x
+    return a.coeffs[n+1] = _adopt(a.space, x)
 end
 @inline setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n+1] = HomogeneousPolynomial(a.space, x, n)
