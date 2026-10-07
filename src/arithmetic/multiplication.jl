@@ -43,7 +43,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         *(b::$T{Taylor1{S}}, a::T) where {T<:NumberNotSeries,
             S<:NumberNotSeries} = a * b
         *(a::T, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = Taylor1(a .* b.coeffs)
+            S<:NumberNotSeries} = _taylor1_owned(a .* b.coeffs)
         *(b::Taylor1{$T{S}}, a::T) where
             {T<:NumberNotSeries, S<:NumberNotSeries} = a * b
         *(a::Taylor1{T}, b::$T{Taylor1{S}}) where
@@ -52,7 +52,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         *(b::$T{Taylor1{R}}, a::Taylor1{T}) where
             {T<:NumberNotSeries, R<:NumberNotSeries} = a * b
         *(a::$T{T}, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = Taylor1(a .* b.coeffs)
+            S<:NumberNotSeries} = _taylor1_owned(a .* b.coeffs)
         *(b::Taylor1{$T{S}}, a::$T{T}) where {T<:NumberNotSeries,
             S<:NumberNotSeries} = a * b
     end

@@ -35,8 +35,9 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
         coeffs :: FixedSizeVectorDefault{T}
     ## Inner constructors ##
     function Taylor1{T}(coeffs::FixedSizeVectorDefault{T}) where {T<:Number}
-        _check_same_space_all(coeffs)
-        return new{T}(coeffs)
+        # errors on mixed spaces; embeds scalar-space entries (returns `coeffs` itself
+        # if nothing has to change)
+        return new{T}(_checked_coeffs(coeffs))
     end
     function Taylor1{T}(coeffs::AbstractVector{T}, order::Int) where {T<:Number}
         v = FixedSizeVectorDefault{T}(undef, order+1)
@@ -47,17 +48,16 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
         for ord in last(minrange)+1:order+1
             v[ord] = zero(coeffs[1])
         end
-        _check_same_space_all(coeffs)
-        return new{T}(v)
+        return new{T}(_checked_coeffs(v))
     end
 end
 
 ## Outer constructors ##
 Taylor1(x::Taylor1{T}) where {T<:Number} = x
 Taylor1(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number} =
-    Taylor1{T}(coeffs, order)
+    Taylor1{T}(_own_coeffs(coeffs), order)
 Taylor1(coeffs::AbstractArray{T,1}) where {T<:Number} =
-    Taylor1{T}(FixedSizeVectorDefault(coeffs))
+    _taylor1_owned(_own_coeffs(coeffs))
 Taylor1(coeffs::FixedSizeVectorDefault{T}) where {T<:Number} = Taylor1{T}(coeffs)
 Taylor1(coeffs::FixedSizeVectorDefault{T}, order::Int) where {T<:Number} =
     Taylor1{T}(coeffs, order)

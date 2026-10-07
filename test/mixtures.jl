@@ -653,7 +653,8 @@ end
     @test_throws DimensionMismatch evaluate!(limited_inner_order, 1 + ti,
         vtii_dest[1], aux1)
     aliased_aux = 1 + ti
-    aliased_source = Taylor1([one(ti), aliased_aux], 1)
+    aliased_source = Taylor1([one(ti), zero(ti)], 1)
+    aliased_source.coeffs[2] = aliased_aux   # direct write: the constructor no longer keeps references
     @test_throws ArgumentError evaluate!(aliased_source, 1 + ti,
         zero(ti), aliased_aux)
     mixed_dest = Taylor1(0.0, 0)
