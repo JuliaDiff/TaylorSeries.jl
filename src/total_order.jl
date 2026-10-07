@@ -21,7 +21,15 @@ function ==(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
 end
 
 function ==(a::TaylorN{T}, b::TaylorN{T}) where {T<:Number}
-    space(a) === space(b) || return false
+    if space(a) !== space(b)       # a space-agnostic operand is embedded; two different non-scalar spaces differ
+        if _is_scalar_space(a)
+            a = _embed_scalar(a, space(b), order(b))
+        elseif _is_scalar_space(b)
+            b = _embed_scalar(b, space(a), order(a))
+        else
+            return false
+        end
+    end
     if order(a) != order(b)
         a, b = fixorder(a, b)
     end
@@ -35,7 +43,7 @@ end
 ==(b::TaylorN{Taylor1{S}}, a::Taylor1{TaylorN{T}}) where {T, S} = a == b
 
 function ==(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
-    space(a) === space(b) || return false
+    space(a) === space(b) || _is_scalar_space(a) || _is_scalar_space(b) || return false
     order(a) == order(b) && return a.coeffs == b.coeffs
     return iszero(a.coeffs) && iszero(b.coeffs)
 end
