@@ -14,6 +14,10 @@ include("kernels.jl")
 include("inplace.jl")
 
 ## Evaluating ##
+# An object of the scalar space is a constant: the evaluation point is irrelevant
+# (it only fixes the type of the result)
+@inline _evaluate_scalar(c, vals) = c * one(vals[1])
+
 """
     evaluate(a, [dx])
 
@@ -115,7 +119,8 @@ end
 # as a substitution on the TaylorN vars
 function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{S}) where
         {T<:NumberNotSeries, S<:NumberNotSeries}
-    @assert length(dx) == get_numvars(a[0])
+    sp = _jetspace(a)
+    _is_scalar_space(sp) || @assert length(dx) == get_numvars(sp)
     suma = Taylor1( zero(a[0][0][1])*one(dx[1]), order(a))
     suma.coeffs .= evaluate.(a[:], Ref(dx))
     return suma
@@ -123,8 +128,12 @@ end
 
 function evaluate(a::Taylor1{TaylorN{T}}, dx::AbstractVector{TaylorN{T}}) where
         {T<:NumberNotSeries}
-    @assert length(dx) == get_numvars(a[0])
-    _check_same_space(a[0], dx[1])
+    sp = _jetspace(a)
+    if !_is_scalar_space(sp)
+        @assert length(dx) == get_numvars(sp)
+        dx = _embed_scalar(dx, sp, _reference_order(dx))
+        _check_same_space(a[0], dx[1])
+    end
     suma = Taylor1( zero(a[0]), order(a))
     suma.coeffs .= evaluate.(a[:], Ref(dx))
     return suma
@@ -145,6 +154,7 @@ end
 function evaluate(a::Taylor1{TaylorN{T}}, ind::Int, dx::TaylorN{T}) where
         {T<:NumberNotSeries}
     @assert (1 ≤ ind ≤ get_numvars(a[0])) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    dx = _embed_scalar(dx, space(a[0]), order(a[0]))
     _check_same_space(a[0], dx)
     suma = Taylor1( zero(a[0]), order(a))
     aux = zero(dx)
@@ -174,6 +184,7 @@ it's evaluated at zero. Note that the syntax `a(vals)` is equivalent to
 `evaluate(a, vals)`; and `a()` is equivalent to `evaluate(a)`.
 """
 function evaluate(a::HomogeneousPolynomial, vals::NTuple{N,<:Number}) where {N}
+    _is_scalar_space(a) && return _evaluate_scalar(a[1], vals)
     @assert length(vals) == get_numvars(a)
     return _evaluate(a, vals)
 end
@@ -215,13 +226,19 @@ evaluate(a, x, sorting=b).
 """
 function evaluate(a::TaylorN{T}, vals::Tuple{S,Vararg{S}};
         sorting::Bool=_defaultsorting(T,S)) where {T<:Number,S<:Number}
+    _is_scalar_space(a) && return _evaluate_scalar(constant_term(a), vals)
     @assert get_numvars(a) == length(vals)
     return _evaluate(a, vals, Val(sorting))
 end
 
 function evaluate(a::TaylorN, vals::NTuple{N,<:AbstractSeries};
         sorting::Bool=false) where {N}
+    _is_scalar_space(a) && return _evaluate_scalar(constant_term(a), vals)
     @assert get_numvars(a) == N
+    # scalar points are embedded into the space of the other points (substitution may
+    # take values in a space different from that of `a`); if all are scalars, into `a.space`
+    sp = _common_space(_scalar_space[], vals)
+    vals = _embed_scalar(vals, _is_scalar_space(sp) ? a.space : sp, _reference_order(vals))
     return _evaluate(a, vals, Val(sorting))
 end
 
@@ -243,8 +260,9 @@ end
 
 function evaluate(a::TaylorN{T}, ind::Int, val::S) where {T<:Number,
         S<:NumberNotSeriesN}
-    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     R = promote_type(T,S)
+    _is_scalar_space(a) && return convert(TaylorN{R}, a)
+    @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
     return _evaluate(convert(TaylorN{R}, a), ind, convert(R, val))
 end
 
@@ -255,7 +273,9 @@ function evaluate(a::TaylorN{T}, s::Symbol, val::TaylorN) where {T<:Number}
 end
 
 function evaluate(a::TaylorN{T}, ind::Int, val::TaylorN) where {T<:Number}
+    _is_scalar_space(a) && return convert(TaylorN{promote_type(T, TS.numtype(val))}, a)
     @assert (1 ≤ ind ≤ get_numvars(a)) "Invalid `ind`; it must be between 1 and `get_numvars()`"
+    val = _embed_scalar(val, a.space, order(val))
     _check_same_space(a, val)
     a, val = fixorder(a, val)
     a, val = promote(a, val)
