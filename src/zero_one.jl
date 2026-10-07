@@ -12,8 +12,10 @@ for T in (:Taylor1, :HomogeneousPolynomial, :TaylorN)
 end
 
 
+# `zero.(a.coeffs)` holds fresh objects: no need to copy them again
+zero(a::Taylor1) = _taylor1_owned(zero.(a.coeffs))
+zero(a::TaylorN) = TaylorN(a.space, zero.(a.coeffs), order(a))
 for T in (:Taylor1, :TaylorN)
-    @eval zero(a::$T) = $T(zero.(a.coeffs))
     @eval function one(a::$T)
         b = zero(a)
         b[0] = one(b[0])
