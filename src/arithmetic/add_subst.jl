@@ -12,7 +12,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     for T in (:Taylor1, :TaylorN)
         @eval begin
             function ($f)(a::$T{T}, b::$T{T}) where {T<:Number}
-                _check_same_space(a, b)
+                a, b = _unify_space(a, b)
                 if order(a) != order(b)
                     a, b = fixorder(a, b)
                 end
@@ -232,7 +232,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                 end
 
                 function ($f)(a::$T{T}, b::$T{S}) where {T<:Number, S<:Number}
-                    _check_same_space(a, b)
+                    a, b = _unify_space(a, b)
                     z = zero(a.coeffs[1] + b.coeffs[1])
                     c = $T(z, order(a))
                     for k in eachindex(a)
@@ -291,7 +291,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
     @eval begin
         function ($f)(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{S}) where
                 {T<:NumberNotSeriesN, S<:NumberNotSeriesN}
-            _check_same_space(a, b)
+            a, b = _unify_space(a, b)
             @assert order(a) == order(b)
             v = ($f)(a.coeffs, b.coeffs)
             return HomogeneousPolynomial(a.space, v, order(a))
@@ -299,7 +299,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where
                 {T<:NumberNotSeriesN}
-            _check_same_space(a, b)
+            a, b = _unify_space(a, b)
             @assert order(a) == order(b)
             v = ($f)(a.coeffs, b.coeffs)
             return HomogeneousPolynomial(a.space, v, order(a))
@@ -388,7 +388,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(a::Taylor1{TaylorN{T}}, b::TaylorN{S}) where
                 {T<:NumberNotSeries, S<:NumberNotSeries}
-            _check_same_space(a.coeffs[1], b)
+            a, b = _unify_space(a, b)
             @inbounds aux = $f(a.coeffs[1], b)
             c = Taylor1( zero(aux), order(a))
             for k in eachindex(a)
@@ -399,7 +399,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
 
         function ($f)(b::TaylorN{S}, a::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries,S<:NumberNotSeries}
-            _check_same_space(b, a.coeffs[1])
+            b, a = _unify_space(b, a)
             @inbounds aux = $f(b, a.coeffs[1])
             c = Taylor1( zero(aux), order(a))
             for k in eachindex(a)
@@ -431,7 +431,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
         end
         function ($f)(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where
                 {T<:NumberNotSeries}
-            _check_same_space(a, b)
+            a, b = _unify_space(a, b)
             if order(a) != order(b) ||
                     any(order.(a.coeffs) .!= order.(b.coeffs))
                 a, b = fixorder(a, b)

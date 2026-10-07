@@ -114,7 +114,7 @@ end
     {T<:NumberNotSeriesN, S<:NumberNotSeriesN} = /(promote(a,b)...)
 
 function /(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
-    _check_same_space(a, b)
+    a, b = _unify_space(a, b)
     @assert !_isthinzero(constant_term(b))
     if order(a) != order(b)
         a, b = fixorder(a, b)
@@ -151,7 +151,7 @@ function /(a::S, b::TaylorN{T}) where {S<:NumberNotSeriesN, T<:NumberNotSeriesN}
 end
 
 function /(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    _check_same_space(a, b)
+    a, b = _unify_space(a, b)
     _isthinzero(a) && !_isthinzero(b) && return zero(a)
     if (order(a) != order(b)) || any(order.(a.coeffs) .!= order.(b.coeffs))
         a, b = fixorder(a, b)
@@ -185,7 +185,7 @@ end
 
 function /(a::TaylorN{T}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
     _check_same_space(b)
-    _check_same_space(a, b[0])
+    a, b = _unify_space(a, b)
     R = typeof(constant_term(a)/constant_term(b[0]))
     if R == T
         aa = Taylor1(a, order(b))
