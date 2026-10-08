@@ -8,7 +8,7 @@
 
 ## Conversion
 convert(::Type{Taylor1{T}}, a::Taylor1) where {T<:Number} =
-    Taylor1(convert(Array{T,1}, a.coeffs))
+    _taylor1_owned(convert(Array{T,1}, a.coeffs))
 
 convert(::Type{Taylor1{T}}, a::Taylor1{T}) where {T<:Number} = a # same object!
 
@@ -128,7 +128,7 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
             end
         end
     end
-    return Taylor1(vT)
+    return _taylor1_owned(vT)
 end
 
 
@@ -250,8 +250,9 @@ function Base._promote(a::Taylor1{S}, b::Taylor1{TaylorN{T}}) where
     R = promote_type(S, T)
     sp = _jetspace(b)
     ordN = order(b[0])
-    anew = Taylor1([TaylorN(sp, convert(R, c), ordN) for c in a.coeffs], order(a))
-    return anew, convert(Taylor1{TaylorN{R}}, b)  # TaylorN→TaylorN convert keeps the space
+    vnew = [TaylorN(sp, convert(R, c), ordN) for c in a.coeffs]
+    anew = Taylor1{eltype(vnew)}(vnew, order(a))  # inner constructor: no copy
+    return anew, convert(Taylor1{TaylorN{R}}, b)  # TaylorN->TaylorN convert keeps the space
 end
 Base._promote(b::Taylor1{TaylorN{T}}, a::Taylor1{S}) where
     {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))

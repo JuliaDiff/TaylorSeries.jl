@@ -155,20 +155,59 @@ function _own_coeffs(v::AbstractVector{T}) where {T<:AbstractSeries}
     out = FixedSizeVectorDefault{T}(undef, n)
     hasspace = _has_space(T)
     sp = hasspace ? _common_space(_scalar_space[], v) : _scalar_space[]
-    seen = n > 64 ? Base.IdSet{T}() : nothing      # O(n²) scan for small vectors
+    dups = _repeated_objects(v)
     for (i, x) in enumerate(v)
-        dup = seen === nothing ? _seen_before(v, i) : (x in seen || (push!(seen, x); false))
         y = (hasspace && _is_scalar_space(x)) ? _embed_scalar(x, sp) : x
-        out[i] = (y === x && dup) ? (hasspace ? _adopt(sp, x) : deepcopy(x)) : y
+        out[i] = (y === x && dups !== nothing && dups[i]) ?
+            (hasspace ? _adopt(sp, x) : deepcopy(x)) : y
     end
     return out
 end
-@inline function _seen_before(v, i)
-    x = v[i]
-    for j in firstindex(v):i-1
-        @inbounds v[j] === x && return true
+
+
+# Returns `nothing` if no object appears twice in `v`; otherwise a `BitVector` marking the
+# entries that repeat an earlier one. O(n²) pointer comparisons for short vectors (no allocation
+# when there are no repeated objects); above that, a small open-addressing table keyed by
+# the address of the coefficient storage (exact: a hit is confirmed with `===`), which is
+# O(n). Cheap identity hash for series (`Taylor1`, `HomogeneousPolynomial`, `TaylorN`):
+# the address of their coefficients (not dereferenced; objects are alive during the call)
+@inline _storage_hash(x) = UInt(pointer(x.coeffs)) >> 4
+
+function _repeated_objects(v)
+    n = length(v)
+    mask = nothing
+    if n <= 24
+        for i in 2:n
+            x = v[i]
+            for j in 1:i-1
+                if @inbounds v[j] === x
+                    mask === nothing && (mask = falses(n))
+                    mask[i] = true
+                    break
+                end
+            end
+        end
+        return mask
     end
-    return false
+    m = nextpow(2, 2n)
+    table = zeros(Int, m)          # slot -> index (in `v`) of the object stored there
+    for i in 1:n
+        x = v[i]
+        h = Int(_storage_hash(x) & UInt(m - 1)) + 1
+        while true
+            j = table[h]
+            if j == 0
+                table[h] = i
+                break
+            elseif v[j] === x
+                mask === nothing && (mask = falses(n))
+                mask[i] = true
+                break
+            end
+            h = h == m ? 1 : h + 1
+        end
+    end
+    return mask
 end
 
 
