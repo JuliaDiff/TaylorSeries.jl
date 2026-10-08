@@ -186,6 +186,13 @@ end
         @test s2.coeffs[1] !== s2.coeffs[2] && s2.coeffs[2] !== s2.coeffs[3]
         s2[1][0][1] = 99.0                                       # in-place write: only one slot changes
         @test s2[0][0][1] != 99.0 && s2[2][0][1] != 99.0 && ξ[0][1] != 99.0
+        # repeated objects are found for short and for long vectors, adjacent or not
+        big = Taylor1(fill(ξ, 100))
+        @test allunique(map(objectid, big.coeffs))
+        vv = [ξ; [a + i for i in 1:60]; ξ]
+        tv = Taylor1(vv)
+        @test tv.coeffs[1] === ξ && tv.coeffs[end] !== ξ && allunique(map(objectid, tv.coeffs))
+        @test Taylor1([ξ, a, ξ]).coeffs[3] !== ξ
         # an object that appears only once is stored without copying (no cost)
         η = a + 2
         @test Taylor1([η, ξ]).coeffs[1] === η
