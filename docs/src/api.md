@@ -81,8 +81,11 @@ make_inverse_dict
 set_default_space!
 _coeffsHP
 _coeffsTN
+_adopt
+_common_space
 _check_same_space
 _check_same_space_all
+_embed_scalar
 numtype
 mul!
 mul!(::HomogeneousPolynomial, ::HomogeneousPolynomial, ::HomogeneousPolynomial)
