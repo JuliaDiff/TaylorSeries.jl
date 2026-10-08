@@ -97,13 +97,14 @@ strictly necessary.
 - `input_positions`: output coefficient position for each input coefficient pair.
 - `output_offsets`: start positions of each output coefficient's group in `output_pairs`.
 - `output_pairs`: input-pair identifiers grouped by output coefficient.
-- `num_right`: number of coefficients in the right input polynomial.
+- `right_bits`: number of bits reserved in `output_pairs` for the number of coefficients
+    in the right input polynomial.
 """
 mutable struct HomogeneousProductTable
     input_positions :: Vector{Int}
     output_offsets  :: Vector{Int}
     output_pairs    :: Vector{UInt32}
-    num_right       :: Int
+    right_bits      :: Int
 end
 
 """
