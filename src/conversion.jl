@@ -71,7 +71,7 @@ convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) where {T<:Numb
     TaylorN( convert(Array{HomogeneousPolynomial{T},1}, b), maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::S)  where {T<:Number,S<:Number} =
-     TaylorN(_scalar_space[], convert(T, b), 0)
+     _constant_taylorN(_scalar_space[], convert(T, b))
 
 convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) where {T<:Number} =
     TaylorN( [b], order(b))
@@ -80,9 +80,9 @@ convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) where {T<:Numb
     TaylorN( b, maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::T) where {T<:Number} =
-    TaylorN(_scalar_space[], b, 0)
+    _constant_taylorN(_scalar_space[], b)
 
-convert(::Type{TaylorN}, b::Number) = TaylorN(_scalar_space[], b, 0)
+convert(::Type{TaylorN}, b::Number) = _constant_taylorN(_scalar_space[], b)
 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
@@ -251,8 +251,8 @@ function Base._promote(a::Taylor1{S}, b::Taylor1{TaylorN{T}}) where
     sp = _jetspace(b)
     ordN = order(b[0])
     vnew = [TaylorN(sp, convert(R, c), ordN) for c in a.coeffs]
-    anew = Taylor1{eltype(vnew)}(vnew, order(a))  # inner constructor: no copy
-    return anew, convert(Taylor1{TaylorN{R}}, b)  # TaylorN->TaylorN convert keeps the space
+    anew = Taylor1{eltype(vnew)}(vnew, order(a))
+    return anew, convert(Taylor1{TaylorN{R}}, b)
 end
 Base._promote(b::Taylor1{TaylorN{T}}, a::Taylor1{S}) where
     {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))

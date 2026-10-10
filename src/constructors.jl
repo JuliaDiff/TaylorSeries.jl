@@ -30,6 +30,24 @@ DataType for polynomial expansions in one independent variable.
 
 Note that `Taylor1` variables are callable. For more information, see
 [`evaluate`](@ref).
+
+Note: For `v` a vector of `TaylorN`s, `Taylor1(v)` and `Taylor1(v, order)` check the
+spaces of the entries (two different non-scalar spaces throw an error), embed
+scalar-space entries (e.g. the `1.0` in `[x, 1.0]`) in the proper space of, and
+copy an object that appears more than once in `v`, so that no two coefficients
+share an object (eg in `Taylor1(fill(ξ, n))`). Objects that appear once are stored
+by reference. These checks are costly, so it is recommended to pass a
+`FixedSizeVectorDefault` instead: it is stored as it is (not copied), its
+entries are not copied either, and only the spaces are checked. In that case
+you are responsible for not putting the same object in two slots.
+
+```julia
+v = FixedSizeVectorDefault{TaylorN{Float64}}(undef, n)
+for k in 1:n
+    v[k] = ...        # a fresh object for every slot
+end
+t = Taylor1(v)
+```
 """
 struct Taylor1{T<:Number} <: AbstractSeries{T}
         coeffs :: FixedSizeVectorDefault{T}
@@ -203,7 +221,10 @@ Note that `TaylorN` variables are callable. For more information, see
 struct TaylorN{T<:Number} <: AbstractSeries{T}
         coeffs  :: FixedSizeVectorDefault{HomogeneousPolynomial{T}}
         space   :: JetSpace
-    ## Inner constructor ##
+    ## Inner constructors ##
+    # Trusted constructor
+    TaylorN{T}(coeffs::FixedSizeVectorDefault{HomogeneousPolynomial{T}},
+            space::JetSpace) where {T<:Number} = new{T}(coeffs, space)
     function TaylorN{T}(v::AbstractArray{HomogeneousPolynomial{T},1},
             order::Int) where {T<:Number}
         space = _space_from_homogeneous_vector(v, default_space[])
@@ -288,7 +309,17 @@ const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 
 ## Additional Taylor1 and TaylorN outer constructor ##
 Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
-TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(_scalar_space[], convert(T, x), 0)
+TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} =
+    _constant_taylorN(_scalar_space[], convert(T, x))
+
+# Shortcut for a constant (order 0) `TaylorN` in `space`.
+@inline function _constant_taylorN(space::JetSpace, x::T) where {T<:Number}
+    hp = HomogeneousPolynomial{T}(space, x, 0)
+    v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, 1)
+    v[1] = hp
+    return TaylorN{T}(v, space)
+end
+
 
 # """
 #     get_numvars
