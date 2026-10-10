@@ -288,8 +288,7 @@ const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 
 ## Additional Taylor1 and TaylorN outer constructor ##
 Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
-TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), order())
-
+TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(_scalar_space[], convert(T, x), 0)
 
 # """
 #     get_numvars
