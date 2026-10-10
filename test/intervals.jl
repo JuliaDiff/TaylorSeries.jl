@@ -3,7 +3,7 @@
 
 using TaylorSeries, IntervalArithmetic
 
-using Test
+using Test, Random
 # eeuler = Base.MathConstants.e
 
 setdisplay(:full)
@@ -275,5 +275,126 @@ setdisplay(:full)
         @test isequal_interval(constant_term(aN), interval(-1.0, 2.0))
 
     end
+
+# Tests of the explicit midpoint-radius product kernels of TaylorSeriesIAExt:
+# `TS.mul_midrad` (TaylorN) and `TS.mul_midrad!` (TaylorN, HomogeneousPolynomial).
+# Rigour: for random points inside the intervals of the factors, the exact (Rational)
+# product lies in the computed enclosure.
+@testset "midpoint-radius products of TaylorN{Interval}" begin
+    rng = MersenneTwister(7)
+    sp = JetSpace(6, ["x", "y"])
+    Q = Rational{BigInt}
+    for (ord, w) in ((3, 0.0), (3, 1e-12), (3, 0.3), (2, 5.0))
+        a = TaylorN(sp, interval(0.0), ord)
+        b = TaylorN(sp, interval(0.0), ord)
+        ar = TaylorN(sp, zero(Q), ord)
+        br = TaylorN(sp, zero(Q), ord)
+        for (p, pr) in ((a, ar), (b, br))
+            for q in eachindex(p.coeffs), h in eachindex(p.coeffs[q].coeffs)
+                c = randn(rng)
+                lo, hi = c - w*rand(rng), c + w*rand(rng)
+                p.coeffs[q].coeffs[h] = w == 0.0 ? interval(c) : interval(lo, hi)
+                l, u = Q(inf(p.coeffs[q].coeffs[h])), Q(sup(p.coeffs[q].coeffs[h]))
+                pr.coeffs[q].coeffs[h] = l + (u - l) * Q(rand(rng))   # point inside
+            end
+        end
+        cr = ar * br                                   # exact product of the points
+        cgen = a * b                                   # generic interval arithmetic
+        cmr = TS.mul_midrad(a, b)
+        # homogeneous-polynomial kernel, accumulating into c = 0
+        chp = zero(a)
+        for k in eachindex(chp), i in 0:k
+            TS.mul_midrad!(chp.coeffs[k+1], a.coeffs[i+1], b.coeffs[k-i+1])
+        end
+        for q in eachindex(cr.coeffs), h in eachindex(cr.coeffs[q].coeffs)
+            ex = cr.coeffs[q].coeffs[h]
+            for c in (cgen, cmr, chp)
+                x = c.coeffs[q].coeffs[h]
+                @test Q(inf(x)) <= ex <= Q(sup(x))
+            end
+            @test isequal_interval(cmr.coeffs[q].coeffs[h], chp.coeffs[q].coeffs[h])
+            @test isguaranteed(cmr.coeffs[q].coeffs[h]) == isguaranteed(cgen.coeffs[q].coeffs[h])
+            # thin factors: the enclosure stays thin
+            w == 0.0 && @test diam(cmr.coeffs[q].coeffs[h]) < 1e-13
+        end
+    end
+    # exact operations stay exactly thin, zero coefficients stay exactly zero (as with the
+    # generic interval arithmetic)
+    let
+        allcoeffs(p) = [c for hp in p.coeffs for c in hp.coeffs]     # flattened coefficients
+        x, y = TaylorN(sp, Interval{Float64}, 1, order=3), TaylorN(sp, Interval{Float64}, 2, order=3)
+        a = interval(1.0) + interval(2.0) * x
+        b = interval(3.0) + interval(0.5) * y
+        cm, cg = TS.mul_midrad(a, b), a * b
+        @test all(isequal_interval.(allcoeffs(cm), allcoeffs(cg)))
+        @test all(diam.(allcoeffs(cm)) .== 0)
+        m = TS.mul_midrad(x * x, y)                    # x²y: other coefficients are exact 0
+        @test all(isequal_interval.(allcoeffs(m), allcoeffs(x * x * y)))
+    end
+    # decorations: `dac`/`def` coefficients are allowed (the result carries the minimum
+    # decoration); `trv` ones fall back to the generic arithmetic
+    let
+        allcoeffs(p) = [c for hp in p.coeffs for c in hp.coeffs]
+        x, y = TaylorN(sp, Interval{Float64}, 1, order=3), TaylorN(sp, Interval{Float64}, 2, order=3)
+        a = interval(1.5) + interval(2.0) * x
+        b = interval(3.0) + interval(0.5) * y
+        a.coeffs[1].coeffs[1] = IntervalArithmetic.setdecoration(a.coeffs[1].coeffs[1], dac)
+        cm, cg = TS.mul_midrad(a, b), a * b
+        @test all(decoration.(allcoeffs(cm)) .<= decoration.(allcoeffs(cg)))
+        @test decoration(cm.coeffs[1].coeffs[1]) == dac
+        @test all(inf.(allcoeffs(cm)) .<= sup.(allcoeffs(cg))) && all(inf.(allcoeffs(cg)) .<= sup.(allcoeffs(cm)))
+        a.coeffs[1].coeffs[1] = IntervalArithmetic.setdecoration(a.coeffs[1].coeffs[1], trv)
+        @test all(isequal_interval.(allcoeffs(TS.mul_midrad(a, b)), allcoeffs(a * b)))   # generic path
+    end
+    # unbounded coefficients: generic interval arithmetic
+    a = TaylorN(sp, interval(0.0), 2); b = TaylorN(sp, interval(1.0), 2)
+    a.coeffs[2].coeffs[1] = interval(-Inf, 1.0)        # trv decoration
+    c = TS.mul_midrad(a, b)
+    @test !isbounded(c.coeffs[2].coeffs[1])
+end
+
+@testset "midpoint-radius accumulation of products (TS.midrad_acc)" begin
+    rng = MersenneTwister(11)
+    sp = JetSpace(6, ["x", "y"])
+    Q = Rational{BigInt}
+    # interval polynomial of order 3 and an exact (Rational, order 6) point inside it
+    function mk(w)
+        p = TaylorN(sp, interval(0.0), 3)
+        pr = TaylorN(sp, zero(Q), 6)
+        for k in 1:4, i in eachindex(p.coeffs[k].coeffs)
+            c = randn(rng)
+            x = w == 0.0 ? interval(c) : interval(c - w*rand(rng), c + w*rand(rng))
+            p.coeffs[k].coeffs[i] = x
+            l, u = Q(inf(x)), Q(sup(x))
+            pr.coeffs[k].coeffs[i] = l + (u - l) * Q(rand(rng))
+        end
+        return p, pr
+    end
+    for w in (0.0, 1e-12, 0.3)
+        (a1, a1r), (a2, a2r), (b1, b1r), (b2, b2r) = mk(w), mk(w), mk(w), mk(w)
+        mp = TS.midrad_poly
+        @test all(TS.midrad_usable, (mp(a1), mp(a2), mp(b1), mp(b2)))
+        acc = TS.midrad_acc(a1, 6)
+        TS.mul_midrad_acc!(acc, mp(a1), mp(b1))
+        TS.mul_midrad_acc!(acc, mp(a2), mp(b2))
+        TS.mul_midrad_acc!(acc, mp(a1), mp(b2), 2.0)           # counted twice
+        dest = TaylorN(sp, interval(0.0), 6)
+        @test all([TS.midrad_finalize!(dest.coeffs[d+1], acc, d) for d in 0:6])
+        ex = a1r * b1r + a2r * b2r + 2 * (a1r * b2r)
+        inside = true
+        for k in 1:7, i in eachindex(dest.coeffs[k].coeffs)
+            x, e = dest.coeffs[k].coeffs[i], ex.coeffs[k].coeffs[i]
+            inside &= Q(inf(x)) <= e <= Q(sup(x))
+        end
+        @test inside
+        # thin factors: the enclosure stays thin
+        w == 0.0 && @test all(diam(x) < 1e-12 for hp in dest.coeffs for x in hp.coeffs)
+        # reset clears the accumulators
+        TS.midrad_reset!(acc)
+        dest0 = TaylorN(sp, interval(0.0), 6)
+        @test all([TS.midrad_finalize!(dest0.coeffs[d+1], acc, d) for d in 0:6])
+        @test all(isequal_interval(x, interval(0.0)) for hp in dest0.coeffs for x in hp.coeffs)
+    end
+end
 
 end
