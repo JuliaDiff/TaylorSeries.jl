@@ -63,13 +63,13 @@ for I in (:Interval, :ComplexI)
                 b::HomogeneousPolynomial{$I{S}}) where {T<:NumTypes, S<:NumTypes}
             order(a) == order(b) &&
                 return all(isequal_interval.(a.coeffs, b.coeffs))
-            return all(TS._isthinzero.(a.coeffs)) && all(TS._isthinzero.(b.coeffs))
+            return all(TS._isthinzero, a.coeffs) && all(TS._isthinzero, b.coeffs)
         end
 
-        iszero(a::Taylor1{$I{T}}) where {T<:NumTypes} = all(TS._isthinzero.(a.coeffs))
+        iszero(a::Taylor1{$I{T}}) where {T<:NumTypes} = all(TS._isthinzero, a.coeffs)
 
         iszero(a::HomogeneousPolynomial{$I{T}}) where {T<:NumTypes} =
-            all(TS._isthinzero.(a.coeffs))
+            all(TS._isthinzero, a.coeffs)
     end
 end
 
@@ -271,6 +271,451 @@ function TS.accsqr!(c::HomogeneousPolynomial{Interval{T}},
         end
     end
     return nothing
+end
+
+
+# ----------------------------------------------------------------------------
+# Midpoint-radius products of `HomogeneousPolynomial{Interval}` / `TaylorN{Interval}`
+#
+# The generic kernels multiply and add `Interval`s, whose directed rounding is emulated
+# in software (`RoundingEmulator`) and dominates the cost when the coefficients are
+# (almost) thin. Here, each factor `x` is enclosed as `x ⊆ [m-r, m+r]` (hardware
+# arithmetic), and the accumulated coefficient `Σ_k x_k y_k` is computed as
+#
+#     M ± rad,   rad = (E + R) (1 + 4(n+4)u)  [+ 16 n η if underflow is possible],
+#
+# where, for the `n` nonzero terms,
+#   * `M` is the floating-point value of `Σ m_k m'_k` (recursive summation) and
+#     `E = Σ (|e_k| + |t_k|)`, with `e_k` the exact error of each product (`fma`) and
+#     `t_k` the exact error of each addition (TwoSum, Knuth): error-free transformations, so
+#     `Σ m_k m'_k = M + Σ (e_k + t_k)` exactly. Hence `E` bounds the rounding error without
+#     any `γ_n` estimate, and it is zero when the operations are exact;
+#   * `R = Σ (r_k |m'_k| + |m_k| s_k + r_k s_k)` bounds the effect of the radii
+#     (`m_k, r_k` and `m'_k, s_k` midpoints and radii of the factors):
+#     `|Σ x_k y_k - Σ m_k m'_k| ≤ R` for all `x_k, y_k` in the intervals;
+#   * `u = eps/2`, `η = nextfloat(0)`; the factor `(1 + 4(n+4)u)` absorbs the rounding of the
+#     sums `E`, `R` of nonnegative terms and of the final product.
+# The endpoints are `M ∓ rad` rounded outwards only if the subtraction/addition is inexact
+# (TwoSum), so the result is exactly thin (`[M, M]`) when `rad = 0`. Terms with a thin
+# zero factor are skipped (their product is exactly 0). The result is a rigorous enclosure
+# whose width is of a few ulps for (almost) thin factors, comparable to interval arithmetic;
+# for wide factors it can be wider (midpoint-radius product). Because of this, `*` and `mul!`
+# are NOT modified: the kernel is only used through the explicit functions `TS.mul_midrad`
+# and `TS.mul_midrad!` (for `TaylorN` and `HomogeneousPolynomial`). It is used only if all
+# the coefficients of both factors have finite endpoints and a safe decoration (`def`, `dac`
+# or `com`); otherwise (or if an overflow occurs) the generic interval arithmetic is used.
+# ----------------------------------------------------------------------------
+all(f -> isdefined(TS, f), (:mul_midrad, :mul_midrad!, :midrad_poly, :midrad_usable,
+        :midrad_acc, :midrad_reset!, :mul_midrad_acc!, :midrad_finalize!)) || error("""
+    TaylorSeriesIAExt needs, in TaylorSeries, the stubs
+        function mul_midrad end
+        function mul_midrad! end
+        function midrad_poly end
+        function midrad_usable end
+        function midrad_acc end
+        function midrad_reset! end
+        function mul_midrad_acc! end
+        function midrad_finalize! end""")
+
+# midpoint and radius of a bounded interval: x ⊆ [m-r, m+r]
+@inline function _midrad(x::Interval{T}) where {T<:Base.IEEEFloat}
+    lo = inf(x)
+    hi = sup(x)
+    m = lo/2 + hi/2
+    r = max(hi - m, m - lo)
+    # upper bound of the exact radius: r is within a relative error u of it, and
+    # r*(1+2eps) rounds to something at least r(1+3u) (r = 0 stays 0: thin factors)
+    return m, r * (one(T) + 2*eps(T))
+end
+
+# (usable, decoration, guaranteed) of the factors for the midpoint-radius kernel: the endpoints
+# must be finite (so nonempty and bounded) and the decoration safe (`def`, `dac` or `com`;
+# not `trv`/`ill`). The decoration of the result is the minimum of those of the factors,
+# as for the interval product.
+@inline function _mr_info(x::Interval)
+    d = decoration(x)
+    return (isfinite(inf(x)) & isfinite(sup(x)) & (d >= def)), d, isguaranteed(x)
+end
+
+@inline function _mr_info(coeffs::AbstractVector{<:Interval})
+    ok = true
+    d = com
+    g = true
+    @inbounds for x in coeffs
+        dx = decoration(x)
+        ok &= isfinite(inf(x)) & isfinite(sup(x)) & (dx >= def)
+        d = min(d, dx)
+        g &= isguaranteed(x)
+    end
+    return ok, d, g
+end
+
+@inline _mr_join(a, b) = (a[1] & b[1], min(a[2], b[2]), a[3] & b[3])
+
+# M - rad rounded downwards / M + rad rounded upwards, only if inexact (TwoSum)
+@inline function _mr_down(M::T, rad::T) where {T<:Base.IEEEFloat}
+    y = -rad
+    s = M + y
+    bb = s - M
+    t = (M - (s - bb)) + (y - bb)
+    return t < 0 ? prevfloat(s) : s
+end
+@inline function _mr_up(M::T, rad::T) where {T<:Base.IEEEFloat}
+    s = M + rad
+    bb = s - M
+    t = (M - (s - bb)) + (rad - bb)
+    return t > 0 ? nextfloat(s) : s
+end
+
+# Interval enclosing Σ x_k y_k from M, E, R of `n` terms (see above); `uf`: underflow
+# is possible; `d`, `g`: decoration and guarantee flag of the result; `nothing` if it is
+# not finite
+@inline function _mr_enclose(M::T, E::T, R::T, n::Int, uf::Bool, d::Decoration,
+        g::Bool) where {T<:Base.IEEEFloat}
+    u = eps(T)/2
+    rad = (E + R) * (1 + 4*(n + 4)*u)
+    uf && (rad += 16 * n * nextfloat(zero(T)))
+    if iszero(rad)
+        isfinite(M) || return nothing
+        lo = hi = M
+    else
+        lo = _mr_down(M, rad)
+        hi = _mr_up(M, rad)
+        (isfinite(lo) && isfinite(hi)) || return nothing
+    end
+    return IntervalArithmetic._unsafe_interval(
+        IntervalArithmetic._unsafe_bareinterval(T, lo, hi), d, g)
+end
+
+# Generic kernel (same as in TaylorSeries)
+@inline function _mul_output_major_generic!(c::HomogeneousPolynomial, a::HomogeneousPolynomial,
+        b::HomogeneousPolynomial, table)
+    offsets = table.output_offsets
+    output_pairs = table.output_pairs
+    num_right = table.num_right
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    @inbounds for pos in 1:length(offsets)-1
+        acc = c_coeffs[pos]
+        for csr_pos in offsets[pos]:(offsets[pos+1]-1)
+            pair = Int(output_pairs[csr_pos]) - 1
+            na = pair ÷ num_right + 1
+            nb = pair - (na-1) * num_right + 1
+            acc += a_coeffs[na] * b_coeffs[nb]
+        end
+        c_coeffs[pos] = acc
+    end
+    return nothing
+end
+
+# Midpoint-radius kernel; `d`, `g` are the decoration and the `isguaranteed` flag of the result
+@inline function _mul_output_major_midrad!(c::HomogeneousPolynomial{Interval{T}},
+        a::HomogeneousPolynomial{Interval{T}}, b::HomogeneousPolynomial{Interval{T}},
+        table, d::Decoration, g::Bool) where {T<:Base.IEEEFloat}
+    offsets = table.output_offsets
+    output_pairs = table.output_pairs
+    num_right = table.num_right
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    thr = floatmin(T) / eps(T)                  # below this, underflow is possible
+    @inbounds for pos in 1:length(offsets)-1
+        M = zero(T)
+        E = zero(T)
+        R = zero(T)
+        n = 0
+        uf = false
+        for csr_pos in offsets[pos]:(offsets[pos+1]-1)
+            pair = Int(output_pairs[csr_pos]) - 1
+            na = pair ÷ num_right + 1
+            nb = pair - (na-1) * num_right + 1
+            ma, ra = _midrad(a_coeffs[na])
+            mb, rb = _midrad(b_coeffs[nb])
+            ((iszero(ma) & iszero(ra)) | (iszero(mb) & iszero(rb))) && continue   # exact 0
+            p = ma * mb
+            e = fma(ma, mb, -p)                    # ma*mb = p + e exactly
+            s = M + p
+            bb = s - M
+            tt = (M - (s - bb)) + (p - bb)         # M + p = s + tt exactly
+            M = s
+            E += abs(e) + abs(tt)
+            t123 = ra * abs(mb) + abs(ma) * rb + ra * rb
+            R += t123
+            uf |= (abs(p) < thr) | ((t123 < thr) & (!iszero(ra) | !iszero(rb)))
+            n += 1
+        end
+        n == 0 && continue
+        prod = _mr_enclose(M, E, R, n, uf, d, g)
+        if prod === nothing                       # overflow: generic interval arithmetic
+            acc = c_coeffs[pos]
+            for csr_pos in offsets[pos]:(offsets[pos+1]-1)
+                pair = Int(output_pairs[csr_pos]) - 1
+                na = pair ÷ num_right + 1
+                nb = pair - (na-1) * num_right + 1
+                acc += a_coeffs[na] * b_coeffs[nb]
+            end
+            c_coeffs[pos] = acc
+        else
+            c_coeffs[pos] += prod
+        end
+    end
+    return nothing
+end
+
+@inline function _mul_output_major_dispatch!(c::HomogeneousPolynomial{Interval{T}},
+        a::HomogeneousPolynomial{Interval{T}}, b::HomogeneousPolynomial{Interval{T}}) where
+        {T<:Base.IEEEFloat}
+    (TS._isthinzero(b) || TS._isthinzero(a)) && return nothing
+    degree_a = order(a)
+    degree_b = order(b)
+    degree_a == 0 && return _muladd_scalar_dispatch!(c, a.coeffs[1], b)
+    degree_b == 0 && return _muladd_scalar_dispatch!(c, b.coeffs[1], a)
+    table = TS._init_output_major_product_table!(c.space, degree_a, degree_b)
+    ok, d, g = _mr_join(_mr_info(a.coeffs), _mr_info(b.coeffs))
+    if ok
+        _mul_output_major_midrad!(c, a, b, table, d, g)
+    else
+        _mul_output_major_generic!(c, a, b, table)
+    end
+    return nothing
+end
+
+# c += scalar * a  (one of the factors is of degree 0)
+@inline function _muladd_scalar_dispatch!(c::HomogeneousPolynomial{Interval{T}},
+        scalar::Interval{T}, a::HomogeneousPolynomial{Interval{T}}) where
+        {T<:Base.IEEEFloat}
+    TS._isthinzero(scalar) && return nothing
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    ok, d, g = _mr_join(_mr_info(scalar), _mr_info(a_coeffs))
+    if !ok
+        @inbounds for i in eachindex(c_coeffs)
+            ai = a_coeffs[i]
+            TS._isthinzero(ai) && continue
+            c_coeffs[i] += scalar * ai
+        end
+        return nothing
+    end
+    ms, rs = _midrad(scalar)
+    thr = floatmin(T) / eps(T)
+    @inbounds for i in eachindex(c_coeffs)
+        ai = a_coeffs[i]
+        TS._isthinzero(ai) && continue
+        ma, ra = _midrad(ai)
+        p = ms * ma
+        e = fma(ms, ma, -p)                        # ms*ma = p + e exactly
+        t123 = rs * abs(ma) + abs(ms) * ra + rs * ra
+        uf = (abs(p) < thr) | ((t123 < thr) & (!iszero(rs) | !iszero(ra)))
+        prod = _mr_enclose(p, abs(e), t123, 1, uf, d, g)
+        c_coeffs[i] += prod === nothing ? scalar * ai : prod
+    end
+    return nothing
+end
+
+# c += a * b with the midpoint-radius kernel (homogeneous polynomials)
+TS.mul_midrad!(c::HomogeneousPolynomial{Interval{T}}, a::HomogeneousPolynomial{Interval{T}},
+        b::HomogeneousPolynomial{Interval{T}}) where {T<:Base.IEEEFloat} =
+    _mul_output_major_dispatch!(c, a, b)
+
+# c += a * b with the midpoint-radius kernel (TaylorN)
+function TS.mul_midrad!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
+        b::TaylorN{Interval{T}}) where {T<:Base.IEEEFloat}
+    TS._check_same_space(c, a, b)
+    for k in eachindex(c)
+        kk = k + 1
+        @inbounds for i = 0:k
+            _mul_output_major_dispatch!(c.coeffs[kk], a.coeffs[i+1], b.coeffs[kk-i])
+        end
+    end
+    return nothing
+end
+
+# a * b with the midpoint-radius kernel
+function TS.mul_midrad(a::TaylorN{Interval{T}}, b::TaylorN{Interval{T}}) where
+        {T<:Base.IEEEFloat}
+    TS._check_same_space(a, b)
+    if TS.order(a) != TS.order(b)
+        a, b = TS.fixorder(a, b)
+    end
+    c = zero(a)
+    TS.mul_midrad!(c, a, b)
+    return c
+end
+
+
+# ----------------------------------------------------------------------------
+# Accumulation of products of whole polynomials in midpoint-radius form
+#
+# `TS.midrad_poly(p)` converts a `TaylorN{Interval}` once to midpoints and radii (per degree);
+# `TS.midrad_acc(p, maxdeg)` creates accumulators `M, E, R, n` (see above) for each monomial of
+# the degrees `0:maxdeg` of the products; `TS.mul_midrad_acc!(acc, pa, pb[, factor])` accumulates
+# `factor * pa * pb` (`factor` a power of two: exact) for all the pairs of degrees with
+# `u+v ≤ maxdeg`, with no interval arithmetic at all; `TS.midrad_finalize!(dest, acc, d)`
+# writes into the homogeneous polynomial `dest` of degree `d` one interval per monomial (one
+# `_mr_enclose` for the whole accumulation, so a single rigorous bound of the sum of all the
+# products accumulated); `TS.midrad_reset!(acc)` clears the accumulators. The error-free
+# transformations make the order of the accumulation irrelevant for the validity of the bound.
+# The decoration of the result is the minimum of those of all the factors accumulated and its
+# `isguaranteed` flag their conjunction. `midrad_finalize!` returns `false` (and the caller must
+# use the interval arithmetic) if some result is not finite.
+# ----------------------------------------------------------------------------
+struct MidRadPoly{T<:Base.IEEEFloat,S}
+    mid::Vector{Vector{T}}
+    rad::Vector{Vector{T}}
+    ok::Bool
+    dec::Decoration
+    g::Bool
+    space::S
+end
+
+mutable struct MidRadAcc{T<:Base.IEEEFloat}
+    M::Vector{Vector{T}}
+    E::Vector{Vector{T}}
+    R::Vector{Vector{T}}
+    n::Vector{Vector{Int}}
+    uf::Vector{Vector{Bool}}
+    maxdeg::Int
+    dec::Decoration
+    g::Bool
+end
+
+function TS.midrad_poly(p::TaylorN{Interval{T}}) where {T<:Base.IEEEFloat}
+    nd = length(p.coeffs)
+    mid = Vector{Vector{T}}(undef, nd)
+    rad = Vector{Vector{T}}(undef, nd)
+    ok = true
+    d = com
+    g = true
+    for k in 1:nd
+        cs = p.coeffs[k].coeffs
+        m = Vector{T}(undef, length(cs))
+        r = Vector{T}(undef, length(cs))
+        @inbounds for i in eachindex(cs)
+            x = cs[i]
+            dx = decoration(x)
+            ok &= isfinite(inf(x)) & isfinite(sup(x)) & (dx >= def)
+            d = min(d, dx)
+            g &= isguaranteed(x)
+            m[i], r[i] = _midrad(x)
+        end
+        mid[k] = m
+        rad[k] = r
+    end
+    sp = p.coeffs[1].space
+    return MidRadPoly{T,typeof(sp)}(mid, rad, ok, d, g, sp)
+end
+
+TS.midrad_usable(mp::MidRadPoly) = mp.ok
+
+function TS.midrad_acc(::TaylorN{Interval{T}}, maxdeg::Int) where {T<:Base.IEEEFloat}
+    mk() = [T[] for _ in 0:maxdeg]
+    return MidRadAcc{T}(mk(), mk(), mk(), [Int[] for _ in 0:maxdeg],
+        [Bool[] for _ in 0:maxdeg], maxdeg, com, true)
+end
+
+function TS.midrad_reset!(acc::MidRadAcc{T}) where {T}
+    for d in 1:acc.maxdeg+1
+        fill!(acc.M[d], zero(T))
+        fill!(acc.E[d], zero(T))
+        fill!(acc.R[d], zero(T))
+        fill!(acc.n[d], 0)
+        fill!(acc.uf[d], false)
+    end
+    acc.dec = com
+    acc.g = true
+    return nothing
+end
+
+@inline function _acc_arrays!(acc::MidRadAcc{T}, d::Int, nout::Int) where {T}
+    Md = acc.M[d+1]
+    if length(Md) != nout
+        resize!(Md, nout); fill!(Md, zero(T))
+        resize!(acc.E[d+1], nout); fill!(acc.E[d+1], zero(T))
+        resize!(acc.R[d+1], nout); fill!(acc.R[d+1], zero(T))
+        resize!(acc.n[d+1], nout); fill!(acc.n[d+1], 0)
+        resize!(acc.uf[d+1], nout); fill!(acc.uf[d+1], false)
+    end
+    return Md, acc.E[d+1], acc.R[d+1], acc.n[d+1], acc.uf[d+1]
+end
+
+# accumulate the term (ma ± ra)(mb ± rb) in the position `pos` (see the section above)
+@inline function _acc_term!(Md, Ed, Rd, nd, ufd, pos::Int, ma::T, ra::T, mb::T, rb::T,
+        thr::T) where {T}
+    ((iszero(ma) & iszero(ra)) | (iszero(mb) & iszero(rb))) && return nothing
+    p = ma * mb
+    e = fma(ma, mb, -p)
+    @inbounds begin
+        M = Md[pos]
+        s = M + p
+        bb = s - M
+        tt = (M - (s - bb)) + (p - bb)
+        Md[pos] = s
+        Ed[pos] += abs(e) + abs(tt)
+        t123 = ra * abs(mb) + abs(ma) * rb + ra * rb
+        Rd[pos] += t123
+        ufd[pos] |= (abs(p) < thr) | ((t123 < thr) & (!iszero(ra) | !iszero(rb)))
+        nd[pos] += 1
+    end
+    return nothing
+end
+
+function TS.mul_midrad_acc!(acc::MidRadAcc{T}, pa::MidRadPoly{T}, pb::MidRadPoly{T},
+        factor::T = one(T)) where {T<:Base.IEEEFloat}
+    acc.dec = min(acc.dec, pa.dec, pb.dec)
+    acc.g &= pa.g & pb.g
+    thr = floatmin(T) / eps(T)
+    for u in 0:length(pa.mid)-1, v in 0:length(pb.mid)-1
+        d = u + v
+        d > acc.maxdeg && continue
+        mau, rau = pa.mid[u+1], pa.rad[u+1]
+        mbv, rbv = pb.mid[v+1], pb.rad[v+1]
+        if u == 0
+            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(mbv))
+            msc, rsc = factor * mau[1], factor * rau[1]
+            @inbounds for i in eachindex(mbv)
+                _acc_term!(Md, Ed, Rd, nd, ufd, i, msc, rsc, mbv[i], rbv[i], thr)
+            end
+        elseif v == 0
+            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(mau))
+            msc, rsc = mbv[1], rbv[1]
+            @inbounds for i in eachindex(mau)
+                _acc_term!(Md, Ed, Rd, nd, ufd, i, factor * mau[i], factor * rau[i],
+                    msc, rsc, thr)
+            end
+        else
+            table = TS._init_output_major_product_table!(pa.space, u, v)
+            offsets = table.output_offsets
+            output_pairs = table.output_pairs
+            num_right = table.num_right
+            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(offsets) - 1)
+            @inbounds for pos in 1:length(offsets)-1
+                for csr_pos in offsets[pos]:(offsets[pos+1]-1)
+                    pair = Int(output_pairs[csr_pos]) - 1
+                    na = pair ÷ num_right + 1
+                    nb = pair - (na-1) * num_right + 1
+                    _acc_term!(Md, Ed, Rd, nd, ufd, pos, factor * mau[na], factor * rau[na],
+                        mbv[nb], rbv[nb], thr)
+                end
+            end
+        end
+    end
+    return nothing
+end
+
+function TS.midrad_finalize!(dest::HomogeneousPolynomial{Interval{T}}, acc::MidRadAcc{T},
+        d::Int) where {T<:Base.IEEEFloat}
+    (d > acc.maxdeg || isempty(acc.M[d+1])) && return true       # nothing accumulated
+    Md, Ed, Rd, nd, ufd = acc.M[d+1], acc.E[d+1], acc.R[d+1], acc.n[d+1], acc.uf[d+1]
+    @assert length(Md) == length(dest.coeffs)
+    @inbounds for pos in eachindex(Md)
+        n = nd[pos]
+        n == 0 && continue
+        prod = _mr_enclose(Md[pos], Ed[pos], Rd[pos], n, ufd[pos], acc.dec, acc.g)
+        prod === nothing && return false
+        dest.coeffs[pos] = prod
+    end
+    return true
 end
 
 
