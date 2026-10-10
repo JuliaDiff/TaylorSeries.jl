@@ -8,7 +8,7 @@
 
 ## Conversion
 convert(::Type{Taylor1{T}}, a::Taylor1) where {T<:Number} =
-    Taylor1(convert(Array{T,1}, a.coeffs))
+    _taylor1_owned(convert(Array{T,1}, a.coeffs))
 
 convert(::Type{Taylor1{T}}, a::Taylor1{T}) where {T<:Number} = a # same object!
 
@@ -47,15 +47,16 @@ convert(::Type{HomogeneousPolynomial{T}}, b::Array{S,1}) where {T<:Number,S<:Num
     HomogeneousPolynomial(convert(Array{T,1}, b), orderH(b))
 
 convert(::Type{HomogeneousPolynomial{T}}, b::S) where {T<:Number,S<:Number}=
-    HomogeneousPolynomial([convert(T,b)], 0)
+    HomogeneousPolynomial(_scalar_space[], convert(T,b), 0)
 
 convert(::Type{HomogeneousPolynomial{T}}, b::Array{T,1}) where {T<:Number} =
     HomogeneousPolynomial(b, orderH(b))
 
 convert(::Type{HomogeneousPolynomial{T}}, b::T) where {T<:Number} =
-    HomogeneousPolynomial([b], 0)
+    HomogeneousPolynomial(_scalar_space[], b, 0)
 
-convert(::Type{HomogeneousPolynomial}, a::Number) = HomogeneousPolynomial([a],0)
+convert(::Type{HomogeneousPolynomial}, a::Number) =
+    HomogeneousPolynomial(_scalar_space[], a, 0)
 
 
 convert(::Type{TaylorN{T}}, a::TaylorN) where {T<:Number} =
@@ -70,7 +71,7 @@ convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{S},1}) where {T<:Numb
     TaylorN( convert(Array{HomogeneousPolynomial{T},1}, b), maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::S)  where {T<:Number,S<:Number} =
-     TaylorN( [HomogeneousPolynomial([convert(T, b)], 0)], 0) # order()
+     TaylorN(_scalar_space[], convert(T, b), 0)
 
 convert(::Type{TaylorN{T}}, b::HomogeneousPolynomial{T}) where {T<:Number} =
     TaylorN( [b], order(b))
@@ -79,9 +80,9 @@ convert(::Type{TaylorN{T}}, b::Array{HomogeneousPolynomial{T},1}) where {T<:Numb
     TaylorN( b, maxorderH(b))
 
 convert(::Type{TaylorN{T}}, b::T) where {T<:Number} =
-    TaylorN( [HomogeneousPolynomial([b], 0)], 0) # order()
+    TaylorN(_scalar_space[], b, 0)
 
-convert(::Type{TaylorN}, b::Number) = TaylorN( [HomogeneousPolynomial([b], 0)], 0) # order()
+convert(::Type{TaylorN}, b::Number) = TaylorN(_scalar_space[], b, 0)
 
 
 function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
@@ -127,7 +128,7 @@ function convert(::Type{Taylor1{TaylorN{T}}}, s::TaylorN{Taylor1{T}}) where {T<:
             end
         end
     end
-    return Taylor1(vT)
+    return _taylor1_owned(vT)
 end
 
 
@@ -247,10 +248,11 @@ Base._promote(b::S, a::Taylor1{TaylorN{T}}) where
 function Base._promote(a::Taylor1{S}, b::Taylor1{TaylorN{T}}) where
         {S<:NumberNotSeries, T<:NumberNotSeries}
     R = promote_type(S, T)
-    sp = space(b[0])
+    sp = _jetspace(b)
     ordN = order(b[0])
-    anew = Taylor1([TaylorN(sp, convert(R, c), ordN) for c in a.coeffs], order(a))
-    return anew, convert(Taylor1{TaylorN{R}}, b)  # TaylorN→TaylorN convert keeps the space
+    vnew = [TaylorN(sp, convert(R, c), ordN) for c in a.coeffs]
+    anew = Taylor1{eltype(vnew)}(vnew, order(a))  # inner constructor: no copy
+    return anew, convert(Taylor1{TaylorN{R}}, b)  # TaylorN->TaylorN convert keeps the space
 end
 Base._promote(b::Taylor1{TaylorN{T}}, a::Taylor1{S}) where
     {S<:NumberNotSeries, T<:NumberNotSeries} = reverse(Base._promote(a, b))

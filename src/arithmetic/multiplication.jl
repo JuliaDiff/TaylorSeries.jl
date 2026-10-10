@@ -43,7 +43,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         *(b::$T{Taylor1{S}}, a::T) where {T<:NumberNotSeries,
             S<:NumberNotSeries} = a * b
         *(a::T, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = Taylor1(a .* b.coeffs)
+            S<:NumberNotSeries} = _taylor1_owned(a .* b.coeffs)
         *(b::Taylor1{$T{S}}, a::T) where
             {T<:NumberNotSeries, S<:NumberNotSeries} = a * b
         *(a::Taylor1{T}, b::$T{Taylor1{S}}) where
@@ -52,7 +52,7 @@ for T in (:HomogeneousPolynomial, :TaylorN)
         *(b::$T{Taylor1{R}}, a::Taylor1{T}) where
             {T<:NumberNotSeries, R<:NumberNotSeries} = a * b
         *(a::$T{T}, b::Taylor1{$T{S}}) where {T<:NumberNotSeries,
-            S<:NumberNotSeries} = Taylor1(a .* b.coeffs)
+            S<:NumberNotSeries} = _taylor1_owned(a .* b.coeffs)
         *(b::Taylor1{$T{S}}, a::$T{T}) where {T<:NumberNotSeries,
             S<:NumberNotSeries} = a * b
     end
@@ -70,7 +70,7 @@ function *(a::Taylor1{T}, b::Taylor1{T}) where {T<:Number}
 end
 
 function *(a::TaylorN{T}, b::TaylorN{T}) where {T<:NumberNotSeriesN}
-    _check_same_space(a, b)
+    a, b = _unify_space(a, b)
     if order(a) != order(b)
         a, b = fixorder(a, b)
     end
@@ -105,7 +105,7 @@ end
 
 function *(a::HomogeneousPolynomial{T}, b::HomogeneousPolynomial{T}) where
         {T<:NumberNotSeriesN}
-    _check_same_space(a, b)
+    a, b = _unify_space(a, b)
     oorder = TS.order(a) + TS.order(b)
     # NOTE: the following returns order TS.order(a), but could be TS.order(), or zero
     oorder > TS.order(a.space) &&
@@ -122,7 +122,7 @@ function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{S}}) where
 end
 
 function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
-    _check_same_space(a, b)
+    a, b = _unify_space(a, b)
     if (order(a) != order(b)) || any(order.(a.coeffs) .!= order.(b.coeffs))
         a, b = fixorder(a, b)
     end

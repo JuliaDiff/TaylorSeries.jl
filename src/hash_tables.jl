@@ -271,6 +271,9 @@ end
 
 default_space[] = JetSpace(DEFAULT_TAYLORN_ORDER, copy(DEFAULT_TAYLORN_VARIABLE_NAMES))
 
+# Internal order-0 space tagging scalars produced by implicit conversion
+_init_scalar_space!()
+
 # Garbage-collect here to free memory
 GC.gc();
 

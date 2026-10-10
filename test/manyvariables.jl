@@ -142,6 +142,262 @@ end
     ty = Taylor1([y, z], 2)
     @test (tx + ty)[0].space === sx
     @test (tx * ty)[0].space === sx
+
+    @testset "Test _scalar_space and adopt" begin
+        variables!("x", order=4, numvars=2, nowarn=true)
+        spA = JetSpace(order=4, variables=["a", "b"])
+        spB = JetSpace(order=4, variables=["a", "b"])        # equal content, different object
+        a, b = variables(spA)
+        p, _ = variables(spB)
+
+        # --- item 1: convert goes to the scalar space, never to default_space
+        c = convert(TaylorN{Float64}, 1.0)
+        @test TS.space(c) === TS._scalar_space[]
+        @test TS.space(convert(HomogeneousPolynomial{Float64}, 2.0)) === TS._scalar_space[]
+        @test order(c) == 0
+
+        # scalar meets a real space: result lives in the real space
+        @test TS.space(a + c) === spA
+        @test TS.space(c * a) === spA
+        @test (a + c)[0][1] == 1.0 && (a + c)[1][1] == 1.0
+        # ... but two non-scalar spaces still do not mix, even with equal content
+        @test_throws ArgumentError a + p
+        @test_throws ArgumentError TaylorN(spA, 1.0, 0) + p      # explicit order-0 is NOT a wildcard
+
+        # array literals and Taylor1 containers
+        t = Taylor1([a, 1.0])
+        @test all(TS.space(t[k]) === spA for k in 0:1)
+        @test order(t[1]) == 0                                   # converted constants stay order 0 (wildcard)
+        # a Taylor1 built from a type is made of constants: it takes the space of the other operand
+        tt = Taylor1(TaylorN{Float64}, 3)
+        @test TS.space((tt + a)[0]) === spA
+        @test TS.space((a * tt)[1]) === spA
+        @test TS.space((tt * Taylor1([a, a]))[1]) === spA
+        tt[0] = a                                                # first non-scalar insertion fixes the space
+        @test all(TS.space(tt[k]) === spA for k in 0:3)
+        @test TS.space((Taylor1([a, a]) + Taylor1(convert(TaylorN{Float64}, 2.0), 1))[0]) === spA
+        @test_throws ArgumentError Taylor1([a, p])               # mixed non-scalar spaces rejected
+
+        # --- item 2: no aliasing in the vector constructor
+        ξ = a + 1
+        s = Taylor1([ξ, ξ, ξ])
+        @test s.coeffs[1] !== s.coeffs[2] && s.coeffs[2] !== s.coeffs[3]
+        s2 = Taylor1(fill(ξ, 3))
+        @test s2.coeffs[1] !== s2.coeffs[2] && s2.coeffs[2] !== s2.coeffs[3]
+        s2[1][0][1] = 99.0                                       # in-place write: only one slot changes
+        @test s2[0][0][1] != 99.0 && s2[2][0][1] != 99.0 && ξ[0][1] != 99.0
+        # repeated objects are found for short and for long vectors, adjacent or not
+        big = Taylor1(fill(ξ, 100))
+        @test allunique(map(objectid, big.coeffs))
+        vv = [ξ; [a + i for i in 1:60]; ξ]
+        tv = Taylor1(vv)
+        @test tv.coeffs[1] === ξ && tv.coeffs[end] !== ξ && allunique(map(objectid, tv.coeffs))
+        @test Taylor1([ξ, a, ξ]).coeffs[3] !== ξ
+        # an object that appears only once is stored without copying (no cost)
+        η = a + 2
+        @test Taylor1([η, ξ]).coeffs[1] === η
+
+        # --- item 3: setindex!(::TaylorN, ::HomogeneousPolynomial, n) copies
+        f = a + b
+        h = HomogeneousPolynomial(spA, [3.0, 4.0], 1)
+        f[1] = h
+        @test f[1] !== h
+        h[1] = -1.0
+        @test f[1][1] == 3.0
+        # Taylor1{TaylorN} setindex!: adopts scalars, copies, checks
+        s[1] = convert(TaylorN{Float64}, 5.0)
+        @test TS.space(s[1]) === spA && s[1][0][1] == 5.0
+        @test_throws ArgumentError (s[2] = p)
+
+        # --- Taylor1(x, order): zero-filled slots are distinct objects (unchanged behaviour)
+        z = Taylor1(zero(a), 3)
+        @test z.coeffs[2] !== z.coeffs[3] && z.coeffs[3] !== z.coeffs[4]
+
+        # --- evaluate with scalar-space objects
+        @test evaluate(c, (1.0, 2.0)) == 1.0
+        @test evaluate(c, [1.0, 2.0]) == 1.0
+        @test evaluate(convert(HomogeneousPolynomial{Float64}, 3.0), (1.0, 2.0)) == 3.0
+        @test evaluate(a + b, [convert(TaylorN{Float64}, 1.0), b]) isa TaylorN   # scalar value is embedded
+        @test TS.space(evaluate(a + b, [convert(TaylorN{Float64}, 1.0), b])) === spA
+
+        # --- equality and division with scalar-space operands
+        @test c == 1.0 && c == TaylorN(1.0, 3)
+        @test (a + c) == (a + 1.0)
+        @test (a + c) / c == a + 1.0
+        @test TS.space((a + c) / c) === spA
+        @test TS.space(c / (a + c)) === spA
+        @test TS._jetspace(Taylor1(5)) === TS._scalar_space[]    # no error on space-less series
+        @test TS._embed_scalar(a, spB) === a                           # non-scalar spaces are never changed
+
+        # --- TaylorN{Taylor1}: assigning a Taylor1 stays in the space of the TaylorN
+        v = TaylorN(spA, Taylor1([1.0, 2.0]), 2)
+        v[0] = Taylor1([3.0, 4.0])
+        @test TS.space(v[0]) === spA && v[0][1] == Taylor1([3.0, 4.0])
+        @test TS.space(exp(v)) === spA
+
+        # --- documented behaviour: promote with 2 arguments keeps the space of the series, while
+        # n-ary `promote` and array literals use `convert`, i.e. the scalar space. The raw
+        # (kernel) check is strict, so it rejects the scalar-space entry; `_common_space` accepts it.
+        @test isnothing(TS._check_same_space(promote(a, 0)...))
+        @test_throws ArgumentError TS._check_same_space(promote(a, a, 0)...)
+        E = [a, a, 0]
+        @test TS.space(E[3]) === TS._scalar_space[]
+        @test_throws ArgumentError TS._check_same_space(E...)
+        @test TS._common_space(TS._scalar_space[], E) === spA
+        @test TS.space(sum(E)) === spA                           # entry points embed the scalar
+
+        # --- comparability with previous behaviour (same space, nothing changes)
+        @test (a + b)*(a - b) == a^2 - b^2
+    end
+
+    @testset "Tests with mixed JetSpaces" begin
+        ordN = 4
+        sp  = JetSpace(5, ["a", "b"])
+        sp2 = JetSpace(5, ["c", "d"])       # same shape as sp, different space
+        ξ = TaylorN(sp,  1, order=ordN)
+        η = TaylorN(sp2, 1, order=ordN)
+        ζ = TaylorN(sp2, 2, order=ordN)
+        x    = Taylor1([1+ξ, 2ξ, ξ^2], 2)
+        # Not accepted by Taylor1 constructor, because mixed JetSpaces
+        @test_throws ArgumentError Taylor1([1+ξ, η, ξ], 2)
+        # Accepted by Taylor1, but mixed, due to setindex!
+        xmix = deepcopy(x)
+        xmix.coeffs[2] = η
+
+        @testset "Promotion uses the space of the operands" begin
+            y  = Taylor1([TaylorN(sp, float(k), ordN) for k in 1:6])    # order 5
+            t  = Taylor1([1.0, 2.0, 3.0, 4.0])                          # order 3
+            ti = Taylor1([1, 2, 3, 4])
+            tl = Taylor1([TaylorN(sp, c, ordN) for c in t.coeffs])      # lifted by hand
+
+            a, b = promote(t, y)
+            @test a isa Taylor1{TaylorN{Float64}} && b isa Taylor1{TaylorN{Float64}}
+            @test all(space(a[k]) === sp for k in eachindex(a))
+            @test reverse(promote(y, t)) == (a, b)
+
+            tN = t + zero(y)
+            @test all(space(tN[k]) === sp for k in eachindex(tN))
+            @test tN == tl + zero(y)
+            for op in (+, -), u in (t, ti)
+                @test op(u, y) == op(tl, y)
+                @test op(y, u) == op(y, tl)
+                @test order(op(u, y)) == order(t)
+            end
+            @test t * y == tl * y
+            @test y / (1 + t) == y / (1 + tl)
+
+            # scalars
+            @test space(promote(ξ, 2.0)[2]) === sp
+            @test all(space(c) === sp for c in promote(x, 2.0)[2].coeffs)
+        end
+
+        @testset "convert keeps the space" begin
+            hp = HomogeneousPolynomial(sp, Int, 1)
+            @test space(convert(TaylorN{Float64}, hp))   === sp
+            @test space(convert(TaylorN{Int}, hp))       === sp
+            @test space(convert(TaylorN{Float64}, [hp])) === sp
+            @test space(convert(TaylorN{Int}, [hp]))     === sp
+            @test space(convert(TaylorN{Float64}, ξ))    === sp
+
+            r = convert(TaylorN{Taylor1{Float64}}, x)
+            @test space(r) === sp
+            @test convert(Taylor1{TaylorN{Float64}}, r) == x
+            @test_throws ArgumentError convert(TaylorN{Taylor1{Float64}}, xmix)
+        end
+
+        @testset "setindex! on Taylor1{TaylorN}" begin
+            y = deepcopy(x)
+            @test_throws ArgumentError (y[1] = η)
+            @test_throws ArgumentError (y[0:1] = η)
+            @test_throws ArgumentError (y[:] = [ξ, η, ξ])
+
+            # assigned coefficients are copies (no aliasing)
+            w = 1 + ξ
+            y[1] = w
+            w[0][1] = 5.0
+            @test y[1] == 1 + ξ
+            y[0:1] = w
+            @test y[0] !== y[1]
+        end
+
+        @testset "Addition and subtraction" begin
+            y = Taylor1([η, η, η], 2)
+            @test_throws ArgumentError x + xmix
+            @test_throws ArgumentError x - xmix
+            @test_throws ArgumentError TaylorSeries.add!(zero(x), x, y, 0)
+            @test_throws ArgumentError TaylorSeries.subst!(zero(x), x, y, 0)
+        end
+
+        @testset "Multiplication, division, powers" begin
+            # products with HomogeneousPolynomial{Taylor1} / TaylorN{Taylor1} keep the space
+            hpt = HomogeneousPolynomial(sp, [Taylor1(2), Taylor1(2)], 1)
+            ξt  = TaylorN(sp, [hpt], ordN)
+            @test space(2.0 * hpt) === sp
+            @test space(Taylor1(2) * hpt) === sp
+            @test space(2.0 * ξt) === sp
+            @test space(Taylor1(2) * ξt) === sp
+
+            @test_throws ArgumentError x * xmix
+            @test_throws ArgumentError x / xmix
+            @test_throws ArgumentError ξ / xmix
+            @test_throws ArgumentError TaylorSeries.mul!(zero(x), x, xmix, 1)
+            @test_throws ArgumentError TaylorSeries.mul!(zero(x), 2.0, xmix, 1)
+            @test_throws ArgumentError TaylorSeries.mul!(zero(x), x, xmix)
+            @test_throws ArgumentError TaylorSeries.div!(zero(x), xmix, 2.0, 1)
+            @test_throws ArgumentError TaylorSeries.sqr!(zero(ξ), η, 0.0, 1)
+            @test_throws ArgumentError TaylorSeries.sqrt!(zero(ξ), 1+η, zero(ξ), 1)
+        end
+
+        @testset "p == 1 powers: copies in the same space" begin
+            hp = HomogeneousPolynomial(sp, Float64, 1)
+            for u in (hp, 1 + ξ)
+                for v in (Base.power_by_squaring(u, 1), u^1)
+                    @test space(v) === sp
+                    @test v == u
+                    @test v.coeffs !== u.coeffs
+                end
+            end
+            t = Taylor1(3)
+            v = Base.power_by_squaring(t, 1)
+            @test v == t && v.coeffs !== t.coeffs
+        end
+
+        @testset "Division regressions" begin
+            # TaylorN{Int} / TaylorN{Int} promotes to Float64
+            ξi = TaylorN(sp, Int, 1, order=ordN)
+            @test (1 + ξi) / (2 + ξi) == (1 + ξ) / (2 + ξ)
+            # TaylorN / Taylor1{TaylorN} has the Taylor1 order of the denominator
+            r = (1 + ξ) / x
+            @test order(r) == order(x)
+            @test r == Taylor1(1 + ξ, order(x)) / x
+        end
+
+        @testset "Evaluation and inverse_map" begin
+            @test_throws ArgumentError evaluate(ξ, (ξ, η))
+            @test_throws ArgumentError evaluate(xmix, 1, ξ)
+            @test_throws ArgumentError evaluate(Taylor1(2), xmix)
+            # non-singular Jacobian, so only the space check can make this throw
+            @test_throws ArgumentError TaylorSeries.inverse_map([ξ, ζ])
+        end
+
+        @testset "identity! and one!" begin
+            @test_throws ArgumentError TaylorSeries.identity!(zero(ξ), η)
+            @test_throws ArgumentError TaylorSeries.identity!(zero(x), xmix)   # Taylor1{TaylorN}
+
+            # one! on nested series: only the constant coefficient is one
+            y = deepcopy(x)
+            TaylorSeries.one!(y)
+            @test y == one(y)
+            TaylorSeries.one!(y)
+            @test y == one(y)
+
+            # one!(c, a, 0) with c[0] of lower inner order than a[0]
+            a2 = Taylor1([Taylor1(3), Taylor1(3)], 1)
+            c2 = Taylor1([Taylor1(1), Taylor1(1)], 1)
+            TaylorSeries.one!(c2, a2, 0)
+            @test c2[0] == one(c2[0])
+        end
+    end
 end
 
 @testset "Tests for HomogeneousPolynomial and TaylorN" begin
@@ -1155,153 +1411,4 @@ end
     @test ctab == sp.coeff_table
     @test ee1 == ee2
 
-end
-
-@testset "Tests with mixed JetSpaces" begin
-    ordN = 4
-    sp  = JetSpace(5, ["a", "b"])
-    sp2 = JetSpace(5, ["c", "d"])       # same shape as sp, different space
-    ξ = TaylorN(sp,  1, order=ordN)
-    η = TaylorN(sp2, 1, order=ordN)
-    ζ = TaylorN(sp2, 2, order=ordN)
-    x    = Taylor1([1+ξ, 2ξ, ξ^2], 2)
-    # Not accepted by Taylor1 constructor, because mixed JetSpaces
-    @test_throws ArgumentError Taylor1([1+ξ, η, ξ], 2)
-    # Accepted by Taylor1, but mixed, due to setindex!
-    xmix = deepcopy(x)
-    xmix.coeffs[2] = η
-
-    @testset "Promotion uses the space of the operands" begin
-        y  = Taylor1([TaylorN(sp, float(k), ordN) for k in 1:6])    # order 5
-        t  = Taylor1([1.0, 2.0, 3.0, 4.0])                          # order 3
-        ti = Taylor1([1, 2, 3, 4])
-        tl = Taylor1([TaylorN(sp, c, ordN) for c in t.coeffs])      # lifted by hand
-
-        a, b = promote(t, y)
-        @test a isa Taylor1{TaylorN{Float64}} && b isa Taylor1{TaylorN{Float64}}
-        @test all(space(a[k]) === sp for k in eachindex(a))
-        @test reverse(promote(y, t)) == (a, b)
-
-        tN = t + zero(y)
-        @test all(space(tN[k]) === sp for k in eachindex(tN))
-        @test tN == tl + zero(y)
-        for op in (+, -), u in (t, ti)
-            @test op(u, y) == op(tl, y)
-            @test op(y, u) == op(y, tl)
-            @test order(op(u, y)) == order(t)
-        end
-        @test t * y == tl * y
-        @test y / (1 + t) == y / (1 + tl)
-
-        # scalars
-        @test space(promote(ξ, 2.0)[2]) === sp
-        @test all(space(c) === sp for c in promote(x, 2.0)[2].coeffs)
-    end
-
-    @testset "convert keeps the space" begin
-        hp = HomogeneousPolynomial(sp, Int, 1)
-        @test space(convert(TaylorN{Float64}, hp))   === sp
-        @test space(convert(TaylorN{Int}, hp))       === sp
-        @test space(convert(TaylorN{Float64}, [hp])) === sp
-        @test space(convert(TaylorN{Int}, [hp]))     === sp
-        @test space(convert(TaylorN{Float64}, ξ))    === sp
-
-        r = convert(TaylorN{Taylor1{Float64}}, x)
-        @test space(r) === sp
-        @test convert(Taylor1{TaylorN{Float64}}, r) == x
-        @test_throws ArgumentError convert(TaylorN{Taylor1{Float64}}, xmix)
-    end
-
-    @testset "setindex! on Taylor1{TaylorN}" begin
-        y = deepcopy(x)
-        @test_throws ArgumentError (y[1] = η)
-        @test_throws ArgumentError (y[0:1] = η)
-        @test_throws ArgumentError (y[:] = [ξ, η, ξ])
-
-        # assigned coefficients are copies (no aliasing)
-        w = 1 + ξ
-        y[1] = w
-        w[0][1] = 5.0
-        @test y[1] == 1 + ξ
-        y[0:1] = w
-        @test y[0] !== y[1]
-    end
-
-    @testset "Addition and subtraction" begin
-        y = Taylor1([η, η, η], 2)
-        @test_throws ArgumentError x + xmix
-        @test_throws ArgumentError x - xmix
-        @test_throws ArgumentError TaylorSeries.add!(zero(x), x, y, 0)
-        @test_throws ArgumentError TaylorSeries.subst!(zero(x), x, y, 0)
-    end
-
-    @testset "Multiplication, division, powers" begin
-        # products with HomogeneousPolynomial{Taylor1} / TaylorN{Taylor1} keep the space
-        hpt = HomogeneousPolynomial(sp, [Taylor1(2), Taylor1(2)], 1)
-        ξt  = TaylorN(sp, [hpt], ordN)
-        @test space(2.0 * hpt) === sp
-        @test space(Taylor1(2) * hpt) === sp
-        @test space(2.0 * ξt) === sp
-        @test space(Taylor1(2) * ξt) === sp
-
-        @test_throws ArgumentError x * xmix
-        @test_throws ArgumentError x / xmix
-        @test_throws ArgumentError ξ / xmix
-        @test_throws ArgumentError TaylorSeries.mul!(zero(x), x, xmix, 1)
-        @test_throws ArgumentError TaylorSeries.mul!(zero(x), 2.0, xmix, 1)
-        @test_throws ArgumentError TaylorSeries.mul!(zero(x), x, xmix)
-        @test_throws ArgumentError TaylorSeries.div!(zero(x), xmix, 2.0, 1)
-        @test_throws ArgumentError TaylorSeries.sqr!(zero(ξ), η, 0.0, 1)
-        @test_throws ArgumentError TaylorSeries.sqrt!(zero(ξ), 1+η, zero(ξ), 1)
-    end
-
-    @testset "p == 1 powers: copies in the same space" begin
-        hp = HomogeneousPolynomial(sp, Float64, 1)
-        for u in (hp, 1 + ξ)
-            for v in (Base.power_by_squaring(u, 1), u^1)
-                @test space(v) === sp
-                @test v == u
-                @test v.coeffs !== u.coeffs
-            end
-        end
-        t = Taylor1(3)
-        v = Base.power_by_squaring(t, 1)
-        @test v == t && v.coeffs !== t.coeffs
-    end
-
-    @testset "Division regressions" begin
-        # TaylorN{Int} / TaylorN{Int} promotes to Float64
-        ξi = TaylorN(sp, Int, 1, order=ordN)
-        @test (1 + ξi) / (2 + ξi) == (1 + ξ) / (2 + ξ)
-        # TaylorN / Taylor1{TaylorN} has the Taylor1 order of the denominator
-        r = (1 + ξ) / x
-        @test order(r) == order(x)
-        @test r == Taylor1(1 + ξ, order(x)) / x
-    end
-
-    @testset "Evaluation and inverse_map" begin
-        @test_throws ArgumentError evaluate(ξ, (ξ, η))
-        @test_throws ArgumentError evaluate(xmix, 1, ξ)
-        @test_throws ArgumentError evaluate(Taylor1(2), xmix)
-        # non-singular Jacobian, so only the space check can make this throw
-        @test_throws ArgumentError TaylorSeries.inverse_map([ξ, ζ])
-    end
-
-    @testset "identity! and one!" begin
-        @test_throws ArgumentError TaylorSeries.identity!(zero(ξ), η)
-        @test_throws ArgumentError TaylorSeries.identity!(zero(x), xmix)   # Taylor1{TaylorN}
-
-        # one! on nested series: only the constant coefficient is one
-        y = deepcopy(x)
-        TaylorSeries.one!(y)
-        @test y == one(y)
-        TaylorSeries.one!(y)
-        @test y == one(y)
-
-        # one!(c, a, 0) with c[0] of lower inner order than a[0]
-        a2 = Taylor1([Taylor1(3), Taylor1(3)], 1)
-        c2 = Taylor1([Taylor1(1), Taylor1(1)], 1)
-        TaylorSeries.one!(c2, a2, 0)
-        @test c2[0] == one(c2[0])
-    end
 end

@@ -28,9 +28,292 @@ _has_space(::Type) = false
 _has_space(::Type{<:Union{HomogeneousPolynomial,TaylorN}}) = true
 _has_space(::Type{Taylor1{T}}) where {T} = _has_space(T)
 
-# The space of a series (recursive through nested Taylor1s)
+
+## Scalar-space helpers ------------------------------------------------------
+# Plain numeric values created by conversion live in `_scalar_space[]` (order 0, 0
+# variables). The *raw* `_check_same_space(::JetSpace, ::JetSpace)` stays strict
+# on purpose: in-place kernels run `@inbounds` loops sized by one operand, so a
+# scalar leaking into them must be an error. Scalars are instead embedded at the
+# entry points (`_unify_space`) and by containers (`_adopt`, `_checked_coeffs`).
+#
+# Naming: `_jetspace(x)` gives the JetSpace of `x` (the scalar space for numbers and
+# for series with no non-scalar elements), `_is_scalar_space(x)` asks whether `x` is
+# space-agnostic, and `_embed_scalar(x, sp[, ord])` returns `x` in `sp` *only if*
+# `_is_scalar_space(x)`; otherwise it returns `x` itself, so a non-scalar space is never
+# silently changed.
+
+# The space of an object (recursive through nested Taylor1s)
+_jetspace(::Number) = _scalar_space[]                 # plain numbers
 _jetspace(a::Union{HomogeneousPolynomial,TaylorN}) = space(a)
-_jetspace(a::Taylor1) = _jetspace(a.coeffs[1])
+function _jetspace(a::Taylor1{T}) where {T}
+    _has_space(T) || return _scalar_space[]
+    for c in a.coeffs
+        sp = _jetspace(c)
+        _is_scalar_space(sp) || return sp             # first non-scalar coefficient
+    end
+    return _scalar_space[]
+end
+
+# Is the object space-agnostic? For a `Taylor1{TaylorN}`: are *all* coefficients
+@inline _is_scalar_space(x::Number) = _is_scalar_space(_jetspace(x))
+
+
+"""
+    _embed_scalar(x, sp::JetSpace, ord::Int=0)
+
+Return `x` rebuilt in `sp` if `x` is space-agnostic (`_is_scalar_space(x)`), and `x`
+otherwise. `ord` is the inner order given to the embedded `TaylorN`s
+(0 means "take the order of the other operand", as in `fixorder`); it is
+ignored by the other types. It also acts on vectors and tuples of series, which are
+returned unchanged if nothing has to be embedded.
+"""
+_embed_scalar(x, ::JetSpace, ::Int=0) = x                          # nothing to embed
+_embed_scalar(a::HomogeneousPolynomial, sp::JetSpace, ::Int=0) =
+    _is_scalar_space(a) ? HomogeneousPolynomial(sp, a.coeffs[1], 0) : a
+_embed_scalar(a::TaylorN, sp::JetSpace, ord::Int=0) =
+    _is_scalar_space(a) ? TaylorN(sp, a.coeffs[1].coeffs[1], ord) : a
+function _embed_scalar(a::Taylor1{TaylorN{T}}, sp::JetSpace, ord::Int=0) where {T<:Number}
+    _is_scalar_space(a) || return a          # only a Taylor1 made of constants
+    v = FixedSizeVectorDefault{TaylorN{T}}(undef, length(a.coeffs))
+    for (i, c) in enumerate(a.coeffs)
+        v[i] = _embed_scalar(c, sp, ord)
+    end
+    return Taylor1{TaylorN{T}}(v)
+end
+function _embed_scalar(v::Union{AbstractVector{<:Union{HomogeneousPolynomial,TaylorN}},Tuple},
+        sp::JetSpace, ord::Int=0)
+    _is_scalar_space(sp) && return v
+    any(_is_scalar_space, v) || return v
+    return map(x -> _embed_scalar(x, sp, ord), v)
+end
+
+
+# Order of the first non-scalar `TaylorN` (used to embed evaluation points; containers
+# keep embedded constants at order 0, which acts as a wildcard in `fixorder`)
+_reference_order(v) = 0
+function _reference_order(v::Union{AbstractVector{<:TaylorN},Tuple})
+    for x in v
+        x isa TaylorN && !_is_scalar_space(x) && return order(x)
+    end
+    return 0
+end
+
+
+"""
+    _common_space(sp::JetSpace, v)
+
+JetSpace shared by the non-scalar entries of `v` (and `sp`, if it is not the scalar
+space); the scalar space if there is none. Throws if two non-scalar spaces differ.
+"""
+@inline function _common_space(sp::JetSpace, v)
+    ssp = _scalar_space[]
+    for x in v
+        s = _jetspace(x)
+        if s === ssp || s === sp
+            continue
+        elseif sp === ssp
+            sp = s
+        else
+            _check_same_space(sp, s)     # two different non-scalar spaces: throws
+        end
+    end
+    return sp
+end
+
+
+"""
+    _adopt(sp::JetSpace, x[, ord])
+
+Value to be *stored* in a container living in `sp`: space-agnostic `x` is embedded
+(a new object), anything else is checked against `sp` and copied (no aliasing).
+"""
+function _adopt(sp::JetSpace, x::TaylorN, ord::Int=0)
+    _is_scalar_space(x) && return _embed_scalar(x, sp, ord)
+    _check_same_space(sp, x.space)
+    return TaylorN(sp, x.coeffs, order(x))     # space known: skips the 2-argument constructor path
+end
+function _adopt(sp::JetSpace, x::HomogeneousPolynomial, ::Int=0)
+    _is_scalar_space(x) && return _embed_scalar(x, sp)
+    _check_same_space(sp, x.space)
+    return _copy_series(x)
+end
+function _adopt(sp::JetSpace, x::Taylor1, ord::Int=0)
+    _is_scalar_space(x) || _check_same_space(sp, _jetspace(x))
+    y = _embed_scalar(x, sp, ord)
+    return y === x ? deepcopy(x) : y
+end
+
+
+# Coefficients for a `Taylor1` built from a user-supplied vector. Numbers need nothing
+# (the constructors copy the container). For series, scalar-space entries are embedded
+# and an object that appears in several slots (`[ξ, ξ, ξ]`, `fill(ξ, n)`) is copied in
+# all but its first occurrence, so that no two slots share an object. Objects that
+# appear once are stored as they are (no copy), as before.
+_own_coeffs(v::AbstractVector{<:Number}) = v
+function _own_coeffs(v::AbstractVector{T}) where {T<:AbstractSeries}
+    n = length(v)
+    out = FixedSizeVectorDefault{T}(undef, n)
+    hasspace = _has_space(T)
+    sp = hasspace ? _common_space(_scalar_space[], v) : _scalar_space[]
+    dups = _repeated_objects(v)
+    for (i, x) in enumerate(v)
+        y = (hasspace && _is_scalar_space(x)) ? _embed_scalar(x, sp) : x
+        out[i] = (y === x && dups !== nothing && dups[i]) ?
+            (hasspace ? _adopt(sp, x) : deepcopy(x)) : y
+    end
+    return out
+end
+
+
+# Returns `nothing` if no object appears twice in `v`; otherwise a `BitVector` marking the
+# entries that repeat an earlier one. O(n²) pointer comparisons for short vectors (no allocation
+# when there are no repeated objects); above that, a small open-addressing table keyed by
+# the address of the coefficient storage (exact: a hit is confirmed with `===`), which is
+# O(n). Cheap identity hash for series (`Taylor1`, `HomogeneousPolynomial`, `TaylorN`):
+# the address of their coefficients (not dereferenced; objects are alive during the call)
+@inline _storage_hash(x) = UInt(pointer(x.coeffs)) >> 4
+
+function _repeated_objects(v)
+    n = length(v)
+    mask = nothing
+    if n <= 24
+        for i in 2:n
+            x = v[i]
+            for j in 1:i-1
+                if @inbounds v[j] === x
+                    mask === nothing && (mask = falses(n))
+                    mask[i] = true
+                    break
+                end
+            end
+        end
+        return mask
+    end
+    m = nextpow(2, 2n)
+    table = zeros(Int, m)          # slot -> index (in `v`) of the object stored there
+    for i in 1:n
+        x = v[i]
+        h = Int(_storage_hash(x) & UInt(m - 1)) + 1
+        while true
+            j = table[h]
+            if j == 0
+                table[h] = i
+                break
+            elseif v[j] === x
+                mask === nothing && (mask = falses(n))
+                mask[i] = true
+                break
+            end
+            h = h == m ? 1 : h + 1
+        end
+    end
+    return mask
+end
+
+
+# Used by the inner `TaylorN` constructor: one pass that throws on a non-scalar space
+# different from `sp`, and embeds scalar-space polynomials (new vector) if there are any
+@inline function _checked_hps(sp::JetSpace, v::AbstractVector{HomogeneousPolynomial{T}}) where {T}
+    ssp = _scalar_space[]
+    nscalar = 0
+    for pol in v
+        s = pol.space
+        s === sp && continue
+        s === ssp ? (nscalar += 1) : _check_same_space(sp, s)
+    end
+    (nscalar == 0 || sp === ssp) && return v
+    return _embed_entries(sp, v)
+end
+
+# Rare path of the checks above; returns a copy of the same container type (type-stable)
+@noinline function _embed_entries(sp::JetSpace, v::AbstractVector)
+    out = copy(v)
+    for i in eachindex(out)
+        out[i] = _embed_scalar(out[i], sp)
+    end
+    return out
+end
+
+# Trusted constructor: `v` already holds objects nobody else references
+_taylor1_owned(v::AbstractVector{T}) where {T<:Number} =
+    Taylor1{T}(v isa FixedSizeVectorDefault{T} ? v : FixedSizeVectorDefault(v))
+
+# Used by the inner `Taylor1` constructors. Throws on mixed non-scalar spaces; if scalar-space
+# entries are mixed with non-scalar ones, returns a new vector with them embedded
+# (the caller's vector is not modified). Otherwise returns `v` itself.
+@inline _checked_coeffs(v::AbstractVector{T}) where {T} =
+    _has_space(T) ? _checked_coeffs_space(v) : v
+@inline function _checked_coeffs_space(v::AbstractVector{T}) where {T}
+    isempty(v) && return v
+    # single pass: common non-scalar space (strict) and number of scalar-space entries
+    ssp = _scalar_space[]
+    sp = ssp
+    nscalar = 0
+    for x in v
+        s = _jetspace(x)
+        if s === ssp
+            nscalar += 1
+        elseif sp === ssp
+            sp = s
+        elseif s !== sp
+            _check_same_space(sp, s)     # two different non-scalar spaces: throws
+        end
+    end
+    (nscalar == 0 || sp === ssp) && return v
+    return _embed_entries(sp, v)
+end
+
+# Entry-point helper for binary operations: embed the scalar operand (if any) into
+# the space of the other one, error on two different non-scalar spaces, and keep the full
+# coefficient check for `Taylor1{<:TaylorN}` (kernels may write `coeffs` directly).
+@inline _unify_space(a::AbstractSeries, b::AbstractSeries) =
+    (_check_same_space(a, b); (a, b))
+@inline function _unify_space(a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+    sa, sb = a.space, b.space
+    sa === sb && return a, b
+    _is_scalar_space(sa) && return _embed_scalar(a, sb), b
+    _is_scalar_space(sb) && return a, _embed_scalar(b, sa)
+    _space_mismatch_error(sa, sb)
+end
+@inline function _unify_space(a::TaylorN, b::TaylorN)
+    sa, sb = a.space, b.space
+    sa === sb && return a, b
+    _is_scalar_space(sa) && return _embed_scalar(a, sb, order(b)), b
+    _is_scalar_space(sb) && return a, _embed_scalar(b, sa, order(a))
+    _space_mismatch_error(sa, sb)
+end
+# `Taylor1{<:TaylorN}` with `TaylorN`; a `Taylor1` made of constants (e.g. built from a
+# type, `Taylor1(TaylorN{Float64}, 5)`) takes the space of the other operand
+function _unify_space(a::Taylor1{<:TaylorN}, b::TaylorN)
+    sa, sb = _jetspace(a), b.space
+    if sa !== sb
+        if _is_scalar_space(sa)
+            a = _embed_scalar(a, sb, order(b))
+        elseif _is_scalar_space(sb)
+            b = _embed_scalar(b, sa, order(a.coeffs[1]))
+        else
+            _space_mismatch_error(sa, sb)
+        end
+    end
+    _check_same_space(a.coeffs[1], b)
+    return a, b
+end
+_unify_space(b::TaylorN, a::Taylor1{<:TaylorN}) = reverse(_unify_space(a, b))
+
+function _unify_space(a::Taylor1{<:TaylorN}, b::Taylor1{<:TaylorN})
+    sa, sb = _jetspace(a), _jetspace(b)
+    if sa !== sb
+        if _is_scalar_space(sa)
+            a = _embed_scalar(a, sb, order(b.coeffs[1]))
+        elseif _is_scalar_space(sb)
+            b = _embed_scalar(b, sa, order(a.coeffs[1]))
+        else
+            _space_mismatch_error(sa, sb)
+        end
+    end
+    _check_same_space(a, b)     # full-coefficient check (still needed, item 4)
+    return a, b
+end
 
 
 """
@@ -134,9 +417,7 @@ _check_same_space_all(v::AbstractVector) = (_has_space(eltype(v)) &&
 function _space_from_homogeneous_vector(v::AbstractVector{<:HomogeneousPolynomial},
         fallback::JetSpace)
     isempty(v) && return fallback
-    space = v[1].space
-    _check_same_space(space, v)
-    return space
+    return _common_space(_scalar_space[], v)
 end
 
 _constant_series_like(a::Taylor1, x, order::Int) = Taylor1(x, order)
@@ -292,11 +573,20 @@ getindex(a::Taylor1{T}, u::StepRange{Int,Int}) where {T<:Number} =
 #     setindex!(a.coeffs, deepcopy(x), n+1)
 @inline function setindex!(a::Taylor1{TaylorN{T}}, x::TaylorN{T}, n::Int) where
         {T<:NumberNotSeries}
-    _check_same_space(a[0], x)
-    return a.coeffs[n+1] = TaylorN(space(x), x.coeffs, order(x))
+    sp = _jetspace(a)
+    if _is_scalar_space(sp) && !_is_scalar_space(x)
+        sp = x.space           # `a` was made of constants: its coefficients adopt that space
+        for i in eachindex(a.coeffs)
+            a.coeffs[i] = _embed_scalar(a.coeffs[i], sp)
+        end
+    end
+    return a.coeffs[n+1] = _adopt(sp, x, order(a.coeffs[n+1]))
 end
+# Build the `HomogeneousPolynomial` explicitly in `a.space`: storing the `Taylor1` directly
+# would go through `convert(HomogeneousPolynomial{...}, ::Taylor1)`, which only sees the
+# target type (scalar space). `_coeffsHP` copies `x`.
 @inline setindex!(a::TaylorN{Taylor1{T}}, x::Taylor1{T}, n::Int) where
-    {T<:NumberNotSeries} = a.coeffs[n+1] = Taylor1{T}(x.coeffs[:])
+    {T<:NumberNotSeries} = a.coeffs[n+1] = HomogeneousPolynomial(a.space, x, n)
 @inline function setindex!(a::Taylor1{Taylor1{T}}, x::Taylor1{T}, n::Int) where
         {T<:Taylor1{<:Number}}
     a.coeffs[n+1] = zero(x)
@@ -415,8 +705,7 @@ getcoeff(a::TaylorN, v::AbstractArray{Int,1}) = getcoeff(a, (v...,))
 @inline function setindex!(a::TaylorN{T}, x::HomogeneousPolynomial{T}, n::Int) where
         {T<:Number}
     @assert order(x) == n
-    _check_same_space(a, x)
-    return a.coeffs[n+1] = x
+    return a.coeffs[n+1] = _adopt(a.space, x)
 end
 @inline setindex!(a::TaylorN{T}, x::T, n::Int) where {T<:Number} =
     a.coeffs[n+1] = HomogeneousPolynomial(a.space, x, n)

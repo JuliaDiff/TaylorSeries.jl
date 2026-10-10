@@ -28,8 +28,8 @@ using TaylorSeries
 ## One independent variable
 
 Taylor expansions in one variable are represented by the [`Taylor1`](@ref) type,
-which consists of a vector of coefficients (fieldname `coeffs`) and the maximum
-order considered for the expansion (fieldname `order`). The
+which consists of a vector of coefficients (field name `coeffs`) and the maximum
+order considered for the expansion (field name `order`). The
 coefficients are arranged in ascending order with respect to the degree of the
 monomial, so that
 `coeffs[1]` is the constant term, `coeffs[2]` gives the first order term (`t^1`),
@@ -48,14 +48,14 @@ shift_taylor(a) = a + Taylor1(typeof(a),5)  ## a + taylor-polynomial of order 5
 t = shift_taylor(0.0) # Independent variable `t`
 ```
 
-!!! warning
+!!! Warning
     The information about the maximum order considered is displayed using a big-𝒪 notation.
     The convention followed when different orders are combined, and when certain functions
     are used in a way that they reduce the order (like [`differentiate`](@ref)), is to be consistent
     with the mathematics and the big-𝒪 notation, i.e., to propagate the lowest order.
 
 In some cases, it is desirable to not display the big-𝒪 notation. The function [`displayBigO`](@ref)
-allows to control whether it is displayed or not.
+allows controlling whether it is displayed or not.
 ```@repl userguide
 displayBigO(false) # turn-off displaying big O notation
 t
@@ -101,12 +101,12 @@ t^2 / t # The result is of order 4, instead of 5
 ```
 
 Note that the last example returns a `Taylor1` series of order 4, instead
-of order 5; this is be consistent with the number of known coefficients of the
+of order 5; this is consistent with the number of known coefficients of the
 returned series, since the result corresponds to factorize `t` in the numerator
 to cancel the same factor in the denominator.
 
-`Taylor1` is also equiped with a total order, provided by overloading [`isless`](@ref).
-The ordering is consistent with the interpretation that there are infinitessimal
+`Taylor1` is also equipped with a total order, provided by overloading [`isless`](@ref).
+The ordering is consistent with the interpretation that there are infinitesimal
 elements in the algebra; for details see M. Berz, "Automatic Differentiation as
 Nonarchimedean Analysis", Computer Arithmetic and Enclosure Methods, (1992), Elsevier,
 439-450. This is illustrated by:
@@ -231,8 +231,8 @@ Useful shortcuts are [`taylor_expand`](@ref) and [`update!`](@ref).
 The former returns
 the expansion of a function around a given value `t0`, mimicking the use
 of `shift_taylor` above. In turn, `update!`
-provides an in-place update of a given Taylor polynomial, that is, it shifts
-it further by the provided amount. Note that the type of the `Taylor1` polynomial and the shifted point must be compatible, in the sense that the latter must be convertable into the parametric type of the former.
+provides an update in-place of a given Taylor polynomial, that is, it shifts
+it further by the provided amount. Note that the type of the `Taylor1` polynomial and the shifted point must be compatible, in the sense that the latter must be convertible into the parametric type of the former.
 
 ```@repl userguide
 p = taylor_expand( x -> sin(x), pi/2, order=16) # 16-th order expansion of sin(t) around pi/2
@@ -255,8 +255,11 @@ The structure [`TaylorN`](@ref) is constructed as a vector of parameterized
 homogeneous polynomials
 defined by the type [`HomogeneousPolynomial`](@ref), which in turn is an ordered vector of
 coefficients of given order (degree). Each multivariate polynomial belongs to a
-[`JetSpace`](@ref), which stores the maximum order, the independent-variable
-metadata, and the lookup tables used by multivariate arithmetic.
+[`JetSpace`](@ref), which stores the maximum order, independent-variable
+metadata, and the lookup tables used by multivariate arithmetic. A plain number
+belongs to all possible `JetSpace`s. The package must therefore decide which space
+a scalar takes when it meets a series; that `JetSpace` is the `TS._scalar_space`,
+whose main application is related to the use of `convert`.
 
 The recommended way to create an independent multivariate algebra is to create a
 `JetSpace` explicitly and then request its variables with [`variables`](@ref):
@@ -296,7 +299,7 @@ specify the variables using a vector of symbols.
 variables!([:x, :y], order=10)
 ```
 
-Similarly, subindexed variables are also available by specifying a single
+Similarly, sub-indexed variables are also available by specifying a single
 variable name and the optional keyword argument `numvars`:
 
 ```@repl userguide
@@ -319,9 +322,10 @@ a, b = variables(ab_space)
 TaylorSeries.space(a) === ab_space
 ```
 
-!!! warning
+!!! Warning
     An `OverflowError` is thrown when the construction of the internal tables is not
-    fully consistent, avoiding silent errors; see [issue #85](https://github.com/JuliaDiff/TaylorSeries.jl/issues/85).
+    fully consistent, avoiding silent errors; see
+    [issue #85](https://github.com/JuliaDiff/TaylorSeries.jl/issues/85).
 
 The function [`show_params_TaylorN`](@ref) displays the current values of the
 parameters, in an info block.
@@ -332,10 +336,10 @@ show_params_TaylorN()
 
 Internally, each `JetSpace` owns the hash tables that translate the index of
 the coefficients of a [`HomogeneousPolynomial`](@ref) of given order into the
-corresponding multi-variable monomials, or the other way around. Reusing the
+corresponding multi-variable monomials, and the other way around. Reusing the
 same space lets all polynomials in that algebra share these tables and related
 arithmetic caches. The initial default space has `order = 6` and `num_vars = 2`;
-calling `variables!` changes that default space for compatibility with older
+calling `variables!` may change that default space for compatibility with older
 code.
 
 The easiest way to construct a [`TaylorN`](@ref) object is by defining
@@ -360,7 +364,7 @@ objects directly, which is uncomfortable.
 ```@repl userguide
 variables!(:x, numvars=2); # symbols can be used
 HomogeneousPolynomial([1,-1])
-TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])],4)
+TaylorN([HomogeneousPolynomial([1,0]), HomogeneousPolynomial([1,2,3])], 4)
 ```
 
 The Taylor expansions are implemented around 0 for all variables; if the
@@ -376,9 +380,9 @@ Note that some of the arithmetic operations have been extended for
 [`HomogeneousPolynomial`](@ref); division, for instance, is not extended.
 The same convention used for `Taylor1` objects is used when combining
 `TaylorN` polynomials of different order.
-Both `HomogeneousPolynomial` and `TaylorN` are equiped with a total *lexicographical*
+Both `HomogeneousPolynomial` and `TaylorN` are equipped with a total *lexicographical*
 order, provided by overloading [`isless`](@ref).
-The ordering is consistent with the interpretation that there are infinitessimal
+The ordering is consistent with the interpretation that there are infinitesimal
 elements in the algebra; for details see M. Berz, "Automatic Differentiation as
 Nonarchimedean Analysis", Computer Arithmetic and Enclosure Methods, (1992), Elsevier,
 439-450.
@@ -463,8 +467,8 @@ differentiate((1,1), p) # 0-th order coefficient of the previous expression
 Integration with respect to the `r`-th variable for
 `HomogeneousPolynomial`s and `TaylorN` objects is obtained
 using [`integrate`](@ref). Note that `integrate` for `TaylorN`
-objects allows to specify a constant of integration, which must
-be independent from the integrated variable. Again, the integration
+objects allows specifying a constant of integration, which must
+be independent of the integrated variable. Again, the integration
 variable may be specified by its symbol.
 
 ```@repl userguide
@@ -477,7 +481,7 @@ integrate( differentiate( q, 2 ), 2, y)
 [`evaluate`](@ref) can also be used for [`TaylorN`](@ref) objects, using
 it on vectors of
 numbers (`Real` or `Complex`); the length of the vector must coincide with the
-number of independent variables. [`evaluate`](@ref) also allows to specify only
+number of independent variables. [`evaluate`](@ref) also allows specifying only
 one variable and a value.
 
 ```@repl userguide
@@ -545,7 +549,7 @@ type `Array{TaylorN{T},1}`:
 ∇(p)
 TaylorSeries.gradient( q )
 ```
-To compute the Jacobian and Hessian of a vector field, we use respectively [`TaylorSeries.jacobianmatrix`](@ref) and [`TaylorSeries.hessianmatrix`](@ref), which return an `Array{TaylorN{T}, 2}`. In case we also want to evaluate the partial derivatives, [`TaylorSeries.jacobian`](@ref) and
+To compute the Jacobian and Hessian of a vector field, we use respectively [`TaylorSeries.jacobianmatrix`](@ref) and [`TaylorSeries.hessianmatrix`](@ref), which return a `Array{TaylorN{T}, 2}`. In case we also want to evaluate the partial derivatives, [`TaylorSeries.jacobian`](@ref) and
 [`TaylorSeries.hessian`](@ref) are more efficient:
 ```@repl userguide
 r = p-q-2*p*q
@@ -579,7 +583,7 @@ such polynomials:
 cos(2.1+x+t1N)
 ```
 
-This kind of expansions are of interest when studying the dependence of
+These kinds of expansions are of interest when studying the dependence of
 parameters, for instance in the context of bifurcation theory or when considering
 the dependence of the solution of a differential equation on the initial conditions,
 around a given solution. In this case, `x` and `y` represent small variations
