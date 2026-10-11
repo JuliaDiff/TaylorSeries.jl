@@ -106,6 +106,10 @@ function make_suite(order, nv, N)
     s3["Taylor1(Vector{TaylorN}) light (N+1)"]   = @benchmarkable Taylor1($vN)
     s3["Taylor1(Vector{TaylorN}, order) light"]  = @benchmarkable Taylor1($vN, $(N+3))
     s3["Taylor1([x, 1.0, 2.0])"]                 = @benchmarkable Taylor1([$x, 1.0, 2.0])
+    s3["TaylorN{Float64}(1.0) (explicit constructor)"] = @benchmarkable TaylorN{Float64}(1.0)
+    fvN = FixedSizeVectorDefault(vN)                      # the documented opt-out of the checks
+    s3["Taylor1(FixedSizeVectorDefault{TaylorN}) (opt-out)"]        = @benchmarkable Taylor1($fvN)
+    s3["Taylor1(FixedSizeVectorDefault{TaylorN}, order) (opt-out)"] = @benchmarkable Taylor1($fvN, $(N+3))
     s3["Taylor1(fill(f, N+1)) (repeated object)"] = @benchmarkable Taylor1(fill($f, $(N+1)))
     s3["Taylor1(fill(fd, N+1)) dense (repeated)"] = @benchmarkable Taylor1(fill($fd, $(N+1)))
     s3["Taylor1{TaylorN} t[k] = TaylorN"]        = @benchmarkable (a[3] = $g) setup=(a = copy_t($tN)) evals=1

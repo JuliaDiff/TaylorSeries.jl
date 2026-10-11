@@ -37,8 +37,8 @@ _has_space(::Type{Taylor1{T}}) where {T} = _has_space(T)
 # entry points (`_unify_space`) and by containers (`_adopt`, `_checked_coeffs`).
 #
 # Naming: `_jetspace(x)` gives the JetSpace of `x` (the scalar space for numbers and
-# for series with no non-scalar elements), `_is_scalar_space(x)` asks whether `x` is
-# space-agnostic, and `_embed_scalar(x, sp[, ord])` returns `x` in `sp` *only if*
+# for series with no non-scalar space), `_is_scalar_space(x)` asks whether `x` is
+# space-agnostic, and `_embed_scalar(x, sp[, ord])` rebuilds `x` in `sp` *only if*
 # `_is_scalar_space(x)`; otherwise it returns `x` itself, so a non-scalar space is never
 # silently changed.
 
@@ -62,8 +62,8 @@ end
     _embed_scalar(x, sp::JetSpace, ord::Int=0)
 
 Return `x` rebuilt in `sp` if `x` is space-agnostic (`_is_scalar_space(x)`), and `x`
-otherwise. `ord` is the inner order given to the embedded `TaylorN`s
-(0 means "take the order of the other operand", as in `fixorder`); it is
+itself (the same object) otherwise. `ord` is the inner order given to the embedded
+`TaylorN`s (0 means "take the order of the other operand", as in `fixorder`); it is
 ignored by the other types. It also acts on vectors and tuples of series, which are
 returned unchanged if nothing has to be embedded.
 """
@@ -71,7 +71,9 @@ _embed_scalar(x, ::JetSpace, ::Int=0) = x                          # nothing to 
 _embed_scalar(a::HomogeneousPolynomial, sp::JetSpace, ::Int=0) =
     _is_scalar_space(a) ? HomogeneousPolynomial(sp, a.coeffs[1], 0) : a
 _embed_scalar(a::TaylorN, sp::JetSpace, ord::Int=0) =
-    _is_scalar_space(a) ? TaylorN(sp, a.coeffs[1].coeffs[1], ord) : a
+    _is_scalar_space(a) ? _embed_constant(a.coeffs[1].coeffs[1], sp, ord) : a
+@inline _embed_constant(c, sp::JetSpace, ord::Int) =
+    ord == 0 ? _constant_taylorN(sp, c) : TaylorN(sp, c, ord)
 function _embed_scalar(a::Taylor1{TaylorN{T}}, sp::JetSpace, ord::Int=0) where {T<:Number}
     _is_scalar_space(a) || return a          # only a Taylor1 made of constants
     v = FixedSizeVectorDefault{TaylorN{T}}(undef, length(a.coeffs))
@@ -145,70 +147,76 @@ end
 
 
 # Coefficients for a `Taylor1` built from a user-supplied vector. Numbers need nothing
-# (the constructors copy the container). For series, scalar-space entries are embedded
-# and an object that appears in several slots (`[ξ, ξ, ξ]`, `fill(ξ, n)`) is copied in
-# all but its first occurrence, so that no two slots share an object. Objects that
-# appear once are stored as they are (no copy), as before.
+# (the constructors copy the container). For series, in a single pass over `v`: scalar-space
+# entries are embedded (second pass, only if there are any), two different non-scalar spaces
+# throw, and an object that appears in several slots (`[ξ, ξ, ξ]`, `fill(ξ, n)`) is copied in
+# all but its first occurrence, so that no two slots share an object. Objects that appear
+# once are stored as they are (no copy), as before. Repeated objects are found with O(n²)
+# pointer comparisons for short vectors (no allocation) and, above 24 entries, with a small
+# open-addressing table keyed by the address of the coefficient storage (a hit is confirmed
+# with `===`, so it is exact).
 _own_coeffs(v::AbstractVector{<:Number}) = v
 function _own_coeffs(v::AbstractVector{T}) where {T<:AbstractSeries}
     n = length(v)
     out = FixedSizeVectorDefault{T}(undef, n)
+    n == 0 && return out
     hasspace = _has_space(T)
-    sp = hasspace ? _common_space(_scalar_space[], v) : _scalar_space[]
-    dups = _repeated_objects(v)
-    for (i, x) in enumerate(v)
-        y = (hasspace && _is_scalar_space(x)) ? _embed_scalar(x, sp) : x
-        out[i] = (y === x && dups !== nothing && dups[i]) ?
-            (hasspace ? _adopt(sp, x) : deepcopy(x)) : y
+    ssp = _scalar_space[]
+    sp = ssp                          # common non-scalar space found so far
+    nscalar = 0
+    table = n > 24 ? zeros(Int, nextpow(2, 2n)) : nothing
+    m = table === nothing ? 0 : length(table)
+    for i in 1:n
+        x = v[i]
+        s = ssp
+        if hasspace
+            s = _jetspace(x)
+            if s === ssp
+                nscalar += 1
+                out[i] = x            # embedded below
+                continue
+            elseif sp === ssp
+                sp = s
+            elseif s !== sp
+                _check_same_space(sp, s)      # two different non-scalar spaces: throws
+            end
+        end
+        dup = false
+        if table === nothing
+            for j in 1:i-1
+                if @inbounds v[j] === x
+                    dup = true
+                    break
+                end
+            end
+        else
+            h = Int(_storage_hash(x) & UInt(m - 1)) + 1
+            while true
+                j = table[h]
+                if j == 0
+                    table[h] = i
+                    break
+                elseif v[j] === x
+                    dup = true
+                    break
+                end
+                h = h == m ? 1 : h + 1
+            end
+        end
+        out[i] = dup ? (hasspace ? _adopt(s, x) : deepcopy(x)) : x
+    end
+    if nscalar > 0
+        for i in 1:n
+            x = out[i]
+            _is_scalar_space(x) && (out[i] = _embed_scalar(x, sp))
+        end
     end
     return out
 end
 
-
-# Returns `nothing` if no object appears twice in `v`; otherwise a `BitVector` marking the
-# entries that repeat an earlier one. O(n²) pointer comparisons for short vectors (no allocation
-# when there are no repeated objects); above that, a small open-addressing table keyed by
-# the address of the coefficient storage (exact: a hit is confirmed with `===`), which is
-# O(n). Cheap identity hash for series (`Taylor1`, `HomogeneousPolynomial`, `TaylorN`):
-# the address of their coefficients (not dereferenced; objects are alive during the call)
+# Cheap identity hash for series (`Taylor1`, `HomogeneousPolynomial`, `TaylorN`): the
+# address of their coefficients (not dereferenced; objects are alive during the call)
 @inline _storage_hash(x) = UInt(pointer(x.coeffs)) >> 4
-
-function _repeated_objects(v)
-    n = length(v)
-    mask = nothing
-    if n <= 24
-        for i in 2:n
-            x = v[i]
-            for j in 1:i-1
-                if @inbounds v[j] === x
-                    mask === nothing && (mask = falses(n))
-                    mask[i] = true
-                    break
-                end
-            end
-        end
-        return mask
-    end
-    m = nextpow(2, 2n)
-    table = zeros(Int, m)          # slot -> index (in `v`) of the object stored there
-    for i in 1:n
-        x = v[i]
-        h = Int(_storage_hash(x) & UInt(m - 1)) + 1
-        while true
-            j = table[h]
-            if j == 0
-                table[h] = i
-                break
-            elseif v[j] === x
-                mask === nothing && (mask = falses(n))
-                mask[i] = true
-                break
-            end
-            h = h == m ? 1 : h + 1
-        end
-    end
-    return mask
-end
 
 
 # Used by the inner `TaylorN` constructor: one pass that throws on a non-scalar space
