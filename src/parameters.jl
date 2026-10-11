@@ -151,6 +151,23 @@ end
 # default algebra without mutating spaces held by existing TaylorN objects.
 const default_space = Ref{JetSpace}()
 
+# Internal order-0, zero-variable space. It tags *scalars* that were produced by
+# implicit conversion (`convert(TaylorN{T}, ::Number)`, array literals, etc), i.e.
+# values whose space is not known yet.
+# Like `default_space`, it lives in a `Ref` and is initialized
+# at load time, in `hash_tables.jl`, once the `JetSpace` constructors exist.
+const _scalar_space = Ref{JetSpace}()
+
+function _init_scalar_space!()
+    # One monomial (the constant), with the empty exponent vector and hash label 0;
+    # precomputed-table constructor (the public one requires order ≥ 1, num_vars ≥ 1)
+    _scalar_space[] = JetSpace(0, 0, String[], Symbol[],
+        [[Int[]]], [[0]], [1], [Dict{Int,Int}(0 => 1)])
+    return _scalar_space[]
+end
+
+@inline _is_scalar_space(sp::JetSpace) = sp === _scalar_space[]
+
 Base.deepcopy_internal(space::JetSpace, stackdict::IdDict) = space
 Base.broadcastable(space::JetSpace) = Ref(space)
 

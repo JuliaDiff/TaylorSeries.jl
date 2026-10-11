@@ -98,6 +98,8 @@ function _reconstruct_space(spec::JetSpaceSerialization)
 end
 
 function _cached_space(spec::JetSpaceSerialization)
+    # the internal scalar space (order 0, no variables) is a singleton
+    spec.order == 0 && isempty(spec.variable_names) && return TS._scalar_space[]
     key = _space_cache_key(spec)
     lock(_space_cache_lock) do
         # Same session: return the very space that was saved (keeps `===`)

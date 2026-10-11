@@ -305,18 +305,6 @@ end
 # the coefficients of both factors have finite endpoints and a safe decoration (`def`, `dac`
 # or `com`); otherwise (or if an overflow occurs) the generic interval arithmetic is used.
 # ----------------------------------------------------------------------------
-all(f -> isdefined(TS, f), (:mul_midrad, :mul_midrad!, :midrad_poly, :midrad_usable,
-        :midrad_acc, :midrad_reset!, :mul_midrad_acc!, :midrad_finalize!)) || error("""
-    TaylorSeriesIAExt needs, in TaylorSeries, the stubs
-        function mul_midrad end
-        function mul_midrad! end
-        function midrad_poly end
-        function midrad_usable end
-        function midrad_acc end
-        function midrad_reset! end
-        function mul_midrad_acc! end
-        function midrad_finalize! end""")
-
 # midpoint and radius of a bounded interval: x ⊆ [m-r, m+r]
 @inline function _midrad(x::Interval{T}) where {T<:Base.IEEEFloat}
     lo = inf(x)
@@ -370,11 +358,17 @@ end
 # Interval enclosing Σ x_k y_k from M, E, R of `n` terms (see above); `uf`: underflow
 # is possible; `d`, `g`: decoration and guarantee flag of the result; `nothing` if it is
 # not finite
-@inline function _mr_enclose(M::T, E::T, R::T, n::Int, uf::Bool, d::Decoration,
-        g::Bool) where {T<:Base.IEEEFloat}
+# radius of the enclosure of an accumulation of `n` terms with the quantities `E`, `R`
+@inline function _acc_rad(E::T, R::T, n::Int, uf::Bool) where {T<:Base.IEEEFloat}
     u = eps(T)/2
     rad = (E + R) * (1 + 4*(n + 4)*u)
     uf && (rad += 16 * n * nextfloat(zero(T)))
+    return rad
+end
+
+@inline function _mr_enclose(M::T, E::T, R::T, n::Int, uf::Bool, d::Decoration,
+        g::Bool) where {T<:Base.IEEEFloat}
+    rad = _acc_rad(E, R, n, uf)
     if iszero(rad)
         isfinite(M) || return nothing
         lo = hi = M
@@ -561,15 +555,16 @@ end
 # use the interval arithmetic) if some result is not finite.
 # ----------------------------------------------------------------------------
 struct MidRadPoly{T<:Base.IEEEFloat,S}
-    mid::Vector{Vector{T}}
-    rad::Vector{Vector{T}}
+    mid::Vector{T}          # midpoints of all the monomials, degree after degree
+    rad::Vector{T}          # radii
+    off::Vector{Int}        # monomials of degree d: off[d+1] : off[d+2]-1 (off[1] = 1)
     ok::Bool
     dec::Decoration
     g::Bool
     space::S
 end
 
-mutable struct MidRadAcc{T<:Base.IEEEFloat}
+mutable struct MidRadAcc{T<:Base.IEEEFloat,S}
     M::Vector{Vector{T}}
     E::Vector{Vector{T}}
     R::Vector{Vector{T}}
@@ -578,40 +573,44 @@ mutable struct MidRadAcc{T<:Base.IEEEFloat}
     maxdeg::Int
     dec::Decoration
     g::Bool
+    space::S
 end
 
 function TS.midrad_poly(p::TaylorN{Interval{T}}) where {T<:Base.IEEEFloat}
     nd = length(p.coeffs)
-    mid = Vector{Vector{T}}(undef, nd)
-    rad = Vector{Vector{T}}(undef, nd)
+    off = Vector{Int}(undef, nd + 1)
+    off[1] = 1
+    for k in 1:nd
+        off[k+1] = off[k] + length(p.coeffs[k].coeffs)
+    end
+    mid = Vector{T}(undef, off[nd+1] - 1)
+    rad = Vector{T}(undef, off[nd+1] - 1)
     ok = true
     d = com
     g = true
     for k in 1:nd
         cs = p.coeffs[k].coeffs
-        m = Vector{T}(undef, length(cs))
-        r = Vector{T}(undef, length(cs))
+        o = off[k] - 1
         @inbounds for i in eachindex(cs)
             x = cs[i]
             dx = decoration(x)
             ok &= isfinite(inf(x)) & isfinite(sup(x)) & (dx >= def)
             d = min(d, dx)
             g &= isguaranteed(x)
-            m[i], r[i] = _midrad(x)
+            mid[o+i], rad[o+i] = _midrad(x)
         end
-        mid[k] = m
-        rad[k] = r
     end
     sp = p.coeffs[1].space
-    return MidRadPoly{T,typeof(sp)}(mid, rad, ok, d, g, sp)
+    return MidRadPoly{T,typeof(sp)}(mid, rad, off, ok, d, g, sp)
 end
 
 TS.midrad_usable(mp::MidRadPoly) = mp.ok
 
-function TS.midrad_acc(::TaylorN{Interval{T}}, maxdeg::Int) where {T<:Base.IEEEFloat}
+function TS.midrad_acc(p::TaylorN{Interval{T}}, maxdeg::Int) where {T<:Base.IEEEFloat}
     mk() = [T[] for _ in 0:maxdeg]
-    return MidRadAcc{T}(mk(), mk(), mk(), [Int[] for _ in 0:maxdeg],
-        [Bool[] for _ in 0:maxdeg], maxdeg, com, true)
+    sp = p.coeffs[1].space
+    return MidRadAcc{T,typeof(sp)}(mk(), mk(), mk(), [Int[] for _ in 0:maxdeg],
+        [Bool[] for _ in 0:maxdeg], maxdeg, com, true, sp)
 end
 
 function TS.midrad_reset!(acc::MidRadAcc{T}) where {T}
@@ -665,22 +664,24 @@ function TS.mul_midrad_acc!(acc::MidRadAcc{T}, pa::MidRadPoly{T}, pb::MidRadPoly
     acc.dec = min(acc.dec, pa.dec, pb.dec)
     acc.g &= pa.g & pb.g
     thr = floatmin(T) / eps(T)
-    for u in 0:length(pa.mid)-1, v in 0:length(pb.mid)-1
+    mida, rada, offa = pa.mid, pa.rad, pa.off
+    midb, radb, offb = pb.mid, pb.rad, pb.off
+    @inbounds for u in 0:length(offa)-2, v in 0:length(offb)-2
         d = u + v
         d > acc.maxdeg && continue
-        mau, rau = pa.mid[u+1], pa.rad[u+1]
-        mbv, rbv = pb.mid[v+1], pb.rad[v+1]
+        oa, la = offa[u+1] - 1, offa[u+2] - offa[u+1]      # monomials of degree u: oa+1 : oa+la
+        ob, lb = offb[v+1] - 1, offb[v+2] - offb[v+1]
         if u == 0
-            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(mbv))
-            msc, rsc = factor * mau[1], factor * rau[1]
-            @inbounds for i in eachindex(mbv)
-                _acc_term!(Md, Ed, Rd, nd, ufd, i, msc, rsc, mbv[i], rbv[i], thr)
+            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, lb)
+            msc, rsc = factor * mida[oa+1], factor * rada[oa+1]
+            for i in 1:lb
+                _acc_term!(Md, Ed, Rd, nd, ufd, i, msc, rsc, midb[ob+i], radb[ob+i], thr)
             end
         elseif v == 0
-            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(mau))
-            msc, rsc = mbv[1], rbv[1]
-            @inbounds for i in eachindex(mau)
-                _acc_term!(Md, Ed, Rd, nd, ufd, i, factor * mau[i], factor * rau[i],
+            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, la)
+            msc, rsc = midb[ob+1], radb[ob+1]
+            for i in 1:la
+                _acc_term!(Md, Ed, Rd, nd, ufd, i, factor * mida[oa+i], factor * rada[oa+i],
                     msc, rsc, thr)
             end
         else
@@ -689,13 +690,13 @@ function TS.mul_midrad_acc!(acc::MidRadAcc{T}, pa::MidRadPoly{T}, pb::MidRadPoly
             output_pairs = table.output_pairs
             num_right = table.num_right
             Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(offsets) - 1)
-            @inbounds for pos in 1:length(offsets)-1
+            for pos in 1:length(offsets)-1
                 for csr_pos in offsets[pos]:(offsets[pos+1]-1)
                     pair = Int(output_pairs[csr_pos]) - 1
                     na = pair ÷ num_right + 1
                     nb = pair - (na-1) * num_right + 1
-                    _acc_term!(Md, Ed, Rd, nd, ufd, pos, factor * mau[na], factor * rau[na],
-                        mbv[nb], rbv[nb], thr)
+                    _acc_term!(Md, Ed, Rd, nd, ufd, pos, factor * mida[oa+na],
+                        factor * rada[oa+na], midb[ob+nb], radb[ob+nb], thr)
                 end
             end
         end
@@ -716,6 +717,110 @@ function TS.midrad_finalize!(dest::HomogeneousPolynomial{Interval{T}}, acc::MidR
         dest.coeffs[pos] = prod
     end
     return true
+end
+
+
+# ----------------------------------------------------------------------------
+# Range over the box [-1,1]^N of a homogeneous piece, from midpoint-radius data
+#
+# For the piece of degree d of a polynomial, Σ_i c_i σ^{α_i}, with c_i ⊆ [m_i - r_i, m_i + r_i], and
+# σ ∈ [-1,1]^N, the rule of `_evaluate(…, Val(true))` is used: σ^α ranges over [0,1] if all the
+# exponents are even (this needs d even), and over [-1,1] otherwise, so for d > 0
+#
+#     range ⊆ [ -(L + S), U + S ],   S = Σ_{other} (|m_i| + r_i),
+#                                    L = Σ_{even} max(0, r_i - m_i),   U = Σ_{even} max(0, m_i + r_i)
+#
+# (for d = 0 it is the coefficient, [m - r, m + r]). The sums are of nonnegative terms, each
+# computed with relative error ≤ u (additions and subtractions that give subnormals are exact), so
+# the sums over the `len` monomials are inflated by (1 + 4(len+4)u): no interval arithmetic. The
+# result is not exactly thin for exact data (it is wider by ~1e-15 relative), which is irrelevant
+# for the uses (bounds of cross terms and of the neglected terms).
+#
+# `TS.midrad_range(mp::MidRadPoly, d)`: range of the piece of degree d of the polynomial of `mp`.
+# `TS.midrad_range(acc::MidRadAcc, d)`: range of the accumulated polynomial of degree d, with
+# the coefficients enclosed as `M ± rad` (as in `midrad_finalize!`, without rounding the
+# coefficients to intervals first).
+# ----------------------------------------------------------------------------
+@inline function _even_monomial(space, d::Int, i::Int)
+    iseven(d) || return false
+    @inbounds for e in space.coeff_table[d+1][i]
+        isodd(e) && return false
+    end
+    return true
+end
+
+# interval [-lo, hi] from the (nonnegative) bounds, or the entire interval if not finite
+@inline function _range_interval(lo::T, hi::T, dec::Decoration, g::Bool) where {T<:Base.IEEEFloat}
+    if isfinite(lo) && isfinite(hi)
+        return IntervalArithmetic._unsafe_interval(
+            IntervalArithmetic._unsafe_bareinterval(T, -lo, hi), dec, g)
+    end
+    return IntervalArithmetic._unsafe_interval(
+        IntervalArithmetic._unsafe_bareinterval(T, -T(Inf), T(Inf)), trv, false)
+end
+
+@inline function _range_from_sums(L::T, U::T, S::T, len::Int, dec::Decoration,
+        g::Bool) where {T<:Base.IEEEFloat}
+    u = eps(T)/2
+    fac = 1 + 4*(len + 4)*u
+    thr = floatmin(T) / eps(T)
+    η = nextfloat(zero(T))
+    lo = (L + S) * fac
+    hi = (U + S) * fac
+    (iszero(lo) || lo >= thr) || (lo += η)             # underflow of the product
+    (iszero(hi) || hi >= thr) || (hi += η)
+    return _range_interval(lo, hi, dec, g)
+end
+
+function TS.midrad_range(mp::MidRadPoly{T}, d::Int) where {T<:Base.IEEEFloat}
+    o = mp.off[d+1] - 1
+    len = mp.off[d+2] - mp.off[d+1]
+    if d == 0
+        m, r = mp.mid[o+1], mp.rad[o+1]
+        lo, hi = _mr_down(m, r), _mr_up(m, r)
+        (isfinite(lo) && isfinite(hi)) || return _range_interval(T(Inf), T(Inf), mp.dec, mp.g)
+        return IntervalArithmetic._unsafe_interval(
+            IntervalArithmetic._unsafe_bareinterval(T, lo, hi), mp.dec, mp.g)
+    end
+    L = zero(T); U = zero(T); S = zero(T)
+    @inbounds for i in 1:len
+        m, r = mp.mid[o+i], mp.rad[o+i]
+        if _even_monomial(mp.space, d, i)
+            L += max(zero(T), r - m)
+            U += max(zero(T), m + r)
+        else
+            S += abs(m) + r
+        end
+    end
+    return _range_from_sums(L, U, S, len, mp.dec, mp.g)
+end
+
+function TS.midrad_range(acc::MidRadAcc{T}, d::Int) where {T<:Base.IEEEFloat}
+    zeroI = IntervalArithmetic._unsafe_interval(
+        IntervalArithmetic._unsafe_bareinterval(T, zero(T), zero(T)), acc.dec, acc.g)
+    (d > acc.maxdeg || isempty(acc.M[d+1])) && return zeroI    # nothing accumulated
+    Md, Ed, Rd, nd, ufd = acc.M[d+1], acc.E[d+1], acc.R[d+1], acc.n[d+1], acc.uf[d+1]
+    len = length(Md)
+    if d == 0
+        nd[1] == 0 && return zeroI
+        rad = _acc_rad(Ed[1], Rd[1], nd[1], ufd[1])
+        lo, hi = _mr_down(Md[1], rad), _mr_up(Md[1], rad)
+        (isfinite(lo) && isfinite(hi)) || return _range_interval(T(Inf), T(Inf), acc.dec, acc.g)
+        return IntervalArithmetic._unsafe_interval(
+            IntervalArithmetic._unsafe_bareinterval(T, lo, hi), acc.dec, acc.g)
+    end
+    L = zero(T); U = zero(T); S = zero(T)
+    @inbounds for i in 1:len
+        nd[i] == 0 && continue
+        m, r = Md[i], _acc_rad(Ed[i], Rd[i], nd[i], ufd[i])
+        if _even_monomial(acc.space, d, i)
+            L += max(zero(T), r - m)
+            U += max(zero(T), m + r)
+        else
+            S += abs(m) + r
+        end
+    end
+    return _range_from_sums(L, U, S, len, acc.dec, acc.g)
 end
 
 
@@ -1533,6 +1638,15 @@ function TS._evaluate(a::HomogeneousPolynomial{T}, dx::_IntervalVals{S},
     odd_order = isodd(order(a))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
+        # if isodd(sum(ct[i]))
+        #     suma += sum(a_coeff) * dx[1]
+        #     continue
+        # end
+        # @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
+        # for n in 2:length(dx)
+        #     @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
+        #     tmp *= vv
+        # end
         tmp = (odd_order || !all(iseven, ct[i])) ? Isym : Ieven
         suma += a_coeff * tmp
     end

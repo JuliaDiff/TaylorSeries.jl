@@ -397,4 +397,62 @@ end
     end
 end
 
+@testset "ranges over [-1,1]^N from midpoint-radius data (TS.midrad_range)" begin
+    rng = MersenneTwister(21)
+    sp = JetSpace(6, ["x", "y"])
+    Q = Rational{BigInt}
+    box = [interval(-1.0, 1.0), interval(-1.0, 1.0)]
+    # exact value of the homogeneous piece of degree d with (Rational) coefficients at σ
+    exact_piece(hpr, d, σ) = sum(hpr.coeffs[i] * prod(σ[j]^e for (j, e) in enumerate(sp.coeff_table[d+1][i]))
+                                 for i in eachindex(hpr.coeffs))
+    # the enclosure by midpoint and radius has an absolute slack of a few ulps of the values (the
+    # midpoint is rounded), which can be larger than the width of a (nearly) thin range
+    slack(x) = 16 * eps() * max(1.0, abs(inf(x)), abs(sup(x)))
+    # vertices of the box and random points
+    points() = vcat([[Q(s1), Q(s2)] for s1 in (-1, 1), s2 in (-1, 1)][:],
+                    [[Q(2 * rand(rng) - 1), Q(2 * rand(rng) - 1)] for _ in 1:20])
+    # interval polynomial of order `ord` and an exact (Rational) point inside it
+    function mk(ord, w)
+        p = TaylorN(sp, interval(0.0), ord)
+        pr = TaylorN(sp, zero(Q), 6)
+        for k in 1:ord+1, i in eachindex(p.coeffs[k].coeffs)
+            c = randn(rng)
+            x = w == 0.0 ? interval(c) : interval(c - w*rand(rng), c + w*rand(rng))
+            p.coeffs[k].coeffs[i] = x
+            l, u = Q(inf(x)), Q(sup(x))
+            pr.coeffs[k].coeffs[i] = l + (u - l) * Q(rand(rng))
+        end
+        return p, pr
+    end
+    for w in (0.0, 1e-12, 0.3)
+        # (1) the pieces of a polynomial
+        p, pr = mk(3, w)
+        mp = TS.midrad_poly(p)
+        for d in 0:3
+            mr = TS.midrad_range(mp, d)
+            ia = p.coeffs[d+1](box)                              # interval evaluation
+            @test all(Q(inf(mr)) <= exact_piece(pr.coeffs[d+1], d, σ) <= Q(sup(mr)) for σ in points())
+            @test diam(mr) <= diam(ia) * (1 + 1e-9) + slack(ia)   # not wider than the interval arithmetic
+        end
+        # (2) the accumulated polynomial (degrees 0:6)
+        (a1, a1r), (a2, a2r), (b1, b1r), (b2, b2r) = mk(3, w), mk(3, w), mk(3, w), mk(3, w)
+        acc = TS.midrad_acc(a1, 6)
+        TS.mul_midrad_acc!(acc, TS.midrad_poly(a1), TS.midrad_poly(b1))
+        TS.mul_midrad_acc!(acc, TS.midrad_poly(a2), TS.midrad_poly(b2))
+        TS.mul_midrad_acc!(acc, TS.midrad_poly(a1), TS.midrad_poly(b2), 2.0)
+        dest = TaylorN(sp, interval(0.0), 6)
+        @test all([TS.midrad_finalize!(dest.coeffs[d+1], acc, d) for d in 0:6])
+        ex = a1r * b1r + a2r * b2r + 2 * (a1r * b2r)             # exact polynomial of the same points
+        for d in 0:6
+            mr = TS.midrad_range(acc, d)
+            ia = dest.coeffs[d+1](box)                           # from the intervals of `midrad_finalize!`
+            @test all(Q(inf(mr)) <= exact_piece(ex.coeffs[d+1], d, σ) <= Q(sup(mr)) for σ in points())
+            @test diam(mr) <= diam(ia) * (1 + 1e-9) + slack(ia)
+        end
+    end
+    # nothing accumulated: zero
+    acc0 = TS.midrad_acc(TaylorN(sp, interval(0.0), 3), 6)
+    @test all(isequal_interval(TS.midrad_range(acc0, d), interval(0.0)) for d in 0:6)
+end
+
 end

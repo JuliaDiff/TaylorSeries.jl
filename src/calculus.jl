@@ -110,7 +110,7 @@ function differentiate(a::Taylor1{T}, n::Int) where {T <: Number}
     for i = 2:n
         differentiate!(res, res)
     end
-    return Taylor1(res.coeffs[1:order(a)-n+1])
+    return _taylor1_owned(res.coeffs[1:order(a)-n+1])
 end
 
 """

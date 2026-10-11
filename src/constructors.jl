@@ -30,13 +30,32 @@ DataType for polynomial expansions in one independent variable.
 
 Note that `Taylor1` variables are callable. For more information, see
 [`evaluate`](@ref).
+
+Note: For `v` a vector of `TaylorN`s, `Taylor1(v)` and `Taylor1(v, order)` check the
+spaces of the entries (two different non-scalar spaces throw an error), embed
+scalar-space entries (e.g. the `1.0` in `[x, 1.0]`) in the proper space of, and
+copy an object that appears more than once in `v`, so that no two coefficients
+share an object (eg in `Taylor1(fill(ξ, n))`). Objects that appear once are stored
+by reference. These checks are costly, so it is recommended to pass a
+`FixedSizeVectorDefault` instead: it is stored as it is (not copied), its
+entries are not copied either, and only the spaces are checked. In that case
+you are responsible for not putting the same object in two slots.
+
+```julia
+v = FixedSizeVectorDefault{TaylorN{Float64}}(undef, n)
+for k in 1:n
+    v[k] = ...        # a fresh object for every slot
+end
+t = Taylor1(v)
+```
 """
 struct Taylor1{T<:Number} <: AbstractSeries{T}
         coeffs :: FixedSizeVectorDefault{T}
     ## Inner constructors ##
     function Taylor1{T}(coeffs::FixedSizeVectorDefault{T}) where {T<:Number}
-        _check_same_space_all(coeffs)
-        return new{T}(coeffs)
+        # errors on mixed spaces; embeds scalar-space entries (returns `coeffs` itself
+        # if nothing has to change)
+        return new{T}(_checked_coeffs(coeffs))
     end
     function Taylor1{T}(coeffs::AbstractVector{T}, order::Int) where {T<:Number}
         v = FixedSizeVectorDefault{T}(undef, order+1)
@@ -47,17 +66,16 @@ struct Taylor1{T<:Number} <: AbstractSeries{T}
         for ord in last(minrange)+1:order+1
             v[ord] = zero(coeffs[1])
         end
-        _check_same_space_all(coeffs)
-        return new{T}(v)
+        return new{T}(_checked_coeffs(v))
     end
 end
 
 ## Outer constructors ##
 Taylor1(x::Taylor1{T}) where {T<:Number} = x
 Taylor1(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number} =
-    Taylor1{T}(coeffs, order)
+    Taylor1{T}(_own_coeffs(coeffs), order)
 Taylor1(coeffs::AbstractArray{T,1}) where {T<:Number} =
-    Taylor1{T}(FixedSizeVectorDefault(coeffs))
+    _taylor1_owned(_own_coeffs(coeffs))
 Taylor1(coeffs::FixedSizeVectorDefault{T}) where {T<:Number} = Taylor1{T}(coeffs)
 Taylor1(coeffs::FixedSizeVectorDefault{T}, order::Int) where {T<:Number} =
     Taylor1{T}(coeffs, order)
@@ -203,7 +221,10 @@ Note that `TaylorN` variables are callable. For more information, see
 struct TaylorN{T<:Number} <: AbstractSeries{T}
         coeffs  :: FixedSizeVectorDefault{HomogeneousPolynomial{T}}
         space   :: JetSpace
-    ## Inner constructor ##
+    ## Inner constructors ##
+    # Trusted constructor
+    TaylorN{T}(coeffs::FixedSizeVectorDefault{HomogeneousPolynomial{T}},
+            space::JetSpace) where {T<:Number} = new{T}(coeffs, space)
     function TaylorN{T}(v::AbstractArray{HomogeneousPolynomial{T},1},
             order::Int) where {T<:Number}
         space = _space_from_homogeneous_vector(v, default_space[])
@@ -214,7 +235,7 @@ struct TaylorN{T<:Number} <: AbstractSeries{T}
             order::Int) where {T<:Number}
         isempty(v) &&
             return new{T}(zeros(HomogeneousPolynomial(space, zero(T), 0), order), space)
-        _check_same_space(space, v)
+        v = _checked_hps(space, v)
         coeffs = _coeffsTN(space, v, order)
         return new{T}(coeffs, space)
     end
@@ -288,7 +309,16 @@ const NumberNotSeriesN = Union{Real,Complex,Taylor1}
 
 ## Additional Taylor1 and TaylorN outer constructor ##
 Taylor1{T}(x::S) where {T<:Number,S<:NumberNotSeries} = Taylor1([convert(T,x)], 0)
-TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} = TaylorN(convert(T, x), order())
+TaylorN{T}(x::S) where {T<:Number,S<:NumberNotSeries} =
+    _constant_taylorN(_scalar_space[], convert(T, x))
+
+# Shortcut for a constant (order 0) `TaylorN` in `space`.
+@inline function _constant_taylorN(space::JetSpace, x::T) where {T<:Number}
+    hp = HomogeneousPolynomial{T}(space, x, 0)
+    v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, 1)
+    v[1] = hp
+    return TaylorN{T}(v, space)
+end
 
 
 # """
