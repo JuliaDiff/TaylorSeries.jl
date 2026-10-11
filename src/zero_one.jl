@@ -14,7 +14,7 @@ end
 
 # `zero.(a.coeffs)` holds fresh objects: no need to copy them again
 zero(a::Taylor1) = _taylor1_owned(zero.(a.coeffs))
-zero(a::TaylorN) = TaylorN(a.space, zero.(a.coeffs), order(a))
+zero(a::TaylorN{T}) where {T<:Number} = TaylorN{T}(zero.(a.coeffs), a.space)
 for T in (:Taylor1, :TaylorN)
     @eval function one(a::$T)
         b = zero(a)
