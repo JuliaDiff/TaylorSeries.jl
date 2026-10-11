@@ -561,8 +561,9 @@ end
 # use the interval arithmetic) if some result is not finite.
 # ----------------------------------------------------------------------------
 struct MidRadPoly{T<:Base.IEEEFloat,S}
-    mid::Vector{Vector{T}}
-    rad::Vector{Vector{T}}
+    mid::Vector{T}          # midpoints of all the monomials, degree after degree
+    rad::Vector{T}          # radii
+    off::Vector{Int}        # monomials of degree d: off[d+1] : off[d+2]-1 (off[1] = 1)
     ok::Bool
     dec::Decoration
     g::Bool
@@ -582,28 +583,30 @@ end
 
 function TS.midrad_poly(p::TaylorN{Interval{T}}) where {T<:Base.IEEEFloat}
     nd = length(p.coeffs)
-    mid = Vector{Vector{T}}(undef, nd)
-    rad = Vector{Vector{T}}(undef, nd)
+    off = Vector{Int}(undef, nd + 1)
+    off[1] = 1
+    for k in 1:nd
+        off[k+1] = off[k] + length(p.coeffs[k].coeffs)
+    end
+    mid = Vector{T}(undef, off[nd+1] - 1)
+    rad = Vector{T}(undef, off[nd+1] - 1)
     ok = true
     d = com
     g = true
     for k in 1:nd
         cs = p.coeffs[k].coeffs
-        m = Vector{T}(undef, length(cs))
-        r = Vector{T}(undef, length(cs))
+        o = off[k] - 1
         @inbounds for i in eachindex(cs)
             x = cs[i]
             dx = decoration(x)
             ok &= isfinite(inf(x)) & isfinite(sup(x)) & (dx >= def)
             d = min(d, dx)
             g &= isguaranteed(x)
-            m[i], r[i] = _midrad(x)
+            mid[o+i], rad[o+i] = _midrad(x)
         end
-        mid[k] = m
-        rad[k] = r
     end
     sp = p.coeffs[1].space
-    return MidRadPoly{T,typeof(sp)}(mid, rad, ok, d, g, sp)
+    return MidRadPoly{T,typeof(sp)}(mid, rad, off, ok, d, g, sp)
 end
 
 TS.midrad_usable(mp::MidRadPoly) = mp.ok
@@ -665,22 +668,24 @@ function TS.mul_midrad_acc!(acc::MidRadAcc{T}, pa::MidRadPoly{T}, pb::MidRadPoly
     acc.dec = min(acc.dec, pa.dec, pb.dec)
     acc.g &= pa.g & pb.g
     thr = floatmin(T) / eps(T)
-    for u in 0:length(pa.mid)-1, v in 0:length(pb.mid)-1
+    mida, rada, offa = pa.mid, pa.rad, pa.off
+    midb, radb, offb = pb.mid, pb.rad, pb.off
+    @inbounds for u in 0:length(offa)-2, v in 0:length(offb)-2
         d = u + v
         d > acc.maxdeg && continue
-        mau, rau = pa.mid[u+1], pa.rad[u+1]
-        mbv, rbv = pb.mid[v+1], pb.rad[v+1]
+        oa, la = offa[u+1] - 1, offa[u+2] - offa[u+1]      # monomials of degree u: oa+1 : oa+la
+        ob, lb = offb[v+1] - 1, offb[v+2] - offb[v+1]
         if u == 0
-            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(mbv))
-            msc, rsc = factor * mau[1], factor * rau[1]
-            @inbounds for i in eachindex(mbv)
-                _acc_term!(Md, Ed, Rd, nd, ufd, i, msc, rsc, mbv[i], rbv[i], thr)
+            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, lb)
+            msc, rsc = factor * mida[oa+1], factor * rada[oa+1]
+            for i in 1:lb
+                _acc_term!(Md, Ed, Rd, nd, ufd, i, msc, rsc, midb[ob+i], radb[ob+i], thr)
             end
         elseif v == 0
-            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(mau))
-            msc, rsc = mbv[1], rbv[1]
-            @inbounds for i in eachindex(mau)
-                _acc_term!(Md, Ed, Rd, nd, ufd, i, factor * mau[i], factor * rau[i],
+            Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, la)
+            msc, rsc = midb[ob+1], radb[ob+1]
+            for i in 1:la
+                _acc_term!(Md, Ed, Rd, nd, ufd, i, factor * mida[oa+i], factor * rada[oa+i],
                     msc, rsc, thr)
             end
         else
@@ -689,13 +694,13 @@ function TS.mul_midrad_acc!(acc::MidRadAcc{T}, pa::MidRadPoly{T}, pb::MidRadPoly
             output_pairs = table.output_pairs
             num_right = table.num_right
             Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(offsets) - 1)
-            @inbounds for pos in 1:length(offsets)-1
+            for pos in 1:length(offsets)-1
                 for csr_pos in offsets[pos]:(offsets[pos+1]-1)
                     pair = Int(output_pairs[csr_pos]) - 1
                     na = pair ÷ num_right + 1
                     nb = pair - (na-1) * num_right + 1
-                    _acc_term!(Md, Ed, Rd, nd, ufd, pos, factor * mau[na], factor * rau[na],
-                        mbv[nb], rbv[nb], thr)
+                    _acc_term!(Md, Ed, Rd, nd, ufd, pos, factor * mida[oa+na],
+                        factor * rada[oa+na], midb[ob+nb], radb[ob+nb], thr)
                 end
             end
         end
@@ -1533,6 +1538,15 @@ function TS._evaluate(a::HomogeneousPolynomial{T}, dx::_IntervalVals{S},
     odd_order = isodd(order(a))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
+        # if isodd(sum(ct[i]))
+        #     suma += sum(a_coeff) * dx[1]
+        #     continue
+        # end
+        # @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
+        # for n in 2:length(dx)
+        #     @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
+        #     tmp *= vv
+        # end
         tmp = (odd_order || !all(iseven, ct[i])) ? Isym : Ieven
         suma += a_coeff * tmp
     end
