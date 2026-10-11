@@ -1533,15 +1533,6 @@ function TS._evaluate(a::HomogeneousPolynomial{T}, dx::_IntervalVals{S},
     odd_order = isodd(order(a))
     for (i, a_coeff) in enumerate(a.coeffs)
         TS._isthinzero(a_coeff) && continue
-        # if isodd(sum(ct[i]))
-        #     suma += sum(a_coeff) * dx[1]
-        #     continue
-        # end
-        # @inbounds tmp = iseven(ct[i][1]) ? Ieven : dx[1]
-        # for n in 2:length(dx)
-        #     @inbounds vv = iseven(ct[i][n]) ? Ieven : dx[1]
-        #     tmp *= vv
-        # end
         tmp = (odd_order || !all(iseven, ct[i])) ? Isym : Ieven
         suma += a_coeff * tmp
     end
