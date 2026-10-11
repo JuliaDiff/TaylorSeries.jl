@@ -143,6 +143,7 @@ function midrad_acc end
 function midrad_reset! end
 function mul_midrad_acc! end
 function midrad_finalize! end
+function midrad_range end
 
 # Internal multiplication functions
 function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
