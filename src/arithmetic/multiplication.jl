@@ -134,6 +134,16 @@ function *(a::Taylor1{TaylorN{T}}, b::Taylor1{TaylorN{T}}) where {T<:NumberNotSe
 end
 
 
+# Need the following for products with interval coeffs
+function mul_midrad end
+function mul_midrad! end
+function midrad_poly end
+function midrad_usable end
+function midrad_acc end
+function midrad_reset! end
+function mul_midrad_acc! end
+function midrad_finalize! end
+
 # Internal multiplication functions
 function mul!(c::Taylor1{T}, a::Taylor1{T}, b::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
