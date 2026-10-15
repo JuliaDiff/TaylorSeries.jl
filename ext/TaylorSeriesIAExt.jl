@@ -1590,6 +1590,26 @@ function TS.evaluate(a::Taylor1{TaylorN{T}}, dx::Interval{S}) where {T<:Real, S<
 end
 
 
+# In-place evaluation of arrays of `Taylor1` at a time `δt`: use the specialized (tighter)
+# `evaluate` for intervals, instead of the generic `_evaluate` kernel used by `evaluate!`
+# for `NumberNotSeries` coefficients.
+function TS.evaluate!(x::AbstractArray{Taylor1{Interval{T}}}, δt::S,
+        dest::AbstractArray{Interval{T}}) where {T<:NumTypes, S<:Union{NumTypes,Interval{T}}}
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = evaluate(x[i], δt)
+    end
+    return nothing
+end
+
+function TS.evaluate!(x::AbstractArray{Taylor1{T}}, δt::Interval{T},
+        dest::AbstractArray{Interval{T}}) where {T<:NumTypes}
+    @inbounds for i in eachindex(x, dest)
+        dest[i] = evaluate(x[i], δt)
+    end
+    return nothing
+end
+
+
 TS._evaluate(a::HomogeneousPolynomial{T}, dx::AbstractVector{Interval{S}}) where
     {T<:Real, S<:NumTypes} = _evaluate_hp_interval(a, dx)
 
