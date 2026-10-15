@@ -455,4 +455,21 @@ end
     @test all(isequal_interval(TS.midrad_range(acc0, d), interval(0.0)) for d in 0:6)
 end
 
+@testset "evaluate! agrees with evaluate for Taylor1{Interval}" begin
+    ord = 25; t0 = 0.5866360410531761
+    s = [sin(t0)]; c = [cos(t0)]
+    for k in 1:ord-1
+        push!(s, c[k]/k); push!(c, -s[k]/k)
+    end
+    coef = vcat(0.0, [c[k+1]/(k+1) for k in 0:ord-1])       # x' = cos(t0 + τ)
+    p = Taylor1([interval(prevfloat(v), nextfloat(v)) for v in coef], ord)
+    p[0] = interval(-2e-14, 2e-14)
+    x = [p, p]
+    dest = [interval(0.0), interval(0.0)]
+    for δt in (-t0, 0.3, interval(-t0))
+        evaluate!(x, δt, dest)
+        @test all(isequal_interval.(dest, evaluate.(x, δt)))
+    end
+end
+
 end
