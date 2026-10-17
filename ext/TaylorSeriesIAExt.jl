@@ -386,16 +386,17 @@ end
         b::HomogeneousPolynomial, table)
     offsets = table.output_offsets
     output_pairs = table.output_pairs
-    num_right = table.num_right
+    right_bits = UInt32(table.right_bits) & 0x1f
+    right_mask = (one(UInt32) << right_bits) - one(UInt32)
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
     @inbounds for pos in 1:length(offsets)-1
         acc = c_coeffs[pos]
         for csr_pos in offsets[pos]:(offsets[pos+1]-1)
-            pair = Int(output_pairs[csr_pos]) - 1
-            na = pair ÷ num_right + 1
-            nb = pair - (na-1) * num_right + 1
+            packed = output_pairs[csr_pos]
+            na = Int(packed >> right_bits)
+            nb = Int(packed & right_mask)
             acc += a_coeffs[na] * b_coeffs[nb]
         end
         c_coeffs[pos] = acc
@@ -409,7 +410,8 @@ end
         table, d::Decoration, g::Bool) where {T<:Base.IEEEFloat}
     offsets = table.output_offsets
     output_pairs = table.output_pairs
-    num_right = table.num_right
+    right_bits = UInt32(table.right_bits) & 0x1f
+    right_mask = (one(UInt32) << right_bits) - one(UInt32)
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
@@ -421,9 +423,9 @@ end
         n = 0
         uf = false
         for csr_pos in offsets[pos]:(offsets[pos+1]-1)
-            pair = Int(output_pairs[csr_pos]) - 1
-            na = pair ÷ num_right + 1
-            nb = pair - (na-1) * num_right + 1
+            packed = output_pairs[csr_pos]
+            na = Int(packed >> right_bits)
+            nb = Int(packed & right_mask)
             ma, ra = _midrad(a_coeffs[na])
             mb, rb = _midrad(b_coeffs[nb])
             ((iszero(ma) & iszero(ra)) | (iszero(mb) & iszero(rb))) && continue   # exact 0
@@ -444,9 +446,9 @@ end
         if prod === nothing                       # overflow: generic interval arithmetic
             acc = c_coeffs[pos]
             for csr_pos in offsets[pos]:(offsets[pos+1]-1)
-                pair = Int(output_pairs[csr_pos]) - 1
-                na = pair ÷ num_right + 1
-                nb = pair - (na-1) * num_right + 1
+                packed = output_pairs[csr_pos]
+                na = Int(packed >> right_bits)
+                nb = Int(packed & right_mask)
                 acc += a_coeffs[na] * b_coeffs[nb]
             end
             c_coeffs[pos] = acc
@@ -688,13 +690,14 @@ function TS.mul_midrad_acc!(acc::MidRadAcc{T}, pa::MidRadPoly{T}, pb::MidRadPoly
             table = TS._init_output_major_product_table!(pa.space, u, v)
             offsets = table.output_offsets
             output_pairs = table.output_pairs
-            num_right = table.num_right
+            right_bits = UInt32(table.right_bits) & 0x1f
+            right_mask = (one(UInt32) << right_bits) - one(UInt32)
             Md, Ed, Rd, nd, ufd = _acc_arrays!(acc, d, length(offsets) - 1)
             for pos in 1:length(offsets)-1
                 for csr_pos in offsets[pos]:(offsets[pos+1]-1)
-                    pair = Int(output_pairs[csr_pos]) - 1
-                    na = pair ÷ num_right + 1
-                    nb = pair - (na-1) * num_right + 1
+                    packed = output_pairs[csr_pos]
+                    na = Int(packed >> right_bits)
+                    nb = Int(packed & right_mask)
                     _acc_term!(Md, Ed, Rd, nd, ufd, pos, factor * mida[oa+na],
                         factor * rada[oa+na], midb[ob+nb], radb[ob+nb], thr)
                 end
