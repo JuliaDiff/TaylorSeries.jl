@@ -548,31 +548,31 @@ end
     zeroT = zero( TaylorN([xH],1) )
     @test findfirst(zeroT) == findlast(zeroT) == -1
     @test (@inferred imag(xT)) == (zeroT)
-    @test zeroT.coeffs == zeros(HomogeneousPolynomial{Int}, 1)
+    @test zeroT.coeffs == zeros(HomogeneousPolynomial{Int}, 2)
     @test size(xH) == (2,)
     @test firstindex(xH) == 1
     @test lastindex(yH) == 2
-    @test length(zeros(HomogeneousPolynomial{Int}, 1)) == 2
+    @test length(zeros(HomogeneousPolynomial{Int}, 1)) == 1
     @test one(HomogeneousPolynomial(1,1)) == HomogeneousPolynomial([1,1])
     uT = one(convert(TaylorN{Float64},yT))
     @test uT == one(HomogeneousPolynomial)
     @test uT == convert(TaylorN{Float64},uT)
     @test zeroT[0] == HomogeneousPolynomial(0, 0)
     @test uT[0] == HomogeneousPolynomial(1, 0)
-    @test ones(xH,1) == [1, xH+yH]
+    @test TS._ones(xH,1) == [1, xH+yH]
     if VERSION < v"1.11"
-        @test typeof(ones(xH,2)) ==
+        @test typeof(TS._ones(xH,2)) ==
             FixedSizeArray{HomogeneousPolynomial{Int},1,Vector{HomogeneousPolynomial{Int}}}
     else
-        @test typeof(ones(xH,2)) ==
+        @test typeof(TS._ones(xH,2)) ==
             FixedSizeArray{HomogeneousPolynomial{Int},1,Memory{HomogeneousPolynomial{Int64}}}
     end
-    @test length(ones(xH,2)) == 3
+    @test length(TS._ones(xH,2)) == 3
     @test ones(HomogeneousPolynomial{Complex{Int}},0) ==
-        [HomogeneousPolynomial([complex(1,0)], 0)]
+        HomogeneousPolynomial{Complex{Int}}[]
     @test !isnan(uT)
     @test TS.fixorder(xH,yH) == (xH,yH)
-    @test_throws AssertionError TS.fixorder(zeros(xH,0)[1],yH)
+    @test_throws AssertionError TS.fixorder(TS._zeros(xH,0)[1],yH)
 
     @testset "Lexicographic order" begin
         @test HomogeneousPolynomial([2.1]) > 0.5 * xH > yH > xH^2
@@ -809,7 +809,7 @@ end
     @test q[1] == pol[1]
     @test q[end] == pol[end]
     q[:] .= pol.coeffs
-    zHall = zeros(HomogeneousPolynomial{Float64}, order(q))
+    zHall = zeros(HomogeneousPolynomial{Float64}, order(q)+1)
     q[:] .= zHall
     @test q[:] == zHall
     q[:] .= pol.coeffs
