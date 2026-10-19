@@ -91,6 +91,30 @@ end
     @test length.(sx.mul_table) == [4, 3, 2, 1]
     @test length(sa.mul_table) == 2
     @test length.(sa.mul_table) == [2, 1]
+    for degree_a in 1:order(sx)-1, degree_b in 1:order(sx)-degree_a
+        table = TaylorSeries._init_output_major_product_table!(sx, degree_a, degree_b)
+        num_a = sx.size_table[degree_a+1]
+        num_b = sx.size_table[degree_b+1]
+        num_c = sx.size_table[degree_a+degree_b+1]
+        @test table.right_bits == ndigits(num_b, base=2)
+        @test length(table.output_offsets) == num_c + 1
+        @test length(table.output_pairs) == num_a * num_b
+        mask = (one(UInt32) << table.right_bits) - one(UInt32)
+        seen = falses(num_a * num_b)
+        consistent = true
+        for pos in 1:num_c
+            group = table.output_pairs[table.output_offsets[pos]:(table.output_offsets[pos+1]-1)]
+            nas = Int.(group .>> table.right_bits)
+            nbs = Int.(group .& mask)
+            pair_ids = @. (nas - 1) * num_b + nbs
+            consistent &= all(1 .≤ nas .≤ num_a) && all(1 .≤ nbs .≤ num_b)
+            consistent &= all(table.input_positions[pair_ids] .== pos)
+            consistent &= issorted(pair_ids)
+            seen[pair_ids] .= true
+        end
+        @test consistent
+        @test all(seen)
+    end
     shown_sx = sprint(show, sx)
     @test occursin("JetSpace", shown_sx)
     @test occursin("Expansion order:", shown_sx)
