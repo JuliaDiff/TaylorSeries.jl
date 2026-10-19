@@ -496,7 +496,7 @@ the corresponding zeros.
 """
 function _coeffsTN(space::JetSpace, v::AbstractVector{HomogeneousPolynomial{T}},
         order::Int) where {T}
-    coeffs = zeros(HomogeneousPolynomial(space, v[1][1], TS.order(v[1])), order)
+    coeffs = _zeros(HomogeneousPolynomial(space, v[1][1], TS.order(v[1])), order)
     vord = TS.order.(v)
     max_order = maximum(vord)
     if allunique(vord) && (max_order ≤ order)

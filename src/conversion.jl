@@ -91,7 +91,7 @@ function convert(::Type{TaylorN{Taylor1{T}}}, s::Taylor1{TaylorN{T}}) where {T<:
     for k in eachindex(s)
         _check_same_space(sp, space(s[k]))
     end
-    r = zeros(HomogeneousPolynomial(sp, Taylor1(zero(T), order(s)), 0), orderN)
+    r = _zeros(HomogeneousPolynomial(sp, Taylor1(zero(T), order(s)), 0), orderN)
 
     v = zeros(T, order(s)+1)
     @inbounds for ordT in eachindex(s)
