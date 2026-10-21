@@ -35,11 +35,6 @@ function _zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     return v
 end
 
-function zeros(::Type{HomogeneousPolynomial{T}}, n::Int) where {T<:Number}
-    zhp = HomogeneousPolynomial(_scalar_space[], zero(T), 0)
-    return [zhp for _ = 1:n]
-end
-
 
 one(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(a.space, one.(a.coeffs), order(a))
@@ -53,12 +48,6 @@ function _ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     end
     return v
 end
-
-function ones(::Type{HomogeneousPolynomial{T}}, n::Int) where {T<:Number}
-    ohp = HomogeneousPolynomial(_scalar_space[], one(T), 0)
-    return [ohp for _ = 1:n]
-end
-
 
 
 # Recursive functions (homogeneous coefficients)
