@@ -33,7 +33,7 @@ import Base: ==, +, -, *, /, ^
 import Base: iterate, size, eachindex, firstindex, lastindex,
     eltype, length, getindex, setindex!, axes, copyto!
 
-import Base: zero, one, zeros, ones, isinf, isnan, iszero, isless,
+import Base: zero, one, isinf, isnan, iszero, isless,
     convert, promote_rule, promote, show, sum!,
     real, imag, conj, adjoint,
     round, ceil, floor, rem, mod, mod2pi, abs, abs2,

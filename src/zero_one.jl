@@ -27,21 +27,20 @@ zero(v::Vector{T}) where {T<:AbstractSeries} = zero.(v)
 zero(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(a.space, zero(a.coeffs[1]), order(a))
 
-function zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
+# Internal
+function _zeros(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
     z = zero(a[1])
     v .= HomogeneousPolynomial.(Ref(a.space), z, 0:order)
     return v
 end
 
-zeros(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
-    zeros( HomogeneousPolynomial(zero(T), 0), order)
-
 
 one(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(a.space, one.(a.coeffs), order(a))
 
-function ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
+# Internal
+function _ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, order+1)
     for ord in eachindex(v)
         v[ord] = HomogeneousPolynomial(a.space,
@@ -49,10 +48,6 @@ function ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
     end
     return v
 end
-
-ones(::Type{HomogeneousPolynomial{T}}, order::Int) where {T<:Number} =
-    ones( HomogeneousPolynomial(one(T), 0), order)
-
 
 
 # Recursive functions (homogeneous coefficients)

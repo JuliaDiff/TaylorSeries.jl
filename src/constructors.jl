@@ -234,7 +234,7 @@ struct TaylorN{T<:Number} <: AbstractSeries{T}
             v::AbstractArray{HomogeneousPolynomial{T},1},
             order::Int) where {T<:Number}
         isempty(v) &&
-            return new{T}(zeros(HomogeneousPolynomial(space, zero(T), 0), order), space)
+            return new{T}(_zeros(HomogeneousPolynomial(space, zero(T), 0), order), space)
         v = _checked_hps(space, v)
         coeffs = _coeffsTN(space, v, order)
         return new{T}(coeffs, space)

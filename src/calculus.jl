@@ -484,7 +484,7 @@ of the `r`-th variable; if `x0` is omitted, it is taken as zero.
 function integrate(a::TaylorN, r::Int)
     T = promote_type(TS.numtype(a), TS.numtype(a[0]/1))
     order_max = min(order(a.space), order(a)+1)
-    coeffs = zeros(HomogeneousPolynomial(a.space, zero(T), 0), order_max)
+    coeffs = _zeros(HomogeneousPolynomial(a.space, zero(T), 0), order_max)
 
     @inbounds for ord = 0:order_max-1
         coeffs[ord+1] = integrate( a[ord], r)
