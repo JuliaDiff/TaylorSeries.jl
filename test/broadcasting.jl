@@ -37,9 +37,9 @@ using Test
     # Nested Taylor1 tests
     t = Taylor1(Int, 3)
     ts = zero(t)
-    ts .= t
+    ts.coeffs .= t.coeffs
     @test ts == t
-    @. ts = 3 * t^2 - 1
+    ts.coeffs .= getcoeff.(3 * t^2 - 1, 0:order(t))
     @test ts == 3 * t^2 - 1
 
     #  `tt` has to be `Taylor1{Taylor1{Float64}}` (instead of `Taylor1{Taylor1{Int}}`)
@@ -47,15 +47,15 @@ using Test
     tt = Taylor1([zero(1.0*t), one(t)], 2)
     tts = zero(tt)
     @test tt .== tt
-    @. tts = 3 * tt^2 - 1
+    tts.coeffs .= getcoeff.(3 * tt^2 - 1, 0:order(tt))
     @test tts == 3 * tt^2 - 1
 
     ttt = Taylor1([zero(tt), one(tt)])
     ttts = zero(ttt)
     @test ttt .≈ ttt
-    @. ttts = 3 * ttt^1 - 1
+    ttts.coeffs .= getcoeff.(3 * ttt^1 - 1, 0:order(ttt))
     @test ttts == 3 * ttt^1 - 1
-    @. ttts = 3 * ttt^3 - 1
+    ttts.coeffs .= getcoeff.(3 * ttt^3 - 1, eachindex(ttts))
     @test ttts == - 1.0
 end
 
@@ -70,9 +70,9 @@ end
     @test x[2] .== y[2]
 
     xHs = zero(xH)
-    xHs .= xH
+    xHs.coeffs .= xH.coeffs
     @test xHs == xH
-    @. xHs = 2 * xH + yH
+    xHs.coeffs .= getfield(2 * xH + yH, :coeffs)
     @test xHs == 2 * xH + yH
 
     @test 1 .* xH == xH
@@ -88,9 +88,9 @@ end
     @test_throws MethodError Float32(x)
 
     p = zero(x)
-    p .= x
+    p.coeffs .= x.coeffs
     @test p == x
-    @. p = 1 + 2*x + 3x^2 - x * y
+    p.coeffs .= getfield(1 + 2*x + 3x^2 - x * y, :coeffs)
     @test p == 1 + 2*x + 3*x^2 - x * y
 
     @test 1.0 .+ x == 1.0 + x
@@ -124,11 +124,11 @@ end
     @test typeof(1.0 .* tN) == Taylor1{TaylorN{Float64}}
 
     tNs = zero(tN)
-    tNs .= tN
+    tNs.coeffs .= tN.coeffs
     @test tNs == tN
-    @. tNs = y[1] * tN^2 - 1
+    tNs.coeffs .= getfield(y[1] * tN^2 - 1, :coeffs)
     @test tNs == y[1] * tN^2 - 1
-    @. tNs = y * tN^2 - 1
+    tNs.coeffs .= getfield(y * tN^2 - 1, :coeffs)
     @test tNs == y * tN^2 - 1
 end
 
@@ -153,9 +153,13 @@ end
     @test 1.0 .* tN1 == tN1
     @test typeof(1.0 .* tN1) == TaylorN{Taylor1{Float64}}
 
+    # Note: Broadcasting assignement changed in Julia v1.14; see #444
+    # Use `copyto!` with nested Taylor1's
     tN1s = zero(tN1)
-    tN1s .= tN1
+    # tN1s .= tN1
+    copyto!(tN1s.coeffs, tN1.coeffs)
     @test tN1s == tN1
-    @. tN1s = t * tN1^2 - 1
+    # @. tN1s = t * tN1^2 - 1
+    copyto!(tN1s.coeffs, getproperty(t * tN1^2 - 1, :coeffs))
     @test tN1s == t * tN1^2 - 1
 end
