@@ -1531,8 +1531,9 @@ function sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            _mul_scalar_unchecked!(s[k], i, a[i], c[k-i], ordQ)
-            _mul_scalar_unchecked!(c[k], i, a[i], s[k-i], ordQ)
+            # _mul_scalar_unchecked!(s[k], i, a[i], c[k-i], ordQ)
+            # _mul_scalar_unchecked!(c[k], i, a[i], s[k-i], ordQ)
+            _mul_scalar2_unchecked!(s[k], c[k], i, a[i], c[k-i], s[k-i], ordQ)
         end
     end
     div!(s, s, k, k)

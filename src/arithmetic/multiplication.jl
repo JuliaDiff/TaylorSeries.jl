@@ -750,6 +750,96 @@ end
 end
 
 
+# Two products with a common factor, in one pass, equivalent to
+#     _mul_scalar_unchecked!(c1, scalar, a, b1)
+#     _mul_scalar_unchecked!(c2, scalar, a, b2)
+@inline function _mul_scalar2_unchecked!(c1::HomogeneousPolynomial,
+        c2::HomogeneousPolynomial, scalar::NumberNotSeries, a::HomogeneousPolynomial,
+        b1::HomogeneousPolynomial, b2::HomogeneousPolynomial)
+    (_isthinzero(scalar) || _isthinzero(a)) && return nothing
+    do1 = !_isthinzero(b1)
+    do2 = !_isthinzero(b2)
+    if !(do1 && do2)    # at most one product to do: the single-product kernel
+        do1 && _mul_scalar_unchecked!(c1, scalar, a, b1)
+        do2 && _mul_scalar_unchecked!(c2, scalar, a, b2)
+        return nothing
+    end
+    degree_a = order(a)
+    degree_b = order(b1)
+    if degree_a == 0
+        # = _muladd_scalar_unchecked!(c1, sc, b1) and _muladd_scalar_unchecked!(c2, sc, b2)
+        sc = scalar * a.coeffs[1]
+        _isthinzero(sc) && return nothing
+        c1_coeffs = c1.coeffs
+        c2_coeffs = c2.coeffs
+        b1_coeffs = b1.coeffs
+        b2_coeffs = b2.coeffs
+        @inbounds for i in eachindex(c1_coeffs)
+            b1i = b1_coeffs[i]
+            _isthinzero(b1i) || (c1_coeffs[i] += sc * b1i)
+            b2i = b2_coeffs[i]
+            _isthinzero(b2i) || (c2_coeffs[i] += sc * b2i)
+        end
+        return nothing
+    end
+    if degree_b == 0
+        # = _muladd_scalar_unchecked!(c1, sc1, a) and _muladd_scalar_unchecked!(c2, sc2, a)
+        sc1 = scalar * b1.coeffs[1]
+        sc2 = scalar * b2.coeffs[1]
+        do1 = !_isthinzero(sc1)
+        do2 = !_isthinzero(sc2)
+        c1_coeffs = c1.coeffs
+        c2_coeffs = c2.coeffs
+        a_coeffs = a.coeffs
+        @inbounds for i in eachindex(c1_coeffs)
+            ai = a_coeffs[i]
+            _isthinzero(ai) && continue
+            do1 && (c1_coeffs[i] += sc1 * ai)
+            do2 && (c2_coeffs[i] += sc2 * ai)
+        end
+        return nothing
+    end
+    #
+    sp = c1.space
+    @inbounds num_coeffs_a = sp.size_table[degree_a+1]
+    @inbounds num_coeffs_b = sp.size_table[degree_b+1]
+    input_positions = _product_table(sp, degree_a, degree_b).input_positions
+    pair = 1
+    c1_coeffs = c1.coeffs
+    c2_coeffs = c2.coeffs
+    a_coeffs = a.coeffs
+    b1_coeffs = b1.coeffs
+    b2_coeffs = b2.coeffs
+    @inbounds for na in 1:num_coeffs_a
+        ca = a_coeffs[na]
+        if _isthinzero(ca)
+            pair += num_coeffs_b
+            continue
+        end
+        sca = scalar * ca
+        for nb in 1:num_coeffs_b
+            pos = input_positions[pair]
+            cb1 = b1_coeffs[nb]
+            _isthinzero(cb1) || (c1_coeffs[pos] += sca * cb1)
+            cb2 = b2_coeffs[nb]
+            _isthinzero(cb2) || (c2_coeffs[pos] += sca * cb2)
+            pair += 1
+        end
+    end
+    return nothing
+end
+@inline function _mul_scalar2_unchecked!(c1::TaylorN{T}, c2::TaylorN{T},
+        scalar::NumberNotSeries, a::TaylorN{T}, b1::TaylorN{T}, b2::TaylorN{T},
+        k::Int) where {T<:Number}
+    kk = k + 1
+    @inbounds for i = 0:k
+        _mul_scalar2_unchecked!(c1.coeffs[kk], c2.coeffs[kk], scalar, a.coeffs[i+1],
+            b1.coeffs[kk-i], b2.coeffs[kk-i])
+    end
+    return nothing
+end
+
+
 """
     mul!(c, a, b) --> nothing
 
