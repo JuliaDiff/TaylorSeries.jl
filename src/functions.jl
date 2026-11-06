@@ -513,6 +513,43 @@ function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
     end
     return nothing
 end
+function sincos!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        for j in eachindex(a[k])
+            @inbounds sincos!(s[0], c[0], constant_term(a), j)
+        end
+        return nothing
+    end
+    @inbounds s_k = s[k]
+    @inbounds c_k = c[k]
+    zero!(s_k)
+    zero!(c_k)
+    s_kc = s_k.coeffs
+    c_kc = c_k.coeffs
+    @inbounds for i = 1:k
+        a_ic = a[i].coeffs
+        c_kic = c[k-i].coeffs
+        s_kic = s[k-i].coeffs
+        for j in eachindex(a[k])
+            jj = j + 1
+            s_acc = zero(T)
+            c_acc = zero(T)
+            for l = 1:jj
+                a_il = a_ic[l]
+                s_acc += a_il * c_kic[jj-l+1]
+                c_acc += a_il * s_kic[jj-l+1]
+            end
+            s_kc[jj] = s_kc[jj] + s_acc * i
+            c_kc[jj] = c_kc[jj] + c_acc * (-i)
+        end
+    end
+    @inbounds for jj in eachindex(s_kc)
+        s_kc[jj] = s_kc[jj] / k
+        c_kc[jj] = c_kc[jj] / k
+    end
+    return nothing
+end
 
 function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
