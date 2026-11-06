@@ -1524,15 +1524,15 @@ function sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces once per call
+    _check_same_space(s, c, a)
     # The recursion formula
-    # x = TaylorN( a[1][0][1], order(a[0]) )
     zero!(s[k])
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            # x[ordQ].coeffs .= i .* a[i][ordQ].coeffs
-            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
-            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
+            _mul_scalar_unchecked!(s[k], i, a[i], c[k-i], ordQ)
+            _mul_scalar_unchecked!(c[k], i, a[i], s[k-i], ordQ)
         end
     end
     div!(s, s, k, k)
