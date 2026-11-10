@@ -578,6 +578,11 @@ function sincos!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Tayl
     return nothing
 end
 
+# The factor `pi` of the recursions of `sincospi!`; by default is `pi`, but
+# for e.g. intervals returns a proper enclosure.
+_pi_factor(::Type{T}) where {T<:Number} = pi
+_pi_factor(::Type{<:AbstractSeries{T}}) where {T} = _pi_factor(T)
+
 function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
     s_coeffs = s.coeffs
@@ -588,10 +593,11 @@ function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         return nothing
     end
     kk = k+1
+    pi_T = _pi_factor(T)
     @inbounds s_acc = zero(s_coeffs[kk])
     @inbounds c_acc = zero(c_coeffs[kk])
     @inbounds for i = 1:k
-        x = (i * pi) * a_coeffs[i+1]
+        x = (i * pi_T) * a_coeffs[i+1]
         s_acc += x * c_coeffs[k-i+1]
         c_acc -= x * s_coeffs[k-i+1]
     end
@@ -611,14 +617,15 @@ function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
     x = zero(c[k])
     zero!(s[k])
     zero!(c[k])
+    pi_T = _pi_factor(T)
     @inbounds for i = 1:k
         # x = i * pi * a[i]
         # s[k] += x * c[k-i]
         # c[k] -= x * s[k-i]
         for j in eachindex(a[k])
-            mul_scalar!(x,  i*pi, a[i], c[k-i], j)
+            mul_scalar!(x,  i*pi_T, a[i], c[k-i], j)
             add!(s[k], s[k], x, j)
-            mul_scalar!(x, -i*pi, a[i], s[k-i], j)
+            mul_scalar!(x, -i*pi_T, a[i], s[k-i], j)
             add!(c[k], c[k], x, j)
         end
     end
@@ -638,9 +645,9 @@ function sincospi!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Ta
         end
         return nothing
     end
-    # x = i * pi * a[i]:  s[k] += x * c[k-i],  c[k] -= x * s[k-i]   (scalars as in the
-    # generic method: `i*pi` and `-i*pi`)
-    _sincos_nested_recursion!(s, c, a, k, i -> i*pi, i -> -i*pi)
+    # x = i * pi_T * a[i]:  s[k] += x * c[k-i],  c[k] -= x * s[k-i]
+    pi_T = _pi_factor(T)
+    _sincos_nested_recursion!(s, c, a, k, i -> i*pi_T, i -> -i*pi_T)
     return nothing
 end
 

@@ -47,6 +47,11 @@ end
 _intersect_domain_nonstd(x::Interval, y::Interval) =
     _intersect_domain_nonstd(promote(x, y)...)
 
+# The factor `pi` of the recursions of `sincospi!` for `Taylor1`
+const _PI_INTERVAL_F64 = interval(Float64, π)
+TS._pi_factor(::Type{Interval{Float64}}) = _PI_INTERVAL_F64
+TS._pi_factor(::Type{Interval{T}}) where {T<:NumTypes} = interval(T, π)
+
 # Some functions require special interval functions (isequal_interval, isthinzero)
 for I in (:Interval, :ComplexI)
     @eval begin
