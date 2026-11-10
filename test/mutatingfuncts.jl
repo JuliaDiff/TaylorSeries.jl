@@ -3,6 +3,7 @@
 
 using TaylorSeries
 using Test
+using Random: Xoshiro
 
 @testset "Mutating functions" begin
     t1 = Taylor1(6)
@@ -208,4 +209,161 @@ using Test
     @test exp(log1p_t1tn) ≈ one_plus_small
     @test log1p(small_t1tn) ≈ log1p_t1tn
 
+end
+
+@testset "Specialized mutating functions" begin
+    # The in-place functions and the pair of functions (`s`, `c`) that each one computes
+    local SINCOS_INPLACE = ((TaylorSeries.sincos!, sin, cos),
+        (TaylorSeries.sincospi!, sinpi, cospi),
+        (TaylorSeries.sinhcosh!, sinh, cosh))
+
+    # n-th derivative at 0 of `f`, as a BigFloat
+    function deriv_at_zero(f, n::Int)
+        f === sin   && return BigFloat((0, 1, 0, -1)[mod(n, 4) + 1])
+        f === cos   && return BigFloat((1, 0, -1, 0)[mod(n, 4) + 1])
+        f === sinpi && return big(pi)^n * deriv_at_zero(sin, n)
+        f === cospi && return big(pi)^n * deriv_at_zero(cos, n)
+        f === sinh  && return BigFloat(isodd(n))
+        f === cosh  && return BigFloat(iseven(n))
+        throw(ArgumentError("unknown function $f"))
+    end
+
+    # Coefficient of `t^k * ξ_1^j_1 * ... * ξ_m^j_m` in the expansion of
+    # `f(cs * (t + ξ_1 + ... + ξ_m))`: `cs^n f^(n)(0) / (k! j_1! ... j_m!)`, with `n = k + Σ j_i`
+    function known_coeff(f, cs, k::Int, js::NTuple{N,Int}) where {N}
+        n = k + sum(js; init = 0)
+        den = factorial(big(k)) * prod(factorial(big(j)) for j in js; init = big(1))
+        return big(cs)^n * deriv_at_zero(f, n) / den
+    end
+
+    # All exponent tuples of `nv` variables with total degree ≤ `order`
+    monomials(nv::Int, order::Int) =
+        [js for js in Iterators.product(ntuple(_ -> 0:order, nv)...) if sum(js) ≤ order]
+
+
+    @testset "Test sincos!, sincospi!, sinhcosh! for Taylor1{Taylor1}" begin
+        # function barrier: `f!` varies in the loop below
+        allocs(f!, s, c, a, k) = @allocated f!(s, c, a, k)
+        for (f!, fs, fc) in SINCOS_INPLACE, cs in (0.5, 0.5f0, 0.5im),
+                (outer, inner) in ((1, 0), (7, 3), (20, 5))
+            R = typeof(cs)
+            tol = R <: Union{Float32, Complex{Float32}} ? 1e-5 : 1e-13
+            u = Taylor1(inner ≥ 1 ? [zero(R), cs] : [zero(R)], inner)
+            x = Taylor1([u, Taylor1([cs], inner)], outer)            # cs * (t + u)
+            s, c = zero(x), zero(x)
+            for k in eachindex(x)
+                f!(s, c, x, k)
+            end
+            @test all(isapprox(s[k][j], known_coeff(fs, cs, k, (j,)); atol = tol)
+                for k in 0:outer, j in 0:inner)
+            @test all(isapprox(c[k][j], known_coeff(fc, cs, k, (j,)); atol = tol)
+                for k in 0:outer, j in 0:inner)
+            allocs(f!, s, c, x, outer)                   # warm-up
+            @test allocs(f!, s, c, x, outer) == 0
+        end
+    end
+
+    @testset "Test _mul_scalar2_unchecked!" begin
+        sp = JetSpace(order = 4, variables = [:u, :v])
+        u, v = variables(sp)
+        rng = Xoshiro(20261107)
+        randtn() = sum(randn(rng) * u^i * v^j for i in 0:4 for j in 0:4-i)
+        function sprinkle_zeros!(x)
+            for q in eachindex(x)
+                hp = x.coeffs[q+1].coeffs
+                r = rand(rng)
+                r < 0.25 ? fill!(hp, 0.0) :
+                    r < 0.45 ? (hp[rand(rng, eachindex(hp))] = rand(rng, (0.0, -0.0))) : nothing
+            end
+            return x
+        end
+        bitequal(x, y) = all(q -> all(map(===, x[q].coeffs, y[q].coeffs)), eachindex(x))
+
+        # `pre * a`, coefficient by coefficient (what the kernel must reproduce with `pre`)
+        function prescaled(pre, a)
+            pa = zero(a)
+            for q in eachindex(a), m in eachindex(a.coeffs[q+1].coeffs)
+                pa.coeffs[q+1].coeffs[m] = pre * a.coeffs[q+1].coeffs[m]
+            end
+            return pa
+        end
+
+        for trial in 1:200, scalar in (3, 0, -1.5), pre in (nothing, pi)
+            a, b1, b2 = sprinkle_zeros!(randtn()), sprinkle_zeros!(randtn()), sprinkle_zeros!(randtn())
+            pa = isnothing(pre) ? a : prescaled(pre, a)
+            c1, c2 = randtn(), randtn()
+            d1, d2 = zero(c1), zero(c2)              # copies in the same space (no `deepcopy`)
+            TS.identity!(d1, c1)
+            TS.identity!(d2, c2)
+            for k in 0:4
+                TS._mul_scalar2_unchecked!(c1, c2, scalar, a, b1, b2, k, pre)
+                TS._mul_scalar_unchecked!(d1, scalar, pa, b1, k)
+                TS._mul_scalar_unchecked!(d2, scalar, pa, b2, k)
+            end
+            @test bitequal(c1, d1) && bitequal(c2, d2)
+        end
+    end
+
+    @testset "Test sincos!, sincospi!, sinhcosh! for Taylor1{TaylorN}" begin
+        # function barrier: `f!` varies in the loop below
+        allocs(f!, s, c, a, k) = @allocated f!(s, c, a, k)
+        for (f!, fs, fc) in SINCOS_INPLACE, cs in (0.5, 0.5im),
+                (jetorder, nv) in ((1, 1), (3, 2), (4, 3)), outer in (1, 7, 15)
+            sp = JetSpace(order = jetorder, variables = [Symbol(:ξ, i) for i in 1:nv])
+            x0 = cs * sum(variables(sp))
+            x = Taylor1([x0, cs + zero(x0)], outer)                  # cs * (t + Σ ξ_i)
+            x_copy = zero(x)
+            for k in eachindex(x)
+                TS.identity!(x_copy[k], x[k])
+            end
+            s, c = zero(x), zero(x)
+            for k in eachindex(x)
+                f!(s, c, x, k)
+            end
+            mons = monomials(nv, jetorder)
+            @test all(isapprox(getcoeff(s[k], js), known_coeff(fs, cs, k, js); atol = 1e-13)
+                for k in 0:outer, js in mons)
+            @test all(isapprox(getcoeff(c[k], js), known_coeff(fc, cs, k, js); atol = 1e-13)
+                for k in 0:outer, js in mons)
+            @test x == x_copy                                        # argument not modified
+            allocs(f!, s, c, x, outer)                   # warm-up
+            @test allocs(f!, s, c, x, outer) == 0
+        end
+
+        # mixed spaces: an error, before anything is modified
+        sp1 = JetSpace(order = 2, variables = [:u, :v])
+        sp2 = JetSpace(order = 2, variables = [:u, :v])
+        u1, _ = variables(sp1)
+        u2, _ = variables(sp2)
+        for (f!, _, _) in SINCOS_INPLACE
+            a1 = Taylor1([0.1 + u1, 0.5 * u1, 0.25 + u1], 2)
+            a2 = Taylor1([0.1 + u2, 0.5 * u2, 0.25 + u2], 2)
+            s, c = zero(a1), zero(a1)
+            f!(s, c, a1, 0)
+            @test_throws ArgumentError f!(s, c, a2, 1)
+        end
+    end
+
+    @testset "sincospi! for TaylorN" begin
+        for cs in (0.5, 0.5im), (jetorder, nv) in ((1, 1), (3, 2), (6, 3))
+            sp = JetSpace(order = jetorder, variables = [Symbol(:ξ, i) for i in 1:nv])
+            x = cs * sum(variables(sp))
+            x_copy = zero(x)
+            TS.identity!(x_copy, x)
+            s1, c1, s2, c2 = zero(x), zero(x), zero(x), zero(x)
+            for k in eachindex(x)
+                TS.sincospi!(s1, c1, x, k)
+            end
+            for k in eachindex(x)
+                TS.sincospi!(s2, c2, x, k)
+            end
+            mons = monomials(nv, jetorder)
+            @test all(isapprox(getcoeff(s1, js), known_coeff(sinpi, cs, 0, js); atol = 1e-13)
+                for js in mons)
+            @test all(isapprox(getcoeff(c1, js), known_coeff(cospi, cs, 0, js); atol = 1e-13)
+                for js in mons)
+            @test x == x_copy                                        # argument not modified
+            @test s1 == s2 && c1 == c2                               # same result when repeated
+        end
+    end
 end

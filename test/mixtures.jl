@@ -801,3 +801,40 @@ end
     set_taylor1_varname(1, "t")
     @test TS._params_Taylor1_.var_name == ["t"]
 end
+
+@testset "Test mixtures involving cis and cispi" begin
+    sp = JetSpace(order = 4, variables = [:u, :v])
+    u, v = variables(sp)
+    t = Taylor1(8)
+    real_series = (
+        0.3 + t - 0.2 * t^2,                                            # Taylor1{Float64}
+        0.3 + u - 0.5 * u * v + v^3,                                    # TaylorN{Float64}
+        Taylor1([0.3 + u, 1.0 + 0.0 * u, 0.5 * v], 6),                  # Taylor1{TaylorN}
+        Taylor1([Taylor1([0.3, 1.0], 3), Taylor1([0.0, 0.5], 3)], 6))   # Taylor1{Taylor1}
+    for x in real_series
+        z = cis(x)
+        s, c = sincos(x)
+        @test typeof(z) == typeof(im * x)
+        @test real(z) == c
+        @test imag(z) == s
+        @test z ≈ exp(im * x)
+        zpi = cispi(x)
+        s, c = sincospi(x)
+        @test typeof(zpi) == typeof(im * x)
+        @test real(zpi) == c
+        @test imag(zpi) == s
+        @test zpi ≈ exp(im * pi * x)
+    end
+
+    complex_series = (
+        (0.3 + 0.1im) + t - 0.2 * t^2,                                  # Taylor1{ComplexF64}
+        (0.3 + 0.1im) + u - 0.5im * u * v)                              # TaylorN{ComplexF64}
+    for x in complex_series
+        s, c = sincos(x)
+        @test cis(x) == c + im * s
+        @test cis(x) ≈ exp(im * x)
+        s, c = sincospi(x)
+        @test cispi(x) == c + im * s
+        @test cispi(x) ≈ exp(im * pi * x)
+    end
+end
