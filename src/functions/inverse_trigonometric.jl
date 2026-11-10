@@ -8,6 +8,7 @@
 
 # Inverse trigonometric functions: asin, acos, atan
 
+
 # Out-of-place functions
 for T in (:Taylor1, :TaylorN)
     @eval begin
@@ -329,13 +330,11 @@ function asin!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         subst!(res[k], a[k], res[k], ordQ)
         div!(res[k], r[0], ordQ)
     end
-    # Compute k-th coefficient of auxiliary term s=1-a^2
-    aux = zero(a)
+    # k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, zero(a[0]), k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux, 0)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k]
     return nothing
 end
 
@@ -360,13 +359,11 @@ function acos!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         subst!(res[k], res[k], ordQ)
         div!(res[k], r[0], ordQ)
     end
-    # Compute k-th coefficient of auxiliary term s=1-a^2
-    aux = zero(a)
+    # k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, zero(a[0]), k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux, 0)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k]
     return nothing
 end
 

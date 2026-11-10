@@ -297,17 +297,9 @@ function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         div!(res[k], tmp, r[0], ordQ)
         zero!(tmp, ordQ)
     end
-    # Compute auxiliary term s=1+a^2
-    s = zero(a)#Taylor1(zero(a[0]), order(a))
-    for i = 0:k
-        sqr!(s, a, tmp, i)
-        if i == 0
-            s[0] = one(s[0]) + s[0]
-            add!(s, one(s), s, 0)
-        end
-    end
-    # Update aux term r = sqrt(s) = sqrt(1+a^2)
-    sqrt!(r, s, zero(a), k)
+    # Update aux term r = sqrt(s), s = 1+a^2
+    sqr!(r, a, tmp, k)  # r[k] <- (a^2)[k]
+    sqrt!(r, r, r, k)   # r[k] <- (sqrt(s))[k]
     return nothing
 end
 
@@ -344,18 +336,9 @@ function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
-    # Compute auxiliary term s=a^2-1
-    s = zero(a)#Taylor1(zero(a[0]), order(a))
-    zero!(tmp)
-    for i = 0:k
-        sqr!(s, a, tmp, i)
-        if i == 0
-            s[0] = one(s[0]) + s[0]
-            subst!(s, s, one(s), 0)
-        end
-    end
-    # Update aux term r = sqrt(s) = sqrt(a^2-1)
-    sqrt!(r, s, zero(a), k)
+    # Update aux term r = sqrt(s), s = 1+a^2
+    sqr!(r, a, tmp, k)  # r[k] <- (a^2)[k]
+    sqrt!(r, r, r, k)   # r[k] <- (sqrt(s))[k]
     return nothing
 end
 
