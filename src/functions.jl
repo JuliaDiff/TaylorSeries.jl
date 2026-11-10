@@ -55,8 +55,6 @@ for T in (:Taylor1, :TaylorN)
             return c
         end
 
-        sin(a::$T) = sincos(a)[1]
-        cos(a::$T) = sincos(a)[2]
         function sincos(a::$T)
             order = TS.order(a)
             aux, auxc = sincos(constant_term(a))
@@ -69,9 +67,9 @@ for T in (:Taylor1, :TaylorN)
             end
             return s, c
         end
+        sin(a::$T) = sincos(a)[1]
+        cos(a::$T) = sincos(a)[2]
 
-        sinpi(a::$T) = sincospi(a)[1]
-        cospi(a::$T) = sincospi(a)[2]
         function sincospi(a::$T)
             order = TS.order(a)
             aux, auxc = sincospi(constant_term(a))
@@ -84,6 +82,8 @@ for T in (:Taylor1, :TaylorN)
             end
             return s, c
         end
+        sinpi(a::$T) = sincospi(a)[1]
+        cospi(a::$T) = sincospi(a)[2]
 
         function tan(a::$T)
             order = TS.order(a)
@@ -152,8 +152,6 @@ for T in (:Taylor1, :TaylorN)
             return c
         end
 
-        sinh(a::$T) = sinhcosh(a)[1]
-        cosh(a::$T) = sinhcosh(a)[2]
         function sinhcosh(a::$T)
             order = TS.order(a)
             aux = sinh(constant_term(a))
@@ -166,6 +164,8 @@ for T in (:Taylor1, :TaylorN)
             end
             return s, c
         end
+        sinh(a::$T) = sinhcosh(a)[1]
+        cosh(a::$T) = sinhcosh(a)[2]
 
         function tanh(a::$T)
             order = TS.order(a)
@@ -289,36 +289,6 @@ function exp!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
     end
     return nothing
 end
-#
-# function exp!(c::Taylor1{T}, a::Taylor1{T}, aaux::T, k::Int) where
-#         {T<:Number}
-#     aaux = constant_term(a)
-#     if k == 0
-#         for j in eachindex(a[k])
-#             exp!(c[k], aaux, j)
-#         end
-#         return nothing
-#     end
-#     zero!(c[k])
-#     # aux = zero(c[k])
-#     zero!(aaux, k)
-#     @inbounds for i = 0:k-1
-#         # c[k] += (k-i) * a[k-i] * c[i]
-#         for j in eachindex(c[k])
-#             mul_scalar!(aaux, k-i, a[k-i], c[i], j)
-#             add!(c[k], c[k], aaux, j)
-#             zero!(aaux, j)
-#         end
-#     end
-#     # div!(c, c, k, k)
-#     for i in eachindex(c[k])
-#         identity!(aaux, c[k], i)
-#     end
-#     for i in eachindex(c[k])
-#         div!(c[k], aaux, k, i)
-#     end
-#     return nothing
-# end
 
 function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:NumberNotSeries}
@@ -513,14 +483,10 @@ function sincos!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
     end
     return nothing
 end
-function sincos!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
-        k::Int) where {T<:NumberNotSeries}
-    if k == 0
-        for j in eachindex(a[k])
-            @inbounds sincos!(s[0], c[0], constant_term(a), j)
-        end
-        return nothing
-    end
+
+# `Taylor1{Taylor1}`: the recursion (k ≥ 1) shared by `sincos!`, `sincospi!` and `sinhcosh!`
+@inline function _sincos_nested_recursion!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}},
+        a::Taylor1{Taylor1{T}}, k::Int, fs::FS, fc::FC) where {T<:NumberNotSeries, FS, FC}
     @inbounds s_k = s[k]
     @inbounds c_k = c[k]
     zero!(s_k)
@@ -528,6 +494,8 @@ function sincos!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Tayl
     s_kc = s_k.coeffs
     c_kc = c_k.coeffs
     @inbounds for i = 1:k
+        sc_s = fs(i)
+        sc_c = fc(i)
         a_ic = a[i].coeffs
         c_kic = c[k-i].coeffs
         s_kic = s[k-i].coeffs
@@ -540,14 +508,27 @@ function sincos!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Tayl
                 s_acc += a_il * c_kic[jj-l+1]
                 c_acc += a_il * s_kic[jj-l+1]
             end
-            s_kc[jj] = s_kc[jj] + s_acc * i
-            c_kc[jj] = c_kc[jj] + c_acc * (-i)
+            s_kc[jj] = s_kc[jj] + convert(T, s_acc * sc_s)
+            c_kc[jj] = c_kc[jj] + convert(T, c_acc * sc_c)
         end
     end
     @inbounds for jj in eachindex(s_kc)
         s_kc[jj] = s_kc[jj] / k
         c_kc[jj] = c_kc[jj] / k
     end
+    return nothing
+end
+
+function sincos!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        for j in eachindex(a[k])
+            @inbounds sincos!(s[0], c[0], constant_term(a), j)
+        end
+        return nothing
+    end
+    # x = i * a[i]:  s[k] += x * c[k-i],  c[k] -= x * s[k-i]
+    _sincos_nested_recursion!(s, c, a, k, identity, -)
     return nothing
 end
 
@@ -599,6 +580,21 @@ function sincospi!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         div!(s[k], s[k], k, j)
         div!(c[k], c[k], k, j)
     end
+    return nothing
+end
+
+function sincospi!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        a0 = constant_term(a)
+        for j in eachindex(a[k])
+            @inbounds sincospi!(s[0], c[0], a0, j)
+        end
+        return nothing
+    end
+    # x = i * pi * a[i]:  s[k] += x * c[k-i],  c[k] -= x * s[k-i]   (scalars as in the
+    # generic method: `i*pi` and `-i*pi`)
+    _sincos_nested_recursion!(s, c, a, k, i -> i*pi, i -> -i*pi)
     return nothing
 end
 
@@ -864,6 +860,19 @@ function sinhcosh!(s::Taylor1{T}, c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         div!(s[k], s[k], k, j)
         div!(c[k], c[k], k, j)
     end
+    return nothing
+end
+
+function sinhcosh!(s::Taylor1{Taylor1{T}}, c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}},
+        k::Int) where {T<:NumberNotSeries}
+    if k == 0
+        for j in eachindex(a[k])
+            sinhcosh!(s[k], c[k], a[k], j)
+        end
+        return nothing
+    end
+    # x = i * a[i]:  s[k] += x * c[k-i],  c[k] += x * s[k-i]
+    _sincos_nested_recursion!(s, c, a, k, identity, identity)
     return nothing
 end
 
@@ -1155,8 +1164,16 @@ function sincospi!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
         @inbounds s[0][1], c[0][1] = sincospi( a0 )
         return nothing
     end
-    mul!(a, pi, a, k)
-    sincos!(s, c, a, k)
+    # Check spaces
+    _check_same_space(s, c, a)
+    zero!(s, k)
+    zero!(c, k)
+    @inbounds for i = 1:k
+        _mul_scalar_unchecked!(s[k],  i, a[i], c[k-i], pi)
+        _mul_scalar_unchecked!(c[k], -i, a[i], s[k-i], pi)
+    end
+    @inbounds div!(s[k], s[k], k)
+    @inbounds div!(c[k], c[k], k)
     return nothing
 end
 
@@ -1524,15 +1541,14 @@ function sincos!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         end
         return nothing
     end
-    # Check spaces once per call
+    # Check spaces
     _check_same_space(s, c, a)
     # The recursion formula
     zero!(s[k])
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            # _mul_scalar_unchecked!(s[k], i, a[i], c[k-i], ordQ)
-            # _mul_scalar_unchecked!(c[k], i, a[i], s[k-i], ordQ)
+            # s[k] += i * a[i] * c[k-i];  c[k] += i * a[i] * s[k-i]
             _mul_scalar2_unchecked!(s[k], c[k], i, a[i], c[k-i], s[k-i], ordQ)
         end
     end
@@ -1550,12 +1566,20 @@ function sincospi!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         end
         return nothing
     end
-    # aa = pi * a
-    aa = Taylor1(zero(a[0]), order(a))
-    @inbounds for ordT in eachindex(a)
-        mul!(aa, pi, a, ordT)
+    # Check spaces
+    _check_same_space(s, c, a)
+    # The recursion formula
+    zero!(s[k])
+    zero!(c[k])
+    @inbounds for i = 1:k
+        for ordQ in eachindex(a[0])
+            # s[k] += i * (pi*a[i]) * c[k-i];  c[k] += i * (pi*a[i]) * s[k-i]
+            _mul_scalar2_unchecked!(s[k], c[k], i, a[i], c[k-i], s[k-i], ordQ, pi)
+        end
     end
-    sincos!(s, c, aa, k)
+    div!(s, s, k, k)
+    subst!(c, c, k)
+    div!(c, c, k, k)
     return nothing
 end
 
@@ -1682,13 +1706,15 @@ function sinhcosh!(s::Taylor1{TaylorN{T}}, c::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(s, c, a)
     # The recursion formula
     zero!(s[k])
     zero!(c[k])
     @inbounds for i = 1:k
         for ordQ in eachindex(a[0])
-            mul_scalar!(s[k], i, a[i], c[k-i], ordQ)
-            mul_scalar!(c[k], i, a[i], s[k-i], ordQ)
+            # s[k] += i * a[i] * c[k-i];  c[k] += i * a[i] * s[k-i], in one pass
+            _mul_scalar2_unchecked!(s[k], c[k], i, a[i], c[k-i], s[k-i], ordQ)
         end
     end
     div!(s, s, k, k)

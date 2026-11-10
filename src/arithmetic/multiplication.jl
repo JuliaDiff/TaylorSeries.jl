@@ -615,13 +615,18 @@ c_k = \sum_{j=0}^k a_j b_{k-j}.
     return nothing
 end
 
+# `_prescale(pre, x)`: the coefficient `x` of a factor, multiplied on the fly
+# by `pre`, or `x` itself if `pre === nothing`. Allows using `pre * a` without storing it.
+@inline _prescale(::Nothing, x) = x
+@inline _prescale(pre, x) = pre * x
+
 @inline function _muladd_scalar_unchecked!(c::HomogeneousPolynomial, scalar,
-        a::HomogeneousPolynomial)
+        a::HomogeneousPolynomial, pre::Union{Nothing,NumberNotSeries} = nothing)
     _isthinzero(scalar) && return nothing
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     @inbounds for i in eachindex(c_coeffs)
-        ai = a_coeffs[i]
+        ai = _prescale(pre, a_coeffs[i])
         _isthinzero(ai) && continue
         c_coeffs[i] += scalar * ai
     end
@@ -695,12 +700,13 @@ end
 
 @inline function _mul_scalar_unchecked!(c::HomogeneousPolynomial,
         scalar::NumberNotSeries, a::HomogeneousPolynomial,
-        b::HomogeneousPolynomial)
+        b::HomogeneousPolynomial, pre::Union{Nothing,NumberNotSeries} = nothing)
     (_isthinzero(scalar) || _isthinzero(b) || _isthinzero(a)) && return nothing
     degree_a = order(a)
     degree_b = order(b)
-    degree_a == 0 && return _muladd_scalar_unchecked!(c, scalar * a.coeffs[1], b)
-    degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b.coeffs[1], a)
+    degree_a == 0 &&
+        return _muladd_scalar_unchecked!(c, scalar * _prescale(pre, a.coeffs[1]), b)
+    degree_b == 0 && return _muladd_scalar_unchecked!(c, scalar * b.coeffs[1], a, pre)
 
     sp = c.space
     order_a = degree_a+1
@@ -713,7 +719,7 @@ end
     a_coeffs = a.coeffs
     b_coeffs = b.coeffs
     @inbounds for na in 1:num_coeffs_a
-        ca = a_coeffs[na]
+        ca = _prescale(pre, a_coeffs[na])
         if _isthinzero(ca)
             pair += num_coeffs_b
             continue
@@ -750,49 +756,66 @@ end
 end
 
 
-# Two products with a common factor, in one pass, equivalent to
-#     _mul_scalar_unchecked!(c1, scalar, a, b1)
-#     _mul_scalar_unchecked!(c2, scalar, a, b2)
+# Two products with a common factor, equivalent to
+#     _mul_scalar_unchecked!(c1, scalar, pa, b1)
+#     _mul_scalar_unchecked!(c2, scalar, pa, b2)
+# where `pa = a` if `pre === nothing`, and otherwise the polynomial with
+# coefficients `pre * a[i]`; see _prescale.
 @inline function _mul_scalar2_unchecked!(c1::HomogeneousPolynomial,
         c2::HomogeneousPolynomial, scalar::NumberNotSeries, a::HomogeneousPolynomial,
-        b1::HomogeneousPolynomial, b2::HomogeneousPolynomial)
+        b1::HomogeneousPolynomial, b2::HomogeneousPolynomial,
+        pre::Union{Nothing,NumberNotSeries} = nothing)
     (_isthinzero(scalar) || _isthinzero(a)) && return nothing
+    # Skip corresponding product if b1 or b2 is zero
     do1 = !_isthinzero(b1)
     do2 = !_isthinzero(b2)
-    if !(do1 && do2)    # at most one product to do: the single-product kernel
-        do1 && _mul_scalar_unchecked!(c1, scalar, a, b1)
-        do2 && _mul_scalar_unchecked!(c2, scalar, a, b2)
-        return nothing
+    if do1 && do2
+        _mul_scalar2_kernel!(c1, c2, scalar, a, b1, b2, pre, Val(true), Val(true))
+    elseif do1
+        _mul_scalar2_kernel!(c1, c2, scalar, a, b1, b2, pre, Val(true), Val(false))
+    elseif do2
+        _mul_scalar2_kernel!(c1, c2, scalar, a, b1, b2, pre, Val(false), Val(true))
     end
+    return nothing
+end
+
+@inline function _mul_scalar2_kernel!(c1::HomogeneousPolynomial, c2::HomogeneousPolynomial,
+        scalar::NumberNotSeries, a::HomogeneousPolynomial, b1::HomogeneousPolynomial,
+        b2::HomogeneousPolynomial, pre::Union{Nothing,NumberNotSeries},
+        ::Val{D1}, ::Val{D2}) where {D1, D2}
     degree_a = order(a)
     degree_b = order(b1)
     if degree_a == 0
         # = _muladd_scalar_unchecked!(c1, sc, b1) and _muladd_scalar_unchecked!(c2, sc, b2)
-        sc = scalar * a.coeffs[1]
+        sc = scalar * _prescale(pre, a.coeffs[1])
         _isthinzero(sc) && return nothing
         c1_coeffs = c1.coeffs
         c2_coeffs = c2.coeffs
         b1_coeffs = b1.coeffs
         b2_coeffs = b2.coeffs
         @inbounds for i in eachindex(c1_coeffs)
-            b1i = b1_coeffs[i]
-            _isthinzero(b1i) || (c1_coeffs[i] += sc * b1i)
-            b2i = b2_coeffs[i]
-            _isthinzero(b2i) || (c2_coeffs[i] += sc * b2i)
+            if D1
+                b1i = b1_coeffs[i]
+                _isthinzero(b1i) || (c1_coeffs[i] += sc * b1i)
+            end
+            if D2
+                b2i = b2_coeffs[i]
+                _isthinzero(b2i) || (c2_coeffs[i] += sc * b2i)
+            end
         end
         return nothing
     end
     if degree_b == 0
-        # = _muladd_scalar_unchecked!(c1, sc1, a) and _muladd_scalar_unchecked!(c2, sc2, a)
+        # = _muladd_scalar_unchecked!(c1, sc1, pa) and _muladd_scalar_unchecked!(c2, sc2, pa)
         sc1 = scalar * b1.coeffs[1]
         sc2 = scalar * b2.coeffs[1]
-        do1 = !_isthinzero(sc1)
-        do2 = !_isthinzero(sc2)
+        do1 = D1 && !_isthinzero(sc1)
+        do2 = D2 && !_isthinzero(sc2)
         c1_coeffs = c1.coeffs
         c2_coeffs = c2.coeffs
         a_coeffs = a.coeffs
         @inbounds for i in eachindex(c1_coeffs)
-            ai = a_coeffs[i]
+            ai = _prescale(pre, a_coeffs[i])
             _isthinzero(ai) && continue
             do1 && (c1_coeffs[i] += sc1 * ai)
             do2 && (c2_coeffs[i] += sc2 * ai)
@@ -811,7 +834,7 @@ end
     b1_coeffs = b1.coeffs
     b2_coeffs = b2.coeffs
     @inbounds for na in 1:num_coeffs_a
-        ca = a_coeffs[na]
+        ca = _prescale(pre, a_coeffs[na])
         if _isthinzero(ca)
             pair += num_coeffs_b
             continue
@@ -819,10 +842,14 @@ end
         sca = scalar * ca
         for nb in 1:num_coeffs_b
             pos = input_positions[pair]
-            cb1 = b1_coeffs[nb]
-            _isthinzero(cb1) || (c1_coeffs[pos] += sca * cb1)
-            cb2 = b2_coeffs[nb]
-            _isthinzero(cb2) || (c2_coeffs[pos] += sca * cb2)
+            if D1
+                cb1 = b1_coeffs[nb]
+                _isthinzero(cb1) || (c1_coeffs[pos] += sca * cb1)
+            end
+            if D2
+                cb2 = b2_coeffs[nb]
+                _isthinzero(cb2) || (c2_coeffs[pos] += sca * cb2)
+            end
             pair += 1
         end
     end
@@ -830,11 +857,11 @@ end
 end
 @inline function _mul_scalar2_unchecked!(c1::TaylorN{T}, c2::TaylorN{T},
         scalar::NumberNotSeries, a::TaylorN{T}, b1::TaylorN{T}, b2::TaylorN{T},
-        k::Int) where {T<:Number}
+        k::Int, pre::Union{Nothing,NumberNotSeries} = nothing) where {T<:Number}
     kk = k + 1
     @inbounds for i = 0:k
         _mul_scalar2_unchecked!(c1.coeffs[kk], c2.coeffs[kk], scalar, a.coeffs[i+1],
-            b1.coeffs[kk-i], b2.coeffs[kk-i])
+            b1.coeffs[kk-i], b2.coeffs[kk-i], pre)
     end
     return nothing
 end
