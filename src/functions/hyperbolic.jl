@@ -235,7 +235,12 @@ function tanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
     end
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        aux[ordQ] = res[k][ordQ] / k
+        # aux[ordQ] <- res[k][ordQ] / k, in place
+        aux_hp = aux[ordQ].coeffs
+        res_hp = res[k][ordQ].coeffs
+        for j in eachindex(aux_hp)
+            aux_hp[j] = res_hp[j] / k
+        end
         subst!(res[k], a[k], aux, ordQ)
     end
     zero!(aux)

@@ -361,7 +361,12 @@ function atanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
     end
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = res[k][ordQ] / k
+        # tmp[ordQ] <- res[k][ordQ] / k, in place
+        tmp_hp = tmp[ordQ].coeffs
+        res_hp = res[k][ordQ].coeffs
+        for j in eachindex(tmp_hp)
+            tmp_hp[j] = res_hp[j] / k
+        end
         add!(tmp, a[k], tmp, ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
