@@ -7,6 +7,43 @@
 #
 
 
+# Construct a complex series depending on the coefficients type, use for `cis` and `cispi`
+_complex_series(c::T, s::T) where {T<:Real} = complex(c, s)
+_complex_series(c::T, s::T) where {T<:Complex} = c + im * s
+function _complex_series(c::Taylor1, s::Taylor1)
+    c_coeffs = c.coeffs
+    s_coeffs = s.coeffs
+    z1 = _complex_series(c_coeffs[1], s_coeffs[1])
+    v = FixedSizeVectorDefault{typeof(z1)}(undef, length(c_coeffs))
+    v[1] = z1
+    @inbounds for i in 2:length(c_coeffs)
+        v[i] = _complex_series(c_coeffs[i], s_coeffs[i])
+    end
+    return Taylor1(v)
+end
+function _complex_series(c::HomogeneousPolynomial, s::HomogeneousPolynomial)
+    c_coeffs = c.coeffs
+    s_coeffs = s.coeffs
+    # one allocation (the coefficient array), then filled in place
+    z = HomogeneousPolynomial(c.space, _complex_series(c_coeffs[1], s_coeffs[1]), order(c))
+    z_coeffs = z.coeffs
+    @inbounds for i in 2:length(c_coeffs)
+        z_coeffs[i] = _complex_series(c_coeffs[i], s_coeffs[i])
+    end
+    return z
+end
+function _complex_series(c::TaylorN, s::TaylorN)
+    c_hps = c.coeffs
+    s_hps = s.coeffs
+    z1 = _complex_series(c_hps[1], s_hps[1])
+    v = FixedSizeVectorDefault{typeof(z1)}(undef, length(c_hps))
+    v[1] = z1
+    @inbounds for i in 2:length(c_hps)
+        v[i] = _complex_series(c_hps[i], s_hps[i])
+    end
+    return TaylorN{numtype(z1)}(v, c.space) # trusted constructor: same space and orders as `c`
+end
+
 # Functions
 for T in (:Taylor1, :TaylorN)
     @eval begin
@@ -84,6 +121,15 @@ for T in (:Taylor1, :TaylorN)
         end
         sinpi(a::$T) = sincospi(a)[1]
         cospi(a::$T) = sincospi(a)[2]
+
+        function cis(a::$T)
+            s, c = sincos(a)
+            return _complex_series(c, s)
+        end
+        function cispi(a::$T)
+            s, c = sincospi(a)
+            return _complex_series(c, s)
+        end
 
         function tan(a::$T)
             order = TS.order(a)

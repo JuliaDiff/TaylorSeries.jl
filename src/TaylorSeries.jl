@@ -38,7 +38,7 @@ import Base: zero, one, isinf, isnan, iszero, isless,
     real, imag, conj, adjoint,
     round, ceil, floor, rem, mod, mod2pi, abs, abs2,
     sqrt, exp, expm1, log, log1p,
-    sin, cos, sincos, sinpi, cospi, sincospi, tan,
+    sin, cos, sincos, sinpi, cospi, sincospi, cis, cispi, tan,
     asin, acos, atan, sinh, cosh, tanh, atanh, asinh, acosh,
     power_by_squaring,
     rtoldefault, isfinite, isapprox, rad2deg, deg2rad
