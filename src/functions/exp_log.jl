@@ -283,8 +283,10 @@ function expm1!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         return nothing
     end
     zero!(c, k)
-    c0 = c[0]+one(c[0])
-    @inbounds mul_scalar!(c[k], k, a[k], c0)
+    # c[k] += k * a[k] * (c[0] + 1): the factor c[0] + 1 is a constant (degree 0), so this is
+    # the degree-0 branch of `mul_scalar!`, without building that polynomial
+    @inbounds c00 = c[0][1]
+    @inbounds _muladd_scalar_unchecked!(c[k], k * (c00 + one(c00)), a[k])
     @inbounds for i = 1:k-1
         mul_scalar!(c[k], k-i, a[k-i], c[i])
     end
@@ -364,16 +366,25 @@ function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
     tmp = _constant_series_like(a[k], zero(a[k][0][1]), order(a[0]))
     zero!(res[k])
     # i=0 term of sum
+    # tmp[ordQ] is scaled in place
     @inbounds for ordQ in eachindex(a[0])
         one!(tmp, a[0], ordQ)
         add!(tmp, res[0], tmp, ordQ)
-        tmp[ordQ] = k * tmp[ordQ]
+        tmp_hp = tmp[ordQ].coeffs
+        for j in eachindex(tmp_hp)
+            tmp_hp[j] = k * tmp_hp[j]
+        end
         # zero!(res[k], a[0], ordQ)
         mul!(res[k], a[k], tmp, ordQ)
     end
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[i][ordQ]
+            # tmp[ordQ] <- (k-i) * res[i][ordQ], in place
+            tmp_hp = tmp[ordQ].coeffs
+            res_hp = res[i][ordQ].coeffs
+            for j in eachindex(tmp_hp)
+                tmp_hp[j] = (k-i) * res_hp[j]
+            end
             mul!(res[k], tmp, a[k-i], ordQ)
         end
     end
