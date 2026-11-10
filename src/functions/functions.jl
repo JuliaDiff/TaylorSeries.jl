@@ -6,5 +6,9 @@
 # MIT Expat license
 #
 
+include("exp_log.jl")
 include("trigonometric.jl")
+include("inverse_trigonometric.jl")
+include("hyperbolic.jl")
+include("inverse_hyperbolic.jl")
 include("other.jl")
