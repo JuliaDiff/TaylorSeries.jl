@@ -82,12 +82,10 @@ function asin!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         c[k] += (k-i) * r[i] * c[k-i]
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
-    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, zero(constant_term(a)), k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux, 0)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k] (the third argument of `sqrt!` is not used)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
@@ -101,29 +99,28 @@ function asin!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         return nothing
     end
     zero!(c[k])
-    aux = zero(c)
+    aux = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
-            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux[k], j)
+            mul_scalar!(aux, k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux, j)
         end
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
     zero!(aux)
-    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, aux, k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux, 0)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    _sqrt_nested!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux[k], j)
+        zero!(aux, j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux[k], a[k], c[k], j) # aux <- a[k] - c[k]
+        subst!(aux, a[k], c[k], j)   # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
@@ -140,12 +137,10 @@ function acos!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         c[k] += (k-i) * r[i] * c[k-i]
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
-    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, zero(constant_term(a)), k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k] (the third argument of `sqrt!` is not used)
     @inbounds c[k] = -(a[k] + c[k]/k) / constant_term(r)
     return nothing
 end
@@ -159,30 +154,29 @@ function acos!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         return nothing
     end
     zero!(c[k])
-    aux = zero(c)
+    aux = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
-            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux[k], j)
+            mul_scalar!(aux, k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux, j)
         end
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
     zero!(aux)
-    sqr!(r, a, aux[0], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, aux, k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux, 0)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    _sqrt_nested!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
     # @inbounds c[k] = - (a[k] + c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux[k], j)
+        zero!(aux, j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        add!(aux[k], a[k], c[k], j) # aux <- a[k] + c[k]
-        subst!(aux[k], aux[k], j)
+        add!(aux, a[k], c[k], j)     # aux <- a[k] + c[k]
+        subst!(aux, aux, j)
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
