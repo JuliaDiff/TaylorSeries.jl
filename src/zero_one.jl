@@ -14,7 +14,14 @@ end
 
 # `zero.(a.coeffs)` holds fresh objects: no need to copy them again
 zero(a::Taylor1) = _taylor1_owned(zero.(a.coeffs))
-zero(a::TaylorN{T}) where {T<:Number} = TaylorN{T}(zero.(a.coeffs), a.space)
+function zero(a::TaylorN{T}) where {T<:Number}
+    a_hps = a.coeffs
+    v = FixedSizeVectorDefault{HomogeneousPolynomial{T}}(undef, length(a_hps))
+    @inbounds for i in eachindex(v)
+        v[i] = zero(a_hps[i])
+    end
+    return TaylorN{T}(v, a.space)
+end
 for T in (:Taylor1, :TaylorN)
     @eval function one(a::$T)
         b = zero(a)
@@ -38,6 +45,17 @@ end
 
 one(a::HomogeneousPolynomial{T}) where {T<:Number} =
     HomogeneousPolynomial(a.space, one.(a.coeffs), order(a))
+# Number coefficients: the constant term is set in place (same value as `one(b[0])`)
+function one(a::TaylorN{T}) where {T<:NumberNotSeries}
+    b = zero(a)
+    one!(b, 0)
+    return b
+end
+function one(a::Taylor1{TaylorN{T}}) where {T<:NumberNotSeries}
+    b = zero(a)
+    @inbounds one!(b[0], 0)
+    return b
+end
 
 # Internal
 function _ones(a::HomogeneousPolynomial{T}, order::Int) where {T<:Number}
