@@ -531,3 +531,16 @@ function sum!(v::TaylorN{S}, a::AbstractArray{HomogeneousPolynomial{S}}) where {
     end
     return nothing
 end
+
+# Helper for `x + one(x)`
+_plus_one(x) = x + one(x)
+function _plus_one(x::Taylor1{S}) where {S<:NumberNotSeries}
+    y = zero(x)
+    x_coeffs = x.coeffs
+    y_coeffs = y.coeffs
+    @inbounds y_coeffs[1] = x_coeffs[1] + one(x_coeffs[1])
+    @inbounds for j in 2:length(x_coeffs)
+        y_coeffs[j] = x_coeffs[j] + zero(x_coeffs[j])
+    end
+    return y
+end
