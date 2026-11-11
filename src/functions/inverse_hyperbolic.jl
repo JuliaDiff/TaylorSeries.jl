@@ -101,7 +101,9 @@ function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         end
     end
     zero!(aux, k)
-    sqrt!(r, a^2+1, aux, k)
+    # Update r[k] <- (sqrt(a^2+1))[k]
+    sqr!(r, a, aux[0], k)
+    sqrt!(r, r, aux, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux[k], j)
@@ -150,7 +152,9 @@ function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         end
     end
     zero!(aux, k)
-    sqrt!(r, a^2-1, aux, k)
+    # Update r[k] <- (sqrt(a^2-1))[k]
+    sqr!(r, a, aux[0], k)
+    sqrt!(r, r, aux, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
         zero!(aux[k], j)
@@ -296,8 +300,8 @@ end
 # In-place functions (recursions) for Taylor1{TaylorN}
 function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
     if k == 0
+        tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
         tmp0 = zero(tmp)
         @inbounds res[0] = asinh( a[0] )
         # r[0] = sqrt(1+a[0]^2)
@@ -323,22 +327,22 @@ function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
     end
     div!(res, res, k, k)
+    tmp = r[k]
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
-        zero!(tmp, ordQ)
     end
     # Update aux term r = sqrt(s), s = 1+a^2
-    sqr!(r, a, tmp, k)  # r[k] <- (a^2)[k]
+    sqr!(r, a, k)       # r[k] <- (a^2)[k]
     sqrt!(r, r, r, k)   # r[k] <- (sqrt(s))[k]
     return nothing
 end
 
 function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
     if k == 0
+        tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
         tmp0 = zero(tmp)
         @inbounds res[0] = acosh( a[0] )
         # r[0] = sqrt(a[0]^2-1)
@@ -365,13 +369,14 @@ function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
     end
     div!(res, res, k, k)
+    tmp = r[k]
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
     # Update aux term r = sqrt(s), s = 1+a^2
-    sqr!(r, a, tmp, k)  # r[k] <- (a^2)[k]
+    sqr!(r, a, k)       # r[k] <- (a^2)[k]
     sqrt!(r, r, r, k)   # r[k] <- (sqrt(s))[k]
     return nothing
 end

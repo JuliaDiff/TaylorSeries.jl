@@ -139,10 +139,10 @@ function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         end
         return nothing
     end
-    cc = c[0]
-    c[0] += one(c[0])
+    @inbounds c00 = c[0][0]
+    @inbounds c[0][0] = c00 + one(c00)
     exp!(c, a, k)
-    c[0] = cc
+    @inbounds c[0][0] = c00
     return nothing
 end
 
