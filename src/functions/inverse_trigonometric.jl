@@ -253,12 +253,10 @@ function asin!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
-    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, aux[0][1], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, zero(constant_term(a)), k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux, 0)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k]
     for l in eachindex(c[k])
         @inbounds c[k][l] = (a[k][l] - c[k][l]/k) / constant_term(r)
     end
@@ -277,12 +275,10 @@ function acos!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
-    aux = zero(a)
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, aux[0][1], k) # r[k] <- (a^2)[k]
+    sqr!(r, a, zero(constant_term(a)), k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
-    zero!(aux, 0)
-    sqrt!(r, r, aux, k) # r[k] <- (sqrt(r))[k]
+    sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k]
     for l in eachindex(c[k])
         @inbounds c[k][l] = -(a[k][l] + c[k][l]/k) / constant_term(r)
     end

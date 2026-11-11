@@ -71,12 +71,13 @@ function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         @inbounds r[0] = sqrt( a[0]^2 + 1 )
         return nothing
     end
-    aux = zero(a)
     zero!(c, k)
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    sqrt!(r, a^2+1, aux, k)
+    # Update r[k] <- (sqrt(a^2+1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
@@ -121,11 +122,12 @@ function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         return nothing
     end
     zero!(c, k)
-    aux = zero(a)
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    sqrt!(r, a^2-1, aux, k)
+    # Update r[k] <- (sqrt(a^2-1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
@@ -225,8 +227,15 @@ function asinh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
     @inbounds for i in 1:k-1
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
-    sqrt!(r, a^2+1, zero(a), k)
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+    # Update r[k] <- (sqrt(a^2+1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
+    # c[k] <- (a[k] - c[k]/k) / r[0], coefficient by coefficient
+    r0 = constant_term(r)
+    @inbounds c_k, a_k = c[k].coeffs, a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / r0
+    end
     return nothing
 end
 
@@ -241,8 +250,15 @@ function acosh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
     @inbounds for i in 1:k-1
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
-    sqrt!(r, a^2-1, zero(a), k)
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+    # Update r[k] <- (sqrt(a^2-1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
+    # c[k] <- (a[k] - c[k]/k) / r[0], coefficient by coefficient
+    r0 = constant_term(r)
+    @inbounds c_k, a_k = c[k].coeffs, a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / r0
+    end
     return nothing
 end
 
@@ -258,7 +274,12 @@ function atanh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         mul_scalar!(c[k], k-i, r[i], c[k-i])
     end
     sqr!(r, a, zero(a[0][1]), k)
-    @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
+    # c[k] <- (a[k] + c[k]/k) / r[0], coefficient by coefficient
+    r0 = constant_term(r)
+    @inbounds c_k, a_k = c[k].coeffs, a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] + c_k[j]/k) / r0
+    end
     return nothing
 end
 

@@ -299,14 +299,25 @@ function log!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         @inbounds c[0] = log(constant_term(a))
         return nothing
     elseif k == 1
-        @inbounds c[1] = a[1] / constant_term(a)
+        a0 = constant_term(a)
+        @inbounds c_1 = c[1].coeffs
+        @inbounds a_1 = a[1].coeffs
+        @inbounds for j in eachindex(c_1)
+            c_1[j] = a_1[j] / a0                    # c[1] <- a[1] / a0
+        end
         return nothing
     end
     zero!(c, k)
     @inbounds for i = 1:k-1
         mul_scalar!(c[k], k-i, a[i], c[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
+    # c[k] <- (a[k] - c[k]/k) / a0
+    a0 = constant_term(a)
+    @inbounds c_k = c[k].coeffs
+    @inbounds a_k = a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / a0
+    end
     return nothing
 end
 
@@ -318,7 +329,11 @@ function log1p!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
     elseif k == 1
         a0 = constant_term(a)
         a0p1 = a0+one(a0)
-        @inbounds c[1] = a[1] / a0p1
+        @inbounds c_1 = c[1].coeffs
+        @inbounds a_1 = a[1].coeffs
+        @inbounds for j in eachindex(c_1)
+            c_1[j] = a_1[j] / a0p1                  # c[1] <- a[1] / a0p1
+        end
         return nothing
     end
     a0 = constant_term(a)
@@ -327,7 +342,12 @@ function log1p!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
     @inbounds for i = 1:k-1
         mul_scalar!(c[k], k-i, a[i], c[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / a0p1
+    # c[k] <- (a[k] - c[k]/k) / a0p1
+    @inbounds c_k = c[k].coeffs
+    @inbounds a_k = a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / a0p1
+    end
     return nothing
 end
 
