@@ -269,9 +269,12 @@ function exp!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         @inbounds c[0] = exp(constant_term(a))
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i = 0:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c[i])
+        _mul_scalar_unchecked!(c[k], k-i, a[k-i], c[i])
     end
     @inbounds div!(c[k], c[k], k)
     return nothing
@@ -282,13 +285,16 @@ function expm1!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         @inbounds c[0] = expm1(constant_term(a))
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     zero!(c, k)
     # c[k] += k * a[k] * (c[0] + 1): the factor c[0] + 1 is a constant (degree 0), so this is
     # the degree-0 branch of `mul_scalar!`, without building that polynomial
     @inbounds c00 = c[0][1]
     @inbounds _muladd_scalar_unchecked!(c[k], k * (c00 + one(c00)), a[k])
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c[i])
+        _mul_scalar_unchecked!(c[k], k-i, a[k-i], c[i])
     end
     @inbounds div!(c[k], c[k], k)
     return nothing
@@ -307,9 +313,12 @@ function log!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, a[i], c[k-i])
     end
     # c[k] <- (a[k] - c[k]/k) / a0
     a0 = constant_term(a)
@@ -336,11 +345,14 @@ function log1p!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     a0 = constant_term(a)
     a0p1 = a0+one(a0)
     zero!(c, k)
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, a[i], c[k-i])
     end
     # c[k] <- (a[k] - c[k]/k) / a0p1
     @inbounds c_k = c[k].coeffs
@@ -362,11 +374,13 @@ function exp!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
     # The recursion formula
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[i], a[k-i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[i], a[k-i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -382,6 +396,8 @@ function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
     # The recursion formula
     tmp = _constant_series_like(a[k], zero(a[k][0][1]), order(a[0]))
     zero!(res[k])
@@ -395,7 +411,7 @@ function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
             tmp_hp[j] = k * tmp_hp[j]
         end
         # zero!(res[k], a[0], ordQ)
-        mul!(res[k], a[k], tmp, ordQ)
+        _muladd_unchecked!(res[k], a[k], tmp, ordQ)
     end
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
@@ -405,7 +421,7 @@ function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
             for j in eachindex(tmp_hp)
                 tmp_hp[j] = (k-i) * res_hp[j]
             end
-            mul!(res[k], tmp, a[k-i], ordQ)
+            _muladd_unchecked!(res[k], tmp, a[k-i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -432,13 +448,15 @@ function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
     # The recursion formula
     zero!(res_k)
     for i = 1:k-1
         res_ki = res_coeffs[k-i+1]
         a_i = a_coeffs[i+1]
         @inbounds for ordQ in eachindex(a0)
-            mul_scalar!(res_k, k-i, res_ki, a_i, ordQ)
+            _mul_scalar_unchecked!(res_k, k-i, res_ki, a_i, ordQ)
         end
     end
     div!(res, res, k, k)
@@ -491,6 +509,9 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
+    # The recursion formula
     zero!(res_k)
     if k == 1
         a1 = a_coeffs[2]
@@ -504,7 +525,7 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res_ki = res_coeffs[k-i+1]
         a_i = a_coeffs[i+1]
         @inbounds for ordQ in eachindex(a0)
-            mul_scalar!(res_k, k-i, res_ki, a_i, ordQ)
+            _mul_scalar_unchecked!(res_k, k-i, res_ki, a_i, ordQ)
         end
     end
     div!(res, res, k, k)

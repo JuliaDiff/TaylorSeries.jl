@@ -248,9 +248,12 @@ function asin!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         @inbounds r[0][1] = sqrt( 1 - a[0][1]^2 )
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, r)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
@@ -270,9 +273,12 @@ function acos!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         @inbounds r[0][1] = sqrt( 1 - a[0][1]^2 )
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, r)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, r[i], c[k-i])
     end
     # Compute k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
@@ -293,9 +299,12 @@ function atan!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         @inbounds r[0] = 1 + a0^2
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, r)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, r[i], c[k-i])
     end
     @inbounds sqr!(r, a, zero(a0), k)
     for l in eachindex(c[k])
@@ -314,11 +323,13 @@ function asin!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, r)
     # The recursion formula
     @inbounds zero!(res[k])
     @inbounds for i in 1:k-1
         for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     @inbounds div!(res, res, k, k)
@@ -342,11 +353,13 @@ function acos!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, r)
     # The recursion formula
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -365,21 +378,23 @@ end
 
 function atan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
     if k == 0
         res[0] = atan( a[0] )
         # zero!(r, a, 0)
-        sqr!(r, a, aux, 0)
+        sqr!(r, a, 0)
         add!(r, r, one(a[0][0][1]), 0)
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, r)
     # The recursion formula
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
+    aux = r[k]
     @inbounds for ordQ in eachindex(a[0])
         # zero!(aux, res[k], ordQ)
         # aux[ordQ] <- - res[k][ordQ] / k, in place
@@ -392,9 +407,8 @@ function atan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         zero!(res[k][ordQ])
         div!(res[k], aux, r[0], ordQ)
     end
-    zero!(aux)
     zero!(r[k])
-    sqr!(r, a, aux, k)
+    sqr!(r, a, k)
     return nothing
 end
 
