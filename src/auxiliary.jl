@@ -437,6 +437,15 @@ _copy_series(x::HomogeneousPolynomial) = HomogeneousPolynomial(x.space, x.coeffs
 _copy_series(x::TaylorN) = TaylorN(x.coeffs, order(x))
 
 
+# Equiv to `deepcopy`, but efficient for TaylorN
+_copy_constant_coeff(x) = deepcopy(x)
+function _copy_constant_coeff(x::TaylorN{T}) where {T<:NumberNotSeries}
+    y = zero(x)
+    identity!(y, x)
+    return y
+end
+
+
 """
     _coeffsHP(x::T, order::Int) where {T<:Number}
     _coeffsHP(coeffs::AbstractArray{T,1}, order::Int) where {T<:Number}

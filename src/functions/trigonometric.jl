@@ -441,11 +441,10 @@ end
 
 function tan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = zero(a[0])
     if k == 0
         @inbounds res[0] = tan( a[0] )
         # zero!(res2, res, 0)
-        sqr!(res2, res, aux, 0)
+        sqr!(res2, res, 0)
         return nothing
     end
     # The recursion formula
@@ -459,13 +458,12 @@ function tan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         div!(res[k][ordQ], res[k][ordQ], k)
         add!(res[k], a[k], res[k], ordQ)
     end
-    sqr!(res2, res, aux, k)
+    sqr!(res2, res, k)
     return nothing
 end
 
 
-
-# Documentation for the recursion relations
+# Documentation of the recursion relations
 @doc doc"""
     sincos!(s, c, a, k) --> nothing
 

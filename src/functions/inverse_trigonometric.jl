@@ -328,7 +328,7 @@ function asin!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
     end
     # k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, zero(a[0]), k) # r[k] <- (a^2)[k]
+    sqr!(r, a, k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
     sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k]
     return nothing
@@ -357,7 +357,7 @@ function acos!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
     end
     # k-th coefficient of auxiliary term s=1-a^2
     zero!(r, k) # r[k] <- 0
-    sqr!(r, a, zero(a[0]), k) # r[k] <- (a^2)[k]
+    sqr!(r, a, k) # r[k] <- (a^2)[k]
     subst!(r, r, k) # r[k] <- -r[k]
     sqrt!(r, r, r, k) # r[k] <- (sqrt(r))[k]
     return nothing
