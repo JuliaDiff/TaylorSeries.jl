@@ -891,15 +891,19 @@ function TS.sqrt!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}},
     a_order = order(a)
     imax = min(k0+kend, a_order)
     imin = max(k0+1, k+k0-a_order)
-    imin ≤ imax && ( @inbounds c[k] = c[imin] * c[k+k0-imin] )
+    # a[k+k0] is read first and the products are accumulated in a local variable, starting from
+    # zero: c[k] is not read before it is written, so its previous content does not matter and
+    # `c` and `a` may be the same series (as in `sqrt!(r, r, aux, k)`)
+    @inbounds ak = k+k0 ≤ a_order ? a[k+k0] : zero(c[k0])
+    @inbounds acc = imin ≤ imax ? c[imin] * c[k+k0-imin] : zero(c[k0])
     @inbounds for i = imin+1:imax
-        c[k] += c[i] * c[k+k0-i]
+        acc += c[i] * c[k+k0-i]
     end
     intvl2 = interval(T(2))
     if k+k0 ≤ a_order
-        @inbounds aux = a[k+k0] - intvl2 * c[k]
+        aux = ak - intvl2 * acc
     else
-        @inbounds aux = - intvl2 * c[k]
+        aux = - intvl2 * acc
     end
     if kodd == 0
         @inbounds aux = aux - c[kend+k0+1]^2
@@ -1064,6 +1068,9 @@ function TS.exp!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}}, k::Int) where
         return nothing
     end
     intvlk = interval(T(k))
+    # c[k] is accumulated below: start from zero (the result must not depend on its
+    # previous content)
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], intvlk * a[k], c[0])
     @inbounds for i = 1:k-1
         TS.mul!(c[k], interval(T(k-i)) * a[k-i], c[i])
@@ -1077,7 +1084,7 @@ function TS.expm1!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}}, k::Int) whe
         @inbounds c[0] = expm1(constant_term(a))
         return nothing
     end
-    c0 = c[0]+one(c[0])
+    c0 = TS._plus_one(c[0])
     intvlk = interval(T(k))
     @inbounds c[k] = intvlk * a[k] * c0
     @inbounds for i = 1:k-1
@@ -1092,8 +1099,9 @@ function TS.expm1!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}}, k::Int) whe
         @inbounds c[0] = expm1(constant_term(a))
         return nothing
     end
-    c0 = c[0]+one(c[0])
+    c0 = TS._plus_one(c[0])
     intvlk = interval(T(k))
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], intvlk * a[k], c0)
     @inbounds for i = 1:k-1
         TS.mul!(c[k], interval(T(k-i)) * a[k-i], c[i])
@@ -1126,6 +1134,7 @@ function TS.log!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}}, k::Int) where
         @inbounds c[1] = a[1] / constant_term(a)
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1))*a[1], c[k-1])
     @inbounds for i = 2:k-1
         TS.mul!(c[k], interval(T(k-i))*a[i], c[k-i])
@@ -1136,7 +1145,7 @@ end
 
 function TS.log1p!(c::Taylor1{Interval{T}}, a::Taylor1{Interval{T}}, k::Int) where {T<:NumTypes}
     a0 = constant_term(a)
-    a0p1 = a0+one(a0)
+    a0p1 = TS._plus_one(a0)
     if k == 0
         @inbounds c[0] = log1p(a0)
         return nothing
@@ -1154,7 +1163,7 @@ end
 
 function TS.log1p!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}}, k::Int) where {T<:NumTypes}
     a0 = constant_term(a)
-    a0p1 = a0+one(a0)
+    a0p1 = TS._plus_one(a0)
     if k == 0
         @inbounds c[0] = log1p(a0)
         return nothing
@@ -1162,6 +1171,7 @@ function TS.log1p!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}}, k::Int) whe
         @inbounds c[1] = a[1] / a0p1
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1))*a[1], c[k-1])
     @inbounds for i = 2:k-1
         TS.mul!(c[k], interval(T(k-i))*a[i], c[k-i])
@@ -1199,6 +1209,8 @@ function TS.sincos!(s::TaylorN{Interval{T}}, c::TaylorN{Interval{T}},
         return nothing
     end
     x = a[1]
+    TS.zero!(s, k)
+    TS.zero!(c, k)
     TS.mul!(s[k], x, c[k-1])
     TS.mul!(c[k], -x, s[k-1])
     @inbounds for i = 2:k
@@ -1239,6 +1251,7 @@ function TS.tan!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         return nothing
     end
     intvlk = interval(T(k))
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], intvlk * a[k], c2[0])
     @inbounds for i = 1:k-1
         TS.mul!(c[k], interval(T(k-i)) * a[k-i], c2[i])
@@ -1273,6 +1286,7 @@ function TS.asin!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds r[0] = sqrt( one(a0) - a0^2 )
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
     @inbounds for i in 2:k-1
         TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
@@ -1307,6 +1321,7 @@ function TS.acos!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds r[0] = sqrt( one(a0) - a0^2 )
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
     @inbounds for i in 2:k-1
         TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
@@ -1341,6 +1356,7 @@ function TS.atan!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds r[0] = one(a0) + a0^2
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
     @inbounds for i in 2:k-1
         TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
@@ -1379,6 +1395,8 @@ function TS.sinhcosh!(s::TaylorN{Interval{T}}, c::TaylorN{Interval{T}},
         return nothing
     end
     x = a[1]
+    TS.zero!(s, k)
+    TS.zero!(c, k)
     @inbounds TS.mul!(s[k], x, c[k-1])
     @inbounds TS.mul!(c[k], x, s[k-1])
     @inbounds for i = 2:k
@@ -1417,6 +1435,7 @@ function TS.tanh!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds c2[0] = aux^2
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], k * a[k], c2[0])
     @inbounds for i = 1:k-1
         TS.mul!(c[k], (k-i) * a[k-i], c2[i])
@@ -1451,6 +1470,7 @@ function TS.asinh!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds r[0] = sqrt( a0^2 + one(a0) )
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
     @inbounds for i in 2:k-1
         TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
@@ -1485,6 +1505,7 @@ function TS.acosh!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds r[0] = sqrt( a0^2 - one(a0) )
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
     @inbounds for i in 2:k-1
         TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
@@ -1519,6 +1540,7 @@ function TS.atanh!(c::TaylorN{Interval{T}}, a::TaylorN{Interval{T}},
         @inbounds r[0] = one(a0) - a0^2
         return nothing
     end
+    TS.zero!(c, k)
     @inbounds TS.mul!(c[k], interval(T(k-1)) * r[1], c[k-1])
     @inbounds for i in 2:k-1
         TS.mul!(c[k], interval(T(k-i)) * r[i], c[k-i])
