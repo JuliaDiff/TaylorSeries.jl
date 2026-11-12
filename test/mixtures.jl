@@ -838,3 +838,63 @@ end
         @test cispi(x) ≈ exp(im * pi * x)
     end
 end
+
+# TaylorN iand Taylor1{Taylor1} represent the same expansions: the coefficient of
+# TaylorN (ξ₁^i₁ ⋯ ξₙ^iₙ) is that of the nested Taylor1 whose innermost variable is
+# the first one and outermost the last one, p[iₙ]⋯[i₁].
+# The helpers below compare all coefficients that both expansions contain,
+# up to rounding: relative tolerance `rtol`, and no absolute tolerance
+# (coefficients that vanish in one representation must vanish in the other).
+_coeff_like(p::TaylorN, idx::NTuple) = getcoeff(p, idx)
+_coeff_like(p::Taylor1, idx::NTuple) = foldl((q, n) -> q[n], reverse(idx); init = p)
+_orders_nested(p::Taylor1) = p[0] isa Taylor1 ? (_orders_nested(p[0])..., TS.order(p)) :
+    (TS.order(p),)
+function _same_coeffs(pN::TaylorN, pT::Taylor1; rtol = 32 * eps())
+    ords = _orders_nested(pT)
+    return all(isapprox(_coeff_like(pN, idx), _coeff_like(pT, idx); rtol)
+        for idx in Iterators.product((0:n for n in ords)...) if sum(idx) ≤ TS.order(pN))
+end
+
+@testset "Compare TaylorN and nested Taylors" begin
+    # functions, and three expansion points within each domain
+    _cmp_funs() = ((exp, (0.0, 0.3, -0.4)), (expm1, (0.0, 0.3, -0.4)), (log, (1.0, 1.5, 0.7)),
+        (log1p, (0.0, 0.3, -0.4)), (sqrt, (1.0, 1.5, 0.7)), (sin, (0.0, 0.3, -0.4)),
+        (cos, (0.0, 0.3, -0.4)), (tan, (0.0, 0.3, -0.4)), (sinpi, (0.0, 0.3, -0.4)),
+        (cospi, (0.0, 0.3, -0.4)), (asin, (0.0, 0.3, -0.4)), (acos, (0.0, 0.3, -0.4)),
+        (atan, (0.0, 0.3, -0.4)), (sinh, (0.0, 0.3, -0.4)), (cosh, (0.0, 0.3, -0.4)),
+        (tanh, (0.0, 0.3, -0.4)), (asinh, (0.0, 0.3, -0.4)), (acosh, (2.0, 1.5, 3.0)),
+        (atanh, (0.0, 0.3, -0.4)))
+
+    @testset "TaylorN and Taylor1{Taylor1} (2 variables)" begin
+        sp = JetSpace(order = 10, variables = [:τ, :σ])
+        x, y = variables(sp)
+        set_taylor1_varname(2, ["t", "s"])
+        t = Taylor1(5)                          # inner variable (τ)
+        s = Taylor1([zero(t), one(t)], 5)       # outer variable (σ)
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y), f(x0 + t + s))
+                    @test _same_coeffs(f(x0 + 0.5x - 0.3y), f(x0 + 0.5t - 0.3s))
+                end
+            end
+        end
+    end
+
+    @testset "TaylorN and Taylor1{Taylor1{Taylor1}} (3 variables)" begin
+        sp = JetSpace(order = 9, variables = [:τ, :σ, :ρ])
+        x, y, z = variables(sp)
+        set_taylor1_varname(3, ["t", "s", "r"])
+        t = Taylor1(3)                          # innermost variable (τ)
+        s = Taylor1([zero(t), one(t)], 3)       # middle variable (σ)
+        r = Taylor1([zero(s), one(s)], 3)       # outermost variable (ρ)
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y + z), f(x0 + t + s + r))
+                    @test _same_coeffs(f(x0 + 0.5x - 0.3y + 0.2z), f(x0 + 0.5t - 0.3s + 0.2r))
+                end
+            end
+        end
+    end
+end
