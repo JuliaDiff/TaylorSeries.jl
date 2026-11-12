@@ -579,4 +579,98 @@ setdisplay(:full)
         @test all(in_interval(known_coeff(sin, 1.0, k, ()), imag(z)[k]) for k in 0:15)
     end
 
+    # All the coefficients of a series (also nested), in a fixed order
+    _flat_coeffs(x::Number) = [x]
+    _flat_coeffs(x::HomogeneousPolynomial) = collect(x.coeffs)
+    _flat_coeffs(x::Union{Taylor1,TaylorN}) = reduce(vcat, (_flat_coeffs(c) for c in x.coeffs))
+    # whether each coefficient of `xI` (Interval) contains the corresponding one of `xB` (BigFloat)
+    _contains(xI, xB) = (cI = _flat_coeffs(xI); cB = _flat_coeffs(xB);
+        length(cI) == length(cB) && all(in_interval(b, a) for (a, b) in zip(cI, cB)))
+
+    # The expansions computed with Interval{Float64} coefficients contain those computed with
+    # BigFloat coefficients (a high-precision reference), coefficient by coefficient, for the same
+    # argument and representation; the constant term of the argument is thin, or an interval around
+    # the BigFloat one
+    @testset "Interval expansions contain the BigFloat ones" begin
+        sp = JetSpace(order = 4, variables = [:u, :v])
+        uI, vI = variables(Interval{Float64}, sp)
+        uB, vB = variables(BigFloat, sp)
+        # x0 + 0.5 u - 0.25 v + 0.5 t, in each representation: Taylor1, TaylorN, Taylor1{TaylorN},
+        # Taylor1{Taylor1}; `c0` builds the constant term and `c` the other coefficients
+        args(c0, c, u, v, x0) = (
+            Taylor1([c0(x0), c(0.5), c(-0.25)], 8),
+            c0(x0) + c(0.5) * u - c(0.25) * v,
+            Taylor1([c0(x0) + c(0.5) * u - c(0.25) * v, c(0.5) + zero(u)], 6),
+            Taylor1([Taylor1([c0(x0), c(0.5)], 4), Taylor1([c(-0.25)], 4)], 6))
+        thin(x) = interval(x)
+        wide(x) = interval(x - 1e-3, x + 1e-3)
+        for (f, x0) in ((exp, 0.3), (expm1, 0.3), (log, 1.3), (log1p, 0.3), (sqrt, 1.3),
+                (sin, 0.3), (cos, 0.3), (tan, 0.3), (sinpi, 0.3), (cospi, 0.3), (asin, 0.3),
+                (acos, 0.3), (atan, 0.3), (sinh, 0.3), (cosh, 0.3), (tanh, 0.3), (asinh, 0.3),
+                (acosh, 2.0), (atanh, 0.3))
+            @testset "$f" begin
+                for c0 in (thin, wide)
+                    for (xI, xB) in zip(args(c0, interval, uI, vI, x0), args(big, big, uB, vB, x0))
+                        @test _contains(f(xI), f(xB))
+                    end
+                end
+            end
+        end
+    end
+
+    # In-place functions on TaylorN{Interval} (several are defined in the IntervalArithmetic
+    # extension): the result does not depend on the previous content of the output series
+    @testset "In-place functions for TaylorN{Interval}" begin
+        sp = JetSpace(order = 4, variables = [:u, :v])
+        u, v = variables(Interval{Float64}, sp)
+        a = interval(0.3) + interval(0.5) * u - interval(0.25) * v
+        b = interval(2.0) + interval(0.5) * u - interval(0.25) * v      # for acosh
+        # a series like `x` whose coefficients are all [7, 7]
+        garbage(x) = (y = zero(x); for hp in y.coeffs; hp.coeffs .= interval(7.0); end; y)
+        # f!(c, a, k)
+        for f! in (TS.exp!, TS.expm1!, TS.log!, TS.log1p!)
+            c1, c2 = zero(a), garbage(a)
+            for k in 0:4
+                f!(c1, a, k)
+                f!(c2, a, k)
+            end
+            @test c1 == c2
+        end
+        # f!(s, c, a, k)
+        for f! in (TS.sincos!, TS.sincospi!, TS.sinhcosh!)
+            s1, c1, s2, c2 = zero(a), zero(a), garbage(a), garbage(a)
+            for k in 0:4
+                f!(s1, c1, a, k)
+                f!(s2, c2, a, k)
+            end
+            @test s1 == s2 && c1 == c2
+        end
+        # f!(c, x, r, k), with an auxiliary series r
+        for (f!, x) in ((TS.tan!, a), (TS.tanh!, a), (TS.asin!, a), (TS.acos!, a), (TS.atan!, a),
+                (TS.asinh!, a), (TS.acosh!, b), (TS.atanh!, a))
+            c1, r1, c2, r2 = zero(x), zero(x), garbage(x), garbage(x)
+            for k in 0:4
+                f!(c1, x, r1, k)
+                f!(c2, x, r2, k)
+            end
+            @test c1 == c2
+        end
+    end
+
+    # sqrt! for Taylor1{Interval} (IntervalArithmetic extension): the result does not depend on the
+    # previous content of c, and c may be the same series as a
+    @testset "sqrt! for Taylor1{Interval}: previous content of c, and c === a" begin
+        a = Taylor1([interval(4.0), interval(1.0), interval(0.5), interval(-0.25)], 6)
+        c = sqrt(a)
+        d = Taylor1(fill(interval(7.0), 7), 6)          # not zero
+        for k in 0:6
+            TS.sqrt!(d, a, interval(0.0), k)
+        end
+        @test d == c
+        r = deepcopy(a)                                  # r[k] holds a[k] until step k
+        for k in 0:6
+            TS.sqrt!(r, r, interval(0.0), k)
+        end
+        @test r == c
+    end
 end
