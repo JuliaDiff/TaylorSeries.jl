@@ -542,6 +542,45 @@ function div!(c::TaylorN, a::TaylorN, k::Int)
     return nothing
 end
 
+
+# Division by the `TaylorN` obtained from `b` but replacing its constant term with `b0`.
+function _div_b0!(c::TaylorN, a::TaylorN, b::TaylorN, b0, k::Int)
+    if k==0
+        @inbounds c.coeffs[1].coeffs[1] = constant_term(a) / b0
+        return nothing
+    end
+    zero!(c, k)
+    c_coeffs = c.coeffs
+    a_coeffs = a.coeffs
+    b_coeffs = b.coeffs
+    kk = k + 1
+    @inbounds for i = 0:k-1
+        _mul_output_major_unchecked!(c_coeffs[kk], c_coeffs[i+1], b_coeffs[kk-i])
+    end
+    @inbounds for i in eachindex(c_coeffs[kk])
+        c_coeffs[kk].coeffs[i] = (a_coeffs[kk].coeffs[i] - c_coeffs[kk].coeffs[i]) / b0
+    end
+    return nothing
+end
+# In place: c[k] <- (c / b′)[k], as `div!(c, b′, k)`
+function _div_b0!(c::TaylorN, b::TaylorN, b0, k::Int)
+    if k==0
+        @inbounds c.coeffs[1].coeffs[1] = constant_term(c) / b0
+        return nothing
+    end
+    c_coeffs = c.coeffs
+    b_coeffs = b.coeffs
+    kk = k + 1
+    @inbounds for i = 0:k-1
+        _mul_scalar_unchecked!(c_coeffs[kk], -1, c_coeffs[i+1], b_coeffs[kk-i])
+    end
+    @inbounds for i in eachindex(c_coeffs[kk])
+        c_coeffs[kk].coeffs[i] = c_coeffs[kk].coeffs[i] / b0
+    end
+    return nothing
+end
+
+
 # In-place division and assignment: c[k] <- scalar * (c/a)[k]
 # NOTE: Here `div!` *accumulates* the result of scalar * (c/a)[k] in c[k] (k > 0)
 #

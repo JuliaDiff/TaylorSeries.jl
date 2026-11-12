@@ -234,7 +234,7 @@ function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         end
         return nothing
     end
-    a0p1 = _plus_one(a0)    # only needed for k ≥ 1
+    a0p1 = _plus_one(a0)    # a0 + 1, only needed for k ≥ 1
     if k == 1
         # @inbounds c[1] = a[1] / a0p1
         for j in eachindex(a[1])
@@ -471,9 +471,32 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
-    tmp1 = _constant_series_like(a_coeffs[k+1], zero(a_coeffs[k+1][0][1]), order(a0))
-    _log1p_denominator!(tmp1, a0)
-    log1p!(res, a, k, tmp1)
+    # Check spaces
+    _check_same_space(res, a)
+    @inbounds a00 = a0[0][1]
+    b0 = _plus_one(a00)
+    # The recursion formula
+    zero!(res_k)
+    if k == 1
+        a1 = a_coeffs[2]
+        @inbounds for ordQ in eachindex(a0)
+            _div_b0!(res_k, a1, a0, b0, ordQ)
+        end
+        return nothing
+    end
+    for i = 1:k-1
+        res_ki = res_coeffs[k-i+1]
+        a_i = a_coeffs[i+1]
+        @inbounds for ordQ in eachindex(a0)
+            _mul_scalar_unchecked!(res_k, k-i, res_ki, a_i, ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    a_k = a_coeffs[k+1]
+    @inbounds for ordQ in eachindex(a0)
+        subst!(res_k, a_k, res_k, ordQ)
+        _div_b0!(res_k, a0, b0, ordQ)
+    end
     return nothing
 end
 
