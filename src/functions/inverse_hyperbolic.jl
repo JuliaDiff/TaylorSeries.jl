@@ -194,6 +194,13 @@ function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         @inbounds for j in eachindex(a[k])
             atanh!(c[0], a0, r[0], j)
         end
+        # The inner `atanh!` stores r[0][j] = (a0^2)[j] for j ≥ 1 (the sign of r = 1 - a^2 is
+        # absorbed in its recursion), but here r[0] is also the divisor 1 - a0^2 of the
+        # recursion below: its coefficients j ≥ 1 are negated
+        @inbounds r0 = r[0]
+        @inbounds for j in 1:order(r0)
+            r0[j] = -r0[j]
+        end
         return nothing
     end
     zero!(c, k)
