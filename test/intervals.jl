@@ -675,8 +675,8 @@ setdisplay(:full)
     end
 
     # TaylorN and nested representations (Taylor1{Taylor1}, Taylor1{Taylor1{Taylor1}},
-    # Taylor1{TaylorN}) with interval coefficients: for each coefficient that both
-    # representations contain, the two intervals must intersect
+    # Taylor1{TaylorN}) with interval coefficients enclose the same exact coefficients: for each
+    # coefficient that both representations contain, the two intervals must intersect
     @testset "Compare TaylorN and nested Taylors with interval coefficients" begin
         # coefficient of ξ₁^i₁ ⋯ ξₙ^iₙ: in a TaylorN; in nested Taylor1s (innermost variable
         # first: p[iₙ]⋯[i₁]); in a Taylor1{TaylorN} (TaylorN variables first, Taylor1 last)
@@ -752,6 +752,32 @@ setdisplay(:full)
                 @test overlap(f(c + I(0.5) * x + I(0.2) * y - I(0.3) * z),
                     f(c + I(0.5) * u + I(0.2) * v - I(0.3) * r))
             end
+        end
+    end
+
+    # Evaluated at a small increment h, the expansions around x0 with interval coefficients
+    # (Taylor1, TaylorN, Taylor1{Taylor1}, Taylor1{TaylorN}) contain f(x0 + h), computed with
+    # BigFloat (the truncation error, of order h^13, is far below the width of the intervals)
+    @testset "Evaluation at a small increment with interval coefficients" begin
+        I = interval
+        sp = JetSpace(order = 12, variables = [:τ, :σ])
+        x, y = variables(Interval{Float64}, sp)
+        t = Taylor1([I(0), I(1)], 12)
+        s = Taylor1([zero(t), one(t)], 12)          # Taylor1{Taylor1}: σ outer, τ inner
+        sp1 = JetSpace(order = 12, variables = [:τ])
+        τ = variables(Interval{Float64}, sp1)[1]
+        sτ = Taylor1([zero(τ), one(τ)], 12)          # Taylor1{TaylorN}: σ outer, τ inner
+        h1, h2 = 0.011, -0.007
+        for (f, x0) in ((exp, 0.3), (expm1, 0.3), (log, 1.3), (log1p, 0.3), (sqrt, 1.3),
+                (sin, 0.3), (cos, 0.3), (tan, 0.3), (sinpi, 0.3), (cospi, 0.3), (asin, 0.3),
+                (acos, 0.3), (atan, 0.3), (sinh, 0.3), (cosh, 0.3), (tanh, 0.3), (asinh, 0.3),
+                (acosh, 2.0), (atanh, 0.3))
+            exact = f(big(x0) + big(h1) + big(h2))
+            c = I(x0)
+            @test in_interval(exact, evaluate(f(c + t), I(h1) + I(h2)))
+            @test in_interval(exact, evaluate(f(c + x + y), [I(h1), I(h2)]))
+            @test in_interval(exact, evaluate(evaluate(f(c + t + s), I(h2)), I(h1)))
+            @test in_interval(exact, evaluate(evaluate(f(c + τ + sτ), I(h2)), [I(h1)]))
         end
     end
 end

@@ -947,3 +947,67 @@ end
         end
     end
 end
+
+# Integrity checks of the expansions of the elementary functions using: (i) compare the
+# evaluation at a small increment of the expansion around x0, f(x0 + h), and
+# computed by Base; and (ii) the chain rule: the derivative of f(x) equals f′(x) x′
+@testset "Evaluation and chain rule tests for the elementary functions" begin
+    # function, its derivative, and three expansion points within its domain
+    funs = ((exp, exp, (0.0, 0.3, -0.4)), (expm1, exp, (0.0, 0.3, -0.4)),
+        (log, x -> 1 / x, (1.0, 1.5, 0.7)), (log1p, x -> 1 / (1 + x), (0.0, 0.3, -0.4)),
+        (sqrt, x -> 1 / (2 * sqrt(x)), (1.0, 1.5, 0.7)), (sin, cos, (0.0, 0.3, -0.4)),
+        (cos, x -> -sin(x), (0.0, 0.3, -0.4)), (tan, x -> 1 + tan(x)^2, (0.0, 0.3, -0.4)),
+        (sinpi, x -> pi * cospi(x), (0.0, 0.3, -0.4)),
+        (cospi, x -> -pi * sinpi(x), (0.0, 0.3, -0.4)),
+        (asin, x -> 1 / sqrt(1 - x^2), (0.0, 0.3, -0.4)),
+        (acos, x -> -1 / sqrt(1 - x^2), (0.0, 0.3, -0.4)),
+        (atan, x -> 1 / (1 + x^2), (0.0, 0.3, -0.4)), (sinh, cosh, (0.0, 0.3, -0.4)),
+        (cosh, sinh, (0.0, 0.3, -0.4)), (tanh, x -> 1 - tanh(x)^2, (0.0, 0.3, -0.4)),
+        (asinh, x -> 1 / sqrt(x^2 + 1), (0.0, 0.3, -0.4)),
+        (acosh, x -> 1 / sqrt(x^2 - 1), (2.0, 1.5, 3.0)),
+        (atanh, x -> 1 / (1 - x^2), (0.0, 0.3, -0.4)))
+
+    @testset "Evaluation at a small increment" begin
+        sp = JetSpace(order = 12, variables = [:τ, :σ])
+        x, y = variables(sp)
+        t = Taylor1(12)
+        s = Taylor1([zero(t), one(t)], 12)          # Taylor1{Taylor1}: σ outer, τ inner
+        sp1 = JetSpace(order = 12, variables = [:τ])
+        τ = variables(sp1)[1]
+        sτ = Taylor1([zero(τ), one(τ)], 12)         # Taylor1{TaylorN}: σ outer, τ inner
+        h1, h2 = 0.011, -0.007
+        for (f, _, x0s) in funs, x0 in x0s
+            exact = f(x0 + h1 + h2)
+            @test isapprox(evaluate(f(x0 + t), h1 + h2), exact; rtol = 32 * eps())
+            @test isapprox(evaluate(f(x0 + x + y), [h1, h2]), exact; rtol = 32 * eps())
+            @test isapprox(evaluate(evaluate(f(x0 + t + s), h2), h1), exact; rtol = 32 * eps())
+            @test isapprox(evaluate(evaluate(f(x0 + τ + sτ), h2), [h1]), exact; rtol = 32 * eps())
+        end
+    end
+
+    @testset "Chain rule" begin
+        # coefficients to compare: all for Taylor1; those of degree < order for TaylorN
+        # (`differentiate` keeps the order of a TaylorN, and f′(x) x′ is incomplete at that degree)
+        coeffs_cmp(p::Taylor1) = collect(p.coeffs)
+        coeffs_cmp(p::TaylorN) =
+            reduce(vcat, (collect(p.coeffs[d+1].coeffs) for d in 0:TS.order(p)-1))
+        # the same series up to rounding, relative to its largest coefficient (a small
+        # coefficient may carry the rounding error of large terms that cancel)
+        function same_series(a, b; rtol = 32 * eps())
+            ca, cb = coeffs_cmp(a), coeffs_cmp(b)
+            scale = max(maximum(abs, ca), maximum(abs, cb))
+            return length(ca) == length(cb) &&
+                all(abs(p - q) ≤ rtol * scale for (p, q) in zip(ca, cb))
+        end
+        sp = JetSpace(order = 10, variables = [:u, :v])
+        u, v = variables(sp)
+        t = Taylor1(15)
+        for (f, df, x0s) in funs, x0 in x0s
+            xt = x0 + t + 0.5 * t^2
+            @test same_series(differentiate(f(xt)), df(xt) * differentiate(xt))
+            xN = x0 + u - 0.3v + 0.5u * v
+            @test same_series(differentiate(f(xN), 1), df(xN) * differentiate(xN, 1))
+            @test same_series(differentiate(f(xN), 2), df(xN) * differentiate(xN, 2))
+        end
+    end
+end
