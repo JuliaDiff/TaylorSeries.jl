@@ -191,25 +191,29 @@ function sqr!(c::TaylorN{T}, k::Int) where {T<:NumberNotSeries}
     return nothing
 end
 
-function sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux::TaylorN{T},
+# The workspace `aux` is not needed (this signature is the one used by `@taylorize`)
+sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, ::TaylorN{T},
+    k::Int) where {T<:NumberNotSeries} = sqr!(res, a, k)
+
+function sqr!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         k::Int) where {T<:NumberNotSeries}
     # Sanity
     zero!(res, k)
+    z = zero(constant_term(a.coeffs[1]))   # the (unused) number argument of `sqr!`
     if k == 0
         @inbounds for ordQ in eachindex(a.coeffs[1])
-            @inbounds sqr!(res.coeffs[1], a.coeffs[1], aux.coeffs[1].coeffs[1], ordQ)
+            @inbounds sqr!(res.coeffs[1], a.coeffs[1], z, ordQ)
         end
         return nothing
     end
     # Recursion formula
     kodd = k%2
     kend = (k - 2 + kodd) >> 1
-    zero!(aux)
     res_coeffs = res.coeffs
     a_coeffs = a.coeffs
     kk = k + 1
     (kodd == 0) && @inbounds for ordQ in eachindex(a_coeffs[1])
-        sqr!(res_coeffs[kk], a_coeffs[(k >> 1)+1], aux.coeffs[1].coeffs[1], ordQ)
+        sqr!(res_coeffs[kk], a_coeffs[(k >> 1)+1], z, ordQ)
         mul!(res_coeffs[kk], 0.5, res_coeffs[kk], ordQ)
     end
     for i = 0:kend

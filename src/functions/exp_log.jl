@@ -126,7 +126,7 @@ function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
     end
     c_coeffs = c.coeffs
     @inbounds cc = c_coeffs[1]
-    @inbounds c_coeffs[1] += one(cc)
+    @inbounds c_coeffs[1] = _plus_one(cc)
     exp!(c, a, k)
     @inbounds c_coeffs[1] = cc
     return nothing
@@ -139,10 +139,10 @@ function expm1!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         end
         return nothing
     end
-    cc = c[0]
-    c[0] += one(c[0])
+    @inbounds c00 = c[0][0]
+    @inbounds c[0][0] = _plus_one(c00)
     exp!(c, a, k)
-    c[0] = cc
+    @inbounds c[0][0] = c00
     return nothing
 end
 
@@ -209,7 +209,7 @@ function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
     c_coeffs = c.coeffs
     a_coeffs = a.coeffs
     @inbounds a0 = a_coeffs[1]
-    a0p1 = a0+one(a0)
+    a0p1 = _plus_one(a0)
     if k == 0
         @inbounds c_coeffs[1] = log1p(a0)
         return nothing
@@ -228,13 +228,14 @@ end
 function log1p!(c::Taylor1{T}, a::Taylor1{T}, k::Int) where
         {T<:Number}
     a0 = constant_term(a)
-    a0p1 = a0+one(a0)
     if k == 0
         for j in eachindex(a[0])
             @inbounds log1p!(c[0], a0, j)
         end
         return nothing
-    elseif k == 1
+    end
+    a0p1 = _plus_one(a0)    # a0 + 1, only needed for k ≥ 1
+    if k == 1
         # @inbounds c[1] = a[1] / a0p1
         for j in eachindex(a[1])
             div!(c[1], a[1], a0p1, j)
@@ -269,9 +270,12 @@ function exp!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         @inbounds c[0] = exp(constant_term(a))
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i = 0:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c[i])
+        _mul_scalar_unchecked!(c[k], k-i, a[k-i], c[i])
     end
     @inbounds div!(c[k], c[k], k)
     return nothing
@@ -282,11 +286,16 @@ function expm1!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         @inbounds c[0] = expm1(constant_term(a))
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     zero!(c, k)
-    c0 = c[0]+one(c[0])
-    @inbounds mul_scalar!(c[k], k, a[k], c0)
+    # c[k] += k * a[k] * (c[0] + 1): the factor c[0] + 1 is a constant (degree 0), so this is
+    # the degree-0 branch of `mul_scalar!`, without building that polynomial
+    @inbounds c00 = c[0][1]
+    @inbounds _muladd_scalar_unchecked!(c[k], k * _plus_one(c00), a[k])
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c[i])
+        _mul_scalar_unchecked!(c[k], k-i, a[k-i], c[i])
     end
     @inbounds div!(c[k], c[k], k)
     return nothing
@@ -297,14 +306,28 @@ function log!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         @inbounds c[0] = log(constant_term(a))
         return nothing
     elseif k == 1
-        @inbounds c[1] = a[1] / constant_term(a)
+        a0 = constant_term(a)
+        @inbounds c_1 = c[1].coeffs
+        @inbounds a_1 = a[1].coeffs
+        @inbounds for j in eachindex(c_1)
+            c_1[j] = a_1[j] / a0                    # c[1] <- a[1] / a0
+        end
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, a[i], c[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(a)
+    # c[k] <- (a[k] - c[k]/k) / a0
+    a0 = constant_term(a)
+    @inbounds c_k = c[k].coeffs
+    @inbounds a_k = a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / a0
+    end
     return nothing
 end
 
@@ -315,17 +338,29 @@ function log1p!(c::TaylorN{T}, a::TaylorN{T}, k::Int) where {T<:Number}
         return nothing
     elseif k == 1
         a0 = constant_term(a)
-        a0p1 = a0+one(a0)
-        @inbounds c[1] = a[1] / a0p1
+        a0p1 = _plus_one(a0)
+        @inbounds c_1 = c[1].coeffs
+        @inbounds a_1 = a[1].coeffs
+        @inbounds for j in eachindex(c_1)
+            c_1[j] = a_1[j] / a0p1                  # c[1] <- a[1] / a0p1
+        end
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a)
+    # The recursion formula
     a0 = constant_term(a)
-    a0p1 = a0+one(a0)
+    a0p1 = _plus_one(a0)
     zero!(c, k)
     @inbounds for i = 1:k-1
-        mul_scalar!(c[k], k-i, a[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, a[i], c[k-i])
     end
-    @inbounds c[k] = (a[k] - c[k]/k) / a0p1
+    # c[k] <- (a[k] - c[k]/k) / a0p1
+    @inbounds c_k = c[k].coeffs
+    @inbounds a_k = a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / a0p1
+    end
     return nothing
 end
 
@@ -340,11 +375,13 @@ function exp!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
     # The recursion formula
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[i], a[k-i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[i], a[k-i], ordQ)
         end
     end
     div!(res, res, k, k)
@@ -360,21 +397,21 @@ function expm1!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
     # The recursion formula
-    tmp = _constant_series_like(a[k], zero(a[k][0][1]), order(a[0]))
     zero!(res[k])
     # i=0 term of sum
+    @inbounds r00 = res[0][0][1]
+    @inbounds res[0][0][1] = _plus_one(r00)
     @inbounds for ordQ in eachindex(a[0])
-        one!(tmp, a[0], ordQ)
-        add!(tmp, res[0], tmp, ordQ)
-        tmp[ordQ] = k * tmp[ordQ]
-        # zero!(res[k], a[0], ordQ)
-        mul!(res[k], a[k], tmp, ordQ)
+        _muladd_unchecked!(res[k], a[k], res[0], ordQ, nothing, k)
     end
+    @inbounds res[0][0][1] = r00
     for i = 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            tmp[ordQ] = (k-i) * res[i][ordQ]
-            mul!(res[k], tmp, a[k-i], ordQ)
+            # res[k] += ((k-i) * res[i]) * a[k-i]
+            _muladd_unchecked!(res[k], res[i], a[k-i], ordQ, k-i, nothing)
         end
     end
     div!(res, res, k, k)
@@ -401,13 +438,15 @@ function log!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
     # The recursion formula
     zero!(res_k)
     for i = 1:k-1
         res_ki = res_coeffs[k-i+1]
         a_i = a_coeffs[i+1]
         @inbounds for ordQ in eachindex(a0)
-            mul_scalar!(res_k, k-i, res_ki, a_i, ordQ)
+            _mul_scalar_unchecked!(res_k, k-i, res_ki, a_i, ordQ)
         end
     end
     div!(res, res, k, k)
@@ -432,9 +471,32 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
-    tmp1 = _constant_series_like(a_coeffs[k+1], zero(a_coeffs[k+1][0][1]), order(a0))
-    _log1p_denominator!(tmp1, a0)
-    log1p!(res, a, k, tmp1)
+    # Check spaces
+    _check_same_space(res, a)
+    @inbounds a00 = a0[0][1]
+    b0 = _plus_one(a00)
+    # The recursion formula
+    zero!(res_k)
+    if k == 1
+        a1 = a_coeffs[2]
+        @inbounds for ordQ in eachindex(a0)
+            _div_b0!(res_k, a1, a0, b0, ordQ)
+        end
+        return nothing
+    end
+    for i = 1:k-1
+        res_ki = res_coeffs[k-i+1]
+        a_i = a_coeffs[i+1]
+        @inbounds for ordQ in eachindex(a0)
+            _mul_scalar_unchecked!(res_k, k-i, res_ki, a_i, ordQ)
+        end
+    end
+    div!(res, res, k, k)
+    a_k = a_coeffs[k+1]
+    @inbounds for ordQ in eachindex(a0)
+        subst!(res_k, a_k, res_k, ordQ)
+        _div_b0!(res_k, a0, b0, ordQ)
+    end
     return nothing
 end
 
@@ -460,6 +522,9 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a)
+    # The recursion formula
     zero!(res_k)
     if k == 1
         a1 = a_coeffs[2]
@@ -473,7 +538,7 @@ function log1p!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res_ki = res_coeffs[k-i+1]
         a_i = a_coeffs[i+1]
         @inbounds for ordQ in eachindex(a0)
-            mul_scalar!(res_k, k-i, res_ki, a_i, ordQ)
+            _mul_scalar_unchecked!(res_k, k-i, res_ki, a_i, ordQ)
         end
     end
     div!(res, res, k, k)

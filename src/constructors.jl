@@ -81,8 +81,11 @@ Taylor1(coeffs::FixedSizeVectorDefault{T}, order::Int) where {T<:Number} =
     Taylor1{T}(coeffs, order)
 function Taylor1(x::T, order::Int) where {T<:Number}
     v = FixedSizeVectorDefault{T}(undef, order+1)
-    v .= zero.(x)
-    v[1] = deepcopy(x)
+    # one `zero(x)` per coefficient
+    @inbounds v[1] = _copy_constant_coeff(x)
+    @inbounds for i in 2:order+1
+        v[i] = zero(x)
+    end
     return Taylor1{T}(v)
 end
 

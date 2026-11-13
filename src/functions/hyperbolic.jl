@@ -7,6 +7,10 @@
 #
 
 # Hyperbolic functions: sinh, cosh, sinhcosh, tanh
+#
+# `sinhcosh!` for `Taylor1{Taylor1}` uses `_sincos_nested_recursion!`, defined in
+# trigonometric.jl
+
 
 # Out-of-place functions
 for T in (:Taylor1, :TaylorN)
@@ -160,12 +164,14 @@ function sinhcosh!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
         @inbounds c[0] = cosh( constant_term(a) )
         return nothing
     end
-    x = a[1]
+    # Check spaces
+    _check_same_space(s, c, a)
+    # The recursion formula
     zero!(s, k)
     zero!(c, k)
     @inbounds for i = 1:k
-        mul_scalar!(s[k], i, a[i], c[k-i])
-        mul_scalar!(c[k], i, a[i], s[k-i])
+        _mul_scalar_unchecked!(s[k], i, a[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], i, a[i], s[k-i])
     end
     @inbounds div!(s[k], s[k], k)
     @inbounds div!(c[k], c[k], k)
@@ -180,9 +186,12 @@ function tanh!(c::TaylorN{T}, a::TaylorN{T}, c2::TaylorN{T}, k::Int) where
         @inbounds c2[0] = aux^2
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, c2)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i = 0:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c2[i])
+        _mul_scalar_unchecked!(c[k], k-i, a[k-i], c2[i])
     end
     @inbounds for l in eachindex(c[k])
         c[k][l] = a[k][l] - c[k][l]/k
@@ -219,28 +228,34 @@ end
 
 function tanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
     if k == 0
         @inbounds res[0] = tanh( a[0] )
         # zero!(res2, res, 0)
-        sqr!(res2, res, aux, 0)
+        sqr!(res2, res, 0)
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, res2)
     # The recursion formula
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
+    aux = res2[k]
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        aux[ordQ] = res[k][ordQ] / k
+        # aux[ordQ] <- res[k][ordQ] / k, in place
+        aux_hp = aux[ordQ].coeffs
+        res_hp = res[k][ordQ].coeffs
+        for j in eachindex(aux_hp)
+            aux_hp[j] = res_hp[j] / k
+        end
         subst!(res[k], a[k], aux, ordQ)
     end
-    zero!(aux)
     zero!(res2[k])
-    sqr!(res2, res, aux, k)
+    sqr!(res2, res, k)
     return nothing
 end
 

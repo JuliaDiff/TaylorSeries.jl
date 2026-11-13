@@ -838,3 +838,176 @@ end
         @test cispi(x) ≈ exp(im * pi * x)
     end
 end
+
+# TaylorN iand Taylor1{Taylor1} represent the same expansions: the coefficient of
+# TaylorN (ξ₁^i₁ ⋯ ξₙ^iₙ) is that of the nested Taylor1 whose innermost variable is
+# the first one and outermost the last one, p[iₙ]⋯[i₁].
+# The helpers below compare all coefficients that both expansions contain,
+# up to rounding: relative tolerance `rtol`, and no absolute tolerance
+# (coefficients that vanish in one representation must vanish in the other).
+_coeff_like(p::TaylorN, idx::NTuple) = getcoeff(p, idx)
+_coeff_like(p::Taylor1, idx::NTuple) = foldl((q, n) -> q[n], reverse(idx); init = p)
+_orders_nested(p::Taylor1) = p[0] isa Taylor1 ? (_orders_nested(p[0])..., TS.order(p)) :
+    (TS.order(p),)
+function _same_coeffs(pN::TaylorN, pT::Taylor1; rtol = 32 * eps())
+    ords = _orders_nested(pT)
+    return all(isapprox(_coeff_like(pN, idx), _coeff_like(pT, idx); rtol)
+        for idx in Iterators.product((0:n for n in ords)...) if sum(idx) ≤ TS.order(pN))
+end
+# Taylor1{TaylorN}: the first variables are those of the TaylorN coefficients, and the last one
+# is that of the Taylor1; p[iₙ] is the TaylorN that holds the coefficients of ξₙ^iₙ
+_coeff_like(p::Taylor1{<:TaylorN}, idx::NTuple) = getcoeff(p[idx[end]], idx[1:end-1])
+function _same_coeffs(pN::TaylorN, pT::Taylor1{<:TaylorN}; rtol = 32 * eps())
+    nv, M, K = get_numvars(pT[0]), TS.order(pT[0]), TS.order(pT)
+    return all(isapprox(_coeff_like(pN, idx), _coeff_like(pT, idx); rtol)
+        for idx in Iterators.product(ntuple(_ -> 0:M, nv)..., 0:K)
+        if sum(idx[1:nv]) ≤ M && sum(idx) ≤ TS.order(pN))
+end
+
+@testset "Compare TaylorN and nested Taylor1s" begin
+    # functions, and three expansion points within each domain
+    _cmp_funs() = ((exp, (0.0, 0.3, -0.4)), (expm1, (0.0, 0.3, -0.4)), (log, (1.0, 1.5, 0.7)),
+        (log1p, (0.0, 0.3, -0.4)), (sqrt, (1.0, 1.5, 0.7)), (sin, (0.0, 0.3, -0.4)),
+        (cos, (0.0, 0.3, -0.4)), (tan, (0.0, 0.3, -0.4)), (sinpi, (0.0, 0.3, -0.4)),
+        (cospi, (0.0, 0.3, -0.4)), (asin, (0.0, 0.3, -0.4)), (acos, (0.0, 0.3, -0.4)),
+        (atan, (0.0, 0.3, -0.4)), (sinh, (0.0, 0.3, -0.4)), (cosh, (0.0, 0.3, -0.4)),
+        (tanh, (0.0, 0.3, -0.4)), (asinh, (0.0, 0.3, -0.4)), (acosh, (2.0, 1.5, 3.0)),
+        (atanh, (0.0, 0.3, -0.4)))
+
+    @testset "TaylorN and Taylor1{Taylor1} (2 variables)" begin
+        sp = JetSpace(order = 10, variables = [:τ, :σ])
+        x, y = variables(sp)
+        set_taylor1_varname(2, ["t", "s"])
+        t = Taylor1(5)                          # inner variable (τ)
+        s = Taylor1([zero(t), one(t)], 5)       # outer variable (σ)
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y), f(x0 + t + s))
+                    @test _same_coeffs(f(x0 + 0.5x - 0.3y), f(x0 + 0.5t - 0.3s))
+                end
+            end
+        end
+    end
+
+    @testset "TaylorN and Taylor1{Taylor1{Taylor1}} (3 variables)" begin
+        sp = JetSpace(order = 9, variables = [:τ, :σ, :ρ])
+        x, y, z = variables(sp)
+        set_taylor1_varname(3, ["t", "s", "r"])
+        t = Taylor1(3)                          # innermost variable (τ)
+        s = Taylor1([zero(t), one(t)], 3)       # middle variable (σ)
+        r = Taylor1([zero(s), one(s)], 3)       # outermost variable (ρ)
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y + z), f(x0 + t + s + r))
+                    @test _same_coeffs(f(x0 + 0.5x - 0.3y + 0.2z), f(x0 + 0.5t - 0.3s + 0.2r))
+                end
+            end
+        end
+    end
+
+    @testset "TaylorN and Taylor1{TaylorN} (2 combined vars each)" begin
+        sp = JetSpace(order = 10, variables = [:τ, :σ])
+        x, y = variables(sp)
+        sp1 = JetSpace(order = 5, variables = [:τ])
+        τ = variables(sp1)[1]                   # inner level: TaylorN in one variable (τ)
+        s = Taylor1([zero(τ), one(τ)], 5)       # outer level: Taylor1 variable (σ)
+        # mixed arithmetic: a TaylorN behaves as the constant Taylor1{TaylorN} it represents
+        b = 1.0 + 0.5τ
+        bT = Taylor1(b, 5)
+        for op in (+, -, *, /)
+            @test op(b, 2 + s) == op(bT, 2 + s)
+            @test op(2 + s, b) == op(2 + s, bT)
+        end
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y), f(x0 + τ + s))
+                    @test _same_coeffs(f(x0 + 0.5x - 0.3y), f(x0 + 0.5τ - 0.3s))
+                end
+            end
+        end
+    end
+
+    @testset "TaylorN Taylor1{TaylorN} (3 combined vars each)" begin
+        sp3 = JetSpace(order = 8, variables = [:τ, :σ, :ρ])
+        x, y, z = variables(sp3)
+        sp2 = JetSpace(order = 4, variables = [:τ, :σ])
+        u, v = variables(sp2)                   # inner level: TaylorN in two variables (τ, σ)
+        r = Taylor1([zero(u), one(u)], 4)       # outer level: Taylor1 variable (ρ)
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y + z), f(x0 + u + v + r))
+                    # (subtracting the outer variable: TaylorN - Taylor1{TaylorN})
+                    @test _same_coeffs(f(x0 + 0.5x + 0.2y - 0.3z), f(x0 + 0.5u + 0.2v - 0.3r))
+                end
+            end
+        end
+    end
+end
+
+# Integrity checks of the expansions of the elementary functions using: (i) compare the
+# evaluation at a small increment of the expansion around x0, f(x0 + h), and
+# computed by Base; and (ii) the chain rule: the derivative of f(x) equals f′(x) x′
+@testset "Evaluation and chain rule tests for the elementary functions" begin
+    # function, its derivative, and three expansion points within its domain
+    funs = ((exp, exp, (0.0, 0.3, -0.4)), (expm1, exp, (0.0, 0.3, -0.4)),
+        (log, x -> 1 / x, (1.0, 1.5, 0.7)), (log1p, x -> 1 / (1 + x), (0.0, 0.3, -0.4)),
+        (sqrt, x -> 1 / (2 * sqrt(x)), (1.0, 1.5, 0.7)), (sin, cos, (0.0, 0.3, -0.4)),
+        (cos, x -> -sin(x), (0.0, 0.3, -0.4)), (tan, x -> 1 + tan(x)^2, (0.0, 0.3, -0.4)),
+        (sinpi, x -> pi * cospi(x), (0.0, 0.3, -0.4)),
+        (cospi, x -> -pi * sinpi(x), (0.0, 0.3, -0.4)),
+        (asin, x -> 1 / sqrt(1 - x^2), (0.0, 0.3, -0.4)),
+        (acos, x -> -1 / sqrt(1 - x^2), (0.0, 0.3, -0.4)),
+        (atan, x -> 1 / (1 + x^2), (0.0, 0.3, -0.4)), (sinh, cosh, (0.0, 0.3, -0.4)),
+        (cosh, sinh, (0.0, 0.3, -0.4)), (tanh, x -> 1 - tanh(x)^2, (0.0, 0.3, -0.4)),
+        (asinh, x -> 1 / sqrt(x^2 + 1), (0.0, 0.3, -0.4)),
+        (acosh, x -> 1 / sqrt(x^2 - 1), (2.0, 1.5, 3.0)),
+        (atanh, x -> 1 / (1 - x^2), (0.0, 0.3, -0.4)))
+
+    @testset "Evaluation at a small increment" begin
+        sp = JetSpace(order = 12, variables = [:τ, :σ])
+        x, y = variables(sp)
+        t = Taylor1(12)
+        s = Taylor1([zero(t), one(t)], 12)          # Taylor1{Taylor1}: σ outer, τ inner
+        sp1 = JetSpace(order = 12, variables = [:τ])
+        τ = variables(sp1)[1]
+        sτ = Taylor1([zero(τ), one(τ)], 12)         # Taylor1{TaylorN}: σ outer, τ inner
+        h1, h2 = 0.011, -0.007
+        for (f, _, x0s) in funs, x0 in x0s
+            exact = f(x0 + h1 + h2)
+            @test isapprox(evaluate(f(x0 + t), h1 + h2), exact; rtol = 32 * eps())
+            @test isapprox(evaluate(f(x0 + x + y), [h1, h2]), exact; rtol = 32 * eps())
+            @test isapprox(evaluate(evaluate(f(x0 + t + s), h2), h1), exact; rtol = 32 * eps())
+            @test isapprox(evaluate(evaluate(f(x0 + τ + sτ), h2), [h1]), exact; rtol = 32 * eps())
+        end
+    end
+
+    @testset "Chain rule" begin
+        # coefficients to compare: all for Taylor1; those of degree < order for TaylorN
+        # (`differentiate` keeps the order of a TaylorN, and f′(x) x′ is incomplete at that degree)
+        coeffs_cmp(p::Taylor1) = collect(p.coeffs)
+        coeffs_cmp(p::TaylorN) =
+            reduce(vcat, (collect(p.coeffs[d+1].coeffs) for d in 0:TS.order(p)-1))
+        # the same series up to rounding, relative to its largest coefficient (a small
+        # coefficient may carry the rounding error of large terms that cancel)
+        function same_series(a, b; rtol = 32 * eps())
+            ca, cb = coeffs_cmp(a), coeffs_cmp(b)
+            scale = max(maximum(abs, ca), maximum(abs, cb))
+            return length(ca) == length(cb) &&
+                all(abs(p - q) ≤ rtol * scale for (p, q) in zip(ca, cb))
+        end
+        sp = JetSpace(order = 10, variables = [:u, :v])
+        u, v = variables(sp)
+        t = Taylor1(15)
+        for (f, df, x0s) in funs, x0 in x0s
+            xt = x0 + t + 0.5 * t^2
+            @test same_series(differentiate(f(xt)), df(xt) * differentiate(xt))
+            xN = x0 + u - 0.3v + 0.5u * v
+            @test same_series(differentiate(f(xN), 1), df(xN) * differentiate(xN, 1))
+            @test same_series(differentiate(f(xN), 2), df(xN) * differentiate(xN, 2))
+        end
+    end
+end

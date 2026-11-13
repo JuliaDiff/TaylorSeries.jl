@@ -67,8 +67,7 @@ for T in (:Taylor1, :TaylorN)
         function sincospi(a::$T)
             order = TS.order(a)
             aux, auxc = sincospi(constant_term(a))
-            aa = one(aux) * a
-            # aa = convert($T{typeof(aux)}, a)
+            aa = convert($T{typeof(aux)}, a)
             s = _constant_series_like(a, aux, order)
             c = _constant_series_like(a, auxc, order)
             for k in eachindex(a)
@@ -335,11 +334,14 @@ function sincos!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
         @inbounds s[0][1], c[0][1] = sincos( a0 )
         return nothing
     end
+    # Check spaces
+    _check_same_space(s, c, a)
+    # The recursion formula
     zero!(s, k)
     zero!(c, k)
     @inbounds for i = 1:k
-        mul_scalar!(s[k],  i, a[i], c[k-i])
-        mul_scalar!(c[k], -i, a[i], s[k-i])
+        _mul_scalar_unchecked!(s[k],  i, a[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], -i, a[i], s[k-i])
     end
     @inbounds div!(s[k], s[k], k)
     @inbounds div!(c[k], c[k], k)
@@ -355,6 +357,7 @@ function sincospi!(s::TaylorN{T}, c::TaylorN{T}, a::TaylorN{T}, k::Int) where
     end
     # Check spaces
     _check_same_space(s, c, a)
+    # The recursion formula
     zero!(s, k)
     zero!(c, k)
     @inbounds for i = 1:k
@@ -375,9 +378,12 @@ function tan!(c::TaylorN{T}, a::TaylorN{T}, c2::TaylorN{T}, k::Int) where
         @inbounds c2[0][1] = aux^2
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, c2)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i = 0:k-1
-        mul_scalar!(c[k], k-i, a[k-i], c2[i])
+        _mul_scalar_unchecked!(c[k], k-i, a[k-i], c2[i])
     end
     # c[k] <- c[k]/k
     div!(c[k], c[k], k)
@@ -441,31 +447,31 @@ end
 
 function tan!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         res2::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    aux = zero(a[0])
     if k == 0
         @inbounds res[0] = tan( a[0] )
         # zero!(res2, res, 0)
-        sqr!(res2, res, aux, 0)
+        sqr!(res2, res, 0)
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, res2)
     # The recursion formula
     zero!(res[k])
     for i = 0:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res2[i], a[k-i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res2[i], a[k-i], ordQ)
         end
     end
     @inbounds for ordQ in eachindex(a[0])
         div!(res[k][ordQ], res[k][ordQ], k)
         add!(res[k], a[k], res[k], ordQ)
     end
-    sqr!(res2, res, aux, k)
+    sqr!(res2, res, k)
     return nothing
 end
 
 
-
-# Documentation for the recursion relations
+# Documentation of the recursion relations
 @doc doc"""
     sincos!(s, c, a, k) --> nothing
 

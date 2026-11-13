@@ -579,4 +579,205 @@ setdisplay(:full)
         @test all(in_interval(known_coeff(sin, 1.0, k, ()), imag(z)[k]) for k in 0:15)
     end
 
+    # All the coefficients of a series (also nested), in a fixed order
+    _flat_coeffs(x::Number) = [x]
+    _flat_coeffs(x::HomogeneousPolynomial) = collect(x.coeffs)
+    _flat_coeffs(x::Union{Taylor1,TaylorN}) = reduce(vcat, (_flat_coeffs(c) for c in x.coeffs))
+    # whether each coefficient of `xI` (Interval) contains the corresponding one of `xB` (BigFloat)
+    _contains(xI, xB) = (cI = _flat_coeffs(xI); cB = _flat_coeffs(xB);
+        length(cI) == length(cB) && all(in_interval(b, a) for (a, b) in zip(cI, cB)))
+
+    # The expansions computed with Interval{Float64} coefficients contain those computed with
+    # BigFloat coefficients (a high-precision reference), coefficient by coefficient, for the same
+    # argument and representation; the constant term of the argument is thin, or an interval around
+    # the BigFloat one
+    @testset "Interval expansions contain the BigFloat ones" begin
+        sp = JetSpace(order = 4, variables = [:u, :v])
+        uI, vI = variables(Interval{Float64}, sp)
+        uB, vB = variables(BigFloat, sp)
+        # x0 + 0.5 u - 0.25 v + 0.5 t, in each representation: Taylor1, TaylorN, Taylor1{TaylorN},
+        # Taylor1{Taylor1}; `c0` builds the constant term and `c` the other coefficients
+        args(c0, c, u, v, x0) = (
+            Taylor1([c0(x0), c(0.5), c(-0.25)], 8),
+            c0(x0) + c(0.5) * u - c(0.25) * v,
+            Taylor1([c0(x0) + c(0.5) * u - c(0.25) * v, c(0.5) + zero(u)], 6),
+            Taylor1([Taylor1([c0(x0), c(0.5)], 4), Taylor1([c(-0.25)], 4)], 6))
+        thin(x) = interval(x)
+        wide(x) = interval(x - 1e-3, x + 1e-3)
+        for (f, x0) in ((exp, 0.3), (expm1, 0.3), (log, 1.3), (log1p, 0.3), (sqrt, 1.3),
+                (sin, 0.3), (cos, 0.3), (tan, 0.3), (sinpi, 0.3), (cospi, 0.3), (asin, 0.3),
+                (acos, 0.3), (atan, 0.3), (sinh, 0.3), (cosh, 0.3), (tanh, 0.3), (asinh, 0.3),
+                (acosh, 2.0), (atanh, 0.3))
+            @testset "$f" begin
+                for c0 in (thin, wide)
+                    for (xI, xB) in zip(args(c0, interval, uI, vI, x0), args(big, big, uB, vB, x0))
+                        @test _contains(f(xI), f(xB))
+                    end
+                end
+            end
+        end
+    end
+
+    # In-place functions on TaylorN{Interval} (several are defined in the IntervalArithmetic
+    # extension): the result does not depend on the previous content of the output series
+    @testset "In-place functions for TaylorN{Interval}" begin
+        sp = JetSpace(order = 4, variables = [:u, :v])
+        u, v = variables(Interval{Float64}, sp)
+        a = interval(0.3) + interval(0.5) * u - interval(0.25) * v
+        b = interval(2.0) + interval(0.5) * u - interval(0.25) * v      # for acosh
+        # a series like `x` whose coefficients are all [7, 7]
+        garbage(x) = (y = zero(x); for hp in y.coeffs; hp.coeffs .= interval(7.0); end; y)
+        # f!(c, a, k)
+        for f! in (TS.exp!, TS.expm1!, TS.log!, TS.log1p!)
+            c1, c2 = zero(a), garbage(a)
+            for k in 0:4
+                f!(c1, a, k)
+                f!(c2, a, k)
+            end
+            @test c1 == c2
+        end
+        # f!(s, c, a, k)
+        for f! in (TS.sincos!, TS.sincospi!, TS.sinhcosh!)
+            s1, c1, s2, c2 = zero(a), zero(a), garbage(a), garbage(a)
+            for k in 0:4
+                f!(s1, c1, a, k)
+                f!(s2, c2, a, k)
+            end
+            @test s1 == s2 && c1 == c2
+        end
+        # f!(c, x, r, k), with an auxiliary series r
+        for (f!, x) in ((TS.tan!, a), (TS.tanh!, a), (TS.asin!, a), (TS.acos!, a), (TS.atan!, a),
+                (TS.asinh!, a), (TS.acosh!, b), (TS.atanh!, a))
+            c1, r1, c2, r2 = zero(x), zero(x), garbage(x), garbage(x)
+            for k in 0:4
+                f!(c1, x, r1, k)
+                f!(c2, x, r2, k)
+            end
+            @test c1 == c2
+        end
+    end
+
+    # sqrt! for Taylor1{Interval} (IntervalArithmetic extension): the result does not depend on the
+    # previous content of c, and c may be the same series as a
+    @testset "sqrt! for Taylor1{Interval}: previous content of c, and c === a" begin
+        a = Taylor1([interval(4.0), interval(1.0), interval(0.5), interval(-0.25)], 6)
+        c = sqrt(a)
+        d = Taylor1(fill(interval(7.0), 7), 6)          # not zero
+        for k in 0:6
+            TS.sqrt!(d, a, interval(0.0), k)
+        end
+        @test d == c
+        r = deepcopy(a)                                  # r[k] holds a[k] until step k
+        for k in 0:6
+            TS.sqrt!(r, r, interval(0.0), k)
+        end
+        @test r == c
+    end
+
+    # TaylorN and nested representations (Taylor1{Taylor1}, Taylor1{Taylor1{Taylor1}},
+    # Taylor1{TaylorN}) with interval coefficients enclose the same exact coefficients: for each
+    # coefficient that both representations contain, the two intervals must intersect
+    @testset "Compare TaylorN and nested Taylors with interval coefficients" begin
+        # coefficient of ξ₁^i₁ ⋯ ξₙ^iₙ: in a TaylorN; in nested Taylor1s (innermost variable
+        # first: p[iₙ]⋯[i₁]); in a Taylor1{TaylorN} (TaylorN variables first, Taylor1 last)
+        coeff_at(p::TaylorN, idx::NTuple) = getcoeff(p, idx)
+        coeff_at(p::Taylor1, idx::NTuple) = foldl((q, n) -> q[n], reverse(idx); init = p)
+        coeff_at(p::Taylor1{<:TaylorN}, idx::NTuple) = getcoeff(p[idx[end]], idx[1:end-1])
+        # multi-indices of the coefficients that a nested series contains
+        orders(p) = p isa Taylor1 && p[0] isa Taylor1 ? (orders(p[0])..., TS.order(p)) :
+            (TS.order(p),)
+        indices(p::Taylor1) = Iterators.product((0:n for n in orders(p))...)
+        indices(p::Taylor1{<:TaylorN}) = (nv = get_numvars(p[0]); M = TS.order(p[0]);
+            (idx for idx in Iterators.product(ntuple(_ -> 0:M, nv)..., 0:TS.order(p))
+                if sum(idx[1:nv]) ≤ M))
+        # the common coefficients of `pN` (TaylorN) and `pT` (nested) intersect
+        overlap(pN, pT) = all(!isdisjoint_interval(coeff_at(pN, idx), coeff_at(pT, idx))
+            for idx in indices(pT) if sum(idx) ≤ TS.order(pN))
+
+        funs = ((exp, (0.0, 0.3, -0.4)), (expm1, (0.0, 0.3, -0.4)), (log, (1.0, 1.5, 0.7)),
+            (log1p, (0.0, 0.3, -0.4)), (sqrt, (1.0, 1.5, 0.7)), (sin, (0.0, 0.3, -0.4)),
+            (cos, (0.0, 0.3, -0.4)), (tan, (0.0, 0.3, -0.4)), (sinpi, (0.0, 0.3, -0.4)),
+            (cospi, (0.0, 0.3, -0.4)), (asin, (0.0, 0.3, -0.4)), (acos, (0.0, 0.3, -0.4)),
+            (atan, (0.0, 0.3, -0.4)), (sinh, (0.0, 0.3, -0.4)), (cosh, (0.0, 0.3, -0.4)),
+            (tanh, (0.0, 0.3, -0.4)), (asinh, (0.0, 0.3, -0.4)), (acosh, (2.0, 1.5, 3.0)),
+            (atanh, (0.0, 0.3, -0.4)))
+        I = interval
+        # constant terms: thin, and wide
+        consts(x0) = (I(x0), I(x0 - 1e-3, x0 + 1e-3))
+
+        @testset "TaylorN{Interval} and Taylor1{Taylor1{Interval}} (2 variables)" begin
+            sp = JetSpace(order = 8, variables = [:τ, :σ])
+            x, y = variables(Interval{Float64}, sp)
+            t = Taylor1([I(0), I(1)], 4)                # inner variable (τ)
+            s = Taylor1([zero(t), one(t)], 4)           # outer variable (σ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y), f(c + t + s))
+                @test overlap(f(c + I(0.5) * x - I(0.3) * y), f(c + I(0.5) * t - I(0.3) * s))
+            end
+        end
+
+        @testset "TaylorN{Interval} and Taylor1{Taylor1{Taylor1{Interval}}} (3 variables)" begin
+            sp = JetSpace(order = 6, variables = [:τ, :σ, :ρ])
+            x, y, z = variables(Interval{Float64}, sp)
+            t = Taylor1([I(0), I(1)], 2)                # innermost variable (τ)
+            s = Taylor1([zero(t), one(t)], 2)           # middle variable (σ)
+            r = Taylor1([zero(s), one(s)], 2)           # outermost variable (ρ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y + z), f(c + t + s + r))
+                @test overlap(f(c + I(0.5) * x + I(0.2) * y - I(0.3) * z),
+                    f(c + I(0.5) * t + I(0.2) * s - I(0.3) * r))
+            end
+        end
+
+        @testset "TaylorN{Interval} and Taylor1{TaylorN{Interval}} (one variable in each level)" begin
+            sp = JetSpace(order = 8, variables = [:τ, :σ])
+            x, y = variables(Interval{Float64}, sp)
+            sp1 = JetSpace(order = 4, variables = [:τ])
+            τ = variables(Interval{Float64}, sp1)[1]    # inner level: TaylorN (τ)
+            s = Taylor1([zero(τ), one(τ)], 4)           # outer level: Taylor1 (σ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y), f(c + τ + s))
+                @test overlap(f(c + I(0.5) * x - I(0.3) * y), f(c + I(0.5) * τ - I(0.3) * s))
+            end
+        end
+
+        @testset "TaylorN{Interval} (3 variables) and Taylor1{TaylorN{Interval}} (2 in the inner level)" begin
+            sp3 = JetSpace(order = 6, variables = [:τ, :σ, :ρ])
+            x, y, z = variables(Interval{Float64}, sp3)
+            sp2 = JetSpace(order = 3, variables = [:τ, :σ])
+            u, v = variables(Interval{Float64}, sp2)    # inner level: TaylorN (τ, σ)
+            r = Taylor1([zero(u), one(u)], 3)           # outer level: Taylor1 (ρ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y + z), f(c + u + v + r))
+                @test overlap(f(c + I(0.5) * x + I(0.2) * y - I(0.3) * z),
+                    f(c + I(0.5) * u + I(0.2) * v - I(0.3) * r))
+            end
+        end
+    end
+
+    # Evaluated at a small increment h, the expansions around x0 with interval coefficients
+    # (Taylor1, TaylorN, Taylor1{Taylor1}, Taylor1{TaylorN}) contain f(x0 + h), computed with
+    # BigFloat (the truncation error, of order h^13, is far below the width of the intervals)
+    @testset "Evaluation at a small increment with interval coefficients" begin
+        I = interval
+        sp = JetSpace(order = 12, variables = [:τ, :σ])
+        x, y = variables(Interval{Float64}, sp)
+        t = Taylor1([I(0), I(1)], 12)
+        s = Taylor1([zero(t), one(t)], 12)          # Taylor1{Taylor1}: σ outer, τ inner
+        sp1 = JetSpace(order = 12, variables = [:τ])
+        τ = variables(Interval{Float64}, sp1)[1]
+        sτ = Taylor1([zero(τ), one(τ)], 12)          # Taylor1{TaylorN}: σ outer, τ inner
+        h1, h2 = 0.011, -0.007
+        for (f, x0) in ((exp, 0.3), (expm1, 0.3), (log, 1.3), (log1p, 0.3), (sqrt, 1.3),
+                (sin, 0.3), (cos, 0.3), (tan, 0.3), (sinpi, 0.3), (cospi, 0.3), (asin, 0.3),
+                (acos, 0.3), (atan, 0.3), (sinh, 0.3), (cosh, 0.3), (tanh, 0.3), (asinh, 0.3),
+                (acosh, 2.0), (atanh, 0.3))
+            exact = f(big(x0) + big(h1) + big(h2))
+            c = I(x0)
+            @test in_interval(exact, evaluate(f(c + t), I(h1) + I(h2)))
+            @test in_interval(exact, evaluate(f(c + x + y), [I(h1), I(h2)]))
+            @test in_interval(exact, evaluate(evaluate(f(c + t + s), I(h2)), I(h1)))
+            @test in_interval(exact, evaluate(evaluate(f(c + τ + sτ), I(h2)), [I(h1)]))
+        end
+    end
 end

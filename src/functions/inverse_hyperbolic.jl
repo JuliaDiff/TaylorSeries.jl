@@ -71,12 +71,13 @@ function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         @inbounds r[0] = sqrt( a[0]^2 + 1 )
         return nothing
     end
-    aux = zero(a)
     zero!(c, k)
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    sqrt!(r, a^2+1, aux, k)
+    # Update r[k] <- (sqrt(a^2+1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
@@ -90,25 +91,27 @@ function asinh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         return nothing
     end
     zero!(c[k])
-    aux = zero(c)
+    aux = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         # mul_scalar!(c[k], k-i, r[i], c[k-i])
         for j in eachindex(a[k])
-            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux[k], j)
+            mul_scalar!(aux, k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux, j)
         end
     end
-    zero!(aux, k)
-    sqrt!(r, a^2+1, aux, k)
+    zero!(aux)
+    # Update r[k] <- (sqrt(a^2+1))[k]
+    sqr!(r, a, aux, k)
+    _sqrt_nested!(r, r, aux, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux[k], j)
+        zero!(aux, j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux[k], a[k], c[k], j) # aux <- a[k] - c[k]
+        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
@@ -121,11 +124,12 @@ function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         return nothing
     end
     zero!(c, k)
-    aux = zero(a)
     @inbounds for i in 1:k-1
         c[k] += (k-i) * r[i] * c[k-i]
     end
-    sqrt!(r, a^2-1, aux, k)
+    # Update r[k] <- (sqrt(a^2-1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
     @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     return nothing
 end
@@ -139,24 +143,26 @@ function acosh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         return nothing
     end
     zero!(c[k])
-    aux = zero(c)
+    aux = zero(c[k])
     @inbounds for i in 1:k-1
         # c[k] += (k-i) * r[i] * c[k-i]
         for j in eachindex(a[k])
-            mul_scalar!(aux[k], k-i, r[i], c[k-i], j)
-            add!(c[k], c[k], aux[k], j)
+            mul_scalar!(aux, k-i, r[i], c[k-i], j)
+            add!(c[k], c[k], aux, j)
         end
     end
-    zero!(aux, k)
-    sqrt!(r, a^2-1, aux, k)
+    zero!(aux)
+    # Update r[k] <- (sqrt(a^2-1))[k]
+    sqr!(r, a, aux, k)
+    _sqrt_nested!(r, r, aux, k)
     # @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
     @inbounds for j in eachindex(a[k])
-        zero!(aux[k], j)
+        zero!(aux, j)
         div!(c[k], c[k], k, j)     # c[k] <- c[k]/k
-        subst!(aux[k], a[k], c[k], j) # aux <- a[k] - c[k]
+        subst!(aux, a[k], c[k], j) # aux <- a[k] - c[k]
     end
     @inbounds for j in eachindex(a[k])
-        div!(c[k], aux[k], constant_term(r), j) # c[k] <- aux / constant_term(r)
+        div!(c[k], aux, constant_term(r), j) # c[k] <- aux / constant_term(r)
     end
     return nothing
 end
@@ -187,6 +193,13 @@ function atanh!(c::Taylor1{T}, a::Taylor1{T}, r::Taylor1{T}, k::Int) where
         a0 = constant_term(a)
         @inbounds for j in eachindex(a[k])
             atanh!(c[0], a0, r[0], j)
+        end
+        # The inner `atanh!` stores r[0][j] = (a0^2)[j] for j ≥ 1 (the sign of r = 1 - a^2 is
+        # absorbed in its recursion), but here r[0] is also the divisor 1 - a0^2 of the
+        # recursion below: its coefficients j ≥ 1 are negated
+        @inbounds r0 = r[0]
+        @inbounds for j in 1:order(r0)
+            r0[j] = -r0[j]
         end
         return nothing
     end
@@ -221,12 +234,22 @@ function asinh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         @inbounds r[0] = sqrt( a[0][1]^2 + 1 )
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, r)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, r[i], c[k-i])
     end
-    sqrt!(r, a^2+1, zero(a), k)
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+    # Update r[k] <- (sqrt(a^2+1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
+    # c[k] <- (a[k] - c[k]/k) / r[0], coefficient by coefficient
+    r0 = constant_term(r)
+    @inbounds c_k, a_k = c[k].coeffs, a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / r0
+    end
     return nothing
 end
 
@@ -237,12 +260,22 @@ function acosh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         @inbounds r[0] = sqrt( a[0][1]^2 - 1 )
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, r)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, r[i], c[k-i])
     end
-    sqrt!(r, a^2-1, zero(a), k)
-    @inbounds c[k] = (a[k] - c[k]/k) / constant_term(r)
+    # Update r[k] <- (sqrt(a^2-1))[k]
+    sqr!(r, a, zero(constant_term(a)), k)
+    sqrt!(r, r, r, k)
+    # c[k] <- (a[k] - c[k]/k) / r[0], coefficient by coefficient
+    r0 = constant_term(r)
+    @inbounds c_k, a_k = c[k].coeffs, a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] - c_k[j]/k) / r0
+    end
     return nothing
 end
 
@@ -253,12 +286,20 @@ function atanh!(c::TaylorN{T}, a::TaylorN{T}, r::TaylorN{T}, k::Int) where
         @inbounds r[0] = 1 - a[0][1]^2
         return nothing
     end
+    # Check spaces
+    _check_same_space(c, a, r)
+    # The recursion formula
     zero!(c, k)
     @inbounds for i in 1:k-1
-        mul_scalar!(c[k], k-i, r[i], c[k-i])
+        _mul_scalar_unchecked!(c[k], k-i, r[i], c[k-i])
     end
     sqr!(r, a, zero(a[0][1]), k)
-    @inbounds c[k] = (a[k] + c[k]/k) / constant_term(r)
+    # c[k] <- (a[k] + c[k]/k) / r[0], coefficient by coefficient
+    r0 = constant_term(r)
+    @inbounds c_k, a_k = c[k].coeffs, a[k].coeffs
+    @inbounds for j in eachindex(c_k)
+        c_k[j] = (a_k[j] + c_k[j]/k) / r0
+    end
     return nothing
 end
 
@@ -266,8 +307,8 @@ end
 # In-place functions (recursions) for Taylor1{TaylorN}
 function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
     if k == 0
+        tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
         tmp0 = zero(tmp)
         @inbounds res[0] = asinh( a[0] )
         # r[0] = sqrt(1+a[0]^2)
@@ -283,38 +324,32 @@ function asinh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, r)
     # The recursion formula
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
+    tmp = r[k]
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
-        zero!(tmp, ordQ)
     end
-    # Compute auxiliary term s=1+a^2
-    s = zero(a)#Taylor1(zero(a[0]), order(a))
-    for i = 0:k
-        sqr!(s, a, tmp, i)
-        if i == 0
-            s[0] = one(s[0]) + s[0]
-            add!(s, one(s), s, 0)
-        end
-    end
-    # Update aux term r = sqrt(s) = sqrt(1+a^2)
-    sqrt!(r, s, zero(a), k)
+    # Update aux term r = sqrt(s), s = 1+a^2
+    sqr!(r, a, k)       # r[k] <- (a^2)[k]
+    sqrt!(r, r, r, k)   # r[k] <- (sqrt(s))[k]
     return nothing
 end
 
 function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
     if k == 0
+        tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
         tmp0 = zero(tmp)
         @inbounds res[0] = acosh( a[0] )
         # r[0] = sqrt(a[0]^2-1)
@@ -331,61 +366,61 @@ function acosh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         end
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, r)
     # The recursion formula
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
     div!(res, res, k, k)
+    tmp = r[k]
     @inbounds for ordQ in eachindex(a[0])
         subst!(tmp, a[k], res[k], ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
-    # Compute auxiliary term s=a^2-1
-    s = zero(a)#Taylor1(zero(a[0]), order(a))
-    zero!(tmp)
-    for i = 0:k
-        sqr!(s, a, tmp, i)
-        if i == 0
-            s[0] = one(s[0]) + s[0]
-            subst!(s, s, one(s), 0)
-        end
-    end
-    # Update aux term r = sqrt(s) = sqrt(a^2-1)
-    sqrt!(r, s, zero(a), k)
+    # Update aux term r = sqrt(s), s = 1+a^2
+    sqr!(r, a, k)       # r[k] <- (a^2)[k]
+    sqrt!(r, r, r, k)   # r[k] <- (sqrt(s))[k]
     return nothing
 end
 
 function atanh!(res::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}},
         r::Taylor1{TaylorN{T}}, k::Int) where {T<:NumberNotSeries}
-    tmp = _constant_series_like(a[0], zero(a[0][0][1]), order(a[0]))
     if k == 0
         res[0] = atanh( a[0] )
         # zero!(r, a, 0)
-        sqr!(r, a, tmp, 0)
+        sqr!(r, a, 0)
         subst!(r, one(a[0][0][1]), r, 0)
         return nothing
     end
+    # Check spaces
+    _check_same_space(res, a, r)
     # The recursion formula
     zero!(res[k])
     for i in 1:k-1
         @inbounds for ordQ in eachindex(a[0])
-            mul_scalar!(res[k], k-i, res[k-i], r[i], ordQ)
+            _mul_scalar_unchecked!(res[k], k-i, res[k-i], r[i], ordQ)
         end
     end
+    tmp = r[k]
     @inbounds for ordQ in eachindex(a[0])
         # zero!(tmp, res[k], ordQ)
-        tmp[ordQ] = res[k][ordQ] / k
+        # tmp[ordQ] <- res[k][ordQ] / k, in place
+        tmp_hp = tmp[ordQ].coeffs
+        res_hp = res[k][ordQ].coeffs
+        for j in eachindex(tmp_hp)
+            tmp_hp[j] = res_hp[j] / k
+        end
         add!(tmp, a[k], tmp, ordQ)
         zero!(res[k][ordQ])
         div!(res[k], tmp, r[0], ordQ)
     end
-    zero!(tmp)
     zero!(r[k])
-    sqr!(r, a, tmp, k)
+    sqr!(r, a, k)
     return nothing
 end
 

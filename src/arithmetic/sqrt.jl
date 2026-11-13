@@ -194,7 +194,11 @@ function sqrt!(c::Taylor1{TaylorN{T}}, a::Taylor1{TaylorN{T}}, aux0::Taylor1{Tay
     return nothing
 end
 
-function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Taylor1{T}},
+sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Taylor1{T}},
+    k::Int, k0::Int=0) where {T<:Number} =
+    _sqrt_nested!(c, a, aux.coeffs[k == k0 ? 1 : k+1], k, k0)
+
+function _sqrt_nested!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{T},
         k::Int, k0::Int=0) where {T<:Number}
     k < k0 && return nothing
     c_coeffs = c.coeffs
@@ -214,10 +218,9 @@ function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Tayl
         end
         # The last l0nz coefficients are dropped.
         lnull = l0nz >> 1 # integer division by 2
-        # aux.coeffs[1] = zero(a_coeffs[dosk01])
-        zero!(aux.coeffs[1], 0)
+        zero!(aux, 0)
         for j in eachindex(c_coeffs[k+1])
-            sqrt!(c_coeffs[k+1], a_coeffs[dosk01], aux.coeffs[1], j, lnull)
+            sqrt!(c_coeffs[k+1], a_coeffs[dosk01], aux, j, lnull)
         end
         return nothing
     end
@@ -233,31 +236,29 @@ function sqrt!(c::Taylor1{Taylor1{T}}, a::Taylor1{Taylor1{T}}, aux::Taylor1{Tayl
             @inbounds identity!(c_coeffs[kk], a_coeffs[kk+k0], j)
         end
     end
-    aux_coeffs = aux.coeffs
-    zero!(aux)
     if kodd == 0
-        aaux = zero(aux_coeffs[1].coeffs[1])
+        aaux = zero(aux.coeffs[1])
         # @inbounds c[k] -= (c[kend+k0+1])^2
         @inbounds for j in eachindex(c_coeffs[kk])
-            sqr!(aux_coeffs[kk], c_coeffs[kend+k0+2], aaux, j)
-            subst!(c_coeffs[kk], c_coeffs[kk], aux_coeffs[kk], j)
+            sqr!(aux, c_coeffs[kend+k0+2], aaux, j)
+            subst!(c_coeffs[kk], c_coeffs[kk], aux, j)
             # zero!(aaux)
         end
     end
     @inbounds for i = imin:imax
         # c[k] -= 2 * c[i] * c[k+k0-i]
         for j in eachindex(c_coeffs[kk])
-            zero!(aux_coeffs[kk], j)
-            mul_scalar!(aux_coeffs[kk], 2, c_coeffs[i+1], c_coeffs[kk+k0-i], j)
-            subst!(c_coeffs[kk], c_coeffs[kk], aux_coeffs[kk], j)
+            zero!(aux, j)
+            mul_scalar!(aux, 2, c_coeffs[i+1], c_coeffs[kk+k0-i], j)
+            subst!(c_coeffs[kk], c_coeffs[kk], aux, j)
         end
     end
     # @inbounds c[k] = c[k] / (2*c[k0])
     @inbounds for j in eachindex(c_coeffs[kk])
-        identity!(aux_coeffs[kk], c_coeffs[kk], j)
+        identity!(aux, c_coeffs[kk], j)
     end
     @inbounds for j in eachindex(c[k0])
-        div!(c_coeffs[kk], aux_coeffs[kk], c_coeffs[k0+1], j)
+        div!(c_coeffs[kk], aux, c_coeffs[k0+1], j)
     end
     @inbounds for j in eachindex(c[k0])
         div!(c_coeffs[kk], c_coeffs[kk], 2, j)

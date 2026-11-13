@@ -268,7 +268,8 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     v_coeffs = v.coeffs[k+1].coeffs
                     a_coeffs = a.coeffs[k+1].coeffs
                     copyto!(v_coeffs, a_coeffs)
-                    constant_term!(v, ($f)(constant_term(a), b))
+                    # b only enters the constant term (k = 0)
+                    k == 0 && constant_term!(v, ($f)(constant_term(a), b))
                     return nothing
                 end
 
@@ -276,8 +277,10 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
                     _check_same_space(v, b)
                     v_coeffs = v.coeffs[k+1].coeffs
                     b_coeffs = b.coeffs[k+1].coeffs
-                    copyto!(v_coeffs, ($f)(b_coeffs))
-                    constant_term!(v, ($f)(a, constant_term(b)))
+                    @inbounds for i in eachindex(v_coeffs)
+                        v_coeffs[i] = ($f)(b_coeffs[i])
+                    end
+                    k == 0 && constant_term!(v, ($f)(a, constant_term(b)))
                     return nothing
                 end
 
@@ -403,7 +406,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             @inbounds aux = $f(b, a.coeffs[1])
             c = Taylor1( zero(aux), order(a))
             for k in eachindex(a)
-                ($fc)(c, a, b, k)
+                ($fc)(c, b, a, k)
             end
             return c
         end
@@ -527,4 +530,17 @@ function sum!(v::TaylorN{S}, a::AbstractArray{HomogeneousPolynomial{S}}) where {
         end
     end
     return nothing
+end
+
+# Helper for `x + one(x)`
+_plus_one(x) = x + one(x)
+function _plus_one(x::Taylor1{S}) where {S<:NumberNotSeries}
+    y = zero(x)
+    x_coeffs = x.coeffs
+    y_coeffs = y.coeffs
+    @inbounds y_coeffs[1] = x_coeffs[1] + one(x_coeffs[1])
+    @inbounds for j in 2:length(x_coeffs)
+        y_coeffs[j] = x_coeffs[j] + zero(x_coeffs[j])
+    end
+    return y
 end

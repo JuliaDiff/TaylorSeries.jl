@@ -366,4 +366,62 @@ end
             @test s1 == s2 && c1 == c2                               # same result when repeated
         end
     end
+
+    @testset "Test in-place elementary functions" begin
+        sp = JetSpace(order = 4, variables = [:u, :v])
+        u, v = variables(sp)
+        # one argument of each type, with constant term x0
+        args(x0) = (Taylor1([x0, 0.5, -0.25], 10),
+            x0 + 0.5u - 0.25v,
+            Taylor1([x0 + 0.5u - 0.25v, 0.5 + zero(u)], 10))
+        # a series like `x` whose number coefficients are all 7
+        garbage(x::Taylor1{Float64}) = Taylor1(fill(7.0, order(x) + 1), order(x))
+        garbage(x::TaylorN) = (y = zero(x); for hp in y.coeffs; hp.coeffs .= 7.0; end; y)
+        garbage(x::Taylor1{<:TaylorN}) =
+            Taylor1([garbage(x[0]) for _ in 0:order(x)], order(x))
+        allocs(f!, args...) = @allocated f!(args...)
+
+        # f!(c, a, k)
+        for f! in (TS.exp!, TS.expm1!, TS.log!, TS.log1p!), a in args(0.3)
+            a0, N = deepcopy(a), TS.order(a)
+            c1, c2 = zero(a), garbage(a)
+            for k in 0:N
+                f!(c1, a, k)
+                f!(c2, a, k)
+            end
+            @test c1 == c2
+            @test a == a0
+            allocs(f!, c1, a, N)                     # warm-up
+            @test allocs(f!, c1, a, N) == 0
+        end
+
+        # f!(s, c, a, k)
+        for f! in (TS.sincos!, TS.sincospi!, TS.sinhcosh!), a in args(0.3)
+            a0, N = deepcopy(a), TS.order(a)
+            s1, c1, s2, c2 = zero(a), zero(a), garbage(a), garbage(a)
+            for k in 0:N
+                f!(s1, c1, a, k)
+                f!(s2, c2, a, k)
+            end
+            @test s1 == s2 && c1 == c2
+            @test a == a0
+            allocs(f!, s1, c1, a, N)                 # warm-up
+            @test allocs(f!, s1, c1, a, N) == 0
+        end
+
+        # f!(c, a, r, k), with an auxiliary series r
+        for f! in (TS.tan!, TS.tanh!, TS.asin!, TS.acos!, TS.atan!, TS.asinh!, TS.acosh!,
+                TS.atanh!), a in args(f! === TS.acosh! ? 2.0 : 0.3)
+            a0, N = deepcopy(a), TS.order(a)
+            c1, r1, c2, r2 = zero(a), zero(a), garbage(a), garbage(a)
+            for k in 0:N
+                f!(c1, a, r1, k)
+                f!(c2, a, r2, k)
+            end
+            @test c1 == c2
+            @test a == a0
+            allocs(f!, c1, a, r1, N)                 # warm-up
+            @test allocs(f!, c1, a, r1, N) == 0
+        end
+    end
 end

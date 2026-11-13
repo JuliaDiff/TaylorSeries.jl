@@ -669,13 +669,20 @@ end
     return nothing
 end
 
+# With `pre_a` (`pre_b`) not `nothing`, the factor `a` (`b`) is used as `pre_a * a`
+# (`pre_b * b`), coefficient by coefficient, computed on the fly (see `_prescale`); the scaling
+# factor must not change which coefficients are zero (e.g. a positive integer)
 @inline function _mul_output_major_unchecked!(c::HomogeneousPolynomial,
-        a::HomogeneousPolynomial, b::HomogeneousPolynomial)
+        a::HomogeneousPolynomial, b::HomogeneousPolynomial,
+        pre_a::Union{Nothing,NumberNotSeries} = nothing,
+        pre_b::Union{Nothing,NumberNotSeries} = nothing)
     (_isthinzero(b) || _isthinzero(a)) && return nothing
     degree_a = order(a)
     degree_b = order(b)
-    degree_a == 0 && return _muladd_scalar_unchecked!(c, a.coeffs[1], b)
-    degree_b == 0 && return _muladd_scalar_unchecked!(c, b.coeffs[1], a)
+    degree_a == 0 &&
+        return _muladd_scalar_unchecked!(c, _prescale(pre_a, a.coeffs[1]), b, pre_b)
+    degree_b == 0 &&
+        return _muladd_scalar_unchecked!(c, _prescale(pre_b, b.coeffs[1]), a, pre_a)
 
     table = _init_output_major_product_table!(c.space, degree_a, degree_b)
     offsets = table.output_offsets
@@ -691,7 +698,7 @@ end
             packed = output_pairs[csr_pos]
             na = Int(packed >> right_bits)
             nb = Int(packed & right_mask)
-            acc += a_coeffs[na] * b_coeffs[nb]
+            acc += _prescale(pre_a, a_coeffs[na]) * _prescale(pre_b, b_coeffs[nb])
         end
         c_coeffs[pos] = acc
     end
@@ -738,10 +745,12 @@ end
 end
 
 @inline function _muladd_unchecked!(c::TaylorN{T}, a::TaylorN{T},
-        b::TaylorN{T}, k::Int) where {T<:Number}
+        b::TaylorN{T}, k::Int, pre_a::Union{Nothing,NumberNotSeries} = nothing,
+        pre_b::Union{Nothing,NumberNotSeries} = nothing) where {T<:Number}
     kk = k + 1
     @inbounds for i = 0:k
-        _mul_output_major_unchecked!(c.coeffs[kk], a.coeffs[i+1], b.coeffs[kk-i])
+        _mul_output_major_unchecked!(c.coeffs[kk], a.coeffs[i+1], b.coeffs[kk-i],
+            pre_a, pre_b)
     end
     return nothing
 end
