@@ -673,4 +673,85 @@ setdisplay(:full)
         end
         @test r == c
     end
+
+    # TaylorN and nested representations (Taylor1{Taylor1}, Taylor1{Taylor1{Taylor1}},
+    # Taylor1{TaylorN}) with interval coefficients: for each coefficient that both
+    # representations contain, the two intervals must intersect
+    @testset "Compare TaylorN and nested Taylors with interval coefficients" begin
+        # coefficient of ξ₁^i₁ ⋯ ξₙ^iₙ: in a TaylorN; in nested Taylor1s (innermost variable
+        # first: p[iₙ]⋯[i₁]); in a Taylor1{TaylorN} (TaylorN variables first, Taylor1 last)
+        coeff_at(p::TaylorN, idx::NTuple) = getcoeff(p, idx)
+        coeff_at(p::Taylor1, idx::NTuple) = foldl((q, n) -> q[n], reverse(idx); init = p)
+        coeff_at(p::Taylor1{<:TaylorN}, idx::NTuple) = getcoeff(p[idx[end]], idx[1:end-1])
+        # multi-indices of the coefficients that a nested series contains
+        orders(p) = p isa Taylor1 && p[0] isa Taylor1 ? (orders(p[0])..., TS.order(p)) :
+            (TS.order(p),)
+        indices(p::Taylor1) = Iterators.product((0:n for n in orders(p))...)
+        indices(p::Taylor1{<:TaylorN}) = (nv = get_numvars(p[0]); M = TS.order(p[0]);
+            (idx for idx in Iterators.product(ntuple(_ -> 0:M, nv)..., 0:TS.order(p))
+                if sum(idx[1:nv]) ≤ M))
+        # the common coefficients of `pN` (TaylorN) and `pT` (nested) intersect
+        overlap(pN, pT) = all(!isdisjoint_interval(coeff_at(pN, idx), coeff_at(pT, idx))
+            for idx in indices(pT) if sum(idx) ≤ TS.order(pN))
+
+        funs = ((exp, (0.0, 0.3, -0.4)), (expm1, (0.0, 0.3, -0.4)), (log, (1.0, 1.5, 0.7)),
+            (log1p, (0.0, 0.3, -0.4)), (sqrt, (1.0, 1.5, 0.7)), (sin, (0.0, 0.3, -0.4)),
+            (cos, (0.0, 0.3, -0.4)), (tan, (0.0, 0.3, -0.4)), (sinpi, (0.0, 0.3, -0.4)),
+            (cospi, (0.0, 0.3, -0.4)), (asin, (0.0, 0.3, -0.4)), (acos, (0.0, 0.3, -0.4)),
+            (atan, (0.0, 0.3, -0.4)), (sinh, (0.0, 0.3, -0.4)), (cosh, (0.0, 0.3, -0.4)),
+            (tanh, (0.0, 0.3, -0.4)), (asinh, (0.0, 0.3, -0.4)), (acosh, (2.0, 1.5, 3.0)),
+            (atanh, (0.0, 0.3, -0.4)))
+        I = interval
+        # constant terms: thin, and wide
+        consts(x0) = (I(x0), I(x0 - 1e-3, x0 + 1e-3))
+
+        @testset "TaylorN{Interval} and Taylor1{Taylor1{Interval}} (2 variables)" begin
+            sp = JetSpace(order = 8, variables = [:τ, :σ])
+            x, y = variables(Interval{Float64}, sp)
+            t = Taylor1([I(0), I(1)], 4)                # inner variable (τ)
+            s = Taylor1([zero(t), one(t)], 4)           # outer variable (σ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y), f(c + t + s))
+                @test overlap(f(c + I(0.5) * x - I(0.3) * y), f(c + I(0.5) * t - I(0.3) * s))
+            end
+        end
+
+        @testset "TaylorN{Interval} and Taylor1{Taylor1{Taylor1{Interval}}} (3 variables)" begin
+            sp = JetSpace(order = 6, variables = [:τ, :σ, :ρ])
+            x, y, z = variables(Interval{Float64}, sp)
+            t = Taylor1([I(0), I(1)], 2)                # innermost variable (τ)
+            s = Taylor1([zero(t), one(t)], 2)           # middle variable (σ)
+            r = Taylor1([zero(s), one(s)], 2)           # outermost variable (ρ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y + z), f(c + t + s + r))
+                @test overlap(f(c + I(0.5) * x + I(0.2) * y - I(0.3) * z),
+                    f(c + I(0.5) * t + I(0.2) * s - I(0.3) * r))
+            end
+        end
+
+        @testset "TaylorN{Interval} and Taylor1{TaylorN{Interval}} (one variable in each level)" begin
+            sp = JetSpace(order = 8, variables = [:τ, :σ])
+            x, y = variables(Interval{Float64}, sp)
+            sp1 = JetSpace(order = 4, variables = [:τ])
+            τ = variables(Interval{Float64}, sp1)[1]    # inner level: TaylorN (τ)
+            s = Taylor1([zero(τ), one(τ)], 4)           # outer level: Taylor1 (σ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y), f(c + τ + s))
+                @test overlap(f(c + I(0.5) * x - I(0.3) * y), f(c + I(0.5) * τ - I(0.3) * s))
+            end
+        end
+
+        @testset "TaylorN{Interval} (3 variables) and Taylor1{TaylorN{Interval}} (2 in the inner level)" begin
+            sp3 = JetSpace(order = 6, variables = [:τ, :σ, :ρ])
+            x, y, z = variables(Interval{Float64}, sp3)
+            sp2 = JetSpace(order = 3, variables = [:τ, :σ])
+            u, v = variables(Interval{Float64}, sp2)    # inner level: TaylorN (τ, σ)
+            r = Taylor1([zero(u), one(u)], 3)           # outer level: Taylor1 (ρ)
+            for (f, x0s) in funs, x0 in x0s, c in consts(x0)
+                @test overlap(f(c + x + y + z), f(c + u + v + r))
+                @test overlap(f(c + I(0.5) * x + I(0.2) * y - I(0.3) * z),
+                    f(c + I(0.5) * u + I(0.2) * v - I(0.3) * r))
+            end
+        end
+    end
 end
