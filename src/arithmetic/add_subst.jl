@@ -406,7 +406,7 @@ for (f, fc) in ((:+, :(add!)), (:-, :(subst!)))
             @inbounds aux = $f(b, a.coeffs[1])
             c = Taylor1( zero(aux), order(a))
             for k in eachindex(a)
-                ($fc)(c, a, b, k)
+                ($fc)(c, b, a, k)
             end
             return c
         end
