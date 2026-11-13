@@ -854,8 +854,17 @@ function _same_coeffs(pN::TaylorN, pT::Taylor1; rtol = 32 * eps())
     return all(isapprox(_coeff_like(pN, idx), _coeff_like(pT, idx); rtol)
         for idx in Iterators.product((0:n for n in ords)...) if sum(idx) ≤ TS.order(pN))
 end
+# Taylor1{TaylorN}: the first variables are those of the TaylorN coefficients, and the last one
+# is that of the Taylor1; p[iₙ] is the TaylorN that holds the coefficients of ξₙ^iₙ
+_coeff_like(p::Taylor1{<:TaylorN}, idx::NTuple) = getcoeff(p[idx[end]], idx[1:end-1])
+function _same_coeffs(pN::TaylorN, pT::Taylor1{<:TaylorN}; rtol = 32 * eps())
+    nv, M, K = get_numvars(pT[0]), TS.order(pT[0]), TS.order(pT)
+    return all(isapprox(_coeff_like(pN, idx), _coeff_like(pT, idx); rtol)
+        for idx in Iterators.product(ntuple(_ -> 0:M, nv)..., 0:K)
+        if sum(idx[1:nv]) ≤ M && sum(idx) ≤ TS.order(pN))
+end
 
-@testset "Compare TaylorN and nested Taylors" begin
+@testset "Compare TaylorN and nested Taylor1s" begin
     # functions, and three expansion points within each domain
     _cmp_funs() = ((exp, (0.0, 0.3, -0.4)), (expm1, (0.0, 0.3, -0.4)), (log, (1.0, 1.5, 0.7)),
         (log1p, (0.0, 0.3, -0.4)), (sqrt, (1.0, 1.5, 0.7)), (sin, (0.0, 0.3, -0.4)),
@@ -893,6 +902,46 @@ end
                 for x0 in x0s
                     @test _same_coeffs(f(x0 + x + y + z), f(x0 + t + s + r))
                     @test _same_coeffs(f(x0 + 0.5x - 0.3y + 0.2z), f(x0 + 0.5t - 0.3s + 0.2r))
+                end
+            end
+        end
+    end
+
+    @testset "TaylorN and Taylor1{TaylorN} (2 combined vars each)" begin
+        sp = JetSpace(order = 10, variables = [:τ, :σ])
+        x, y = variables(sp)
+        sp1 = JetSpace(order = 5, variables = [:τ])
+        τ = variables(sp1)[1]                   # inner level: TaylorN in one variable (τ)
+        s = Taylor1([zero(τ), one(τ)], 5)       # outer level: Taylor1 variable (σ)
+        # mixed arithmetic: a TaylorN behaves as the constant Taylor1{TaylorN} it represents
+        b = 1.0 + 0.5τ
+        bT = Taylor1(b, 5)
+        for op in (+, -, *, /)
+            @test op(b, 2 + s) == op(bT, 2 + s)
+            @test op(2 + s, b) == op(2 + s, bT)
+        end
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y), f(x0 + τ + s))
+                    @test _same_coeffs(f(x0 + 0.5x - 0.3y), f(x0 + 0.5τ - 0.3s))
+                end
+            end
+        end
+    end
+
+    @testset "TaylorN Taylor1{TaylorN} (3 combined vars each)" begin
+        sp3 = JetSpace(order = 8, variables = [:τ, :σ, :ρ])
+        x, y, z = variables(sp3)
+        sp2 = JetSpace(order = 4, variables = [:τ, :σ])
+        u, v = variables(sp2)                   # inner level: TaylorN in two variables (τ, σ)
+        r = Taylor1([zero(u), one(u)], 4)       # outer level: Taylor1 variable (ρ)
+        for (f, x0s) in _cmp_funs()
+            @testset "$f" begin
+                for x0 in x0s
+                    @test _same_coeffs(f(x0 + x + y + z), f(x0 + u + v + r))
+                    # (subtracting the outer variable: TaylorN - Taylor1{TaylorN})
+                    @test _same_coeffs(f(x0 + 0.5x + 0.2y - 0.3z), f(x0 + 0.5u + 0.2v - 0.3r))
                 end
             end
         end
